@@ -4,7 +4,7 @@ import "time"
 
 type Opportunity struct {
 	ID          int64     `json:"id" db:"id"`
-	Name        string    `json:"name" db:"name"`
+	Text        string    `json:"text" db:"text"`
 	Description string    `json:"description" db:"description"`
 	Icon        string    `json:"icon" db:"icon"`
 	Color       string    `json:"color" db:"color"`
@@ -15,7 +15,7 @@ func (s *storage) ListOpportunities() ([]Opportunity, error) {
 	opportunities := make([]Opportunity, 0)
 
 	query := `
-		SELECT id, name, description, icon, color, created_at
+		SELECT id, text, description, icon, color, created_at
 		FROM opportunities
 	`
 

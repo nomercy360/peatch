@@ -1,8 +1,10 @@
 package handler
 
 import (
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 	"github.com/peatch-io/peatch/internal/db"
+	svc "github.com/peatch-io/peatch/internal/service"
 	"net/http"
 	"strconv"
 )
@@ -34,7 +36,7 @@ func (h *handler) handleListUsers(c echo.Context) error {
 		FindSimilar: findSimilar,
 	}
 
-	users, err := h.svc.ListUsers(query)
+	users, err := h.svc.ListUserProfiles(query)
 	if err != nil {
 		return err
 	}
@@ -47,13 +49,13 @@ func (h *handler) handleListUsers(c echo.Context) error {
 // @Tags users
 // @Accept  json
 // @Produce  json
-// @Param chat_id path int true "Chat ID"
+// @Param id path int true "User ID"
 // @Success 200 {object} User
-// @Router /api/users/{chat_id} [get]
+// @Router /api/users/{id} [get]
 func (h *handler) handleGetUser(c echo.Context) error {
-	chatID, _ := strconv.ParseInt(c.Param("chat_id"), 10, 64)
+	chatID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 
-	user, err := h.svc.GetUserByChatID(chatID)
+	user, err := h.svc.GetUserByID(chatID)
 	if err != nil {
 		return err
 	}
@@ -61,21 +63,33 @@ func (h *handler) handleGetUser(c echo.Context) error {
 	return c.JSON(http.StatusOK, user)
 }
 
+func getUserID(c echo.Context) int64 {
+	user := c.Get("user").(*jwt.Token)
+	claims := user.Claims.(*svc.JWTClaims)
+	return claims.UID
+}
+
 // handleUpdateUser godoc
 // @Summary Update user
 // @Tags users
 // @Accept  json
 // @Produce  json
-// @Param user body User true "User data"
+// @Param user body UpdateUserRequest true "User data"
 // @Success 200 {object} User
 // @Router /api/users [put]
 func (h *handler) handleUpdateUser(c echo.Context) error {
-	var user db.User
+	uid := getUserID(c)
+
+	var user svc.UpdateUserRequest
 	if err := c.Bind(&user); err != nil {
 		return err
 	}
 
-	updatedUser, err := h.svc.UpdateUser(user)
+	if err := c.Validate(user); err != nil {
+		return err
+	}
+
+	updatedUser, err := h.svc.UpdateUser(uid, user)
 	if err != nil {
 		return err
 	}
@@ -88,14 +102,14 @@ func (h *handler) handleUpdateUser(c echo.Context) error {
 // @Tags users
 // @Accept  json
 // @Produce  json
-// @Param chat_id path int true "Chat ID"
+// @Param id path int true "Following User ID"
 // @Success 204
-// @Router /api/users/{chat_id} [delete]
+// @Router /users/{id}/follow [get]
 func (h *handler) handleFollowUser(c echo.Context) error {
-	userID, _ := strconv.ParseInt(c.Param("user_id"), 10, 64)
-	followerID, _ := strconv.ParseInt(c.Param("follower_id"), 10, 64)
+	userID := getUserID(c)
+	followingID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 
-	err := h.svc.FollowUser(userID, followerID)
+	err := h.svc.FollowUser(userID, followingID)
 	if err != nil {
 		return err
 	}
@@ -108,14 +122,14 @@ func (h *handler) handleFollowUser(c echo.Context) error {
 // @Tags users
 // @Accept  json
 // @Produce  json
-// @Param user_id path int true "User ID"
-// @Param follower_id path int true "Follower ID"
+// @Param id path int true "Following User ID"
 // @Success 204
+// @Router /users/{id}/unfollow [get]
 func (h *handler) handleUnfollowUser(c echo.Context) error {
-	userID, _ := strconv.ParseInt(c.Param("user_id"), 10, 64)
-	followerID, _ := strconv.ParseInt(c.Param("follower_id"), 10, 64)
+	userID := getUserID(c)
+	followingID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 
-	err := h.svc.UnfollowUser(userID, followerID)
+	err := h.svc.UnfollowUser(userID, followingID)
 	if err != nil {
 		return err
 	}
@@ -128,11 +142,10 @@ func (h *handler) handleUnfollowUser(c echo.Context) error {
 // @Tags users
 // @Accept  json
 // @Produce  json
-// @Param user_id path int true "User ID"
 // @Success 204
 // @Router /api/users/{user_id}/publish [post]
 func (h *handler) handlePublishUser(c echo.Context) error {
-	userID, _ := strconv.ParseInt(c.Param("user_id"), 10, 64)
+	userID := getUserID(c)
 
 	err := h.svc.PublishUser(userID)
 	if err != nil {
@@ -147,11 +160,10 @@ func (h *handler) handlePublishUser(c echo.Context) error {
 // @Tags users
 // @Accept  json
 // @Produce  json
-// @Param user_id path int true "User ID"
 // @Success 204
 // @Router /api/users/{user_id}/hide [post]
 func (h *handler) handleHideUser(c echo.Context) error {
-	userID, _ := strconv.ParseInt(c.Param("user_id"), 10, 64)
+	userID := getUserID(c)
 
 	err := h.svc.HideUser(userID)
 	if err != nil {

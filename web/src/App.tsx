@@ -1,17 +1,19 @@
-import { Component, createEffect } from 'solid-js';
+import { createEffect } from 'solid-js';
+import { QueryClient, QueryClientProvider } from '@tanstack/solid-query';
 
+const queryClient = new QueryClient();
 
 export default function App(props: any) {
   createEffect(() => {
     window.Telegram.WebApp.ready();
     window.Telegram.WebApp.expand();
 
-    console.log('App mounted');
+    console.log(window.Telegram.WebApp.initData);
   });
 
   return (
-    <>
-      {props.children}
-    </>
+    <QueryClientProvider client={queryClient}>
+      <>{props.children}</>
+    </QueryClientProvider>
   );
-};
+}

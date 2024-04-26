@@ -10,13 +10,15 @@ definitions:
         type: string
       id:
         type: integer
-      name:
+      text:
         type: string
-      user_id:
-        type: integer
     type: object
   Collaboration:
     properties:
+      badges:
+        items:
+          $ref: '#/definitions/Badge'
+        type: array
       city:
         type: string
       country:
@@ -31,8 +33,8 @@ definitions:
         type: integer
       is_payable:
         type: boolean
-      is_published:
-        type: boolean
+      opportunity:
+        $ref: '#/definitions/Opportunity'
       opportunity_id:
         type: integer
       published_at:
@@ -46,6 +48,39 @@ definitions:
       user_id:
         type: integer
     type: object
+  CreateCollaboration:
+    properties:
+      badge_ids:
+        items:
+          type: integer
+        type: array
+      city:
+        maxLength: 255
+        type: string
+      country:
+        maxLength: 255
+        type: string
+      country_code:
+        maxLength: 2
+        type: string
+      description:
+        maxLength: 1000
+        type: string
+      is_payable:
+        type: boolean
+      opportunity_id:
+        type: integer
+      title:
+        maxLength: 255
+        type: string
+    required:
+      - city
+      - country
+      - country_code
+      - description
+      - opportunity_id
+      - title
+    type: object
   Opportunity:
     properties:
       color:
@@ -58,8 +93,51 @@ definitions:
         type: string
       id:
         type: integer
-      name:
+      text:
         type: string
+    type: object
+  UpdateUserRequest:
+    properties:
+      avatar_url:
+        type: string
+      badge_ids:
+        items:
+          type: integer
+        type: array
+      city:
+        maxLength: 255
+        type: string
+      country:
+        maxLength: 255
+        type: string
+      country_code:
+        maxLength: 2
+        type: string
+      description:
+        maxLength: 1000
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      opportunity_ids:
+        items:
+          type: integer
+        type: array
+      title:
+        maxLength: 255
+        type: string
+    required:
+      - avatar_url
+      - badge_ids
+      - city
+      - country
+      - country_code
+      - description
+      - first_name
+      - last_name
+      - opportunity_ids
+      - title
     type: object
   User:
     properties:
@@ -85,13 +163,9 @@ definitions:
         type: string
       followers_count:
         type: integer
-      following_count:
-        type: integer
       id:
         type: integer
-      is_published:
-        type: boolean
-      language:
+      language_code:
         type: string
       last_name:
         type: string
@@ -111,6 +185,13 @@ definitions:
         type: string
       username:
         type: string
+    type: object
+  UserWithToken:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/User'
     type: object
 host: localhost:8080
 info:
@@ -150,7 +231,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/User'
+            $ref: '#/definitions/UserWithToken'
       summary: Telegram auth
       tags:
       - auth
@@ -228,7 +309,7 @@ paths:
         name: collaboration
         required: true
         schema:
-          $ref: '#/definitions/Collaboration'
+          $ref: '#/definitions/CreateCollaboration'
       produces:
       - application/json
       responses:
@@ -394,7 +475,7 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/User'
+          $ref: '#/definitions/UpdateUserRequest'
       produces:
       - application/json
       responses:
@@ -405,31 +486,14 @@ paths:
       summary: Update user
       tags:
       - users
-  /api/users/{chat_id}:
-    delete:
-      consumes:
-      - application/json
-      parameters:
-      - description: Chat ID
-        in: path
-        name: chat_id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: No Content
-      summary: Delete user
-      tags:
-      - users
+  /api/users/{id}:
     get:
       consumes:
       - application/json
       parameters:
-      - description: Chat ID
+        - description: User ID
         in: path
-        name: chat_id
+          name: id
         required: true
         type: integer
       produces:
@@ -441,19 +505,13 @@ paths:
             $ref: '#/definitions/User'
       summary: Get user
       tags:
-      - users
+        - users
   /api/users/{user_id}/hide:
     post:
       consumes:
-      - application/json
-      parameters:
-      - description: User ID
-        in: path
-        name: user_id
-        required: true
-        type: integer
+        - application/json
       produces:
-      - application/json
+        - application/json
       responses:
         "204":
           description: No Content
@@ -464,10 +522,22 @@ paths:
     post:
       consumes:
       - application/json
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      summary: Publish user
+      tags:
+      - users
+  /users/{id}/follow:
+    get:
+      consumes:
+      - application/json
       parameters:
-      - description: User ID
+        - description: Following User ID
         in: path
-        name: user_id
+          name: id
         required: true
         type: integer
       produces:
@@ -475,7 +545,25 @@ paths:
       responses:
         "204":
           description: No Content
-      summary: Publish user
+      summary: Delete user
+      tags:
+      - users
+  /users/{id}/unfollow:
+    get:
+      consumes:
+      - application/json
+      parameters:
+        - description: Following User ID
+        in: path
+          name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      summary: Unfollow user
       tags:
       - users
 swagger: "2.0"

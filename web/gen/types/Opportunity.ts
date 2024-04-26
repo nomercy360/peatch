@@ -22,5 +22,5 @@ export type Opportunity = {
     /**
      * @type string | undefined
     */
-    name?: string;
+    text?: string;
 };

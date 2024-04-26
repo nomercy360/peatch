@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/peatch-io/peatch/internal/db"
 	"github.com/peatch-io/peatch/internal/terrors"
 	"strconv"
@@ -17,6 +17,26 @@ import (
 type UserWithToken struct {
 	User  db.User `json:"user"`
 	Token string  `json:"token"`
+} // @Name UserWithToken
+
+type TelegramUser struct {
+	ID        int64   `json:"id"`
+	FirstName *string `json:"first_name"`
+	LastName  *string `json:"last_name"`
+	Username  string  `json:"username"`
+	Language  *string `json:"language_code"`
+	IsPremium bool    `json:"is_premium"`
+	AllowsPM  bool    `json:"allows_write_to_pm"`
+}
+
+func (tu *TelegramUser) ToDBUser() db.User {
+	return db.User{
+		FirstName:    tu.FirstName,
+		LastName:     tu.LastName,
+		Username:     tu.Username,
+		LanguageCode: tu.Language,
+		ChatID:       tu.ID,
+	}
 }
 
 func (s *service) TelegramAuth(queryID, userJSON, authDate, hash string) (*UserWithToken, error) {
@@ -47,16 +67,16 @@ func (s *service) TelegramAuth(queryID, userJSON, authDate, hash string) (*UserW
 		return nil, errors.New("authentication data is outdated")
 	}
 
-	var userInfo db.User
-	err = json.Unmarshal([]byte(userJSON), &userInfo)
+	var tgUser TelegramUser
+	err = json.Unmarshal([]byte(userJSON), &tgUser)
 	if err != nil {
 		return nil, err
 	}
 
-	user, err := s.storage.GetUserByChatID(userInfo.ChatID)
+	user, err := s.storage.GetUserByChatID(tgUser.ID)
 	if err != nil {
-		if db.IsNoRowsError(err) {
-			user, err = s.storage.CreateUser(userInfo)
+		if errors.As(err, &db.ErrNotFound) {
+			user, err = s.storage.CreateUser(tgUser.ToDBUser())
 			if err != nil {
 				return nil, err
 			}
@@ -76,20 +96,27 @@ func (s *service) TelegramAuth(queryID, userJSON, authDate, hash string) (*UserW
 	}, nil
 }
 
-func generateJWT(id, chatID int64) (string, error) {
-	mySigningKey := []byte("secret")
+type JWTClaims struct {
+	jwt.RegisteredClaims
+	UID    int64 `json:"uid"`
+	ChatID int64 `json:"chat_id"`
+}
 
-	claims := jwt.StandardClaims{
-		ExpiresAt: time.Now().Add(time.Hour * 24 * 7).Unix(),
-		Issuer:    strconv.FormatInt(chatID, 10),
+func generateJWT(id, chatID int64) (string, error) {
+	claims := &JWTClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+		},
+		UID:    id,
+		ChatID: chatID,
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	ss, err := token.SignedString(mySigningKey)
 
+	t, err := token.SignedString([]byte("secret"))
 	if err != nil {
 		return "", err
 	}
 
-	return ss, nil
+	return t, nil
 }

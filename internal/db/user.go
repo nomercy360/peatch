@@ -1,7 +1,9 @@
 package db
 
 import (
+	"fmt"
 	"github.com/jmoiron/sqlx"
+	"sync"
 	"time"
 )
 
@@ -13,17 +15,15 @@ type User struct {
 	Username       string        `json:"username" db:"username"`
 	CreatedAt      time.Time     `json:"created_at" db:"created_at"`
 	UpdatedAt      time.Time     `json:"updated_at" db:"updated_at"`
-	IsPublished    bool          `json:"is_published" db:"is_published"`
 	PublishedAt    *time.Time    `json:"published_at" db:"published_at"`
 	AvatarURL      *string       `json:"avatar_url" db:"avatar_url"`
 	Title          *string       `json:"title" db:"title"`
 	Description    *string       `json:"description" db:"description"`
-	Language       *string       `json:"language" db:"language"`
+	LanguageCode   *string       `json:"language_code" db:"language_code"`
 	Country        *string       `json:"country" db:"country"`
 	City           *string       `json:"city" db:"city"`
 	CountryCode    *string       `json:"country_code" db:"country_code"`
 	FollowersCount int           `json:"followers_count" db:"followers_count"`
-	FollowingCount int           `json:"following_count" db:"following_count"`
 	RequestsCount  int           `json:"requests_count" db:"requests_count"`
 	Notifications  bool          `json:"notifications" db:"notifications"`
 	Badges         []Badge       `json:"badges" db:"-"`
@@ -33,7 +33,6 @@ type User struct {
 type UserQuery struct {
 	Page        int
 	Limit       int
-	Published   *bool
 	OrderBy     UserQueryOrder
 	Search      string
 	FindSimilar bool
@@ -49,24 +48,18 @@ const (
 func (s *storage) ListUsers(queryParams UserQuery) ([]User, error) {
 	users := make([]User, 0)
 	var args []interface{}
+	paramIndex := 1
 
 	query := `
-		SELECT id, first_name, last_name, chat_id, username, created_at, updated_at, is_published, published_at, avatar_url, title, description, language, country, city, country_code, followers_count, following_count, requests_count, notifications
+		SELECT id, first_name, last_name, chat_id, username, created_at, updated_at, published_at, avatar_url, title, description, language_code, country, city, country_code, followers_count, requests_count, notifications
 		FROM users
-		WHERE 1=1
+		WHERE published_at IS NOT NULL
 	`
 
-	if queryParams.Published != nil {
-		if *queryParams.Published {
-			query += " AND is_published = true"
-		} else {
-			query += " AND is_published = false"
-		}
-	}
-
 	if queryParams.Search != "" {
-		query += " AND (username ILIKE '%' || $1 || '%' OR description ILIKE '%' || $1 || '%')"
+		query += fmt.Sprintf(" AND (username ILIKE $%d OR first_name ILIKE $%d OR last_name ILIKE $%d)", paramIndex, paramIndex, paramIndex)
 		args = append(args, queryParams.Search)
+		paramIndex++
 	}
 
 	if queryParams.OrderBy == UserQueryOrderByFollowers {
@@ -76,7 +69,7 @@ func (s *storage) ListUsers(queryParams UserQuery) ([]User, error) {
 	}
 
 	offset := (queryParams.Page - 1) * queryParams.Limit
-	query += " LIMIT $2 OFFSET $3"
+	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", paramIndex, paramIndex+1)
 	args = append(args, queryParams.Limit, offset)
 
 	err := s.pg.Select(&users, query, args...)
@@ -91,7 +84,7 @@ func (s *storage) GetUserByChatID(chatID int64) (*User, error) {
 	user := new(User)
 
 	query := `
-		SELECT id, first_name, last_name, chat_id, username, created_at, updated_at, is_published, published_at, avatar_url, title, description, language, country, city, country_code, followers_count, following_count, requests_count, notifications
+		SELECT id, first_name, last_name, chat_id, username, created_at, updated_at, published_at, avatar_url, title, description, language_code, country, city, country_code, followers_count, requests_count, notifications
 		FROM users
 		WHERE chat_id = $1;
 	`
@@ -99,6 +92,10 @@ func (s *storage) GetUserByChatID(chatID int64) (*User, error) {
 	err := s.pg.Get(user, query, chatID)
 
 	if err != nil {
+		if IsNoRowsError(err) {
+			return nil, ErrNotFound
+		}
+
 		return nil, err
 	}
 
@@ -107,9 +104,9 @@ func (s *storage) GetUserByChatID(chatID int64) (*User, error) {
 
 func (s *storage) CreateUser(user User) (*User, error) {
 	query := `
-		INSERT INTO users (id, first_name, last_name, chat_id, username, is_published, published_at, avatar_url, title, description, language, country, city, country_code, notifications)
-		VALUES (:id, :first_name, :last_name, :chat_id, :username, :is_published, :published_at, :avatar_url, :title, :description, :language, :country, :city, :country_code, :notifications)
-		RETURNING id, first_name, last_name, chat_id, username, created_at, updated_at, is_published, published_at, avatar_url, title, description, language, country, city, country_code, followers_count, following_count, requests_count, notifications;
+		INSERT INTO users (first_name, last_name, chat_id, username, published_at, avatar_url, title, description, language_code, country, city, country_code, notifications)
+		VALUES (:first_name, :last_name, :chat_id, :username, :published_at, :avatar_url, :title, :description, :language_code, :country, :city, :country_code, :notifications)
+		RETURNING id, first_name, last_name, chat_id, username, created_at, updated_at, published_at, avatar_url, title, description, language_code, country, city, country_code, followers_count, requests_count, notifications;
 	`
 
 	rows, err := s.pg.NamedQuery(query, user)
@@ -140,25 +137,83 @@ func getFirstResult(rows *sqlx.Rows, dest interface{}) error {
 	return nil
 }
 
-func (s *storage) UpdateUser(user User) (*User, error) {
-	query := `
-		UPDATE users
-		SET first_name = :first_name, last_name = :last_name, username = :username, avatar_url = :avatar_url, title = :title, description = :description, language = :language, country = :country, city = :city, country_code = :country_code, notifications = :notifications
-		WHERE id = :id
-		RETURNING id, first_name, last_name, chat_id, username, created_at, updated_at, is_published, published_at, avatar_url, title, description, language, country, city, country_code, followers_count, following_count, requests_count, notifications;
-	`
-
-	rows, err := s.pg.NamedQuery(query, user)
-
-	if err != nil {
-		return nil, err
-	}
-
+func (s *storage) UpdateUser(userID int64, user User, badges, opportunities []int64) (*User, error) {
 	var res User
 
-	if err := getFirstResult(rows, &res); err != nil {
+	query := `
+		UPDATE users
+		SET first_name =$1, last_name = $2, updated_at = NOW(), avatar_url = $3, title = $4, description = $5, country = $6, city = $7, country_code = $8, published_at = NOW()
+		WHERE id = $9
+		RETURNING id, first_name, last_name, chat_id, username, created_at, updated_at, published_at, avatar_url, title, description, language_code, country, city, country_code, followers_count, requests_count, notifications;
+	`
+
+	err := s.pg.QueryRowx(query, user.FirstName, user.LastName, user.AvatarURL, user.Title, user.Description, user.Country, user.City, user.CountryCode, userID).StructScan(&res)
+
+	if err != nil {
+		if IsNoRowsError(err) {
+			return nil, ErrNotFound
+		}
+
 		return nil, err
 	}
+
+	wg := sync.WaitGroup{}
+
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		query := `
+			DELETE FROM user_badges
+			WHERE user_id = $1;
+		`
+
+		_, err := s.pg.Exec(query, userID)
+
+		if err != nil {
+			return
+		}
+
+		query = `
+			INSERT INTO user_badges (user_id, badge_id)
+			VALUES ($1, $2);
+		`
+
+		for _, badgeID := range badges {
+			_, err := s.pg.Exec(query, userID, badgeID)
+			if err != nil {
+				return
+			}
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		query := `
+			DELETE FROM user_opportunities
+			WHERE user_id = $1;
+		`
+
+		_, err := s.pg.Exec(query, userID)
+
+		if err != nil {
+			return
+		}
+
+		query = `
+			INSERT INTO user_opportunities (user_id, opportunity_id)
+			VALUES ($1, $2);
+		`
+
+		for _, opportunityID := range opportunities {
+			_, err := s.pg.Exec(query, userID, opportunityID)
+			if err != nil {
+				return
+			}
+		}
+	}()
+
+	wg.Wait()
 
 	return &res, nil
 }
@@ -167,28 +222,69 @@ func (s *storage) GetUserByID(id int64) (*User, error) {
 	user := new(User)
 
 	query := `
-		SELECT id, first_name, last_name, chat_id, username, created_at, updated_at, is_published, published_at, avatar_url, title, description, language, country, city, country_code, followers_count, following_count, requests_count, notifications
-		FROM users
-		WHERE id = $1;
+		SELECT u.id, u.first_name, u.last_name, u.chat_id, u.username, u.created_at, u.updated_at, u.published_at, u.avatar_url, u.title, u.description, u.language_code, u.country, u.city, u.country_code, u.followers_count, u.requests_count, u.notifications
+		FROM users u
+		WHERE id = $1 AND published_at IS NOT NULL;
 	`
 
 	err := s.pg.Get(user, query, id)
 
 	if err != nil {
+		if IsNoRowsError(err) {
+			return nil, ErrNotFound
+		}
+
 		return nil, err
 	}
+
+	wg := sync.WaitGroup{}
+
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		query := `
+			SELECT b.id, b.text, b.icon, b.color, b.created_at
+			FROM badges b
+			JOIN user_badges ub ON b.id = ub.badge_id
+			WHERE ub.user_id = $1
+		`
+
+		err := s.pg.Select(&user.Badges, query, id)
+
+		if err != nil {
+			return
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		query := `
+			SELECT o.id, o.text, o.description, o.icon, o.color, o.created_at
+			FROM opportunities o
+			JOIN user_opportunities uo ON o.id = uo.opportunity_id
+			WHERE uo.user_id = $1
+		`
+
+		err := s.pg.Select(&user.Opportunities, query, id)
+		if err != nil {
+			return
+		}
+	}()
+
+	wg.Wait()
 
 	return user, nil
 }
 
-func (s *storage) FollowUser(userID, followerID int64) error {
+func (s *storage) FollowUser(userID, followingID int64) error {
 	query := `
 		INSERT INTO user_followers (user_id, follower_id)
 		VALUES ($1, $2)
 		ON CONFLICT DO NOTHING;
 	`
 
-	_, err := s.pg.Exec(query, userID, followerID)
+	_, err := s.pg.Exec(query, followingID, userID)
 
 	if err != nil {
 		return err
@@ -197,16 +293,20 @@ func (s *storage) FollowUser(userID, followerID int64) error {
 	return nil
 }
 
-func (s *storage) UnfollowUser(userID, followerID int64) error {
+func (s *storage) UnfollowUser(userID, followingID int64) error {
 	query := `
 		DELETE FROM user_followers
 		WHERE user_id = $1 AND follower_id = $2;
 	`
 
-	_, err := s.pg.Exec(query, userID, followerID)
+	res, err := s.pg.Exec(query, followingID, userID)
 
 	if err != nil {
 		return err
+	}
+
+	if rowsAffected, _ := res.RowsAffected(); rowsAffected == 0 {
+		return ErrNotFound
 	}
 
 	return nil
@@ -215,14 +315,18 @@ func (s *storage) UnfollowUser(userID, followerID int64) error {
 func (s *storage) PublishUser(userID int64) error {
 	query := `
 		UPDATE users
-		SET is_published = true, published_at = NOW()
+		SET published_at = NOW()
 		WHERE id = $1;
 	`
 
-	_, err := s.pg.Exec(query, userID)
+	res, err := s.pg.Exec(query, userID)
 
 	if err != nil {
 		return err
+	}
+
+	if rowsAffected, _ := res.RowsAffected(); rowsAffected == 0 {
+		return ErrNotFound
 	}
 
 	return nil
@@ -231,14 +335,18 @@ func (s *storage) PublishUser(userID int64) error {
 func (s *storage) HideUser(userID int64) error {
 	query := `
 		UPDATE users
-		SET is_published = false, published_at = NULL
+		SET published_at = NULL
 		WHERE id = $1;
 	`
 
-	_, err := s.pg.Exec(query, userID)
+	res, err := s.pg.Exec(query, userID)
 
 	if err != nil {
 		return err
+	}
+
+	if rowsAffected, _ := res.RowsAffected(); rowsAffected == 0 {
+		return ErrNotFound
 	}
 
 	return nil

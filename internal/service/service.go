@@ -8,7 +8,7 @@ type storage interface {
 	CreateUser(user db.User) (*db.User, error)
 	Ping() error
 	GetUserByID(id int64) (*db.User, error)
-	UpdateUser(user db.User) (*db.User, error)
+	UpdateUser(userID int64, user db.User, badges, opportunities []int64) (*db.User, error)
 	ListOpportunities() ([]db.Opportunity, error)
 	ListBadges() ([]db.Badge, error)
 	CreateBadge(badge db.Badge) (*db.Badge, error)
@@ -18,11 +18,11 @@ type storage interface {
 	HideUser(userID int64) error
 	ListCollaborations(query db.CollaborationQuery) ([]db.Collaboration, error)
 	GetCollaborationByID(id int64) (*db.Collaboration, error)
-	CreateCollaboration(collaboration db.Collaboration) (*db.Collaboration, error)
-	UpdateCollaboration(collaboration db.Collaboration) (*db.Collaboration, error)
-	PublishCollaboration(collaborationID int64) error
-	HideCollaboration(collaborationID int64) error
-	CreateCollaborationRequest(request db.CollaborationRequest) (*db.CollaborationRequest, error)
+	CreateCollaboration(userID int64, collaboration db.Collaboration, badges []int64) (*db.Collaboration, error)
+	UpdateCollaboration(userID int64, collaboration db.Collaboration) (*db.Collaboration, error)
+	PublishCollaboration(userID int64, collaborationID int64) error
+	HideCollaboration(userID int64, collaborationID int64) error
+	CreateCollaborationRequest(userID int64, request db.CollaborationRequest) (*db.CollaborationRequest, error)
 }
 
 type Config struct {

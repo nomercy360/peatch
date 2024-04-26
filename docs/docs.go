@@ -61,7 +61,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/User"
+                            "$ref": "#/definitions/UserWithToken"
                         }
                     }
                 }
@@ -216,7 +216,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/Collaboration"
+                            "$ref": "#/definitions/CreateCollaboration"
                         }
                     }
                 ],
@@ -442,7 +442,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/User"
+                            "$ref": "#/definitions/UpdateUserRequest"
                         }
                     }
                 ],
@@ -456,7 +456,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/users/{chat_id}": {
+        "/api/users/{id}": {
             "get": {
                 "consumes": [
                     "application/json"
@@ -471,8 +471,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Chat ID",
-                        "name": "chat_id",
+                        "description": "User ID",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -483,32 +483,6 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/User"
                         }
-                    }
-                }
-            },
-            "delete": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "Delete user",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Chat ID",
-                        "name": "chat_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content"
                     }
                 }
             }
@@ -525,15 +499,6 @@ const docTemplate = `{
                     "users"
                 ],
                 "summary": "Hide user",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "User ID",
-                        "name": "user_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
                 "responses": {
                     "204": {
                         "description": "No Content"
@@ -553,11 +518,58 @@ const docTemplate = `{
                     "users"
                 ],
                 "summary": "Publish user",
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/users/{id}/follow": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Delete user",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "User ID",
-                        "name": "user_id",
+                        "description": "Following User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/users/{id}/unfollow": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Unfollow user",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Following User ID",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     }
@@ -586,17 +598,20 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
-                "name": {
+                "text": {
                     "type": "string"
-                },
-                "user_id": {
-                    "type": "integer"
                 }
             }
         },
         "Collaboration": {
             "type": "object",
             "properties": {
+                "badges": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Badge"
+                    }
+                },
                 "city": {
                     "type": "string"
                 },
@@ -618,8 +633,8 @@ const docTemplate = `{
                 "is_payable": {
                     "type": "boolean"
                 },
-                "is_published": {
-                    "type": "boolean"
+                "opportunity": {
+                    "$ref": "#/definitions/Opportunity"
                 },
                 "opportunity_id": {
                     "type": "integer"
@@ -641,6 +656,51 @@ const docTemplate = `{
                 }
             }
         },
+        "CreateCollaboration": {
+            "type": "object",
+            "required": [
+                "city",
+                "country",
+                "country_code",
+                "description",
+                "opportunity_id",
+                "title"
+            ],
+            "properties": {
+                "badge_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "city": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "country": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "country_code": {
+                    "type": "string",
+                    "maxLength": 2
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 1000
+                },
+                "is_payable": {
+                    "type": "boolean"
+                },
+                "opportunity_id": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 255
+                }
+            }
+        },
         "Opportunity": {
             "type": "object",
             "properties": {
@@ -659,8 +719,66 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
-                "name": {
+                "text": {
                     "type": "string"
+                }
+            }
+        },
+        "UpdateUserRequest": {
+            "type": "object",
+            "required": [
+                "avatar_url",
+                "badge_ids",
+                "city",
+                "country",
+                "country_code",
+                "description",
+                "first_name",
+                "last_name",
+                "opportunity_ids",
+                "title"
+            ],
+            "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
+                "badge_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "city": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "country": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "country_code": {
+                    "type": "string",
+                    "maxLength": 2
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 1000
+                },
+                "first_name": {
+                    "type": "string"
+                },
+                "last_name": {
+                    "type": "string"
+                },
+                "opportunity_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 255
                 }
             }
         },
@@ -700,16 +818,10 @@ const docTemplate = `{
                 "followers_count": {
                     "type": "integer"
                 },
-                "following_count": {
-                    "type": "integer"
-                },
                 "id": {
                     "type": "integer"
                 },
-                "is_published": {
-                    "type": "boolean"
-                },
-                "language": {
+                "language_code": {
                     "type": "string"
                 },
                 "last_name": {
@@ -738,6 +850,17 @@ const docTemplate = `{
                 },
                 "username": {
                     "type": "string"
+                }
+            }
+        },
+        "UserWithToken": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/User"
                 }
             }
         }

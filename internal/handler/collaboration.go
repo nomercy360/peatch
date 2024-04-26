@@ -3,6 +3,7 @@ package handler
 import (
 	"github.com/labstack/echo/v4"
 	"github.com/peatch-io/peatch/internal/db"
+	svc "github.com/peatch-io/peatch/internal/service"
 	"net/http"
 	"strconv"
 )
@@ -62,21 +63,27 @@ func (h *handler) handleGetCollaboration(c echo.Context) error {
 // @Tags collaborations
 // @Accept  json
 // @Produce  json
-// @Param collaboration body Collaboration true "Collaboration data"
+// @Param collaboration body CreateCollaboration true "Collaboration data"
 // @Success 201 {object} Collaboration
 // @Router /api/collaborations [post]
 func (h *handler) handleCreateCollaboration(c echo.Context) error {
-	var collaboration db.Collaboration
+	var collaboration svc.CreateCollaboration
 	if err := c.Bind(&collaboration); err != nil {
 		return err
 	}
 
-	createdCollaboration, err := h.svc.CreateCollaboration(collaboration)
+	if err := c.Validate(collaboration); err != nil {
+		return err
+	}
+
+	uid := getUserID(c)
+
+	res, err := h.svc.CreateCollaboration(uid, collaboration)
 	if err != nil {
 		return err
 	}
 
-	return c.JSON(http.StatusCreated, createdCollaboration)
+	return c.JSON(http.StatusCreated, res)
 }
 
 // handleUpdateCollaboration godoc
@@ -88,17 +95,23 @@ func (h *handler) handleCreateCollaboration(c echo.Context) error {
 // @Success 200 {object} Collaboration
 // @Router /api/collaborations [put]
 func (h *handler) handleUpdateCollaboration(c echo.Context) error {
-	var collaboration db.Collaboration
+	var collaboration svc.CreateCollaboration
 	if err := c.Bind(&collaboration); err != nil {
 		return err
 	}
 
-	updatedCollaboration, err := h.svc.UpdateCollaboration(collaboration)
+	if err := c.Validate(collaboration); err != nil {
+		return err
+	}
+
+	uid := getUserID(c)
+
+	res, err := h.svc.UpdateCollaboration(uid, collaboration)
 	if err != nil {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, updatedCollaboration)
+	return c.JSON(http.StatusOK, res)
 }
 
 // handlePublishCollaboration godoc
@@ -112,12 +125,14 @@ func (h *handler) handleUpdateCollaboration(c echo.Context) error {
 func (h *handler) handlePublishCollaboration(c echo.Context) error {
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 
-	err := h.svc.PublishCollaboration(id)
+	uid := getUserID(c)
+
+	err := h.svc.PublishCollaboration(uid, id)
 	if err != nil {
 		return err
 	}
 
-	return c.NoContent(http.StatusOK)
+	return c.NoContent(http.StatusNoContent)
 }
 
 // handleHideCollaboration godoc
@@ -131,12 +146,14 @@ func (h *handler) handlePublishCollaboration(c echo.Context) error {
 func (h *handler) handleHideCollaboration(c echo.Context) error {
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 
-	err := h.svc.HideCollaboration(id)
+	uid := getUserID(c)
+
+	err := h.svc.HideCollaboration(uid, id)
 	if err != nil {
 		return err
 	}
 
-	return c.NoContent(http.StatusOK)
+	return c.NoContent(http.StatusNoContent)
 }
 
 // handleDeleteCollaboration godoc
@@ -148,12 +165,18 @@ func (h *handler) handleHideCollaboration(c echo.Context) error {
 // @Success 204
 // @Router /api/collaborations/{id} [delete]
 func (h *handler) handleCreateCollaborationRequest(c echo.Context) error {
-	var request db.CollaborationRequest
+	var request svc.CreateCollaborationRequest
 	if err := c.Bind(&request); err != nil {
 		return err
 	}
 
-	createdRequest, err := h.svc.CreateCollaborationRequest(request)
+	if err := c.Validate(request); err != nil {
+		return err
+	}
+
+	uid := getUserID(c)
+
+	createdRequest, err := h.svc.CreateCollaborationRequest(uid, request)
 	if err != nil {
 		return err
 	}

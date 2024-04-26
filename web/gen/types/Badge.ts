@@ -18,9 +18,5 @@ export type Badge = {
     /**
      * @type string | undefined
     */
-    name?: string;
-    /**
-     * @type integer | undefined
-    */
-    user_id?: number;
+    text?: string;
 };

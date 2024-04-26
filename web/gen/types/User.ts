@@ -1,7 +1,7 @@
-import { Badge } from "./Badge";
-import { Opportunity } from "./Opportunity";
+import type { Badge } from './Badge';
+import type { Opportunity } from './Opportunity';
 
- export type User = {
+export type User = {
     /**
      * @type string | undefined
     */
@@ -45,19 +45,11 @@ import { Opportunity } from "./Opportunity";
     /**
      * @type integer | undefined
     */
-    following_count?: number;
-    /**
-     * @type integer | undefined
-    */
     id?: number;
-    /**
-     * @type boolean | undefined
-    */
-    is_published?: boolean;
     /**
      * @type string | undefined
     */
-    language?: string;
+    language_code?: string;
     /**
      * @type string | undefined
     */

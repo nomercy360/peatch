@@ -14,7 +14,7 @@ import (
 // @Param user query string true "User"
 // @Param auth_date query string true "Auth date"
 // @Param hash query string true "Hash"
-// @Success 200 {object} User
+// @Success 200 {object} UserWithToken
 // @Router /api/auth/telegram [get]
 func (h *handler) handleTelegramAuth(c echo.Context) error {
 	queryID := c.QueryParam("query_id")
