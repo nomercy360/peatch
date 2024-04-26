@@ -3,8 +3,7 @@ package main
 import (
 	"context"
 	"errors"
-	"flag"
-	"github.com/go-playground/validator"
+	"github.com/caarlos0/env/v11"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	_ "github.com/peatch-io/peatch/docs"
@@ -12,7 +11,6 @@ import (
 	"github.com/peatch-io/peatch/internal/handler"
 	"github.com/peatch-io/peatch/internal/service"
 	"github.com/peatch-io/peatch/internal/terrors"
-	"gopkg.in/yaml.v3"
 	"log"
 	"log/slog"
 	"net/http"
@@ -21,33 +19,15 @@ import (
 	"time"
 )
 
-type Config struct {
-	DBConnString string       `yaml:"db_conn_string" validate:"required"`
-	Server       ServerConfig `yaml:"server" validate:"required"`
-	BotToken     string       `yaml:"bot_token" validate:"required"`
+type config struct {
+	DBConnString string `env:"DB_CONN_STRING,required"`
+	Server       ServerConfig
+	BotToken     string `env:"BOT_TOKEN,required"`
 }
 
 type ServerConfig struct {
-	Port string `yaml:"port" validate:"required"`
-	Host string `yaml:"host" validate:"required"`
-}
-
-func ReadConfig(filename string) (*Config, error) {
-	data, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, err
-	}
-
-	var config Config
-	if err := yaml.Unmarshal(data, &config); err != nil {
-		return nil, err
-	}
-
-	if err := validator.New().Struct(config); err != nil {
-		return nil, err
-	}
-
-	return &config, nil
+	Port string `env:"PORT" envDefault:"8080"`
+	Host string `env:"HOST" envDefault:"localhost"`
 }
 
 // @title Peatch API
@@ -57,15 +37,12 @@ func ReadConfig(filename string) (*Config, error) {
 // @host localhost:8080
 // @BasePath /
 func main() {
-	configPath := flag.String("config", "config.yaml", "Path to the config file")
-	flag.Parse()
-
-	config, err := ReadConfig(*configPath)
-	if err != nil {
-		log.Fatalf("Error reading config: %v", err)
+	cfg := config{}
+	if err := env.Parse(&cfg); err != nil {
+		log.Fatalf("Failed to parse config: %v\n", err)
 	}
 
-	pg, err := db.New(config.DBConnString)
+	pg, err := db.New(cfg.DBConnString)
 
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v\n", err)
@@ -75,7 +52,7 @@ func main() {
 
 	e := echo.New()
 
-	//e.Use(middleware.Recover())
+	e.Use(middleware.Recover())
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
@@ -136,7 +113,7 @@ func main() {
 		}
 	}
 
-	svc := service.New(pg, service.Config{BotToken: config.BotToken})
+	svc := service.New(pg, service.Config{BotToken: cfg.BotToken})
 
 	h := handler.New(svc)
 
@@ -148,7 +125,7 @@ func main() {
 	defer stop()
 	// Start server
 	go func() {
-		if err := e.Start(":8080"); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		if err := e.Start(cfg.Server.Host + ":" + cfg.Server.Port); err != nil {
 			e.Logger.Fatal("shutting down the server")
 		}
 	}()

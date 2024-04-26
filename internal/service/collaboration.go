@@ -11,7 +11,8 @@ func (s *service) ListCollaborations(query db.CollaborationQuery) ([]db.Collabor
 		query.Page = 1
 	}
 
-	query.Published = true
+	var published bool
+	query.Published = &published
 
 	return s.storage.ListCollaborations(query)
 }
