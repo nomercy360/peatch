@@ -1,0 +1,481 @@
+basePath: /
+definitions:
+  Badge:
+    properties:
+      color:
+        type: string
+      created_at:
+        type: string
+      icon:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  Collaboration:
+    properties:
+      city:
+        type: string
+      country:
+        type: string
+      country_code:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      is_payable:
+        type: boolean
+      is_published:
+        type: boolean
+      opportunity_id:
+        type: integer
+      published_at:
+        type: string
+      requests_count:
+        type: integer
+      title:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  Opportunity:
+    properties:
+      color:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      icon:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  User:
+    properties:
+      avatar_url:
+        type: string
+      badges:
+        items:
+          $ref: '#/definitions/Badge'
+        type: array
+      chat_id:
+        type: integer
+      city:
+        type: string
+      country:
+        type: string
+      country_code:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      first_name:
+        type: string
+      followers_count:
+        type: integer
+      following_count:
+        type: integer
+      id:
+        type: integer
+      is_published:
+        type: boolean
+      language:
+        type: string
+      last_name:
+        type: string
+      notifications:
+        type: boolean
+      opportunities:
+        items:
+          $ref: '#/definitions/Opportunity'
+        type: array
+      published_at:
+        type: string
+      requests_count:
+        type: integer
+      title:
+        type: string
+      updated_at:
+        type: string
+      username:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: This is a sample server ClanPlatform server.
+  title: Peatch API
+  version: "1.0"
+paths:
+  /api/auth/telegram:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Query ID
+        in: query
+        name: query_id
+        required: true
+        type: string
+      - description: User
+        in: query
+        name: user
+        required: true
+        type: string
+      - description: Auth date
+        in: query
+        name: auth_date
+        required: true
+        type: string
+      - description: Hash
+        in: query
+        name: hash
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/User'
+      summary: Telegram auth
+      tags:
+      - auth
+  /api/badges:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/Badge'
+            type: array
+      summary: List badges
+      tags:
+      - badges
+  /api/badges/{id}:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Badge ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Badge'
+      summary: Get badge
+      tags:
+      - badges
+  /api/collaborations:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Page
+        in: query
+        name: page
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Order by
+        in: query
+        name: order
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/Collaboration'
+            type: array
+      summary: List collaborations
+      tags:
+      - collaborations
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Collaboration data
+        in: body
+        name: collaboration
+        required: true
+        schema:
+          $ref: '#/definitions/Collaboration'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/Collaboration'
+      summary: Create collaboration
+      tags:
+      - collaborations
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Collaboration data
+        in: body
+        name: collaboration
+        required: true
+        schema:
+          $ref: '#/definitions/Collaboration'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Collaboration'
+      summary: Update collaboration
+      tags:
+      - collaborations
+  /api/collaborations/{id}:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: Collaboration ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      summary: Delete collaboration
+      tags:
+      - collaborations
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Collaboration ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Collaboration'
+      summary: Get collaboration
+      tags:
+      - collaborations
+  /api/collaborations/{id}/hide:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Collaboration ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      summary: Hide collaboration
+      tags:
+      - collaborations
+  /api/collaborations/{id}/publish:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Collaboration ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      summary: Publish collaboration
+      tags:
+      - collaborations
+  /api/opportunities:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/Opportunity'
+            type: array
+      summary: List opportunities
+      tags:
+      - opportunities
+  /api/users:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Page
+        in: query
+        name: page
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Order by
+        in: query
+        name: order
+        type: string
+      - description: Search
+        in: query
+        name: search
+        type: string
+      - description: Find similar
+        in: query
+        name: find_similar
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/User'
+            type: array
+      summary: List users
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: User data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/User'
+      summary: Update user
+      tags:
+      - users
+  /api/users/{chat_id}:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: Chat ID
+        in: path
+        name: chat_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      summary: Delete user
+      tags:
+      - users
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Chat ID
+        in: path
+        name: chat_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/User'
+      summary: Get user
+      tags:
+      - users
+  /api/users/{user_id}/hide:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      summary: Hide user
+      tags:
+      - users
+  /api/users/{user_id}/publish:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      summary: Publish user
+      tags:
+      - users
+swagger: "2.0"
