@@ -18,7 +18,7 @@ type UserProfile struct {
 	Description    string           `json:"description" db:"description"`
 	LanguageCode   string           `json:"language_code" db:"language_code"`
 	Country        string           `json:"country" db:"country"`
-	City           string           `json:"city" db:"city"`
+	City           *string          `json:"city" db:"city"`
 	CountryCode    string           `json:"country_code" db:"country_code"`
 	FollowersCount int              `json:"followers_count" db:"followers_count"`
 	RequestsCount  int              `json:"requests_count" db:"requests_count"`
@@ -33,7 +33,7 @@ type UpdateUserRequest struct {
 	Title          string  `json:"title" validate:"max=255,required"`
 	Description    string  `json:"description" validate:"max=1000,required"`
 	Country        string  `json:"country" validate:"max=255,required"`
-	City           string  `json:"city" validate:"max=255,required"`
+	City           *string `json:"city"`
 	CountryCode    string  `json:"country_code" validate:"max=2,required"`
 	BadgeIDs       []int64 `json:"badge_ids" validate:"required"`
 	OpportunityIDs []int64 `json:"opportunity_ids" validate:"required"`
@@ -47,7 +47,7 @@ func (upd *UpdateUserRequest) ToUser() db.User {
 		Title:       &upd.Title,
 		Description: &upd.Description,
 		Country:     &upd.Country,
-		City:        &upd.City,
+		City:        upd.City,
 		CountryCode: &upd.CountryCode,
 	}
 
@@ -69,7 +69,7 @@ func toUserProfiles(users []db.User) []UserProfile {
 			Description:    *user.Description,
 			LanguageCode:   *user.LanguageCode,
 			Country:        *user.Country,
-			City:           *user.City,
+			City:           user.City,
 			CountryCode:    *user.CountryCode,
 			FollowersCount: user.FollowersCount,
 			RequestsCount:  user.RequestsCount,

@@ -10,15 +10,30 @@ type Badge struct {
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 } // @Name Badge
 
-func (s *storage) ListBadges() ([]Badge, error) {
+func (b Badge) GetID() int64 {
+	return b.ID
+}
+
+func (s *storage) ListBadges(search string) ([]Badge, error) {
 	badges := make([]Badge, 0)
 
 	query := `
-		SELECT id, text, icon, color, created_at
-		FROM badges
-	`
+        SELECT id, text, icon, color, created_at
+        FROM badges
+    `
 
-	err := s.pg.Select(&badges, query)
+	if search != "" {
+		query += " WHERE text ILIKE $1"
+		search = "%" + search + "%"
+	}
+
+	var err error
+	if search == "" {
+		err = s.pg.Select(&badges, query)
+	} else {
+		err = s.pg.Select(&badges, query, search)
+	}
+
 	if err != nil {
 		return nil, err
 	}

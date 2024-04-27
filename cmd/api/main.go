@@ -9,6 +9,7 @@ import (
 	_ "github.com/peatch-io/peatch/docs"
 	"github.com/peatch-io/peatch/internal/db"
 	"github.com/peatch-io/peatch/internal/handler"
+	storage "github.com/peatch-io/peatch/internal/s3"
 	"github.com/peatch-io/peatch/internal/service"
 	"github.com/peatch-io/peatch/internal/terrors"
 	"log"
@@ -23,11 +24,19 @@ type config struct {
 	DBConnString string `env:"DB_CONN_STRING,required"`
 	Server       ServerConfig
 	BotToken     string `env:"BOT_TOKEN,required"`
+	AWS          AWSConfig
 }
 
 type ServerConfig struct {
 	Port string `env:"PORT" envDefault:"8080"`
 	Host string `env:"HOST" envDefault:"localhost"`
+}
+
+type AWSConfig struct {
+	AccessKey string `env:"AWS_ACCESS_KEY_ID,required"`
+	SecretKey string `env:"AWS_SECRET_ACCESS_KEY,required"`
+	Bucket    string `env:"AWS_BUCKET,required"`
+	AccountID string `env:"AWS_ACCOUNT_ID,required"`
 }
 
 // @title Peatch API
@@ -52,7 +61,13 @@ func main() {
 
 	e := echo.New()
 
-	e.Use(middleware.Recover())
+	//	e.Use(middleware.Recover())
+
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"*"},
+		AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
+		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
+	}))
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
@@ -113,7 +128,14 @@ func main() {
 		}
 	}
 
-	svc := service.New(pg, service.Config{BotToken: cfg.BotToken})
+	s3Client, err := storage.NewS3Client(
+		cfg.AWS.AccessKey, cfg.AWS.SecretKey, cfg.AWS.AccountID, cfg.AWS.Bucket)
+
+	if err != nil {
+		log.Fatalf("Failed to initialize AWS S3 client: %v\n", err)
+	}
+
+	svc := service.New(pg, s3Client, service.Config{BotToken: cfg.BotToken})
 
 	h := handler.New(svc)
 

@@ -22,7 +22,7 @@ type service interface {
 	GetUserByID(id int64) (*db.User, error)
 	UpdateUser(userID int64, updateRequest svc.UpdateUserRequest) (*db.User, error)
 	ListOpportunities() ([]db.Opportunity, error)
-	ListBadges() ([]db.Badge, error)
+	ListBadges(search string) ([]db.Badge, error)
 	CreateBadge(badge db.Badge) (*db.Badge, error)
 	FollowUser(userID, followingID int64) error
 	UnfollowUser(userID, followingID int64) error
@@ -35,6 +35,7 @@ type service interface {
 	PublishCollaboration(userID int64, collaborationID int64) error
 	HideCollaboration(userID int64, collaborationID int64) error
 	CreateCollaborationRequest(userID int64, request svc.CreateCollaborationRequest) (*db.CollaborationRequest, error)
+	GetPresignedURL(userID int64, objectKey string) (*svc.PresignedURL, error)
 }
 
 type CustomValidator struct {
@@ -71,13 +72,13 @@ func (h *handler) RegisterRoutes(e *echo.Echo) {
 
 	a.GET("/users", h.handleListUsers)
 	a.GET("/users/:id", h.handleGetUser)
-	a.PUT("/users/:id", h.handleUpdateUser)
+	a.PUT("/users", h.handleUpdateUser)
 	a.GET("/opportunities", h.handleListOpportunities)
 	a.GET("/badges", h.handleListBadges)
 	a.POST("/badges", h.handleCreateBadge)
 	a.POST("/users/:id/follow", h.handleFollowUser)
 	a.POST("/users/:id/unfollow", h.handleUnfollowUser)
-	a.POST("/users/publish", h.handlePublishUser)
+	a.POST("/users/show", h.handlePublishUser)
 	a.POST("/users/hide", h.handleHideUser)
 	a.GET("/collaborations", h.handleListCollaborations)
 	a.GET("/collaborations/:id", h.handleGetCollaboration)
@@ -86,8 +87,21 @@ func (h *handler) RegisterRoutes(e *echo.Echo) {
 	a.POST("/collaborations/:id/publish", h.handlePublishCollaboration)
 	a.POST("/collaborations/:id/hide", h.handleHideCollaboration)
 	a.POST("/collaborations/:id/requests", h.handleCreateCollaborationRequest)
+	a.GET("/presigned-url", h.handleGetPresignedURL)
 }
 
 func (h *handler) handleIndex(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{"message": "Hello, world!"})
+}
+
+func (h *handler) handleGetPresignedURL(c echo.Context) error {
+	objectKey := c.QueryParam("filename")
+	uid := getUserID(c)
+
+	res, err := h.svc.GetPresignedURL(uid, objectKey)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, res)
 }

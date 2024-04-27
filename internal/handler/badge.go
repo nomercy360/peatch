@@ -14,7 +14,9 @@ import (
 // @Success 200 {array} Badge
 // @Router /api/badges [get]
 func (h *handler) handleListBadges(c echo.Context) error {
-	badges, err := h.svc.ListBadges()
+	query := c.QueryParam("search")
+
+	badges, err := h.svc.ListBadges(query)
 	if err != nil {
 		return err
 	}

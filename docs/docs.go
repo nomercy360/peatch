@@ -729,7 +729,6 @@ const docTemplate = `{
             "required": [
                 "avatar_url",
                 "badge_ids",
-                "city",
                 "country",
                 "country_code",
                 "description",
@@ -749,8 +748,7 @@ const docTemplate = `{
                     }
                 },
                 "city": {
-                    "type": "string",
-                    "maxLength": 255
+                    "type": "string"
                 },
                 "country": {
                     "type": "string",
@@ -856,6 +854,12 @@ const docTemplate = `{
         "UserWithToken": {
             "type": "object",
             "properties": {
+                "following": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
                 "token": {
                     "type": "string"
                 },

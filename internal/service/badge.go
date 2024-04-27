@@ -6,8 +6,8 @@ import (
 	"golang.org/x/text/language"
 )
 
-func (s *service) ListBadges() ([]db.Badge, error) {
-	return s.storage.ListBadges()
+func (s *service) ListBadges(search string) ([]db.Badge, error) {
+	return s.storage.ListBadges(search)
 }
 
 func (s *service) CreateBadge(badge db.Badge) (*db.Badge, error) {

@@ -3,6 +3,8 @@ package db
 import (
 	"fmt"
 	"github.com/jmoiron/sqlx"
+	"sort"
+	"strings"
 	"sync"
 	"time"
 )
@@ -47,56 +49,129 @@ const (
 
 func (s *storage) ListUsers(queryParams UserQuery) ([]User, error) {
 	users := make([]User, 0)
+	userMap := make(map[int64]*User)
 	var args []interface{}
+
+	offset := (queryParams.Page - 1) * queryParams.Limit
 	paramIndex := 1
 
-	query := `
-		SELECT id, first_name, last_name, chat_id, username, created_at, updated_at, published_at, avatar_url, title, description, language_code, country, city, country_code, followers_count, requests_count, notifications
-		FROM users
-		WHERE published_at IS NOT NULL
-	`
+	whereClauses := []string{"published_at IS NOT NULL"}
 
 	if queryParams.Search != "" {
-		query += fmt.Sprintf(" AND (username ILIKE $%d OR first_name ILIKE $%d OR last_name ILIKE $%d)", paramIndex, paramIndex, paramIndex)
-		args = append(args, queryParams.Search)
+		searchClause := " (first_name ILIKE $1 OR last_name ILIKE $1 OR title ILIKE $1 OR description ILIKE $1) "
+		args = append(args, "%"+queryParams.Search+"%")
+		whereClauses = append(whereClauses, searchClause)
 		paramIndex++
 	}
 
-	if queryParams.OrderBy == UserQueryOrderByFollowers {
-		query += " ORDER BY followers_count DESC"
-	} else {
-		query += " ORDER BY created_at DESC"
-	}
-
-	offset := (queryParams.Page - 1) * queryParams.Limit
-	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", paramIndex, paramIndex+1)
 	args = append(args, queryParams.Limit, offset)
 
-	err := s.pg.Select(&users, query, args...)
+	query := fmt.Sprintf(`
+		SELECT u.id, u.first_name, u.last_name, u.chat_id, u.username, u.created_at, u.updated_at, u.published_at, u.avatar_url, u.title, u.description, u.language_code, u.country, u.city, u.country_code, u.followers_count, u.requests_count, u.notifications,
+			b.id, b.text, b.icon, b.color, b.created_at
+		FROM (SELECT * FROM users WHERE %s ORDER BY created_at DESC LIMIT $%d OFFSET $%d) u
+		LEFT JOIN user_badges ub ON u.id = ub.user_id
+		LEFT JOIN badges b ON ub.badge_id = b.id
+	`, strings.Join(whereClauses, " AND "), paramIndex, paramIndex+1)
+
+	rows, err := s.pg.Queryx(query, args...)
+
 	if err != nil {
 		return nil, err
 	}
 
+	for rows.Next() {
+		var user User
+		var badge Badge
+
+		err := rows.Scan(
+			&user.ID, &user.FirstName, &user.LastName, &user.ChatID, &user.Username, &user.CreatedAt, &user.UpdatedAt, &user.PublishedAt, &user.AvatarURL, &user.Title, &user.Description, &user.LanguageCode, &user.Country, &user.City, &user.CountryCode, &user.FollowersCount, &user.RequestsCount, &user.Notifications,
+			&badge.ID, &badge.Text, &badge.Icon, &badge.Color, &badge.CreatedAt,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		if _, ok := userMap[user.ID]; !ok {
+			user.Badges = append(user.Badges, badge)
+
+			userMap[user.ID] = &user
+		} else {
+			userMap[user.ID].Badges = appendUnique(userMap[user.ID].Badges, badge)
+		}
+	}
+
+	for _, user := range userMap {
+		users = append(users, *user)
+	}
+
+	// sort by name
+	sort.Slice(users, func(i, j int) bool {
+		return users[i].FirstName != nil && users[j].FirstName != nil && *users[i].FirstName < *users[j].FirstName
+	})
+
 	return users, nil
+}
+
+type Entity interface {
+	GetID() int64
+}
+
+func appendUnique[E Entity](entities []E, entity E) []E {
+	for _, e := range entities {
+		if e.GetID() == entity.GetID() {
+			return entities
+		}
+	}
+
+	return append(entities, entity)
+}
+
+func getUserQuery() string {
+	return `
+		SELECT u.id, u.first_name, u.last_name, u.chat_id, u.username, u.created_at, u.updated_at, u.published_at, u.avatar_url, u.title, u.description, u.language_code, u.country, u.city, u.country_code, u.followers_count, u.requests_count, u.notifications,
+			b.id, b.text, b.icon, b.color, b.created_at,
+			o.id, o.text, o.description, o.icon, o.color, o.created_at
+		FROM users u
+		LEFT JOIN user_badges ub ON u.id = ub.user_id
+		LEFT JOIN badges b ON ub.badge_id = b.id
+		LEFT JOIN user_opportunities uo ON u.id = uo.user_id
+		LEFT JOIN opportunities o ON uo.opportunity_id = o.id
+	`
 }
 
 func (s *storage) GetUserByChatID(chatID int64) (*User, error) {
 	user := new(User)
 
-	query := `
-		SELECT id, first_name, last_name, chat_id, username, created_at, updated_at, published_at, avatar_url, title, description, language_code, country, city, country_code, followers_count, requests_count, notifications
-		FROM users
-		WHERE chat_id = $1;
-	`
-
-	err := s.pg.Get(user, query, chatID)
+	// fetch with populating badges and opportunities
+	rows, err := s.pg.Queryx(getUserQuery()+"WHERE chat_id = $1", chatID)
 
 	if err != nil {
-		if IsNoRowsError(err) {
-			return nil, ErrNotFound
+		return nil, err
+	}
+
+	for rows.Next() {
+		var badge Badge
+		var opportunity Opportunity
+
+		err := rows.Scan(
+			&user.ID, &user.FirstName, &user.LastName, &user.ChatID, &user.Username, &user.CreatedAt, &user.UpdatedAt, &user.PublishedAt, &user.AvatarURL, &user.Title, &user.Description, &user.LanguageCode, &user.Country, &user.City, &user.CountryCode, &user.FollowersCount, &user.RequestsCount, &user.Notifications,
+			&badge.ID, &badge.Text, &badge.Icon, &badge.Color, &badge.CreatedAt,
+			&opportunity.ID, &opportunity.Text, &opportunity.Description, &opportunity.Icon, &opportunity.Color, &opportunity.CreatedAt,
+		)
+
+		if err != nil {
+			return nil, err
 		}
 
-		return nil, err
+		if badge.ID != 0 {
+			user.Badges = appendUnique(user.Badges, badge)
+		}
+
+		if opportunity.ID != 0 {
+			user.Opportunities = appendUnique(user.Opportunities, opportunity)
+		}
 	}
 
 	return user, nil
@@ -221,58 +296,34 @@ func (s *storage) UpdateUser(userID int64, user User, badges, opportunities []in
 func (s *storage) GetUserByID(id int64) (*User, error) {
 	user := new(User)
 
-	query := `
-		SELECT u.id, u.first_name, u.last_name, u.chat_id, u.username, u.created_at, u.updated_at, u.published_at, u.avatar_url, u.title, u.description, u.language_code, u.country, u.city, u.country_code, u.followers_count, u.requests_count, u.notifications
-		FROM users u
-		WHERE id = $1 AND published_at IS NOT NULL;
-	`
-
-	err := s.pg.Get(user, query, id)
+	rows, err := s.pg.Queryx(getUserQuery()+"WHERE u.id = $1", id)
 
 	if err != nil {
-		if IsNoRowsError(err) {
-			return nil, ErrNotFound
-		}
-
 		return nil, err
 	}
 
-	wg := sync.WaitGroup{}
+	for rows.Next() {
+		var badge Badge
+		var opportunity Opportunity
 
-	wg.Add(2)
-
-	go func() {
-		defer wg.Done()
-		query := `
-			SELECT b.id, b.text, b.icon, b.color, b.created_at
-			FROM badges b
-			JOIN user_badges ub ON b.id = ub.badge_id
-			WHERE ub.user_id = $1
-		`
-
-		err := s.pg.Select(&user.Badges, query, id)
+		err := rows.Scan(
+			&user.ID, &user.FirstName, &user.LastName, &user.ChatID, &user.Username, &user.CreatedAt, &user.UpdatedAt, &user.PublishedAt, &user.AvatarURL, &user.Title, &user.Description, &user.LanguageCode, &user.Country, &user.City, &user.CountryCode, &user.FollowersCount, &user.RequestsCount, &user.Notifications,
+			&badge.ID, &badge.Text, &badge.Icon, &badge.Color, &badge.CreatedAt,
+			&opportunity.ID, &opportunity.Text, &opportunity.Description, &opportunity.Icon, &opportunity.Color, &opportunity.CreatedAt,
+		)
 
 		if err != nil {
-			return
+			return nil, err
 		}
-	}()
 
-	go func() {
-		defer wg.Done()
-		query := `
-			SELECT o.id, o.text, o.description, o.icon, o.color, o.created_at
-			FROM opportunities o
-			JOIN user_opportunities uo ON o.id = uo.opportunity_id
-			WHERE uo.user_id = $1
-		`
-
-		err := s.pg.Select(&user.Opportunities, query, id)
-		if err != nil {
-			return
+		if badge.ID != 0 {
+			user.Badges = appendUnique(user.Badges, badge)
 		}
-	}()
 
-	wg.Wait()
+		if opportunity.ID != 0 {
+			user.Opportunities = appendUnique(user.Opportunities, opportunity)
+		}
+	}
 
 	return user, nil
 }
@@ -378,4 +429,30 @@ func (s *storage) CreateUserCollaborationRequest(request UserCollaborationReques
 	}
 
 	return &res, nil
+}
+
+func (s *storage) GetUserFollowing(userID int64) ([]int64, error) {
+	users := make([]int64, 0)
+
+	query := `
+		SELECT user_id from user_followers
+		WHERE follower_id = $1
+	`
+
+	rows, err := s.pg.Query(query, userID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		var user int64
+		err := rows.Scan(&user)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+
+	return users, nil
 }

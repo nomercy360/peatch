@@ -11,6 +11,10 @@ type Opportunity struct {
 	CreatedAt   time.Time `json:"created_at" db:"created_at"`
 } // @Name Opportunity
 
+func (o Opportunity) GetID() int64 {
+	return o.ID
+}
+
 func (s *storage) ListOpportunities() ([]Opportunity, error) {
 	opportunities := make([]Opportunity, 0)
 

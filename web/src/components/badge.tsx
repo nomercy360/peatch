@@ -9,7 +9,7 @@ export default function Badge(props: {
       style={{ 'background-color': props.color }}
     >
       <span class="material-symbols-rounded text-[10px] text-white">
-        {props.icon}
+        {String.fromCharCode(parseInt(props.icon, 16))}
       </span>
       <p class="text-xs font-semibold text-white">{props.name}</p>
     </div>

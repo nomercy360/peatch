@@ -29,3 +29,11 @@ func BadRequest(err error) *Error {
 		Message: "bad request",
 	}
 }
+
+func InternalServerError(err error) *Error {
+	return &Error{
+		Code:    http.StatusInternalServerError,
+		E:       err,
+		Message: "internal server error",
+	}
+}

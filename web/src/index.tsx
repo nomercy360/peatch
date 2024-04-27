@@ -3,10 +3,13 @@ import { render } from 'solid-js/web';
 
 import './index.css';
 import { Route, Router } from '@solidjs/router';
-
-import Home from './pages/Home';
-import Profiles from './pages/Profiles';
+import { lazy } from 'solid-js';
 import App from './App';
+
+const Users = lazy(() => import('./pages/users'));
+const Home = lazy(() => import('./pages'));
+const User = lazy(() => import('./pages/users/[id]'));
+const EditUser = lazy(() => import('./pages/users/edit'));
 
 const root = document.getElementById('root');
 
@@ -16,16 +19,16 @@ if (import.meta.env.DEV && !(root instanceof HTMLElement)) {
   );
 }
 
-function NotFound() {
-  return <div>Not Found</div>;
-}
+const NotFound = () => <div>Not Found</div>;
 
 render(
   () => (
     <Router root={App}>
-      <Route path="/profiles" component={Profiles} />
       <Route path="/" component={Home} />
-      <Route path="*404" component={NotFound} />
+      <Route path="/users" component={Users} />
+      <Route path="/users/:id" component={User} />
+      <Route path="/users/edit" component={EditUser} />
+      <Route path="/*all" component={NotFound} />
     </Router>
   ),
   root!,

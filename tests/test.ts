@@ -241,7 +241,7 @@ describe('Test Admin Routes', () => {
 
   it('should show published user', async () => {
     await spec()
-      .post(`${baseUrl}/users/publish`)
+      .post(`${baseUrl}/users/show`)
       .withHeaders({ 'Authorization': 'Bearer $S{secondUserToken}' })
       .expectStatus(204);
   });

@@ -15,8 +15,9 @@ import (
 )
 
 type UserWithToken struct {
-	User  db.User `json:"user"`
-	Token string  `json:"token"`
+	User      db.User `json:"user"`
+	Token     string  `json:"token"`
+	Following []int64 `json:"following"`
 } // @Name UserWithToken
 
 type TelegramUser struct {
@@ -85,14 +86,23 @@ func (s *service) TelegramAuth(queryID, userJSON, authDate, hash string) (*UserW
 		}
 	}
 
+	// fetch following
+	following, err := s.storage.GetUserFollowing(user.ID)
+
+	if err != nil {
+		return nil, err
+	}
+
 	token, err := generateJWT(user.ID, user.ChatID)
+
 	if err != nil {
 		return nil, err
 	}
 
 	return &UserWithToken{
-		User:  *user,
-		Token: token,
+		User:      *user,
+		Token:     token,
+		Following: following,
 	}, nil
 }
 
