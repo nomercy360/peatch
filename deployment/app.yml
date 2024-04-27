@@ -1,0 +1,119 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    service: peatch
+  name: peatch
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      service: peatch
+  strategy: { }
+  template:
+    metadata:
+      labels:
+        service: peatch
+    spec:
+      containers:
+        - image: maksim1111/peatch:latest
+          name: peatch
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          resources: { }
+          envFrom:
+            - secretRef:
+                name: peatch-secrets
+      volumes:
+        - name: peatch-secrets
+          secret:
+            secretName: peatch-secrets
+      restartPolicy: Always
+      imagePullSecrets:
+        - name: regcred
+status: { }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    service: peatch
+  name: peatch
+  namespace: default
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    service: peatch
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: peatch
+  namespace: default
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: api.peatch.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: peatch
+                port:
+                  number: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    service: db
+  name: db
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      service: db
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        service: db
+    spec:
+      containers:
+        - envFrom:
+            - secretRef:
+                name: postgres-secrets
+          image: postgres
+          name: db
+          ports:
+            - containerPort: 5432
+              protocol: TCP
+          resources: { }
+      restartPolicy: Always
+status: { }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    service: db
+  name: db
+  namespace: default
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5432
+      targetPort: 5432
+  selector:
+    service: db
