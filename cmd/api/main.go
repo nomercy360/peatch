@@ -36,7 +36,7 @@ type AWSConfig struct {
 	AccessKey string `env:"AWS_ACCESS_KEY_ID,required"`
 	SecretKey string `env:"AWS_SECRET_ACCESS_KEY,required"`
 	Bucket    string `env:"AWS_BUCKET,required"`
-	AccountID string `env:"AWS_ACCOUNT_ID,required"`
+	Endpoint  string `env:"AWS_ENDPOINT,required"`
 }
 
 // @title Peatch API
@@ -61,7 +61,7 @@ func main() {
 
 	e := echo.New()
 
-	//	e.Use(middleware.Recover())
+	e.Use(middleware.Recover())
 
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
@@ -129,7 +129,7 @@ func main() {
 	}
 
 	s3Client, err := storage.NewS3Client(
-		cfg.AWS.AccessKey, cfg.AWS.SecretKey, cfg.AWS.AccountID, cfg.AWS.Bucket)
+		cfg.AWS.AccessKey, cfg.AWS.SecretKey, cfg.AWS.Endpoint, cfg.AWS.Bucket)
 
 	if err != nil {
 		log.Fatalf("Failed to initialize AWS S3 client: %v\n", err)

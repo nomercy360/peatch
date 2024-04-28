@@ -135,13 +135,13 @@ $$ LANGUAGE plpgsql;
 CREATE TABLE user_collaboration_requests
 (
     id           SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users (id),
     requester_id INTEGER REFERENCES users (id),
-    receiver_id  INTEGER REFERENCES users (id),
     message      TEXT,
     status       collaboration_request_status NOT NULL DEFAULT 'pending',
     created_at   TIMESTAMP                    NOT NULL DEFAULT NOW(),
     updated_at   TIMESTAMP                    NOT NULL DEFAULT NOW(),
-    UNIQUE (requester_id, receiver_id)
+    UNIQUE (user_id, requester_id)
 );
 
 CREATE OR REPLACE FUNCTION update_user_requests_count() RETURNS TRIGGER AS

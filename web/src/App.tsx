@@ -1,6 +1,7 @@
 import { createEffect, createSignal, Match, Switch } from 'solid-js';
 import { QueryClient, QueryClientProvider } from '@tanstack/solid-query';
 import { setToken, setUser } from './store';
+import { API_BASE_URL } from './api';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -18,7 +19,7 @@ export default function App(props: any) {
 
     try {
       const resp = await fetch(
-        'http://localhost:8080/auth/telegram?' + initData,
+        `${API_BASE_URL}/auth/telegram?` + initData,
         { method: 'POST' },
       );
 

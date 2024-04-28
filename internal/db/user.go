@@ -2,7 +2,6 @@ package db
 
 import (
 	"fmt"
-	"github.com/jmoiron/sqlx"
 	"sort"
 	"strings"
 	"sync"
@@ -80,6 +79,8 @@ func (s *storage) ListUsers(queryParams UserQuery) ([]User, error) {
 		return nil, err
 	}
 
+	defer rows.Close()
+
 	for rows.Next() {
 		var user User
 		var badge Badge
@@ -131,8 +132,8 @@ func appendUnique[E Entity](entities []E, entity E) []E {
 func getUserQuery() string {
 	return `
 		SELECT u.id, u.first_name, u.last_name, u.chat_id, u.username, u.created_at, u.updated_at, u.published_at, u.avatar_url, u.title, u.description, u.language_code, u.country, u.city, u.country_code, u.followers_count, u.requests_count, u.notifications,
-			b.id, b.text, b.icon, b.color, b.created_at,
-			o.id, o.text, o.description, o.icon, o.color, o.created_at
+			b.id, b.text, b.icon, b.color,
+			o.id, o.text, o.description, o.icon, o.color
 		FROM users u
 		LEFT JOIN user_badges ub ON u.id = ub.user_id
 		LEFT JOIN badges b ON ub.badge_id = b.id
@@ -143,6 +144,7 @@ func getUserQuery() string {
 
 func (s *storage) GetUserByChatID(chatID int64) (*User, error) {
 	user := new(User)
+	rowsProcessed := 0
 
 	// fetch with populating badges and opportunities
 	rows, err := s.pg.Queryx(getUserQuery()+"WHERE chat_id = $1", chatID)
@@ -151,27 +153,54 @@ func (s *storage) GetUserByChatID(chatID int64) (*User, error) {
 		return nil, err
 	}
 
+	defer rows.Close()
+
 	for rows.Next() {
-		var badge Badge
-		var opportunity Opportunity
+		var badgeID, opportunityID *int64
+		var badgeText, badgeIcon, badgeColor *string
+		var opportunityText, opportunityDescription, opportunityIcon, opportunityColor *string
 
 		err := rows.Scan(
 			&user.ID, &user.FirstName, &user.LastName, &user.ChatID, &user.Username, &user.CreatedAt, &user.UpdatedAt, &user.PublishedAt, &user.AvatarURL, &user.Title, &user.Description, &user.LanguageCode, &user.Country, &user.City, &user.CountryCode, &user.FollowersCount, &user.RequestsCount, &user.Notifications,
-			&badge.ID, &badge.Text, &badge.Icon, &badge.Color, &badge.CreatedAt,
-			&opportunity.ID, &opportunity.Text, &opportunity.Description, &opportunity.Icon, &opportunity.Color, &opportunity.CreatedAt,
+			&badgeID, &badgeText, &badgeIcon, &badgeColor,
+			&opportunityID, &opportunityText, &opportunityDescription, &opportunityIcon, &opportunityColor,
 		)
 
 		if err != nil {
 			return nil, err
 		}
 
-		if badge.ID != 0 {
+		if badgeID != nil {
+			badge := Badge{
+				ID:    *badgeID,
+				Text:  *badgeText,
+				Icon:  *badgeIcon,
+				Color: *badgeColor,
+			}
+
 			user.Badges = appendUnique(user.Badges, badge)
 		}
 
-		if opportunity.ID != 0 {
+		if opportunityID != nil {
+			opportunity := Opportunity{
+				ID:          *opportunityID,
+				Text:        *opportunityText,
+				Description: *opportunityDescription,
+				Icon:        *opportunityIcon,
+				Color:       *opportunityColor,
+			}
 			user.Opportunities = appendUnique(user.Opportunities, opportunity)
 		}
+
+		rowsProcessed++
+	}
+
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
+
+	if rowsProcessed == 0 {
+		return nil, ErrNotFound
 	}
 
 	return user, nil
@@ -192,24 +221,20 @@ func (s *storage) CreateUser(user User) (*User, error) {
 
 	var res User
 
-	if err := getFirstResult(rows, &res); err != nil {
-		return nil, err
-	}
-
-	return &res, nil
-}
-
-func getFirstResult(rows *sqlx.Rows, dest interface{}) error {
 	defer rows.Close()
 
 	if rows.Next() {
-		err := rows.StructScan(dest)
+		err := rows.StructScan(&res)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return nil
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
+
+	return &res, nil
 }
 
 func (s *storage) UpdateUser(userID int64, user User, badges, opportunities []int64) (*User, error) {
@@ -296,33 +321,61 @@ func (s *storage) UpdateUser(userID int64, user User, badges, opportunities []in
 func (s *storage) GetUserByID(id int64) (*User, error) {
 	user := new(User)
 
+	processedRows := 0
+
 	rows, err := s.pg.Queryx(getUserQuery()+"WHERE u.id = $1", id)
 
 	if err != nil {
 		return nil, err
 	}
 
+	defer rows.Close()
+
 	for rows.Next() {
-		var badge Badge
-		var opportunity Opportunity
+		var badgeID, opportunityID *int64
+		var badgeText, badgeIcon, badgeColor *string
+		var opportunityText, opportunityDescription, opportunityIcon, opportunityColor *string
 
 		err := rows.Scan(
 			&user.ID, &user.FirstName, &user.LastName, &user.ChatID, &user.Username, &user.CreatedAt, &user.UpdatedAt, &user.PublishedAt, &user.AvatarURL, &user.Title, &user.Description, &user.LanguageCode, &user.Country, &user.City, &user.CountryCode, &user.FollowersCount, &user.RequestsCount, &user.Notifications,
-			&badge.ID, &badge.Text, &badge.Icon, &badge.Color, &badge.CreatedAt,
-			&opportunity.ID, &opportunity.Text, &opportunity.Description, &opportunity.Icon, &opportunity.Color, &opportunity.CreatedAt,
+			&badgeID, &badgeText, &badgeIcon, &badgeColor,
+			&opportunityID, &opportunityText, &opportunityDescription, &opportunityIcon, &opportunityColor,
 		)
 
 		if err != nil {
 			return nil, err
 		}
 
-		if badge.ID != 0 {
+		if badgeID != nil {
+			badge := Badge{
+				ID:    *badgeID,
+				Text:  *badgeText,
+				Icon:  *badgeIcon,
+				Color: *badgeColor,
+			}
 			user.Badges = appendUnique(user.Badges, badge)
 		}
 
-		if opportunity.ID != 0 {
+		if opportunityID != nil {
+			opportunity := Opportunity{
+				ID:          *opportunityID,
+				Text:        *opportunityText,
+				Description: *opportunityDescription,
+				Icon:        *opportunityIcon,
+				Color:       *opportunityColor,
+			}
 			user.Opportunities = appendUnique(user.Opportunities, opportunity)
 		}
+
+		processedRows++
+	}
+
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
+
+	if processedRows == 0 {
+		return nil, ErrNotFound
 	}
 
 	return user, nil

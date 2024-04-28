@@ -1,8 +1,8 @@
 package storage
 
 import (
+	"bytes"
 	"context"
-	"fmt"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"time"
@@ -12,15 +12,15 @@ import (
 )
 
 type S3Client struct {
-	PresignClient *s3.PresignClient
-	Bucket        string
+	S3Client *s3.Client
+	Bucket   string
 }
 
 // NewS3Client initializes a new AWS S3 client
-func NewS3Client(accessKeyId, accessKeySecret, accountId, bucket string) (*S3Client, error) {
+func NewS3Client(accessKeyId, accessKeySecret, endpoint, bucket string) (*S3Client, error) {
 	r2Resolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
 		return aws.Endpoint{
-			URL: fmt.Sprintf("https://%s.r2.cloudflarestorage.com", accountId),
+			URL: endpoint,
 		}, nil
 	})
 
@@ -37,13 +37,15 @@ func NewS3Client(accessKeyId, accessKeySecret, accountId, bucket string) (*S3Cli
 	client := s3.NewFromConfig(cfg)
 
 	return &S3Client{
-		PresignClient: s3.NewPresignClient(client),
-		Bucket:        bucket,
+		Bucket:   bucket,
+		S3Client: client,
 	}, nil
 }
 
 func (s *S3Client) GetPresignedURL(objectKey string, duration time.Duration) (string, error) {
-	request, err := s.PresignClient.PresignPutObject(context.TODO(), &s3.PutObjectInput{
+	signer := s3.NewPresignClient(s.S3Client)
+
+	request, err := signer.PresignPutObject(context.TODO(), &s3.PutObjectInput{
 		Bucket: aws.String(s.Bucket),
 		Key:    aws.String(objectKey),
 	}, func(opts *s3.PresignOptions) {
@@ -55,4 +57,18 @@ func (s *S3Client) GetPresignedURL(objectKey string, duration time.Duration) (st
 	}
 
 	return request.URL, err
+}
+
+func (s *S3Client) UploadFile(file []byte, fileName string) (string, error) {
+	_, err := s.S3Client.PutObject(context.TODO(), &s3.PutObjectInput{
+		Bucket: aws.String(s.Bucket),
+		Key:    aws.String(fileName),
+		Body:   bytes.NewReader(file),
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	return s.GetPresignedURL(fileName, time.Hour)
 }

@@ -17,7 +17,7 @@ spec:
         service: peatch
     spec:
       containers:
-        - image: maksim1111/peatch:20240428-69fdeb3
+        - image: maksim1111/peatch:latest
           name: peatch
           imagePullPolicy: Always
           command: ["/app/api"]

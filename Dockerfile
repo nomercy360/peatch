@@ -11,6 +11,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o /api ./cmd/api/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o /bot ./cmd/bot/main.go
 
 RUN go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 
@@ -21,6 +22,7 @@ RUN apk --no-cache add ca-certificates bash
 WORKDIR /app
 
 COPY --from=build-stage /api /app/api
+COPY --from=build-stage /bot /app/bot
 COPY /scripts/migrations /app/migrations
 COPY --from=build-stage /go/bin/migrate /app/migrate
 
