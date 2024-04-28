@@ -5,7 +5,7 @@ import { CDN_URL, fetchProfile, followUser, hideProfile, showProfile, unfollowUs
 import { createQuery } from '@tanstack/solid-query';
 import { setUser, store } from '../../store';
 
-export default function UserProfile() {
+export default function Collaboration() {
   const { mainButton, backButton } = useButtons();
 
   const navigate = useNavigate();
@@ -28,11 +28,11 @@ export default function UserProfile() {
   });
 
   const query = createQuery(() => ({
-    queryKey: ['profiles', userId],
+    queryKey: ['collaborations', userId],
     queryFn: () => fetchProfile(Number(userId)),
   }));
 
-  const isCurrentUserProfile = store.user.id === Number(userId);
+  const isCurrentUserCollab = store.user.id === Number(userId);
 
   const publish = async () => {
     setUser({
@@ -69,7 +69,7 @@ export default function UserProfile() {
   };
 
   createEffect(() => {
-    if (isCurrentUserProfile) {
+    if (isCurrentUserCollab) {
       if (!store.user.published_at) {
         mainButton.offClick(pushToEdit);
         mainButton.setVisible('Collaborate');
@@ -103,16 +103,16 @@ export default function UserProfile() {
         <Show when={query.data}>
           <div class="min-h-screen">
             <Switch>
-              <Match when={isCurrentUserProfile && store.user.published_at}>
+              <Match when={isCurrentUserCollab && store.user.published_at}>
                 <ActionButton text="Hide" onClick={hide} />
               </Match>
-              <Match when={isCurrentUserProfile && !store.user.published_at}>
+              <Match when={isCurrentUserCollab && !store.user.published_at}>
                 <ActionButton text="Edit" onClick={pushToEdit} />
               </Match>
-              <Match when={!isCurrentUserProfile && !store.following.includes(Number(userId))}>
+              <Match when={!isCurrentUserCollab && !store.following.includes(Number(userId))}>
                 <ActionButton text="Follow" onClick={follow} />
               </Match>
-              <Match when={!isCurrentUserProfile && store.following.includes(Number(userId))}>
+              <Match when={!isCurrentUserCollab && store.following.includes(Number(userId))}>
                 <ActionButton text="Unfollow" onClick={unfollow} />
               </Match>
             </Switch>

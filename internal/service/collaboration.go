@@ -45,7 +45,7 @@ type CreateCollaboration struct {
 	Description   string  `json:"description" validate:"max=1000,required"`
 	IsPayable     bool    `json:"is_payable"`
 	Country       string  `json:"country" validate:"max=255,required"`
-	City          string  `json:"city" validate:"max=255,required"`
+	City          string  `json:"city"`
 	CountryCode   string  `json:"country_code" validate:"max=2,required"`
 	BadgeIDs      []int64 `json:"badge_ids"`
 } // @Name CreateCollaboration
@@ -57,7 +57,7 @@ func (cc *CreateCollaboration) toCollaboration() db.Collaboration {
 		Description:   cc.Description,
 		IsPayable:     cc.IsPayable,
 		Country:       cc.Country,
-		City:          cc.City,
+		City:          &cc.City,
 		CountryCode:   cc.CountryCode,
 	}
 }

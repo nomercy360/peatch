@@ -1,4 +1,4 @@
-import { FormLayout } from '../../pages/users/edit';
+import { FormLayout } from '../layout';
 
 export default function FillDescription(props: {
   description: string;
@@ -16,12 +16,16 @@ export default function FillDescription(props: {
       title="Introduce yourself"
       description="Tell others about your backround, achievments and goals"
     >
+      <div class='relative rounded-lg mt-5 w-full h-fit min-h-56 bg-peatch-bg'>
       <textarea
-        class="mt-5 h-fit min-h-40 w-full rounded-lg bg-peatch-bg p-2.5 text-black placeholder:text-gray"
+        class="bg-transparent h-full p-2.5 w-full text-black placeholder:text-gray"
         placeholder="For example: 32 y.o. serial entrepreneur & product director with architecture, product design, marketing & tech development background. "
         value={props.description}
         onInput={e => resizer(e)}
-      ></textarea>
+      >
+      </textarea>
+        <span class="absolute bottom-2 right-2 text-gray text-sm">0/500</span>
+      </div>
     </FormLayout>
   );
 }

@@ -1,5 +1,5 @@
 import { createSignal, For, Show, Suspense } from 'solid-js';
-import { FormLayout } from '../../pages/users/edit';
+import { FormLayout } from './layout';
 import countryFlags from '../../assets/countries.json';
 import { createQuery } from '@tanstack/solid-query';
 import useDebounce from '../../hooks/useDebounce';
@@ -62,10 +62,7 @@ export default function SelectLocation(props: {
   };
 
   return (
-    <FormLayout
-      title="Where do you live?"
-      description="It will appears in your profile card, everyone will see it"
-    >
+      <>
       <div class="mt-5 flex h-10 w-full flex-row items-center justify-between rounded-lg bg-peatch-bg px-2.5">
         <input
           class="w-full bg-transparent text-black placeholder:text-gray focus:outline-none"
@@ -114,7 +111,7 @@ export default function SelectLocation(props: {
           </For>
         </Suspense>
       </div>
-    </FormLayout>
+    </>
   );
 }
 

@@ -1,12 +1,12 @@
 import { createSignal, Match, Switch } from 'solid-js';
-import { FormLayout } from '../../pages/users/edit';
+import { FormLayout } from '../layout';
 
 export default function ImageUpload(props: {
-  imgURL: string;
+  imageFromCDN?: string;
   imgFile: File | null;
   setImgFile: (file: File) => void;
 }) {
-  const [previewUrl, setPreviewUrl] = createSignal(props.imgURL);
+  const [previewUrl, setPreviewUrl] = createSignal(props.imageFromCDN || '');
 
   const handleFileChange = (event: any) => {
     const file = event.target.files[0];

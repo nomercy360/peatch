@@ -18,7 +18,7 @@ type Collaboration struct {
 	CreatedAt     time.Time   `json:"created_at" db:"created_at"`
 	UpdatedAt     time.Time   `json:"updated_at" db:"updated_at"`
 	Country       string      `json:"country" db:"country"`
-	City          string      `json:"city" db:"city"`
+	City          *string     `json:"city" db:"city"`
 	CountryCode   string      `json:"country_code" db:"country_code"`
 	RequestsCount int         `json:"requests_count" db:"requests_count"`
 	Badges        []Badge     `json:"badges" db:"-"`

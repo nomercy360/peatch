@@ -1,6 +1,6 @@
 import { For, Show } from 'solid-js';
 import icons from '../../assets/icons.json';
-import { FormLayout } from '../../pages/users/edit';
+import { FormLayout } from './layout';
 import { Badge } from '../../../gen';
 
 export default function CreateBadge(props: {

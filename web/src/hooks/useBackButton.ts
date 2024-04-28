@@ -26,20 +26,19 @@ export function useButtons() {
     setTextColor: (textColor: string) => {
       window.Telegram.WebApp.MainButton.setParams({ text_color: textColor });
     },
-    setVisible: (visible: boolean) => {
-      if (visible) {
-        window.Telegram.WebApp.MainButton.show();
-      } else {
-        window.Telegram.WebApp.MainButton.isVisible = false;
-      }
+    setVisible: (text: string) => {
+      window.Telegram.WebApp.MainButton.setParams({ is_visible: true, text_color: '#FFFFFF', color: '#3F8AF7', text });
+    },
+    hide: () => {
+      window.Telegram.WebApp.MainButton.isVisible = false;
     },
     setActive: (active: boolean) => {
       if (active) {
         //window.Telegram.WebApp.MainButton.enable();
-        window.Telegram.WebApp.MainButton.setParams({color: '#3F8AF7', is_active: true});
+        window.Telegram.WebApp.MainButton.setParams({color: '#3F8AF7', is_active: true, text_color: '#FFFFFF'});
       } else {
         //window.Telegram.WebApp.MainButton.disable();
-        window.Telegram.WebApp.MainButton.setParams({color: '#BEDDFC', is_active: false});
+        window.Telegram.WebApp.MainButton.setParams({color: '#BEDDFC', is_active: false, text_color: '#FFFFFF'});
       }
     },
     onClick: (callback: () => void) => {

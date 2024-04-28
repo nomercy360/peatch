@@ -1,51 +1,42 @@
 import { createStore } from 'solid-js/store';
-import { store, setUser as setUserStore } from '../../store';
 import { createEffect, createSignal, Match, onCleanup, Switch } from 'solid-js';
 import { useButtons } from '../../hooks/useBackButton';
-import { Badge, UpdateUserRequest, User } from '../../../gen';
+import { Badge, CreateCollaboration, User } from '../../../gen';
 import { useNavigate } from '@solidjs/router';
 import { SelectBadge } from '../../components/edit/selectBadge';
 import { createQuery } from '@tanstack/solid-query';
 import {
-  CDN_URL,
+  createCollaboration,
   fetchBadges,
   fetchOpportunities,
-  fetchPresignedUrl,
   postBadge,
-  updateUser,
-  uploadToS3,
 } from '../../api';
 import CreateBadge from '../../components/edit/createBadge';
 import { SelectOpportunity } from '../../components/edit/selectOpp';
 import SelectLocation from '../../components/edit/selectLocation';
-import FillDescription from '../../components/edit/profile/description';
-import ImageUpload from '../../components/edit/profile/imageUpload';
 import { FormLayout } from '../../components/edit/layout';
+import DescribeCollaboration from '../../components/edit/collaboration/descriptiom';
 import { ProgressBar } from '../../components/edit/progress';
 
-const totalScreens = 6;
+const totalScreens = 4;
 
-export default function EditUserProfile() {
-  const [user, setUser] = createStore<UpdateUserRequest>({
-    first_name: store.user.first_name || '',
-    last_name: store.user.last_name || '',
-    title: store.user.title || '',
-    description: store.user.description || '',
-    avatar_url: store.user.avatar_url || '',
-    city: store.user.city || undefined,
-    country: store.user.country || '',
-    country_code: store.user.country_code || '',
-    badge_ids: store.user.badges?.map(b => b.id) || ([] as any),
-    opportunity_ids: store.user.opportunities?.map(o => o.id) || ([] as any),
+export default function Create() {
+  const [collab, setCollab] = createStore<CreateCollaboration>({
+    title: '',
+    description: '',
+    city: undefined,
+    country: '',
+    country_code: '',
+    badge_ids: [],
+    opportunity_id: 0,
+    is_payable: false,
   });
 
   const [screen, setScreen] = createSignal(1);
   const [createBadgeOpen, setCreateBadgeOpen] = createSignal(false);
   const [badgeSearch, setBadgeSearch] = createSignal('');
-  const [_, setImgUploadProgress] = createSignal(0);
 
   const { mainButton, backButton } = useButtons();
-  const [imgFile, setImgFile] = createSignal<File | null>(null);
 
   const navigate = useNavigate();
 
@@ -77,31 +68,9 @@ export default function EditUserProfile() {
     queryFn: () => fetchOpportunities(),
   }));
 
-  const saveUser = async () => {
-    if (imgFile() && imgFile() !== null) {
-      try {
-        const { path, url } = await fetchPresignedUrl(imgFile()!.name);
-        mainButton.showProgress(false);
-        await uploadToS3(
-          url,
-          imgFile()!,
-          e => {
-            setImgUploadProgress(Math.round((e.loaded / e.total) * 100));
-          },
-          () => {
-            setImgUploadProgress(0);
-          },
-        );
-
-        setUser('avatar_url', path);
-      } catch (e) {
-        console.error(e);
-        mainButton.hideProgress();
-      }
-    }
-    const updated = await updateUser(user);
-    setUserStore(updated);
-    navigate('/users/' + store.user.id);
+  const createCollab = async () => {
+    const created = await createCollaboration(collab);
+    navigate('/collaborations/' + created.id);
   };
 
   const publishBadge = async () => {
@@ -112,7 +81,7 @@ export default function EditUserProfile() {
         createBadge.icon,
       );
 
-      setUser('badge_ids', [...user.badge_ids, id]);
+      setCollab('badge_ids', [...collab.badge_ids, id]);
 
       setCreateBadgeOpen(false);
     }
@@ -125,7 +94,9 @@ export default function EditUserProfile() {
       case 1:
         backButton.offClick(prevScreen);
         backButton.onClick(goBack);
-        if (user.first_name && user.last_name && user.title) {
+        mainButton.onClick(nextScreen);
+        mainButton.setVisible('Next');
+        if (collab.title && collab.description) {
           mainButton.setActive(true);
         } else {
           mainButton.setActive(false);
@@ -153,44 +124,30 @@ export default function EditUserProfile() {
           mainButton.onClick(nextScreen);
           mainButton.setActive(false);
 
-          if (user.badge_ids.length) {
+          if (collab.badge_ids.length) {
             mainButton.setActive(true);
           }
         }
         break;
       case 3:
-        if (user.opportunity_ids.length) {
-          mainButton.setActive(true);
-        } else {
-          mainButton.setActive(false);
-        }
-        break;
-      case 4:
-        if (user.country && user.country_code) {
-          mainButton.setActive(true);
-        } else {
-          mainButton.setActive(false);
-        }
-        break;
-      case 5:
-        if (user.description) {
+        if (collab.opportunity_id) {
           mainButton.setActive(true);
         } else {
           mainButton.setActive(false);
         }
         mainButton.onClick(nextScreen);
-        mainButton.offClick(saveUser);
+        mainButton.offClick(publishBadge);
         mainButton.setText('Next');
         break;
-      case 6:
-        if (user.avatar_url || imgFile()) {
+      case 4:
+        if (collab.country && collab.country_code) {
           mainButton.setActive(true);
         } else {
           mainButton.setActive(false);
         }
         mainButton.setText('Save');
         mainButton.offClick(nextScreen);
-        mainButton.onClick(saveUser);
+        mainButton.onClick(createCollab);
         break;
     }
   });
@@ -223,16 +180,23 @@ export default function EditUserProfile() {
       <ProgressBar screen={screen()} totalScreens={totalScreens} />
       <Switch>
         <Match when={screen() === 1}>
-          <GeneralInfo user={user} setUser={setUser} />
+          <DescribeCollaboration
+            title={collab.title}
+            setTitle={t => setCollab('title', t)}
+            description={collab.description}
+            setDescription={d => setCollab('description', d)}
+            isPayable={collab.is_payable}
+            setIsPayable={p => setCollab('is_payable', p)}
+          />
         </Match>
         <Match when={screen() === 2 && !createBadgeOpen()}>
           <FormLayout
-            title="What describes you?"
-            description="This will help us to recommend you to other people"
+            title="Who are you looking for?"
+            description="This will help us to recommend it to other people"
           >
             <SelectBadge
-              selected={user.badge_ids}
-              setSelected={b => setUser('badge_ids', b)}
+              selected={collab.badge_ids}
+              setSelected={b => setCollab('badge_ids', b)}
               setCreateBadgeModal={onBadgeModalOpen}
               search={badgeSearch()}
               setSearch={setBadgeSearch}
@@ -248,43 +212,30 @@ export default function EditUserProfile() {
         </Match>
         <Match when={screen() === 3}>
           <FormLayout
-            title="What are you open for?"
-            description="This will help us to recommend you to other people"
+            title="Select a theme"
+            description="This will help us to recommend it to other people"
           >
             <SelectOpportunity
-              selected={user.opportunity_ids}
-              setSelected={b => setUser('opportunity_ids', b as number[])}
+              selected={collab.opportunity_id}
+              setSelected={b => setCollab('opportunity_id', b as number)}
               opportunities={fetchOpportunityQuery.data}
             />
           </FormLayout>
         </Match>
         <Match when={screen() === 4}>
           <FormLayout
-            title="Where do you live?"
-            description="It will appears in your profile card, everyone will see it"
+            title="Any special location?"
+            description="This will help us to recommend it to other people"
           >
             <SelectLocation
-              city={user.city}
-              setCity={c => setUser('city', c)}
-              country={user.country}
-              setCountry={c => setUser('country', c)}
-              countryCode={user.country_code}
-              setCountryCode={c => setUser('country_code', c)}
+              city={collab.city}
+              setCity={c => setCollab('city', c)}
+              country={collab.country}
+              setCountry={c => setCollab('country', c)}
+              countryCode={collab.country_code}
+              setCountryCode={c => setCollab('country_code', c)}
             />
           </FormLayout>
-        </Match>
-        <Match when={screen() === 5}>
-          <FillDescription
-            setDescription={d => setUser('description', d)}
-            description={user.description}
-          />
-        </Match>
-        <Match when={screen() === 6}>
-          <ImageUpload
-            imageFromCDN={user.avatar_url ? CDN_URL + '/' + store.user.avatar_url : ''}
-            imgFile={imgFile()}
-            setImgFile={setImgFile}
-          />
         </Match>
       </Switch>
     </div>

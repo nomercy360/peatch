@@ -1,20 +1,24 @@
 import { createEffect, createSignal, For, Show, Suspense } from 'solid-js';
-import { FormLayout } from '../../pages/users/edit';
+import { FormLayout } from './layout';
 import { Opportunity } from '../../../gen';
 
 export function SelectOpportunity(props: {
-  selected: number[];
-  setSelected: (selected: number[]) => void;
+  selected: number[] | number;
+  setSelected: (selected: number[] | number) => void;
   opportunities: Opportunity[];
 }) {
   const [filtered, setFiltered] = createSignal(props.opportunities);
   const [search, setSearch] = createSignal('');
 
-  const onBadgeClick = (badgeId: number) => {
-    if (props.selected.includes(badgeId!)) {
-      props.setSelected(props.selected.filter(b => b !== badgeId));
+  const onClick = (oppId: number) => {
+    if (Array.isArray(props.selected)) {
+      if (props.selected.includes(oppId)) {
+        props.setSelected(props.selected.filter(b => b !== oppId));
+      } else if (props.selected.length < 10) {
+        props.setSelected([...props.selected, oppId]);
+      }
     } else {
-      props.setSelected([...props.selected, badgeId!]);
+      props.setSelected(oppId);
     }
   };
 
@@ -30,14 +34,18 @@ export function SelectOpportunity(props: {
     }
   });
 
+  const includes = (oppId: number) => {
+    if (Array.isArray(props.selected)) {
+      return props.selected.includes(oppId);
+    }
+    return props.selected === oppId;
+  }
+
   return (
-    <FormLayout
-      title="What are you open for?"
-      description="This will help us to recommend you to other people"
-    >
+    <>
       <div class="mt-5 flex h-10 w-full flex-row items-center justify-between rounded-lg bg-peatch-bg px-2.5">
         <input
-          class="w-full bg-transparent text-black placeholder:text-gray focus:outline-none"
+          class="w-full h-10 bg-transparent text-black placeholder:text-gray focus:outline-none"
           placeholder="Search collaboration opportunities"
           type="text"
           onInput={e => setSearch(e.currentTarget.value)}
@@ -54,17 +62,18 @@ export function SelectOpportunity(props: {
       </div>
       <div class="flex h-11 w-full flex-row items-center justify-between">
         <div></div>
-        <p class="text-sm text-gray">{props.selected.length} / 10</p>
+        <div class="flex items-center justify-center text-sm h-11 text-gray">{Array.isArray(props.selected) ? `${props.selected.length} / 10` : 'choose one'}</div>
       </div>
       <div class="flex w-full flex-row flex-wrap items-center justify-start gap-1">
         <Suspense fallback={<div>Loading...</div>}>
           <For each={filtered()}>
             {op => (
               <button
-                onClick={() => onBadgeClick(op.id!)}
+                onClick={() => onClick(op.id!)}
                 class="flex h-[60px] w-full flex-row items-center justify-start gap-2.5 rounded-2xl border border-peatch-stroke px-2.5"
                 style={{
-                  'background-color': `${props.selected.includes(op.id!) ? op.color : '#F8F8F8'}`,
+                  'background-color': `${includes(op.id!) ? op.color : '#F8F8F8'}`,
+                  'border-color': `${includes(op.id!) ? op.color : '#F8F8F8'}`,
                 }}
               >
                 <div class="flex size-10 items-center justify-center rounded-full bg-white">
@@ -76,8 +85,8 @@ export function SelectOpportunity(props: {
                 <div
                   class="text-start"
                   classList={{
-                    'text-white': props.selected.includes(op.id!),
-                    'text-peatch-gray': !props.selected.includes(op.id!),
+                    'text-white': includes(op.id!),
+                    'text-peatch-gray': includes(op.id!),
                   }}
                 >
                   <p class="text-sm font-semibold">{op.text}</p>
@@ -88,6 +97,6 @@ export function SelectOpportunity(props: {
           </For>
         </Suspense>
       </div>
-    </FormLayout>
+    </>
   );
 }

@@ -45,7 +45,8 @@ export default function Index() {
         </p>
       </a>
       <div class="h-px w-full bg-peatch-stroke"></div>
-      <div class="flex flex-col items-start justify-start py-4">
+      <a class="flex flex-col items-start justify-start py-4"
+         href="/collaborations/create">
         <div class="flex w-full flex-row items-center justify-start">
           <div
             class="z-20 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-white bg-orange">
@@ -76,7 +77,7 @@ export default function Index() {
         <p class="mt-1.5 text-sm text-gray">
           Yoga practice, Running, Grabbing a coffee, and more
         </p>
-      </div>
+      </a>
       <div class="h-px w-full bg-peatch-stroke"></div>
       <div class="flex flex-col items-start justify-start py-4">
         <div class="flex flex-row items-start justify-between">

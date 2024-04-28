@@ -42,7 +42,11 @@ export const apiFetch = async ({
       return false;
     }
 
-    return responseType === 'json' ? response.json() : response.blob();
+    if (response.status === 204) {
+      return true;
+    } else {
+      return responseType === 'json' ? response.json() : response.blob();
+    }
   } catch (error) {
     console.error('Error:', error);
   } finally {
@@ -150,3 +154,24 @@ export const collaborateUser = async (userID: number) => {
     method: 'POST',
   });
 };
+
+export const createCollaboration = async (collaboration: any) => {
+  return await apiFetch({
+    endpoint: '/collaborations',
+    method: 'POST',
+    body: collaboration,
+  });
+}
+
+export const updateCollaboration = async (collaboration: any) => {
+  return await apiFetch({
+    endpoint: '/collaborations',
+    method: 'PUT',
+    body: collaboration,
+  });
+}
+
+export const fetchCollaborations = async () => {
+  return await apiFetch({ endpoint: '/collaborations' });
+};
+
