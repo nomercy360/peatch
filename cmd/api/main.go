@@ -28,8 +28,8 @@ type config struct {
 }
 
 type ServerConfig struct {
-	Port string `env:"PORT" envDefault:"8080"`
-	Host string `env:"HOST" envDefault:"localhost"`
+	Port string `env:"SERVER_PORT" envDefault:"8080"`
+	Host string `env:"SERVER_HOST" envDefault:"localhost"`
 }
 
 type AWSConfig struct {

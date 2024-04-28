@@ -1,7 +1,7 @@
-import { CreateCollaboration } from './CreateCollaboration';
-import type { Collaboration } from './Collaboration';
+import { CreateCollaboration } from "./CreateCollaboration";
+import type { Collaboration } from "./Collaboration";
 
-/**
+ /**
  * @description Created
 */
 export type PostApiCollaborations201 = Collaboration;
@@ -9,7 +9,7 @@ export type PostApiCollaborations201 = Collaboration;
  /**
  * @description Collaboration data
 */
- export type PostApiCollaborationsMutationRequest = CreateCollaboration;
+export type PostApiCollaborationsMutationRequest = CreateCollaboration;
 
  /**
  * @description Created

@@ -1,7 +1,7 @@
-import { UpdateUserRequest } from './UpdateUserRequest';
-import type { User } from './User';
+import { UpdateUserRequest } from "./UpdateUserRequest";
+import type { User } from "./User";
 
-/**
+ /**
  * @description OK
 */
 export type PutApiUsers200 = User;
@@ -9,7 +9,7 @@ export type PutApiUsers200 = User;
  /**
  * @description User data
 */
- export type PutApiUsersMutationRequest = UpdateUserRequest;
+export type PutApiUsersMutationRequest = UpdateUserRequest;
 
  /**
  * @description OK

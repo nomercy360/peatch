@@ -1,12 +1,12 @@
-import { Badge } from './Badge';
-import { Opportunity } from './Opportunity';
+import { Badge } from "./Badge";
+import { Opportunity } from "./Opportunity";
 
-export type Collaboration = {
+ export type Collaboration = {
     /**
      * @type array | undefined
-     */
+    */
     badges?: Badge[];
-  /**
+    /**
      * @type string | undefined
     */
     city?: string;
@@ -34,7 +34,7 @@ export type Collaboration = {
      * @type boolean | undefined
     */
     is_payable?: boolean;
-  opportunity?: Opportunity;
+    opportunity?: Opportunity;
     /**
      * @type integer | undefined
     */

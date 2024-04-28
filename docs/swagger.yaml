@@ -493,9 +493,9 @@ paths:
       consumes:
       - application/json
       parameters:
-        - description: User ID
+      - description: User ID
         in: path
-          name: id
+        name: id
         required: true
         type: integer
       produces:
@@ -537,9 +537,9 @@ paths:
       consumes:
       - application/json
       parameters:
-        - description: Following User ID
+      - description: Following User ID
         in: path
-          name: id
+        name: id
         required: true
         type: integer
       produces:
@@ -555,9 +555,9 @@ paths:
       consumes:
       - application/json
       parameters:
-        - description: Following User ID
+      - description: Following User ID
         in: path
-          name: id
+        name: id
         required: true
         type: integer
       produces:

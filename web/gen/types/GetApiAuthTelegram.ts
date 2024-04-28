@@ -1,6 +1,6 @@
-import type { UserWithToken } from './UserWithToken';
+import type { UserWithToken } from "./UserWithToken";
 
-export type GetApiAuthTelegramQueryParams = {
+ export type GetApiAuthTelegramQueryParams = {
     /**
      * @description Query ID
      * @type string
@@ -26,12 +26,12 @@ export type GetApiAuthTelegramQueryParams = {
  /**
  * @description OK
 */
- export type GetApiAuthTelegram200 = UserWithToken;
+export type GetApiAuthTelegram200 = UserWithToken;
 
  /**
  * @description OK
 */
- export type GetApiAuthTelegramQueryResponse = UserWithToken;
+export type GetApiAuthTelegramQueryResponse = UserWithToken;
 
  export type GetApiAuthTelegramQuery = {
     Response: GetApiAuthTelegramQueryResponse;

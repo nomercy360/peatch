@@ -17,17 +17,15 @@ spec:
         service: peatch
     spec:
       containers:
-        - image: maksim1111/peatch:latest
+        - image: maksim1111/peatch:20240428-69fdeb3
           name: peatch
           imagePullPolicy: Always
-          command:
-            - /bin/sh
-          args: ["/app"]
+          command: ["/app/api"]
           ports:
             - containerPort: 8080
               name: http
               protocol: TCP
-          resources: { }
+          resources: {}
           envFrom:
             - secretRef:
                 name: peatch-secrets
