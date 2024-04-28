@@ -19,7 +19,7 @@ spec:
       initContainers:
         - name: db-migrations
           image: maksim1111/peatch:latest
-          command: ["/app/migrate -source  file:///app/migrations -database ${DATABASE_URL} up"]
+          command: ["/app/migrate", "-path", "/app/migrations", "-database", "$(DATABASE_URL)", "up"]
           envFrom:
               - secretRef:
                   name: peatch-secrets
