@@ -13,8 +13,6 @@ RUN go mod download
 RUN CGO_ENABLED=0 GOOS=linux go build -o /api ./cmd/api/main.go
 RUN CGO_ENABLED=0 GOOS=linux go build -o /bot ./cmd/bot/main.go
 
-RUN go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
-
 FROM alpine:3.19 AS build-release-stage
 
 RUN apk --no-cache add ca-certificates bash
@@ -24,7 +22,10 @@ WORKDIR /app
 COPY --from=build-stage /api /app/api
 COPY --from=build-stage /bot /app/bot
 COPY /scripts/migrations /app/migrations
-COPY --from=build-stage /go/bin/migrate /app/migrate
+
+RUN curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.1/migrate.linux-amd64.tar.gz | tar xvz && \
+    mv migrate /app/migrate \
+    && chmod +x /app/migrate
 
 EXPOSE 8080
 
