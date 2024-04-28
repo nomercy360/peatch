@@ -26,4 +26,4 @@ COPY --from=build-stage /go/bin/migrate /app/migrate
 
 EXPOSE 8080
 
-CMD ["/peatch"]
+CMD ["/api"]

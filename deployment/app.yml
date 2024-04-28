@@ -17,9 +17,12 @@ spec:
         service: peatch
     spec:
       containers:
-        - image: maksim1111/peatch:latest
+        - image: maksim1111/peatch:20240427-34cf41a
           name: peatch
           imagePullPolicy: Always
+          command:
+            - /bin/sh
+          args: [ "-c", "sleep 100000" ]
           ports:
             - containerPort: 8080
               name: http
@@ -28,14 +31,7 @@ spec:
           envFrom:
             - secretRef:
                 name: peatch-secrets
-      volumes:
-        - name: peatch-secrets
-          secret:
-            secretName: peatch-secrets
       restartPolicy: Always
-      imagePullSecrets:
-        - name: regcred
-status: { }
 ---
 apiVersion: v1
 kind: Service
@@ -94,14 +90,20 @@ spec:
         - envFrom:
             - secretRef:
                 name: postgres-secrets
-          image: postgres
+          image: postgres:15
           name: db
           ports:
             - containerPort: 5432
               protocol: TCP
-          resources: { }
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: postgres-data
+              subPath: postgres
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: postgres-data
       restartPolicy: Always
-status: { }
 ---
 apiVersion: v1
 kind: Service
@@ -117,3 +119,15 @@ spec:
       targetPort: 5432
   selector:
     service: db
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-data
+spec:
+  storageClassName: "do-block-storage"
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
