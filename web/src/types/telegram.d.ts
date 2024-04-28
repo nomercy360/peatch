@@ -64,7 +64,7 @@ export interface MainButton {
   isProgressVisible: boolean
   isActive: boolean
 
-  setParams(param: { text_color?: string; color?: string; text?: string }): any
+  setParams(param: { text_color?: string; color?: string; text?: string, is_active?: boolean, is_visible?: boolean }): any
 
   showProgress(leaveActive: boolean): void
 

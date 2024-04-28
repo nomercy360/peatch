@@ -35,9 +35,11 @@ export function useButtons() {
     },
     setActive: (active: boolean) => {
       if (active) {
-        window.Telegram.WebApp.MainButton.enable();
+        //window.Telegram.WebApp.MainButton.enable();
+        window.Telegram.WebApp.MainButton.setParams({color: '#3F8AF7', is_active: true});
       } else {
-        window.Telegram.WebApp.MainButton.disable();
+        //window.Telegram.WebApp.MainButton.disable();
+        window.Telegram.WebApp.MainButton.setParams({color: '#BEDDFC', is_active: false});
       }
     },
     onClick: (callback: () => void) => {
