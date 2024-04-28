@@ -17,12 +17,12 @@ spec:
         service: peatch
     spec:
       containers:
-        - image: maksim1111/peatch:20240427-34cf41a
+        - image: maksim1111/peatch:latest
           name: peatch
           imagePullPolicy: Always
           command:
             - /bin/sh
-          args: [ "-c", "sleep 100000" ]
+          args: ["/app"]
           ports:
             - containerPort: 8080
               name: http
@@ -127,7 +127,7 @@ metadata:
 spec:
   storageClassName: "do-block-storage"
   accessModes:
-    - ReadWriteOnce
+      - ReadWriteOnce
   resources:
-    requests:
-      storage: 2Gi
+      requests:
+        storage: 2Gi

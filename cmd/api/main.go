@@ -21,10 +21,10 @@ import (
 )
 
 type config struct {
-	DBConnString string `env:"DB_CONN_STRING,required"`
-	Server       ServerConfig
-	BotToken     string `env:"BOT_TOKEN,required"`
-	AWS          AWSConfig
+	DatabaseURL string `env:"DATABASE_URL,required"`
+	Server      ServerConfig
+	BotToken    string `env:"BOT_TOKEN,required"`
+	AWS         AWSConfig
 }
 
 type ServerConfig struct {
@@ -51,7 +51,7 @@ func main() {
 		log.Fatalf("Failed to parse config: %v\n", err)
 	}
 
-	pg, err := db.New(cfg.DBConnString)
+	pg, err := db.New(cfg.DatabaseURL)
 
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v\n", err)
