@@ -16,15 +16,14 @@ export default function FillDescription(props: {
       title="Introduce yourself"
       description="Tell others about your backround, achievments and goals"
     >
-      <div class='relative rounded-lg mt-5 w-full h-fit min-h-56 bg-peatch-bg'>
-      <textarea
-        class="bg-transparent h-full p-2.5 w-full text-black placeholder:text-gray"
-        placeholder="For example: 32 y.o. serial entrepreneur & product director with architecture, product design, marketing & tech development background. "
-        value={props.description}
-        onInput={e => resizer(e)}
-      >
-      </textarea>
-        <span class="absolute bottom-2 right-2 text-gray text-sm">0/500</span>
+      <div class="relative mt-5 h-fit min-h-56 w-full rounded-lg bg-peatch-bg">
+        <textarea
+          class="size-full bg-transparent p-2.5 text-black placeholder:text-gray"
+          placeholder="For example: 32 y.o. serial entrepreneur & product director with architecture, product design, marketing & tech development background. "
+          value={props.description}
+          onInput={e => resizer(e)}
+        ></textarea>
+        <span class="absolute bottom-2 right-2 text-sm text-gray">0/500</span>
       </div>
     </FormLayout>
   );

@@ -1,12 +1,11 @@
 // Unified hook to interact with both BackButton and MainButton
 export function useButtons() {
   const backButton = {
-    setVisible: (visible: boolean) => {
-      if (visible) {
-        window.Telegram.WebApp.BackButton.show();
-      } else {
-        window.Telegram.WebApp.BackButton.isVisible = false;
-      }
+    setVisible: () => {
+      window.Telegram.WebApp.BackButton.show();
+    },
+    hide() {
+      window.Telegram.WebApp.BackButton.isVisible = false;
     },
     onClick: (callback: () => void) => {
       window.Telegram.WebApp.BackButton.onClick(callback);
@@ -27,7 +26,12 @@ export function useButtons() {
       window.Telegram.WebApp.MainButton.setParams({ text_color: textColor });
     },
     setVisible: (text: string) => {
-      window.Telegram.WebApp.MainButton.setParams({ is_visible: true, text_color: '#FFFFFF', color: '#3F8AF7', text });
+      window.Telegram.WebApp.MainButton.setParams({
+        is_visible: true,
+        text_color: '#FFFFFF',
+        color: '#3F8AF7',
+        text,
+      });
     },
     hide: () => {
       window.Telegram.WebApp.MainButton.isVisible = false;
@@ -35,10 +39,18 @@ export function useButtons() {
     setActive: (active: boolean) => {
       if (active) {
         //window.Telegram.WebApp.MainButton.enable();
-        window.Telegram.WebApp.MainButton.setParams({color: '#3F8AF7', is_active: true, text_color: '#FFFFFF'});
+        window.Telegram.WebApp.MainButton.setParams({
+          color: '#3F8AF7',
+          is_active: true,
+          text_color: '#FFFFFF',
+        });
       } else {
         //window.Telegram.WebApp.MainButton.disable();
-        window.Telegram.WebApp.MainButton.setParams({color: '#BEDDFC', is_active: false, text_color: '#FFFFFF'});
+        window.Telegram.WebApp.MainButton.setParams({
+          color: '#BEDDFC',
+          is_active: false,
+          text_color: '#FFFFFF',
+        });
       }
     },
     onClick: (callback: () => void) => {

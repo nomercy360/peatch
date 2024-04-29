@@ -466,7 +466,7 @@ type UserCollaborationRequest struct {
 	Status      string    `json:"status" db:"status"`
 }
 
-func (s *storage) CreateUserCollaborationRequest(request UserCollaborationRequest) (*UserCollaborationRequest, error) {
+func (s *storage) CreateUserCollaboration(request UserCollaborationRequest) (*UserCollaborationRequest, error) {
 	var res UserCollaborationRequest
 
 	query := `

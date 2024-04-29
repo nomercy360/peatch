@@ -9,8 +9,9 @@ import App from './App';
 const Users = lazy(() => import('./pages/users'));
 const Home = lazy(() => import('./pages'));
 const User = lazy(() => import('./pages/users/[id]'));
-const EditUser = lazy(() => import('./pages/collaborations/create'));
+const EditUser = lazy(() => import('./pages/users/edit'));
 const CreateCollaboration = lazy(() => import('./pages/collaborations/create'));
+const UserCollaborate = lazy(() => import('./pages/users/collaborate'));
 
 const root = document.getElementById('root');
 
@@ -30,6 +31,7 @@ render(
       <Route path="/users/:id" component={User} />
       <Route path="/users/edit" component={EditUser} />
       <Route path="/collaborations/create" component={CreateCollaboration} />
+      <Route path="/users/:id/collaborate" component={UserCollaborate} />
       <Route path="/*all" component={NotFound} />
     </Router>
   ),

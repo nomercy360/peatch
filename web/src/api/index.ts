@@ -161,7 +161,7 @@ export const createCollaboration = async (collaboration: any) => {
     method: 'POST',
     body: collaboration,
   });
-}
+};
 
 export const updateCollaboration = async (collaboration: any) => {
   return await apiFetch({
@@ -169,9 +169,16 @@ export const updateCollaboration = async (collaboration: any) => {
     method: 'PUT',
     body: collaboration,
   });
-}
+};
 
 export const fetchCollaborations = async () => {
   return await apiFetch({ endpoint: '/collaborations' });
 };
 
+export const createUserCollaboration = async (collaboration: any) => {
+  return await apiFetch({
+    endpoint: '/collaborations',
+    method: 'POST',
+    body: collaboration,
+  });
+};

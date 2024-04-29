@@ -18,12 +18,12 @@ export default function Collaboration() {
   };
 
   createEffect(() => {
-    backButton.setVisible(true);
+    backButton.setVisible();
     backButton.onClick(back);
   });
 
   onCleanup(() => {
-    backButton.setVisible(false);
+    backButton.hide();
     backButton.offClick(back);
   });
 
@@ -109,10 +109,20 @@ export default function Collaboration() {
               <Match when={isCurrentUserCollab && !store.user.published_at}>
                 <ActionButton text="Edit" onClick={pushToEdit} />
               </Match>
-              <Match when={!isCurrentUserCollab && !store.following.includes(Number(userId))}>
+              <Match
+                when={
+                  !isCurrentUserCollab &&
+                  !store.following.includes(Number(userId))
+                }
+              >
                 <ActionButton text="Follow" onClick={follow} />
               </Match>
-              <Match when={!isCurrentUserCollab && store.following.includes(Number(userId))}>
+              <Match
+                when={
+                  !isCurrentUserCollab &&
+                  store.following.includes(Number(userId))
+                }
+              >
                 <ActionButton text="Unfollow" onClick={unfollow} />
               </Match>
             </Switch>
@@ -139,10 +149,12 @@ export default function Collaboration() {
                         'border-color': badge.color,
                       }}
                     >
-                <span class="material-symbols-rounded text-white">
-                  {String.fromCodePoint(parseInt(badge.icon!, 16))}
-                </span>
-                      <p class="text-sm font-semibold text-white">{badge.text}</p>
+                      <span class="material-symbols-rounded text-white">
+                        {String.fromCodePoint(parseInt(badge.icon!, 16))}
+                      </span>
+                      <p class="text-sm font-semibold text-white">
+                        {badge.text}
+                      </p>
                     </div>
                   )}
                 </For>
@@ -157,9 +169,9 @@ export default function Collaboration() {
                       }}
                     >
                       <div class="flex size-10 items-center justify-center rounded-full bg-white">
-                  <span class="material-symbols-rounded text-black">
-                    {String.fromCodePoint(parseInt(op.icon!, 16))}
-                  </span>
+                        <span class="material-symbols-rounded text-black">
+                          {String.fromCodePoint(parseInt(op.icon!, 16))}
+                        </span>
                       </div>
                       <div class="text-start text-white">
                         <p class="text-sm font-semibold">{op.text}</p>
@@ -177,7 +189,6 @@ export default function Collaboration() {
   );
 }
 // background: ;
-
 
 const ActionButton = (props: { text: string; onClick: () => void }) => {
   return (

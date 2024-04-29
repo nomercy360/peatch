@@ -30,6 +30,7 @@ type storage interface {
 	HideCollaboration(userID int64, collaborationID int64) error
 	CreateCollaborationRequest(userID int64, request db.CollaborationRequest) (*db.CollaborationRequest, error)
 	GetUserFollowing(userID int64) ([]int64, error)
+	CreateUserCollaboration(collaboration db.UserCollaborationRequest) (*db.UserCollaborationRequest, error)
 }
 
 type s3Client interface {

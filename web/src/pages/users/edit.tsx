@@ -1,5 +1,5 @@
 import { createStore } from 'solid-js/store';
-import { store, setUser as setUserStore } from '../../store';
+import { setUser as setUserStore, store } from '../../store';
 import { createEffect, createSignal, Match, onCleanup, Switch } from 'solid-js';
 import { useButtons } from '../../hooks/useBackButton';
 import { Badge, UpdateUserRequest, User } from '../../../gen';
@@ -125,6 +125,9 @@ export default function EditUserProfile() {
       case 1:
         backButton.offClick(prevScreen);
         backButton.onClick(goBack);
+        backButton.setVisible();
+        mainButton.onClick(nextScreen);
+        mainButton.setVisible('Next');
         if (user.first_name && user.last_name && user.title) {
           mainButton.setActive(true);
         } else {
@@ -213,7 +216,7 @@ export default function EditUserProfile() {
   onCleanup(() => {
     mainButton.hide();
     mainButton.offClick(nextScreen);
-    backButton.setVisible(false);
+    backButton.hide();
     backButton.offClick(prevScreen);
     backButton.offClick(goBack);
   });
@@ -281,7 +284,9 @@ export default function EditUserProfile() {
         </Match>
         <Match when={screen() === 6}>
           <ImageUpload
-            imageFromCDN={user.avatar_url ? CDN_URL + '/' + store.user.avatar_url : ''}
+            imageFromCDN={
+              user.avatar_url ? CDN_URL + '/' + store.user.avatar_url : ''
+            }
             imgFile={imgFile()}
             setImgFile={setImgFile}
           />

@@ -172,3 +172,32 @@ func (h *handler) handleHideUser(c echo.Context) error {
 
 	return c.NoContent(http.StatusNoContent)
 }
+
+// handleCreateUserCollaboration godoc
+// @Summary Create user collaboration
+// @Tags collaborations
+// @Accept  json
+// @Produce  json
+// @Param user_id path int true "User ID"
+// @Param collaboration body CreateCollaborationRequest true "Collaboration data"
+// @Success 200 {object} Collaboration
+// @Router /api/users/{user_id}/collaborations [post]
+func (h *handler) handleCreateUserCollaboration(c echo.Context) error {
+	userID := getUserID(c)
+
+	var create svc.CreateUserCollaboration
+	if err := c.Bind(&create); err != nil {
+		return err
+	}
+
+	if err := c.Validate(create); err != nil {
+		return err
+	}
+
+	collaboration, err := h.svc.CreateUserCollaborationRequest(userID, create)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, collaboration)
+}

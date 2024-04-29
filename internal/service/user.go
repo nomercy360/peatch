@@ -148,3 +148,27 @@ func (s *service) PublishUser(userID int64) error {
 func (s *service) HideUser(userID int64) error {
 	return s.storage.HideUser(userID)
 }
+
+type CreateUserCollaboration struct {
+	UserID      int64  `json:"user_id" validate:"required"`
+	RequesterID int64  `json:"requester_id" validate:"required"`
+	Message     string `json:"message" validate:"max=1000"`
+} // @Name CreateUserCollaborationRequest
+
+func (req *CreateUserCollaboration) ToCollaborationRequest() db.UserCollaborationRequest {
+	return db.UserCollaborationRequest{
+		UserID:      req.UserID,
+		RequesterID: req.RequesterID,
+		Message:     req.Message,
+	}
+}
+
+func (s *service) CreateUserCollaboration(userID int64, request CreateUserCollaboration) (*db.UserCollaborationRequest, error) {
+	res, err := s.storage.CreateUserCollaboration(request.ToCollaborationRequest())
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}

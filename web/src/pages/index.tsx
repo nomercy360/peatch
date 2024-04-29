@@ -45,8 +45,10 @@ export default function Index() {
         </p>
       </a>
       <div class="h-px w-full bg-peatch-stroke"></div>
-      <a class="flex flex-col items-start justify-start py-4"
-         href="/collaborations/create">
+      <a
+        class="flex flex-col items-start justify-start py-4"
+        href="/collaborations/create"
+      >
         <div class="flex w-full flex-row items-center justify-start">
           <div
             class="z-20 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-white bg-orange">

@@ -14,3 +14,6 @@ export const [store, setStore] = createStore<{
 export const setUser = (user: User) => setStore('user', user);
 
 export const setToken = (token: string) => setStore('token', token);
+
+export const setFollowing = (following: number[]) =>
+  setStore('following', following);

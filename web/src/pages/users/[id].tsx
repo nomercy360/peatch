@@ -3,7 +3,7 @@ import { createEffect, For, Match, onCleanup, Show, Suspense, Switch } from 'sol
 import { useNavigate, useParams } from '@solidjs/router';
 import { CDN_URL, fetchProfile, followUser, hideProfile, showProfile, unfollowUser } from '../../api';
 import { createQuery } from '@tanstack/solid-query';
-import { setUser, store } from '../../store';
+import { setFollowing, setUser, store } from '../../store';
 
 export default function UserProfile() {
   const { mainButton, backButton } = useButtons();
@@ -18,12 +18,12 @@ export default function UserProfile() {
   };
 
   createEffect(() => {
-    backButton.setVisible(true);
+    backButton.setVisible();
     backButton.onClick(back);
   });
 
   onCleanup(() => {
-    backButton.setVisible(false);
+    backButton.hide();
     backButton.offClick(back);
   });
 
@@ -51,17 +51,17 @@ export default function UserProfile() {
   };
 
   const follow = async () => {
-    store.following.push(Number(userId));
+    setFollowing([...store.following, Number(userId)]);
     await followUser(Number(userId));
   };
 
   const unfollow = async () => {
-    store.following = store.following.filter(f => f !== Number(userId));
+    setFollowing(store.following.filter(id => id !== Number(userId)));
     await unfollowUser(Number(userId));
   };
 
   const collaborate = async () => {
-    navigate(`/collaborate/${userId}`);
+    navigate(`/users/${userId}/collaborate`);
   };
 
   const pushToEdit = () => {
@@ -109,10 +109,20 @@ export default function UserProfile() {
               <Match when={isCurrentUserProfile && !store.user.published_at}>
                 <ActionButton text="Edit" onClick={pushToEdit} />
               </Match>
-              <Match when={!isCurrentUserProfile && !store.following.includes(Number(userId))}>
+              <Match
+                when={
+                  !isCurrentUserProfile &&
+                  !store.following.includes(Number(userId))
+                }
+              >
                 <ActionButton text="Follow" onClick={follow} />
               </Match>
-              <Match when={!isCurrentUserProfile && store.following.includes(Number(userId))}>
+              <Match
+                when={
+                  !isCurrentUserProfile &&
+                  store.following.includes(Number(userId))
+                }
+              >
                 <ActionButton text="Unfollow" onClick={unfollow} />
               </Match>
             </Switch>
@@ -139,10 +149,12 @@ export default function UserProfile() {
                         'border-color': badge.color,
                       }}
                     >
-                <span class="material-symbols-rounded text-white">
-                  {String.fromCodePoint(parseInt(badge.icon!, 16))}
-                </span>
-                      <p class="text-sm font-semibold text-white">{badge.text}</p>
+                      <span class="material-symbols-rounded text-white">
+                        {String.fromCodePoint(parseInt(badge.icon!, 16))}
+                      </span>
+                      <p class="text-sm font-semibold text-white">
+                        {badge.text}
+                      </p>
                     </div>
                   )}
                 </For>
@@ -157,9 +169,9 @@ export default function UserProfile() {
                       }}
                     >
                       <div class="flex size-10 items-center justify-center rounded-full bg-white">
-                  <span class="material-symbols-rounded text-black">
-                    {String.fromCodePoint(parseInt(op.icon!, 16))}
-                  </span>
+                        <span class="material-symbols-rounded text-black">
+                          {String.fromCodePoint(parseInt(op.icon!, 16))}
+                        </span>
                       </div>
                       <div class="text-start text-white">
                         <p class="text-sm font-semibold">{op.text}</p>
@@ -177,7 +189,6 @@ export default function UserProfile() {
   );
 }
 // background: ;
-
 
 const ActionButton = (props: { text: string; onClick: () => void }) => {
   return (

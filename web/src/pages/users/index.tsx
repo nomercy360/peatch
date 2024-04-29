@@ -18,12 +18,12 @@ export default function Index() {
   };
 
   createEffect(() => {
-    backButton.setVisible(true);
+    backButton.setVisible();
     backButton.onClick(back);
   });
 
   onCleanup(() => {
-    backButton.setVisible(false);
+    backButton.hide();
     backButton.offClick(back);
   });
 

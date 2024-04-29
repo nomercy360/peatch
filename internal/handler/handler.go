@@ -36,6 +36,7 @@ type service interface {
 	HideCollaboration(userID int64, collaborationID int64) error
 	CreateCollaborationRequest(userID int64, request svc.CreateCollaborationRequest) (*db.CollaborationRequest, error)
 	GetPresignedURL(userID int64, objectKey string) (*svc.PresignedURL, error)
+	CreateUserCollaboration(userID int64, request svc.CreateUserCollaboration) (*db.UserCollaborationRequest, error)
 }
 
 type CustomValidator struct {
@@ -77,7 +78,8 @@ func (h *handler) RegisterRoutes(e *echo.Echo) {
 	a.GET("/badges", h.handleListBadges)
 	a.POST("/badges", h.handleCreateBadge)
 	a.POST("/users/:id/follow", h.handleFollowUser)
-	a.POST("/users/:id/unfollow", h.handleUnfollowUser)
+	a.DELETE("/users/:id/follow", h.handleUnfollowUser)
+	a.POST("/users/:id/collaborations", h.handleCreateUserCollaboration)
 	a.POST("/users/show", h.handlePublishUser)
 	a.POST("/users/hide", h.handleHideUser)
 	a.GET("/collaborations", h.handleListCollaborations)
