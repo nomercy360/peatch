@@ -55,7 +55,6 @@ definitions:
           type: integer
         type: array
       city:
-        maxLength: 255
         type: string
       country:
         maxLength: 255
@@ -74,12 +73,24 @@ definitions:
         maxLength: 255
         type: string
     required:
-      - city
       - country
       - country_code
       - description
       - opportunity_id
       - title
+    type: object
+  CreateUserCollaboration:
+    properties:
+      message:
+        maxLength: 1000
+        type: string
+      requester_id:
+        type: integer
+      user_id:
+        type: integer
+    required:
+      - requester_id
+      - user_id
     type: object
   Opportunity:
     properties:
@@ -161,14 +172,16 @@ definitions:
         type: string
       followers_count:
         type: integer
+      hidden_at:
+        type: string
       id:
         type: integer
       language_code:
         type: string
       last_name:
         type: string
-      notifications:
-        type: boolean
+      notifications_enabled_at:
+        type: string
       opportunities:
         items:
           $ref: '#/definitions/Opportunity'
@@ -508,6 +521,32 @@ paths:
       summary: Get user
       tags:
         - users
+  /api/users/{user_id}/collaborations:
+    post:
+      consumes:
+        - application/json
+      parameters:
+        - description: User ID
+          in: path
+          name: user_id
+          required: true
+          type: integer
+        - description: Collaboration data
+          in: body
+          name: collaboration
+          required: true
+          schema:
+            $ref: '#/definitions/CreateUserCollaboration'
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Collaboration'
+      summary: Create user collaboration
+      tags:
+        - collaborations
   /api/users/{user_id}/hide:
     post:
       consumes:
@@ -530,6 +569,18 @@ paths:
         "204":
           description: No Content
       summary: Publish user
+      tags:
+        - users
+  /api/users/{user_id}/show:
+    post:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        "204":
+          description: No Content
+      summary: Show user
       tags:
       - users
   /users/{id}/follow:

@@ -487,6 +487,46 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/users/{user_id}/collaborations": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "collaborations"
+                ],
+                "summary": "Create user collaboration",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Collaboration data",
+                        "name": "collaboration",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CreateUserCollaboration"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/Collaboration"
+                        }
+                    }
+                }
+            }
+        },
         "/api/users/{user_id}/hide": {
             "post": {
                 "consumes": [
@@ -518,6 +558,25 @@ const docTemplate = `{
                     "users"
                 ],
                 "summary": "Publish user",
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/api/users/{user_id}/show": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Show user",
                 "responses": {
                     "204": {
                         "description": "No Content"
@@ -659,7 +718,6 @@ const docTemplate = `{
         "CreateCollaboration": {
             "type": "object",
             "required": [
-                "city",
                 "country",
                 "country_code",
                 "description",
@@ -674,8 +732,7 @@ const docTemplate = `{
                     }
                 },
                 "city": {
-                    "type": "string",
-                    "maxLength": 255
+                    "type": "string"
                 },
                 "country": {
                     "type": "string",
@@ -698,6 +755,25 @@ const docTemplate = `{
                 "title": {
                     "type": "string",
                     "maxLength": 255
+                }
+            }
+        },
+        "CreateUserCollaboration": {
+            "type": "object",
+            "required": [
+                "requester_id",
+                "user_id"
+            ],
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "maxLength": 1000
+                },
+                "requester_id": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "integer"
                 }
             }
         },
@@ -816,6 +892,9 @@ const docTemplate = `{
                 "followers_count": {
                     "type": "integer"
                 },
+                "hidden_at": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "integer"
                 },
@@ -825,8 +904,8 @@ const docTemplate = `{
                 "last_name": {
                     "type": "string"
                 },
-                "notifications": {
-                    "type": "boolean"
+                "notifications_enabled_at": {
+                    "type": "string"
                 },
                 "opportunities": {
                     "type": "array",

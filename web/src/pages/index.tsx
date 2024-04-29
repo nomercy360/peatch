@@ -4,11 +4,19 @@ import { store } from '../store';
 export default function Index() {
   const images = ['/thumb.png', '/thumb.png', '/thumb.png'];
 
+  const getUserLink = () => {
+    if (store.user.published_at && store.user.first_name) {
+      return '/users/' + store.user?.id;
+    } else {
+      return '/users/edit';
+    }
+  };
+
   return (
     <div class="flex flex-col px-4">
       <a
         class="flex flex-row items-center justify-between py-4"
-        href={`/users/${store.user?.id}`}
+        href={getUserLink()}
       >
         <p class="text-3xl">Bonsoir, {store.user?.username}!</p>
         <img src="/thumb.png" alt="User Avatar" class="size-10 rounded-xl" />

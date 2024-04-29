@@ -28,6 +28,7 @@ type service interface {
 	UnfollowUser(userID, followingID int64) error
 	PublishUser(userID int64) error
 	HideUser(userID int64) error
+	ShowUser(userID int64) error
 	ListCollaborations(query db.CollaborationQuery) ([]db.Collaboration, error)
 	GetCollaborationByID(id int64) (*db.Collaboration, error)
 	CreateCollaboration(userID int64, create svc.CreateCollaboration) (*db.Collaboration, error)
@@ -80,7 +81,8 @@ func (h *handler) RegisterRoutes(e *echo.Echo) {
 	a.POST("/users/:id/follow", h.handleFollowUser)
 	a.DELETE("/users/:id/follow", h.handleUnfollowUser)
 	a.POST("/users/:id/collaborations", h.handleCreateUserCollaboration)
-	a.POST("/users/show", h.handlePublishUser)
+	a.POST("/users/show", h.handleShowUser)
+	a.POST("/users/publish", h.handlePublishUser)
 	a.POST("/users/hide", h.handleHideUser)
 	a.GET("/collaborations", h.handleListCollaborations)
 	a.GET("/collaborations/:id", h.handleGetCollaboration)

@@ -1,7 +1,7 @@
 import { useButtons } from '../../hooks/useBackButton';
 import { createEffect, For, Match, onCleanup, Show, Suspense, Switch } from 'solid-js';
 import { useNavigate, useParams } from '@solidjs/router';
-import { CDN_URL, fetchProfile, followUser, hideProfile, showProfile, unfollowUser } from '../../api';
+import { CDN_URL, fetchProfile, followUser, hideProfile, publishProfile, showProfile, unfollowUser } from '../../api';
 import { createQuery } from '@tanstack/solid-query';
 import { setFollowing, setUser, store } from '../../store';
 
@@ -39,15 +39,23 @@ export default function UserProfile() {
       ...store.user,
       published_at: new Date().toISOString(),
     });
-    await showProfile();
+    await publishProfile();
   };
 
   const hide = async () => {
     setUser({
       ...store.user,
-      published_at: undefined,
+      hidden_at: new Date().toISOString(),
     });
     await hideProfile();
+  };
+
+  const show = async () => {
+    setUser({
+      ...store.user,
+      hidden_at: undefined,
+    });
+    await showProfile();
   };
 
   const follow = async () => {
@@ -72,7 +80,7 @@ export default function UserProfile() {
     if (isCurrentUserProfile) {
       if (!store.user.published_at) {
         mainButton.offClick(pushToEdit);
-        mainButton.setVisible('Collaborate');
+        mainButton.setVisible('Publish');
         mainButton.onClick(publish);
       } else {
         mainButton.offClick(publish);
@@ -103,11 +111,11 @@ export default function UserProfile() {
         <Show when={query.data}>
           <div class="min-h-screen">
             <Switch>
-              <Match when={isCurrentUserProfile && store.user.published_at}>
-                <ActionButton text="Hide" onClick={hide} />
+              <Match when={isCurrentUserProfile && store.user.hidden_at}>
+                <ActionButton text="Show" onClick={show} />
               </Match>
-              <Match when={isCurrentUserProfile && !store.user.published_at}>
-                <ActionButton text="Edit" onClick={pushToEdit} />
+              <Match when={isCurrentUserProfile && !store.user.hidden_at}>
+                <ActionButton text="Hide" onClick={hide} />
               </Match>
               <Match
                 when={

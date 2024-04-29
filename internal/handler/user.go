@@ -173,13 +173,31 @@ func (h *handler) handleHideUser(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
+// handleShowUser godoc
+// @Summary Show user
+// @Tags users
+// @Accept  json
+// @Produce  json
+// @Success 204
+// @Router /api/users/{user_id}/show [post]
+func (h *handler) handleShowUser(c echo.Context) error {
+	userID := getUserID(c)
+
+	err := h.svc.ShowUser(userID)
+	if err != nil {
+		return err
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}
+
 // handleCreateUserCollaboration godoc
 // @Summary Create user collaboration
 // @Tags collaborations
 // @Accept  json
 // @Produce  json
 // @Param user_id path int true "User ID"
-// @Param collaboration body CreateCollaborationRequest true "Collaboration data"
+// @Param collaboration body CreateUserCollaboration true "Collaboration data"
 // @Success 200 {object} Collaboration
 // @Router /api/users/{user_id}/collaborations [post]
 func (h *handler) handleCreateUserCollaboration(c echo.Context) error {
@@ -194,7 +212,7 @@ func (h *handler) handleCreateUserCollaboration(c echo.Context) error {
 		return err
 	}
 
-	collaboration, err := h.svc.CreateUserCollaborationRequest(userID, create)
+	collaboration, err := h.svc.CreateUserCollaboration(userID, create)
 	if err != nil {
 		return err
 	}

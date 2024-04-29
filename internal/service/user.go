@@ -153,7 +153,7 @@ type CreateUserCollaboration struct {
 	UserID      int64  `json:"user_id" validate:"required"`
 	RequesterID int64  `json:"requester_id" validate:"required"`
 	Message     string `json:"message" validate:"max=1000"`
-} // @Name CreateUserCollaborationRequest
+} // @Name CreateUserCollaboration
 
 func (req *CreateUserCollaboration) ToCollaborationRequest() db.UserCollaborationRequest {
 	return db.UserCollaborationRequest{
@@ -171,4 +171,8 @@ func (s *service) CreateUserCollaboration(userID int64, request CreateUserCollab
 	}
 
 	return res, nil
+}
+
+func (s *service) ShowUser(userID int64) error {
+	return s.storage.ShowUser(userID)
 }

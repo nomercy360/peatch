@@ -148,6 +148,13 @@ export const showProfile = async () => {
   });
 };
 
+export const publishProfile = async () => {
+  return await apiFetch({
+    endpoint: '/users/publish',
+    method: 'POST',
+  });
+};
+
 export const collaborateUser = async (userID: number) => {
   return await apiFetch({
     endpoint: `/users/${userID}/collaborate`,

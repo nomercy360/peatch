@@ -9,26 +9,27 @@ import (
 )
 
 type User struct {
-	ID             int64         `json:"id" db:"id"`
-	FirstName      *string       `json:"first_name" db:"first_name"`
-	LastName       *string       `json:"last_name" db:"last_name"`
-	ChatID         int64         `json:"chat_id" db:"chat_id"`
-	Username       string        `json:"username" db:"username"`
-	CreatedAt      time.Time     `json:"created_at" db:"created_at"`
-	UpdatedAt      time.Time     `json:"updated_at" db:"updated_at"`
-	PublishedAt    *time.Time    `json:"published_at" db:"published_at"`
-	AvatarURL      *string       `json:"avatar_url" db:"avatar_url"`
-	Title          *string       `json:"title" db:"title"`
-	Description    *string       `json:"description" db:"description"`
-	LanguageCode   *string       `json:"language_code" db:"language_code"`
-	Country        *string       `json:"country" db:"country"`
-	City           *string       `json:"city" db:"city"`
-	CountryCode    *string       `json:"country_code" db:"country_code"`
-	FollowersCount int           `json:"followers_count" db:"followers_count"`
-	RequestsCount  int           `json:"requests_count" db:"requests_count"`
-	Notifications  bool          `json:"notifications" db:"notifications"`
-	Badges         []Badge       `json:"badges" db:"-"`
-	Opportunities  []Opportunity `json:"opportunities" db:"-"`
+	ID                     int64         `json:"id" db:"id"`
+	FirstName              *string       `json:"first_name" db:"first_name"`
+	LastName               *string       `json:"last_name" db:"last_name"`
+	ChatID                 int64         `json:"chat_id" db:"chat_id"`
+	Username               string        `json:"username" db:"username"`
+	CreatedAt              time.Time     `json:"created_at" db:"created_at"`
+	UpdatedAt              time.Time     `json:"updated_at" db:"updated_at"`
+	PublishedAt            *time.Time    `json:"published_at" db:"published_at"`
+	NotificationsEnabledAt *time.Time    `json:"notifications_enabled_at" db:"notifications_enabled_at"`
+	HiddenAt               *time.Time    `json:"hidden_at" db:"hidden_at"`
+	AvatarURL              *string       `json:"avatar_url" db:"avatar_url"`
+	Title                  *string       `json:"title" db:"title"`
+	Description            *string       `json:"description" db:"description"`
+	LanguageCode           *string       `json:"language_code" db:"language_code"`
+	Country                *string       `json:"country" db:"country"`
+	City                   *string       `json:"city" db:"city"`
+	CountryCode            *string       `json:"country_code" db:"country_code"`
+	FollowersCount         int           `json:"followers_count" db:"followers_count"`
+	RequestsCount          int           `json:"requests_count" db:"requests_count"`
+	Badges                 []Badge       `json:"badges" db:"-"`
+	Opportunities          []Opportunity `json:"opportunities" db:"-"`
 } // @Name User
 
 type UserQuery struct {
@@ -54,7 +55,7 @@ func (s *storage) ListUsers(queryParams UserQuery) ([]User, error) {
 	offset := (queryParams.Page - 1) * queryParams.Limit
 	paramIndex := 1
 
-	whereClauses := []string{"published_at IS NOT NULL"}
+	whereClauses := []string{"published_at IS NOT NULL AND hidden_at IS NULL"}
 
 	if queryParams.Search != "" {
 		searchClause := " (first_name ILIKE $1 OR last_name ILIKE $1 OR title ILIKE $1 OR description ILIKE $1) "
@@ -66,7 +67,7 @@ func (s *storage) ListUsers(queryParams UserQuery) ([]User, error) {
 	args = append(args, queryParams.Limit, offset)
 
 	query := fmt.Sprintf(`
-		SELECT u.id, u.first_name, u.last_name, u.chat_id, u.username, u.created_at, u.updated_at, u.published_at, u.avatar_url, u.title, u.description, u.language_code, u.country, u.city, u.country_code, u.followers_count, u.requests_count, u.notifications,
+		SELECT u.id, u.first_name, u.last_name, u.chat_id, u.username, u.created_at, u.updated_at, u.published_at, u.avatar_url, u.title, u.description, u.language_code, u.country, u.city, u.country_code, u.followers_count, u.requests_count, u.notfications_enabled_at, u.hidden_at,
 			b.id, b.text, b.icon, b.color, b.created_at
 		FROM (SELECT * FROM users WHERE %s ORDER BY created_at DESC LIMIT $%d OFFSET $%d) u
 		LEFT JOIN user_badges ub ON u.id = ub.user_id
@@ -86,7 +87,11 @@ func (s *storage) ListUsers(queryParams UserQuery) ([]User, error) {
 		var badge Badge
 
 		err := rows.Scan(
-			&user.ID, &user.FirstName, &user.LastName, &user.ChatID, &user.Username, &user.CreatedAt, &user.UpdatedAt, &user.PublishedAt, &user.AvatarURL, &user.Title, &user.Description, &user.LanguageCode, &user.Country, &user.City, &user.CountryCode, &user.FollowersCount, &user.RequestsCount, &user.Notifications,
+			&user.ID, &user.FirstName, &user.LastName, &user.ChatID, &user.Username,
+			&user.CreatedAt, &user.UpdatedAt, &user.PublishedAt, &user.AvatarURL,
+			&user.Title, &user.Description, &user.LanguageCode, &user.Country,
+			&user.City, &user.CountryCode, &user.FollowersCount, &user.RequestsCount,
+			&user.NotificationsEnabledAt, &user.HiddenAt,
 			&badge.ID, &badge.Text, &badge.Icon, &badge.Color, &badge.CreatedAt,
 		)
 
@@ -131,7 +136,7 @@ func appendUnique[E Entity](entities []E, entity E) []E {
 
 func getUserQuery() string {
 	return `
-		SELECT u.id, u.first_name, u.last_name, u.chat_id, u.username, u.created_at, u.updated_at, u.published_at, u.avatar_url, u.title, u.description, u.language_code, u.country, u.city, u.country_code, u.followers_count, u.requests_count, u.notifications,
+		SELECT u.id, u.first_name, u.last_name, u.chat_id, u.username, u.created_at, u.updated_at, u.published_at, u.avatar_url, u.title, u.description, u.language_code, u.country, u.city, u.country_code, u.followers_count, u.requests_count, u.notifications_enabled_at, u.hidden_at,
 			b.id, b.text, b.icon, b.color,
 			o.id, o.text, o.description, o.icon, o.color
 		FROM users u
@@ -161,7 +166,7 @@ func (s *storage) GetUserByChatID(chatID int64) (*User, error) {
 		var opportunityText, opportunityDescription, opportunityIcon, opportunityColor *string
 
 		err := rows.Scan(
-			&user.ID, &user.FirstName, &user.LastName, &user.ChatID, &user.Username, &user.CreatedAt, &user.UpdatedAt, &user.PublishedAt, &user.AvatarURL, &user.Title, &user.Description, &user.LanguageCode, &user.Country, &user.City, &user.CountryCode, &user.FollowersCount, &user.RequestsCount, &user.Notifications,
+			&user.ID, &user.FirstName, &user.LastName, &user.ChatID, &user.Username, &user.CreatedAt, &user.UpdatedAt, &user.PublishedAt, &user.AvatarURL, &user.Title, &user.Description, &user.LanguageCode, &user.Country, &user.City, &user.CountryCode, &user.FollowersCount, &user.RequestsCount, &user.NotificationsEnabledAt, &user.HiddenAt,
 			&badgeID, &badgeText, &badgeIcon, &badgeColor,
 			&opportunityID, &opportunityText, &opportunityDescription, &opportunityIcon, &opportunityColor,
 		)
@@ -208,9 +213,9 @@ func (s *storage) GetUserByChatID(chatID int64) (*User, error) {
 
 func (s *storage) CreateUser(user User) (*User, error) {
 	query := `
-		INSERT INTO users (first_name, last_name, chat_id, username, published_at, avatar_url, title, description, language_code, country, city, country_code, notifications)
-		VALUES (:first_name, :last_name, :chat_id, :username, :published_at, :avatar_url, :title, :description, :language_code, :country, :city, :country_code, :notifications)
-		RETURNING id, first_name, last_name, chat_id, username, created_at, updated_at, published_at, avatar_url, title, description, language_code, country, city, country_code, followers_count, requests_count, notifications;
+		INSERT INTO users (first_name, last_name, chat_id, username, published_at, hidden_at, avatar_url, title, description, language_code, country, city, country_code, notifications_enabled_at)
+		VALUES (:first_name, :last_name, :chat_id, :username, :published_at, :hidden_at, :avatar_url, :title, :description, :language_code, :country, :city, :country_code, :notifications_enabled_at)
+		RETURNING id, first_name, last_name, chat_id, username, created_at, updated_at, published_at, hidden_at, avatar_url, title, description, language_code, country, city, country_code, followers_count, requests_count, notifications_enabled_at;
 	`
 
 	rows, err := s.pg.NamedQuery(query, user)
@@ -337,7 +342,10 @@ func (s *storage) GetUserByID(id int64) (*User, error) {
 		var opportunityText, opportunityDescription, opportunityIcon, opportunityColor *string
 
 		err := rows.Scan(
-			&user.ID, &user.FirstName, &user.LastName, &user.ChatID, &user.Username, &user.CreatedAt, &user.UpdatedAt, &user.PublishedAt, &user.AvatarURL, &user.Title, &user.Description, &user.LanguageCode, &user.Country, &user.City, &user.CountryCode, &user.FollowersCount, &user.RequestsCount, &user.Notifications,
+			&user.ID, &user.FirstName, &user.LastName, &user.ChatID, &user.Username,
+			&user.CreatedAt, &user.UpdatedAt, &user.PublishedAt, &user.AvatarURL,
+			&user.Title, &user.Description, &user.LanguageCode, &user.Country, &user.City,
+			&user.CountryCode, &user.FollowersCount, &user.RequestsCount, &user.NotificationsEnabledAt, &user.HiddenAt,
 			&badgeID, &badgeText, &badgeIcon, &badgeColor,
 			&opportunityID, &opportunityText, &opportunityDescription, &opportunityIcon, &opportunityColor,
 		)
@@ -436,10 +444,30 @@ func (s *storage) PublishUser(userID int64) error {
 	return nil
 }
 
+func (s *storage) ShowUser(userID int64) error {
+	query := `
+		UPDATE users
+		SET hidden_at = NULL
+		WHERE id = $1;
+	`
+
+	res, err := s.pg.Exec(query, userID)
+
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected, _ := res.RowsAffected(); rowsAffected == 0 {
+		return ErrNotFound
+	}
+
+	return nil
+}
+
 func (s *storage) HideUser(userID int64) error {
 	query := `
 		UPDATE users
-		SET published_at = NULL
+		SET hidden_at = NOW()
 		WHERE id = $1;
 	`
 

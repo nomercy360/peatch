@@ -1,24 +1,27 @@
 CREATE TABLE users
 (
-    id              SERIAL PRIMARY KEY,
-    first_name      VARCHAR(255),
-    last_name       VARCHAR(255),
-    chat_id         BIGINT UNIQUE NOT NULL,
-    username        VARCHAR(255),
-    created_at      TIMESTAMP     NOT NULL DEFAULT NOW(),
-    updated_at      TIMESTAMP     NOT NULL DEFAULT NOW(),
-    published_at    TIMESTAMP,
-    avatar_url      VARCHAR(512),
-    title           VARCHAR(255),
-    description     TEXT,
-    language_code VARCHAR(2) NOT NULL DEFAULT 'en',
-    country         VARCHAR(255),
-    city            VARCHAR(255),
-    country_code    VARCHAR(2),
-    followers_count INTEGER       NOT NULL DEFAULT 0,
-    requests_count  INTEGER       NOT NULL DEFAULT 0,
-    notifications   boolean       NOT NULL DEFAULT true
+    id                       SERIAL PRIMARY KEY,
+    first_name               VARCHAR(255),
+    last_name                VARCHAR(255),
+    chat_id                  BIGINT UNIQUE NOT NULL,
+    username                 VARCHAR(255),
+    created_at               TIMESTAMP     NOT NULL DEFAULT NOW(),
+    updated_at               TIMESTAMP     NOT NULL DEFAULT NOW(),
+    published_at             TIMESTAMP,
+    hidden_at                TIMESTAMP,
+    notifications_enabled_at TIMESTAMP,
+    avatar_url               VARCHAR(512),
+    title                    VARCHAR(255),
+    description              TEXT,
+    language_code            VARCHAR(2)    NOT NULL DEFAULT 'en',
+    country                  VARCHAR(255),
+    city                     VARCHAR(255),
+    country_code             VARCHAR(2),
+    followers_count          INTEGER       NOT NULL DEFAULT 0,
+    requests_count           INTEGER       NOT NULL DEFAULT 0
 );
+
+CREATE INDEX users_chat_id_index ON users (chat_id);
 
 CREATE TABLE badges
 (
@@ -499,3 +502,4 @@ values ('ea66', '#FF8C42', 'Acting in a play', 'Being an actor in a stage produc
        ('f88c', '#0B5351', 'Writing', 'Contributing articles or blogs on certain topics'),
        ('e745', '#3478F6', 'Writing blog posts', 'Create new content for a topic you''re interest in'),
        ('f85a', '#17BEBB', 'Youtube collaborations', 'Partnering to create YouTube content');
+
