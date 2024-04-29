@@ -6,7 +6,8 @@ type TelegramNotifier struct {
 	BotToken string
 }
 
-func (t *TelegramNotifier) SendNotification(userID int64, message string) error {
-	log.Infof("Sending notification to user %d: %s", userID, message)
+func (t *TelegramNotifier) SendNotification(chatID int64, message, imgUrl, link string) error {
+	log.Infof("Sending notification to chat %d: %s", chatID, message)
+
 	return nil
 }

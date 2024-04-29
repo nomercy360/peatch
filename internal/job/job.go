@@ -39,7 +39,7 @@ func (s *Scheduler) runJob(job *Job) {
 
 	for range ticker.C {
 		if err := job.run(); err != nil {
-			log.Errorf("Failed to run job %s: %v", job.name, err)
+			log.Errorf("Failed during job %s: %v", job.name, err)
 		}
 	}
 }

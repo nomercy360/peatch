@@ -67,7 +67,7 @@ func (s *storage) ListUsers(queryParams UserQuery) ([]User, error) {
 	args = append(args, queryParams.Limit, offset)
 
 	query := fmt.Sprintf(`
-		SELECT u.id, u.first_name, u.last_name, u.chat_id, u.username, u.created_at, u.updated_at, u.published_at, u.avatar_url, u.title, u.description, u.language_code, u.country, u.city, u.country_code, u.followers_count, u.requests_count, u.notfications_enabled_at, u.hidden_at,
+		SELECT u.id, u.first_name, u.last_name, u.chat_id, u.username, u.created_at, u.updated_at, u.published_at, u.avatar_url, u.title, u.description, u.language_code, u.country, u.city, u.country_code, u.followers_count, u.requests_count, u.notifications_enabled_at, u.hidden_at,
 			b.id, b.text, b.icon, b.color, b.created_at
 		FROM (SELECT * FROM users WHERE %s ORDER BY created_at DESC LIMIT $%d OFFSET $%d) u
 		LEFT JOIN user_badges ub ON u.id = ub.user_id
@@ -249,7 +249,7 @@ func (s *storage) UpdateUser(userID int64, user User, badges, opportunities []in
 		UPDATE users
 		SET first_name =$1, last_name = $2, updated_at = NOW(), avatar_url = $3, title = $4, description = $5, country = $6, city = $7, country_code = $8, published_at = NOW()
 		WHERE id = $9
-		RETURNING id, first_name, last_name, chat_id, username, created_at, updated_at, published_at, avatar_url, title, description, language_code, country, city, country_code, followers_count, requests_count, notifications;
+		RETURNING id, first_name, last_name, chat_id, username, created_at, updated_at, published_at, avatar_url, title, description, language_code, country, city, country_code, followers_count, requests_count, notifications_enabled_at, hidden_at;
 	`
 
 	err := s.pg.QueryRowx(query, user.FirstName, user.LastName, user.AvatarURL, user.Title, user.Description, user.Country, user.City, user.CountryCode, userID).StructScan(&res)
@@ -536,4 +536,38 @@ func (s *storage) GetUserFollowing(userID int64) ([]int64, error) {
 	}
 
 	return users, nil
+}
+
+func (s *storage) ListUserCollaborations(from time.Time) ([]UserCollaborationRequest, error) {
+	requests := make([]UserCollaborationRequest, 0)
+
+	query := `
+		SELECT id, user_id, requester_id, message, created_at, updated_at, status
+		FROM user_collaboration_requests
+		WHERE created_at > $1
+	`
+
+	rows, err := s.pg.Query(query, from.Format(time.RFC3339))
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var request UserCollaborationRequest
+		err := rows.Scan(
+			&request.ID, &request.UserID, &request.RequesterID, &request.Message,
+			&request.CreatedAt, &request.UpdatedAt, &request.Status,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		requests = append(requests, request)
+	}
+
+	return requests, nil
 }

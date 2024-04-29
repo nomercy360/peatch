@@ -10,10 +10,24 @@ func (s *service) ListBadges(search string) ([]db.Badge, error) {
 	return s.storage.ListBadges(search)
 }
 
-func (s *service) CreateBadge(badge db.Badge) (*db.Badge, error) {
+type CreateBadgeRequest struct {
+	Text  string `json:"text" validate:"required"`
+	Icon  string `json:"icon" validate:"required,hexadecimal,len=4"`
+	Color string `json:"color" validate:"required,hexadecimal,len=6"`
+} // @Name CreateBadgeRequest
+
+func (r CreateBadgeRequest) ToBadge() db.Badge {
+	return db.Badge{
+		Text:  r.Text,
+		Icon:  r.Icon,
+		Color: r.Color,
+	}
+}
+
+func (s *service) CreateBadge(badge CreateBadgeRequest) (*db.Badge, error) {
 	c := cases.Title(language.Und, cases.NoLower)
 	badge.Text = c.String(badge.Text)
 
 	// Now, proceed to store the badge
-	return s.storage.CreateBadge(badge)
+	return s.storage.CreateBadge(badge.ToBadge())
 }

@@ -32,8 +32,8 @@ func main() {
 	notifyJob := job.NewNotifyJob(pg, notifier)
 
 	jobs := []*job.Job{
-		job.NewJob("UserRegistrationJob", 10*time.Second, notifyJob.UserRegistrationJob),
-		//job.NewCollaborationMatchNotificationJob(notifier, pg, 1*time.Hour),
+		//job.NewJob("UserRegistrationJob", 10*time.Second, notifyJob.UserRegistrationJob),
+		job.NewJob("NotifyUserReceivedCollaborationRequest", 10*time.Second, notifyJob.NotifyUserReceivedCollaborationRequest),
 		//job.NewCollaborationRequestNotificationJob(notifier, pg, 1*time.Hour),
 		//job.NewCollaborationResponseNotificationJob(notifier, pg, 1*time.Hour),
 	}

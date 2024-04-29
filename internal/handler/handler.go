@@ -23,7 +23,7 @@ type service interface {
 	UpdateUser(userID int64, updateRequest svc.UpdateUserRequest) (*db.User, error)
 	ListOpportunities() ([]db.Opportunity, error)
 	ListBadges(search string) ([]db.Badge, error)
-	CreateBadge(badge db.Badge) (*db.Badge, error)
+	CreateBadge(badge svc.CreateBadgeRequest) (*db.Badge, error)
 	FollowUser(userID, followingID int64) error
 	UnfollowUser(userID, followingID int64) error
 	PublishUser(userID int64) error

@@ -2,7 +2,7 @@ package handler
 
 import (
 	"github.com/labstack/echo/v4"
-	"github.com/peatch-io/peatch/internal/db"
+	svc "github.com/peatch-io/peatch/internal/service"
 	"net/http"
 )
 
@@ -33,8 +33,12 @@ func (h *handler) handleListBadges(c echo.Context) error {
 // @Success 200 {object} Badge
 // @Router /api/badges/{id} [get]
 func (h *handler) handleCreateBadge(c echo.Context) error {
-	var badge db.Badge
+	var badge svc.CreateBadgeRequest
 	if err := c.Bind(&badge); err != nil {
+		return err
+	}
+
+	if err := c.Validate(badge); err != nil {
 		return err
 	}
 
