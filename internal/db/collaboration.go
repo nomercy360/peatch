@@ -2,7 +2,6 @@ package db
 
 import (
 	"fmt"
-	"github.com/jmoiron/sqlx"
 	"strings"
 	"time"
 )
@@ -20,90 +19,62 @@ type Collaboration struct {
 	Country       string      `json:"country" db:"country"`
 	City          *string     `json:"city" db:"city"`
 	CountryCode   string      `json:"country_code" db:"country_code"`
+	HiddenAt      *time.Time  `json:"hidden_at" db:"hidden_at"`
 	RequestsCount int         `json:"requests_count" db:"requests_count"`
-	Badges        []Badge     `json:"badges" db:"-"`
-	Opportunity   Opportunity `json:"opportunity" db:"-"`
+	Opportunity   Opportunity `json:"opportunity" db:"opportunity"`
+	User          User        `json:"user" db:"user"`
 } // @Name Collaboration
 
 type CollaborationQuery struct {
-	Page       int
-	Limit      int
-	Published  *bool
-	OrderBy    CollectionQueryOrder
-	SearchTerm string
+	Page   int
+	Limit  int
+	Search string
+	From   *time.Time
 }
 
-type CollectionQueryOrder string
+func (s *storage) ListCollaborations(params CollaborationQuery) ([]Collaboration, error) {
+	res := make([]Collaboration, 0)
+	query := `
+        SELECT c.*,
+			to_jsonb(o) as opportunity,
+			to_jsonb(u) as "user"
+        FROM collaborations c
+        LEFT JOIN opportunities o ON c.opportunity_id = o.id
+		LEFT JOIN users u ON c.user_id = u.id
+    `
 
-const (
-	CollectionQueryOrderByDate CollectionQueryOrder = "created_at"
-)
-
-func scanCollaborationWithOpportunity(rows *sqlx.Rows) (Collaboration, error) {
-	var collaboration Collaboration
-	var opportunity Opportunity
-
-	if err := rows.Scan(
-		&collaboration.ID, &collaboration.UserID, &collaboration.OpportunityID,
-		&collaboration.Title, &collaboration.Description, &collaboration.IsPayable,
-		&collaboration.PublishedAt, &collaboration.CreatedAt, &collaboration.UpdatedAt,
-		&collaboration.Country, &collaboration.City, &collaboration.CountryCode,
-		&collaboration.RequestsCount, &opportunity.ID, &opportunity.Text,
-		&opportunity.Description, &opportunity.Icon, &opportunity.Color, &opportunity.CreatedAt,
-	); err != nil {
-		return Collaboration{}, err
-	}
-
-	collaboration.Opportunity = opportunity
-
-	return collaboration, nil
-}
-
-func (s *storage) ListCollaborations(query CollaborationQuery) ([]Collaboration, error) {
-	collaborations := make([]Collaboration, 0)
-	var args []interface{}
 	paramIndex := 1
+	args := make([]interface{}, 0)
 
-	queryString := `
-		SELECT c.id, c.user_id, c.opportunity_id, c.title, c.description, c.is_payable, c.published_at, c.created_at, c.updated_at, c.country, c.city, c.country_code, c.requests_count,
-			o.id, o.text, o.description, o.icon, o.color, o.created_at
-		FROM collaborations c
-		JOIN opportunities o ON c.opportunity_id = o.id
-		WHERE published_at IS NOT NULL
-	`
+	whereClauses := []string{"c.published_at IS NOT NULL AND c.hidden_at IS NULL"}
 
-	if query.SearchTerm != "" {
-		args = append(args, query.SearchTerm)
-		queryString += fmt.Sprintf(" AND (title ILIKE $%d OR description ILIKE $%d)", paramIndex, paramIndex)
+	if params.Search != "" {
+		searchClause := fmt.Sprintf("c.title ILIKE $%d", paramIndex)
+		args = append(args, "%"+params.Search+"%")
+		whereClauses = append(whereClauses, searchClause)
 		paramIndex++
 	}
 
-	if query.OrderBy == CollectionQueryOrderByDate {
-		queryString += " ORDER BY created_at DESC"
+	if params.From != nil {
+		fromClause := fmt.Sprintf("c.created_at >= $%d", paramIndex)
+		args = append(args, *params.From)
+		whereClauses = append(whereClauses, fromClause)
+		paramIndex++
 	}
 
-	offset := (query.Page - 1) * query.Limit
+	query = fmt.Sprintf("%s WHERE %s", query, strings.Join(whereClauses, " AND "))
+	//query += fmt.Sprintf(" GROUP BY c.id ORDER BY c.created_at DESC")
+	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", paramIndex, paramIndex+1)
 
-	queryString += fmt.Sprintf(" OFFSET $%d LIMIT $%d", paramIndex, paramIndex+1)
-	args = append(args, offset, query.Limit)
+	offset := (params.Page - 1) * params.Limit
+	args = append(args, params.Limit, offset)
 
-	rows, err := s.pg.Queryx(queryString, args...)
+	err := s.pg.Select(&res, query, args...)
 	if err != nil {
 		return nil, err
 	}
 
-	defer rows.Close()
-
-	for rows.Next() {
-		collaboration, err := scanCollaborationWithOpportunity(rows)
-		if err != nil {
-			return nil, err
-		}
-
-		collaborations = append(collaborations, collaboration)
-	}
-
-	return collaborations, nil
+	return res, nil
 }
 
 func (s *storage) GetCollaborationByID(id int64) (*Collaboration, error) {
@@ -112,37 +83,15 @@ func (s *storage) GetCollaborationByID(id int64) (*Collaboration, error) {
 	query := `
         SELECT 
             c.id, c.user_id, c.opportunity_id, c.title, c.description, c.is_payable, c.published_at, c.created_at, c.updated_at, c.country, c.city, c.country_code, c.requests_count,
-            o.id, o.text, o.description, o.icon, o.color, o.created_at
-        FROM collaborations c
-        LEFT JOIN opportunities o ON c.opportunity_id = o.id
-        WHERE c.id = $1 AND c.published_at IS NOT NULL
-    `
-
-	rows, err := s.pg.Queryx(query, id)
-	if err != nil {
-		return nil, err
-	}
-
-	defer rows.Close()
-
-	if rows.Next() {
-		collaboration, err = scanCollaborationWithOpportunity(rows)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		return nil, ErrNotFound
-	}
-
-	// fetch badges
-	query = `
-		SELECT b.id, b.text, b.icon, b.color, b.created_at
-		FROM badges b
-		JOIN collaboration_badges cb ON b.id = cb.badge_id
-		WHERE cb.collaboration_id = $1
+			to_jsonb(o) as opportunity,
+			to_jsonb(u) as "user"
+		FROM collaborations c
+		LEFT JOIN opportunities o ON c.opportunity_id = o.id
+		LEFT JOIN users u ON c.user_id = u.id
+		WHERE c.id = $1
 	`
 
-	err = s.pg.Select(&collaboration.Badges, query, id)
+	err := s.pg.Get(&collaboration, query, id)
 
 	if err != nil {
 		return nil, err
@@ -155,9 +104,9 @@ func (s *storage) CreateCollaboration(userID int64, collaboration Collaboration,
 	var res Collaboration
 
 	query := `
-		INSERT INTO collaborations (user_id, opportunity_id, title, description, is_payable, country, city, country_code, published_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
-		RETURNING id, user_id, opportunity_id, title, description, is_payable, published_at, created_at, updated_at, country, city, country_code, requests_count
+		INSERT INTO collaborations (user_id, opportunity_id, title, description, is_payable, country, city, country_code)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		RETURNING id, user_id, opportunity_id, title, description, is_payable, published_at, hidden_at, created_at, updated_at, country, city, country_code, requests_count
 	`
 
 	err := s.pg.QueryRowx(
@@ -255,7 +204,26 @@ func (s *storage) CreateCollaborationRequest(userID int64, request Collaboration
 func (s *storage) HideCollaboration(userID int64, collaborationID int64) error {
 	query := `
 		UPDATE collaborations
-		SET published_at = NULL
+		SET hidden_at = NOW()
+		WHERE id = $1 AND user_id = $2
+	`
+
+	res, err := s.pg.Exec(query, collaborationID, userID)
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected, _ := res.RowsAffected(); rowsAffected == 0 {
+		return ErrNotFound
+	}
+
+	return nil
+}
+
+func (s *storage) ShowCollaboration(userID int64, collaborationID int64) error {
+	query := `
+		UPDATE collaborations
+		SET hidden_at = NULL
 		WHERE id = $1 AND user_id = $2
 	`
 
@@ -288,34 +256,4 @@ func (s *storage) PublishCollaboration(userID int64, collaborationID int64) erro
 	}
 
 	return nil
-}
-
-func (s *storage) ListNewCollaborations(from time.Time) ([]Collaboration, error) {
-	collaborations := make([]Collaboration, 0)
-
-	query := `
-		SELECT c.id, c.user_id, c.opportunity_id, c.title, c.description, c.is_payable, c.published_at, c.created_at, c.updated_at, c.country, c.city, c.country_code, c.requests_count,
-			o.id, o.text, o.description, o.icon, o.color, o.created_at
-		FROM collaborations c
-		JOIN opportunities o ON c.opportunity_id = o.id
-		WHERE c.created_at > $1
-	`
-
-	rows, err := s.pg.Queryx(query, from)
-	if err != nil {
-		return nil, err
-	}
-
-	defer rows.Close()
-
-	for rows.Next() {
-		collaboration, err := scanCollaborationWithOpportunity(rows)
-		if err != nil {
-			return nil, err
-		}
-
-		collaborations = append(collaborations, collaboration)
-	}
-
-	return collaborations, nil
 }

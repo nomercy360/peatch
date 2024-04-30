@@ -24,16 +24,12 @@ import (
 func (h *handler) handleListUsers(c echo.Context) error {
 	page, _ := strconv.Atoi(c.QueryParam("page"))
 	limit, _ := strconv.Atoi(c.QueryParam("limit"))
-	orderBy := c.QueryParam("order")
 	search := c.QueryParam("search")
-	findSimilar, _ := strconv.ParseBool(c.QueryParam("find_similar"))
 
 	query := db.UserQuery{
-		Page:        page,
-		Limit:       limit,
-		OrderBy:     db.UserQueryOrder(orderBy),
-		Search:      search,
-		FindSimilar: findSimilar,
+		Page:   page,
+		Limit:  limit,
+		Search: search,
 	}
 
 	users, err := h.svc.ListUserProfiles(query)

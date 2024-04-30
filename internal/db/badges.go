@@ -1,6 +1,8 @@
 package db
 
-import "time"
+import (
+	"time"
+)
 
 type Badge struct {
 	ID        int64     `json:"id" db:"id"`
@@ -9,10 +11,6 @@ type Badge struct {
 	Color     string    `json:"color" db:"color"`
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 } // @Name Badge
-
-func (b Badge) GetID() int64 {
-	return b.ID
-}
 
 func (s *storage) ListBadges(search string) ([]Badge, error) {
 	badges := make([]Badge, 0)

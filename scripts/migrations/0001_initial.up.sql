@@ -5,11 +5,11 @@ CREATE TABLE users
     last_name                VARCHAR(255),
     chat_id                  BIGINT UNIQUE NOT NULL,
     username                 VARCHAR(255),
-    created_at               TIMESTAMP     NOT NULL DEFAULT NOW(),
-    updated_at               TIMESTAMP     NOT NULL DEFAULT NOW(),
-    published_at             TIMESTAMP,
-    hidden_at                TIMESTAMP,
-    notifications_enabled_at TIMESTAMP,
+    created_at               timestamptz NOT NULL DEFAULT NOW(),
+    updated_at               timestamptz NOT NULL DEFAULT NOW(),
+    published_at             timestamptz,
+    hidden_at                timestamptz,
+    notifications_enabled_at timestamptz,
     avatar_url               VARCHAR(512),
     title                    VARCHAR(255),
     description              TEXT,
@@ -29,7 +29,7 @@ CREATE TABLE badges
     text       VARCHAR(255) NOT NULL,
     icon       VARCHAR(255),
     color      VARCHAR(7),
-    created_at TIMESTAMP    NOT NULL DEFAULT NOW()
+    created_at timestamptz DEFAULT NOW()
 );
 
 CREATE TABLE opportunities
@@ -39,7 +39,7 @@ CREATE TABLE opportunities
     description TEXT,
     icon        VARCHAR(255),
     color       VARCHAR(7),
-    created_at  TIMESTAMP    NOT NULL DEFAULT NOW()
+    created_at timestamptz DEFAULT NOW()
 );
 
 CREATE TABLE user_badges
@@ -67,9 +67,10 @@ CREATE TABLE collaborations
     title          VARCHAR(255) NOT NULL,
     description    TEXT,
     is_payable     BOOLEAN      NOT NULL DEFAULT FALSE,
-    published_at   TIMESTAMP,
-    created_at     TIMESTAMP    NOT NULL DEFAULT NOW(),
-    updated_at     TIMESTAMP    NOT NULL DEFAULT NOW(),
+    published_at timestamptz,
+    created_at   timestamptz NOT NULL DEFAULT NOW(),
+    updated_at   timestamptz NOT NULL DEFAULT NOW(),
+    hidden_at    timestamptz,
     country        VARCHAR(255),
     city           VARCHAR(255),
     country_code   VARCHAR(2),
@@ -81,7 +82,7 @@ CREATE TABLE user_followers
 (
     user_id     INTEGER REFERENCES users (id),
     follower_id INTEGER REFERENCES users (id),
-    created_at  TIMESTAMP NOT NULL DEFAULT NOW(),
+    created_at timestamptz DEFAULT NOW(),
     UNIQUE (user_id, follower_id)
 );
 
@@ -115,8 +116,8 @@ CREATE TABLE collaboration_requests
     collaboration_id INTEGER REFERENCES collaborations (id),
     user_id          INTEGER REFERENCES users (id),
     message          TEXT,
-    created_at       TIMESTAMP                    NOT NULL DEFAULT NOW(),
-    updated_at       TIMESTAMP                    NOT NULL DEFAULT NOW(),
+    created_at timestamptz NOT NULL DEFAULT NOW(),
+    updated_at timestamptz NOT NULL DEFAULT NOW(),
     status           collaboration_request_status NOT NULL DEFAULT 'pending',
     UNIQUE (collaboration_id, user_id)
 );
@@ -142,8 +143,8 @@ CREATE TABLE user_collaboration_requests
     requester_id INTEGER REFERENCES users (id),
     message      TEXT,
     status       collaboration_request_status NOT NULL DEFAULT 'pending',
-    created_at   TIMESTAMP                    NOT NULL DEFAULT NOW(),
-    updated_at   TIMESTAMP                    NOT NULL DEFAULT NOW(),
+    created_at timestamptz NOT NULL DEFAULT NOW(),
+    updated_at timestamptz NOT NULL DEFAULT NOW(),
     UNIQUE (user_id, requester_id)
 );
 
@@ -176,8 +177,8 @@ CREATE table notifications
     chat_id           BIGINT,
     text              TEXT,
     image_url         TEXT,
-    sent_at           TIMESTAMP,
-    created_at        TIMESTAMP NOT NULL DEFAULT NOW(),
+    sent_at    timestamptz,
+    created_at timestamptz NOT NULL DEFAULT NOW(),
     notification_type VARCHAR(255),
     entity_id         INTEGER,
     entity_type       VARCHAR(255),

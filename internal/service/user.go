@@ -83,7 +83,7 @@ func toUserProfiles(users []db.User) []UserProfile {
 
 func (s *service) ListUserProfiles(query db.UserQuery) ([]UserProfile, error) {
 	if query.Limit <= 0 {
-		query.Limit = 20
+		query.Limit = 40
 	}
 
 	if query.Page <= 0 {

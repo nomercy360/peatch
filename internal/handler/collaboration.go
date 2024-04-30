@@ -21,12 +21,12 @@ import (
 func (h *handler) handleListCollaborations(c echo.Context) error {
 	page, _ := strconv.Atoi(c.QueryParam("page"))
 	limit, _ := strconv.Atoi(c.QueryParam("limit"))
-	orderBy := c.QueryParam("order")
+	search := c.QueryParam("search")
 
 	query := db.CollaborationQuery{
-		Page:    page,
-		Limit:   limit,
-		OrderBy: db.CollectionQueryOrder(orderBy),
+		Page:   page,
+		Limit:  limit,
+		Search: search,
 	}
 
 	collaborations, err := h.svc.ListCollaborations(query)

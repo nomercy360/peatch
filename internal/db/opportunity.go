@@ -1,6 +1,10 @@
 package db
 
-import "time"
+import (
+	"encoding/json"
+	"fmt"
+	"time"
+)
 
 type Opportunity struct {
 	ID          int64     `json:"id" db:"id"`
@@ -11,8 +15,21 @@ type Opportunity struct {
 	CreatedAt   time.Time `json:"created_at" db:"created_at"`
 } // @Name Opportunity
 
-func (o Opportunity) GetID() int64 {
-	return o.ID
+func (o *Opportunity) Scan(src interface{}) error {
+	var source []byte
+	switch src := src.(type) {
+	case []byte:
+		source = src
+	case string:
+		source = []byte(src)
+	default:
+		return fmt.Errorf("unsupported type: %T", src)
+	}
+
+	if err := json.Unmarshal(source, o); err != nil {
+		return fmt.Errorf("failed to unmarshal JSON into Opportunity: %v", err)
+	}
+	return nil
 }
 
 func (s *storage) ListOpportunities() ([]Opportunity, error) {

@@ -1,145 +1,138 @@
 package db
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/lib/pq"
-	"sort"
 	"strings"
 	"sync"
 	"time"
 )
 
-type User struct {
-	ID                     int64         `json:"id" db:"id"`
-	FirstName              *string       `json:"first_name" db:"first_name"`
-	LastName               *string       `json:"last_name" db:"last_name"`
-	ChatID                 int64         `json:"chat_id" db:"chat_id"`
-	Username               string        `json:"username" db:"username"`
-	CreatedAt              time.Time     `json:"created_at" db:"created_at"`
-	UpdatedAt              time.Time     `json:"updated_at" db:"updated_at"`
-	PublishedAt            *time.Time    `json:"published_at" db:"published_at"`
-	NotificationsEnabledAt *time.Time    `json:"notifications_enabled_at" db:"notifications_enabled_at"`
-	HiddenAt               *time.Time    `json:"hidden_at" db:"hidden_at"`
-	AvatarURL              *string       `json:"avatar_url" db:"avatar_url"`
-	Title                  *string       `json:"title" db:"title"`
-	Description            *string       `json:"description" db:"description"`
-	LanguageCode           *string       `json:"language_code" db:"language_code"`
-	Country                *string       `json:"country" db:"country"`
-	City                   *string       `json:"city" db:"city"`
-	CountryCode            *string       `json:"country_code" db:"country_code"`
-	FollowersCount         int           `json:"followers_count" db:"followers_count"`
-	RequestsCount          int           `json:"requests_count" db:"requests_count"`
-	Badges                 []Badge       `json:"badges" db:"-"`
-	Opportunities          []Opportunity `json:"opportunities" db:"-"`
-} // @Name User
+type BadgeSlice []Badge
 
-type UserQuery struct {
-	Page        int
-	Limit       int
-	OrderBy     UserQueryOrder
-	Search      string
-	FindSimilar bool
+func (bs *BadgeSlice) Scan(src interface{}) error {
+	var source []byte
+	switch src := src.(type) {
+	case []byte:
+		source = src
+	case string:
+		source = []byte(src)
+	default:
+		return fmt.Errorf("unsupported type for BadgeSlice: %T", src)
+	}
+
+	return json.Unmarshal(source, bs)
 }
 
-type UserQueryOrder string
+type OpportunitySlice []Opportunity
 
-const (
-	UserQueryOrderByFollowers UserQueryOrder = "followers"
-	UserQueryOrderByDate      UserQueryOrder = "created_at"
-)
+func (os *OpportunitySlice) Scan(src interface{}) error {
+	var source []byte
+	switch src := src.(type) {
+	case []byte:
+		source = src
+	case string:
+		source = []byte(src)
+	default:
+		return fmt.Errorf("unsupported type for OpportunitySlice: %T", src)
+	}
 
-func (s *storage) ListUsers(queryParams UserQuery) ([]User, error) {
+	return json.Unmarshal(source, os)
+}
+
+type User struct {
+	ID                     int64            `json:"id" db:"id"`
+	FirstName              *string          `json:"first_name" db:"first_name"`
+	LastName               *string          `json:"last_name" db:"last_name"`
+	ChatID                 int64            `json:"chat_id" db:"chat_id"`
+	Username               string           `json:"username" db:"username"`
+	CreatedAt              time.Time        `json:"created_at" db:"created_at"`
+	UpdatedAt              time.Time        `json:"updated_at" db:"updated_at"`
+	PublishedAt            *time.Time       `json:"published_at" db:"published_at"`
+	NotificationsEnabledAt *time.Time       `json:"notifications_enabled_at" db:"notifications_enabled_at"`
+	HiddenAt               *time.Time       `json:"hidden_at" db:"hidden_at"`
+	AvatarURL              *string          `json:"avatar_url" db:"avatar_url"`
+	Title                  *string          `json:"title" db:"title"`
+	Description            *string          `json:"description" db:"description"`
+	LanguageCode           *string          `json:"language_code" db:"language_code"`
+	Country                *string          `json:"country" db:"country"`
+	City                   *string          `json:"city" db:"city"`
+	CountryCode            *string          `json:"country_code" db:"country_code"`
+	FollowersCount         int              `json:"followers_count" db:"followers_count"`
+	RequestsCount          int              `json:"requests_count" db:"requests_count"`
+	Badges                 BadgeSlice       `json:"badges" db:"badges"`
+	Opportunities          OpportunitySlice `json:"opportunities" db:"opportunities"`
+} // @Name User
+
+func (u *User) Scan(src interface{}) error {
+	var source []byte
+	switch src := src.(type) {
+	case []byte:
+		source = src
+	case string:
+		source = []byte(src)
+	default:
+		return fmt.Errorf("unsupported type: %T", src)
+	}
+
+	if err := json.Unmarshal(source, u); err != nil {
+		return fmt.Errorf("failed to unmarshal JSON into Opportunity: %v", err)
+	}
+	return nil
+}
+
+type UserQuery struct {
+	Page   int
+	Limit  int
+	Search string
+}
+
+func (s *storage) ListUsers(params UserQuery) ([]User, error) {
 	users := make([]User, 0)
-	userMap := make(map[int64]*User)
-	var args []interface{}
+	query := `
+        SELECT u.*,
+               json_agg(distinct to_jsonb(b)) as badges,
+               json_agg(distinct to_jsonb(o)) as opportunities
+        FROM users u
+        LEFT JOIN user_opportunities uo ON u.id = uo.user_id
+        LEFT JOIN opportunities o ON uo.opportunity_id = o.id
+        LEFT JOIN user_badges ub ON u.id = ub.user_id
+        LEFT JOIN badges b ON ub.badge_id = b.id
+    `
 
-	offset := (queryParams.Page - 1) * queryParams.Limit
 	paramIndex := 1
+	args := make([]interface{}, 0)
 
 	whereClauses := []string{"published_at IS NOT NULL AND hidden_at IS NULL"}
 
-	if queryParams.Search != "" {
-		searchClause := " (first_name ILIKE $1 OR last_name ILIKE $1 OR title ILIKE $1 OR description ILIKE $1) "
-		args = append(args, "%"+queryParams.Search+"%")
+	if params.Search != "" {
+		searchClause := " (u.first_name ILIKE $1 OR u.last_name ILIKE $1 OR u.title ILIKE $1 OR u.description ILIKE $1) "
+		args = append(args, "%"+params.Search+"%")
 		whereClauses = append(whereClauses, searchClause)
 		paramIndex++
 	}
 
-	args = append(args, queryParams.Limit, offset)
+	query = fmt.Sprintf("%s WHERE %s", query, strings.Join(whereClauses, " AND "))
+	query += fmt.Sprintf(" GROUP BY u.id ORDER BY u.created_at, u.followers_count DESC")
+	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", paramIndex, paramIndex+1)
 
-	query := fmt.Sprintf(`
-		SELECT u.id, u.first_name, u.last_name, u.chat_id, u.username, u.created_at, u.updated_at, u.published_at, u.avatar_url, u.title, u.description, u.language_code, u.country, u.city, u.country_code, u.followers_count, u.requests_count, u.notifications_enabled_at, u.hidden_at,
-			b.id, b.text, b.icon, b.color, b.created_at
-		FROM (SELECT * FROM users WHERE %s ORDER BY created_at DESC LIMIT $%d OFFSET $%d) u
-		LEFT JOIN user_badges ub ON u.id = ub.user_id
-		LEFT JOIN badges b ON ub.badge_id = b.id
-	`, strings.Join(whereClauses, " AND "), paramIndex, paramIndex+1)
+	offset := (params.Page - 1) * params.Limit
+	args = append(args, params.Limit, offset)
 
-	rows, err := s.pg.Queryx(query, args...)
-
+	err := s.pg.Select(&users, query, args...)
 	if err != nil {
 		return nil, err
 	}
 
-	defer rows.Close()
-
-	for rows.Next() {
-		var user User
-		var badge Badge
-
-		err := rows.Scan(
-			&user.ID, &user.FirstName, &user.LastName, &user.ChatID, &user.Username,
-			&user.CreatedAt, &user.UpdatedAt, &user.PublishedAt, &user.AvatarURL,
-			&user.Title, &user.Description, &user.LanguageCode, &user.Country,
-			&user.City, &user.CountryCode, &user.FollowersCount, &user.RequestsCount,
-			&user.NotificationsEnabledAt, &user.HiddenAt,
-			&badge.ID, &badge.Text, &badge.Icon, &badge.Color, &badge.CreatedAt,
-		)
-
-		if err != nil {
-			return nil, err
-		}
-
-		if _, ok := userMap[user.ID]; !ok {
-			user.Badges = append(user.Badges, badge)
-
-			userMap[user.ID] = &user
-		} else {
-			userMap[user.ID].Badges = appendUnique(userMap[user.ID].Badges, badge)
-		}
-	}
-
-	for _, user := range userMap {
-		users = append(users, *user)
-	}
-
-	// sort by name
-	sort.Slice(users, func(i, j int) bool {
-		return users[i].FirstName != nil && users[j].FirstName != nil && *users[i].FirstName < *users[j].FirstName
-	})
-
 	return users, nil
-}
-
-type Entity interface {
-	GetID() int64
-}
-
-func appendUnique[E Entity](entities []E, entity E) []E {
-	for _, e := range entities {
-		if e.GetID() == entity.GetID() {
-			return entities
-		}
-	}
-
-	return append(entities, entity)
 }
 
 func getUserQuery() string {
 	return `
-		SELECT u.id, u.first_name, u.last_name, u.chat_id, u.username, u.created_at, u.updated_at, u.published_at, u.avatar_url, u.title, u.description, u.language_code, u.country, u.city, u.country_code, u.followers_count, u.requests_count, u.notifications_enabled_at, u.hidden_at,
-			b.id, b.text, b.icon, b.color,
-			o.id, o.text, o.description, o.icon, o.color
+		SELECT u.*,
+		       json_agg(distinct to_jsonb(b)) as badges,
+		       json_agg(distinct to_jsonb(o)) as opportunities
 		FROM users u
 		LEFT JOIN user_badges ub ON u.id = ub.user_id
 		LEFT JOIN badges b ON ub.badge_id = b.id
@@ -150,63 +143,11 @@ func getUserQuery() string {
 
 func (s *storage) GetUserByChatID(chatID int64) (*User, error) {
 	user := new(User)
-	rowsProcessed := 0
 
-	// fetch with populating badges and opportunities
-	rows, err := s.pg.Queryx(getUserQuery()+"WHERE chat_id = $1", chatID)
+	err := s.pg.Get(user, getUserQuery()+"WHERE u.chat_id = $1 GROUP BY u.id", chatID)
 
 	if err != nil {
 		return nil, err
-	}
-
-	defer rows.Close()
-
-	for rows.Next() {
-		var badgeID, opportunityID *int64
-		var badgeText, badgeIcon, badgeColor *string
-		var opportunityText, opportunityDescription, opportunityIcon, opportunityColor *string
-
-		err := rows.Scan(
-			&user.ID, &user.FirstName, &user.LastName, &user.ChatID, &user.Username, &user.CreatedAt, &user.UpdatedAt, &user.PublishedAt, &user.AvatarURL, &user.Title, &user.Description, &user.LanguageCode, &user.Country, &user.City, &user.CountryCode, &user.FollowersCount, &user.RequestsCount, &user.NotificationsEnabledAt, &user.HiddenAt,
-			&badgeID, &badgeText, &badgeIcon, &badgeColor,
-			&opportunityID, &opportunityText, &opportunityDescription, &opportunityIcon, &opportunityColor,
-		)
-
-		if err != nil {
-			return nil, err
-		}
-
-		if badgeID != nil {
-			badge := Badge{
-				ID:    *badgeID,
-				Text:  *badgeText,
-				Icon:  *badgeIcon,
-				Color: *badgeColor,
-			}
-
-			user.Badges = appendUnique(user.Badges, badge)
-		}
-
-		if opportunityID != nil {
-			opportunity := Opportunity{
-				ID:          *opportunityID,
-				Text:        *opportunityText,
-				Description: *opportunityDescription,
-				Icon:        *opportunityIcon,
-				Color:       *opportunityColor,
-			}
-			user.Opportunities = appendUnique(user.Opportunities, opportunity)
-		}
-
-		rowsProcessed++
-	}
-
-	if rows.Err() != nil {
-		return nil, rows.Err()
-	}
-
-	if rowsProcessed == 0 {
-		return nil, ErrNotFound
 	}
 
 	return user, nil
@@ -327,64 +268,8 @@ func (s *storage) UpdateUser(userID int64, user User, badges, opportunities []in
 func (s *storage) GetUserByID(id int64) (*User, error) {
 	user := new(User)
 
-	processedRows := 0
-
-	rows, err := s.pg.Queryx(getUserQuery()+"WHERE u.id = $1", id)
-
-	if err != nil {
+	if err := s.pg.Get(user, getUserQuery()+"WHERE u.id = $1 GROUP BY u.id", id); err != nil {
 		return nil, err
-	}
-
-	defer rows.Close()
-
-	for rows.Next() {
-		var badgeID, opportunityID *int64
-		var badgeText, badgeIcon, badgeColor *string
-		var opportunityText, opportunityDescription, opportunityIcon, opportunityColor *string
-
-		err := rows.Scan(
-			&user.ID, &user.FirstName, &user.LastName, &user.ChatID, &user.Username,
-			&user.CreatedAt, &user.UpdatedAt, &user.PublishedAt, &user.AvatarURL,
-			&user.Title, &user.Description, &user.LanguageCode, &user.Country, &user.City,
-			&user.CountryCode, &user.FollowersCount, &user.RequestsCount, &user.NotificationsEnabledAt, &user.HiddenAt,
-			&badgeID, &badgeText, &badgeIcon, &badgeColor,
-			&opportunityID, &opportunityText, &opportunityDescription, &opportunityIcon, &opportunityColor,
-		)
-
-		if err != nil {
-			return nil, err
-		}
-
-		if badgeID != nil {
-			badge := Badge{
-				ID:    *badgeID,
-				Text:  *badgeText,
-				Icon:  *badgeIcon,
-				Color: *badgeColor,
-			}
-			user.Badges = appendUnique(user.Badges, badge)
-		}
-
-		if opportunityID != nil {
-			opportunity := Opportunity{
-				ID:          *opportunityID,
-				Text:        *opportunityText,
-				Description: *opportunityDescription,
-				Icon:        *opportunityIcon,
-				Color:       *opportunityColor,
-			}
-			user.Opportunities = appendUnique(user.Opportunities, opportunity)
-		}
-
-		processedRows++
-	}
-
-	if rows.Err() != nil {
-		return nil, rows.Err()
-	}
-
-	if processedRows == 0 {
-		return nil, ErrNotFound
 	}
 
 	return user, nil

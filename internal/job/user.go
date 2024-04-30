@@ -14,7 +14,7 @@ type storage interface {
 	SearchNotification(userID int64, notificationType db.NotificationType, entityType string, entityID int64) (*db.Notification, error)
 	ListUserCollaborations(from time.Time) ([]db.UserCollaborationRequest, error)
 	UpdateNotificationSentAt(notificationID int64) error
-	ListNewCollaborations(from time.Time) ([]db.Collaboration, error)
+	ListCollaborations(params db.CollaborationQuery) ([]db.Collaboration, error)
 	FindMatchingUsers(opportunityIDs []int64, badgeIDs []int64) ([]db.User, error)
 	ListNewUserProfiles(from time.Time) ([]db.User, error)
 }
@@ -123,7 +123,11 @@ func (j *notifyJob) NotifyNewUserProfile() error {
 func (j *notifyJob) NotifyNewCollaboration() error {
 	log.Println("Checking for new collaborations")
 
-	newCollaborations, err := j.storage.ListNewCollaborations(time.Now().Add(-24 * time.Hour))
+	dayAgo := time.Now().Add(-24 * time.Hour)
+
+	newCollaborations, err := j.storage.ListCollaborations(db.CollaborationQuery{
+		From: &dayAgo,
+	})
 
 	if err != nil {
 		return err
