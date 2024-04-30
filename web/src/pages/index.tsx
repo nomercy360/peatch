@@ -1,5 +1,6 @@
 import { For } from 'solid-js';
 import { store } from '../store';
+import { CDN_URL } from '../api';
 
 export default function Index() {
   const images = ['/thumb.png', '/thumb.png', '/thumb.png'];
@@ -19,7 +20,11 @@ export default function Index() {
         href={getUserLink()}
       >
         <p class="text-3xl">Bonsoir, {store.user?.username}!</p>
-        <img src="/thumb.png" alt="User Avatar" class="size-10 rounded-xl" />
+        <img
+          src={CDN_URL + '/' + store.user?.avatar_url}
+          alt="User Avatar"
+          class="size-10 rounded-xl object-cover object-center"
+        />
       </a>
       <div class="h-px w-full bg-peatch-stroke"></div>
       <a class="flex flex-col items-start justify-start py-4" href="/users">
@@ -29,7 +34,7 @@ export default function Index() {
               <img
                 src={image}
                 alt="User Avatar"
-                class="-ml-1 size-11 rounded-xl border-2 border-white"
+                class="-ml-1 size-11 rounded-xl border-2 border-white object-cover object-center"
                 classList={{
                   'ml-0': idx() === 0,
                   'z-20': idx() === 0,

@@ -31,21 +31,21 @@ const (
 
 func (s *storage) CreateNotification(notification Notification) (*Notification, error) {
 	query := `
-		INSERT INTO notifications (user_id, message_id, chat_id, text, image_url, sent_at, notification_type)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
-		RETURNING user_id, message_id, chat_id, text, image_url, sent_at, notification_type, created_at
+		INSERT INTO notifications (user_id, message_id, chat_id, text, image_url, sent_at, notification_type, entity_type, entity_id)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		RETURNING id, user_id, message_id, chat_id, text, image_url, sent_at, notification_type, created_at, entity_type, entity_id
 	`
 
 	row := s.pg.QueryRow(
 		query, notification.UserID, notification.MessageID, notification.ChatID,
 		notification.Text, notification.ImageURL, notification.SentAt,
-		notification.NotificationType,
+		notification.NotificationType, notification.EntityType, notification.EntityID,
 	)
 
 	var request Notification
 	err := row.Scan(
-		&request.UserID, &request.MessageID, &request.ChatID, &request.Text, &request.ImageURL,
-		&request.SentAt, &request.NotificationType, &request.CreatedAt,
+		&request.ID, &request.UserID, &request.MessageID, &request.ChatID, &request.Text, &request.ImageURL,
+		&request.SentAt, &request.NotificationType, &request.CreatedAt, &request.EntityType, &request.EntityID,
 	)
 
 	if err != nil {
@@ -57,7 +57,7 @@ func (s *storage) CreateNotification(notification Notification) (*Notification, 
 
 func (s *storage) SearchNotification(userID int64, notificationType NotificationType, entityType string, entityID int64) (*Notification, error) {
 	query := `
-		SELECT id, user_id, message_id, chat_id, text, image_url, sent_at, created_at, notification_type
+		SELECT id, user_id, message_id, chat_id, text, image_url, sent_at, created_at, notification_type, entity_type, entity_id
 		FROM notifications
 		WHERE user_id = $1 AND notification_type = $2 AND entity_type = $3 AND entity_id = $4
 		LIMIT 1
@@ -68,9 +68,8 @@ func (s *storage) SearchNotification(userID int64, notificationType Notification
 	var notification Notification
 
 	err := row.Scan(
-		&notification.UserID, &notification.MessageID, &notification.ChatID,
-		&notification.Text, &notification.ImageURL, &notification.SentAt,
-		&notification.CreatedAt, &notification.NotificationType,
+		&notification.ID, &notification.UserID, &notification.MessageID, &notification.ChatID, &notification.Text, &notification.ImageURL,
+		&notification.SentAt, &notification.CreatedAt, &notification.NotificationType, &notification.EntityType, &notification.EntityID,
 	)
 
 	if err != nil {

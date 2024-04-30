@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"github.com/lib/pq"
 	"sort"
 	"strings"
 	"sync"
@@ -547,27 +548,63 @@ func (s *storage) ListUserCollaborations(from time.Time) ([]UserCollaborationReq
 		WHERE created_at > $1
 	`
 
-	rows, err := s.pg.Query(query, from.Format(time.RFC3339))
+	err := s.pg.Select(&requests, query, from)
 
 	if err != nil {
 		return nil, err
 	}
 
-	defer rows.Close()
+	return requests, nil
+}
 
-	for rows.Next() {
-		var request UserCollaborationRequest
-		err := rows.Scan(
-			&request.ID, &request.UserID, &request.RequesterID, &request.Message,
-			&request.CreatedAt, &request.UpdatedAt, &request.Status,
-		)
+func (s *storage) FindMatchingUsers(opportunities []int64, badges []int64) ([]User, error) {
+	query := `
+		SELECT DISTINCT u.id, u.first_name, u.last_name, u.chat_id, u.username, u.created_at, u.updated_at,
+			u.published_at, u.avatar_url, u.title, u.description, u.language_code, u.country, u.city, u.country_code,
+			u.followers_count, u.requests_count, u.notifications_enabled_at, u.hidden_at
+		FROM users u
+		JOIN user_opportunities uo ON u.id = uo.user_id
+		JOIN user_badges ub ON u.id = ub.user_id
+		WHERE 1=1
+	`
 
-		if err != nil {
-			return nil, err
-		}
+	var args []interface{}
 
-		requests = append(requests, request)
+	if len(opportunities) > 0 {
+		query += " AND uo.opportunity_id = ANY($1)"
+		args = append(args, pq.Array(opportunities))
 	}
 
-	return requests, nil
+	if len(badges) > 0 {
+		query += " AND ub.badge_id = ANY($2)"
+		args = append(args, pq.Array(badges))
+	}
+
+	var users []User
+	err := s.pg.Select(&users, query, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+func (s *storage) UpdateUserAvatarURL(userID int64, avatarURL string) error {
+	query := `
+		UPDATE users
+		SET avatar_url = $1
+		WHERE id = $2;
+	`
+
+	res, err := s.pg.Exec(query, avatarURL, userID)
+
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected, _ := res.RowsAffected(); rowsAffected == 0 {
+		return ErrNotFound
+	}
+
+	return nil
 }

@@ -1,13 +1,66 @@
 package notification
 
-import "github.com/labstack/gommon/log"
+import (
+	"bytes"
+	"context"
+	telegram "github.com/go-telegram/bot"
+	"github.com/go-telegram/bot/models"
+	"io"
+	"log"
+	"net/http"
+)
 
 type TelegramNotifier struct {
-	BotToken string
+	tg *telegram.Bot
+}
+
+func NewTelegramNotifier(bot *telegram.Bot) *TelegramNotifier {
+	return &TelegramNotifier{
+		tg: bot,
+	}
 }
 
 func (t *TelegramNotifier) SendNotification(chatID int64, message, imgUrl, link string) error {
-	log.Infof("Sending notification to chat %d: %s", chatID, message)
+	log.Printf("Sending notification to chatID: %d", chatID)
+
+	resp, err := http.Get(imgUrl)
+	if err != nil {
+		log.Printf("Failed to download image: %s", err)
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("Failed to download image, got status code: %d", resp.StatusCode)
+		return err
+	}
+
+	imgData, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("Failed to read image data: %s", err)
+		return err
+	}
+
+	photoParams := &telegram.SendPhotoParams{
+		//ChatID:              chatID,
+		ChatID:              927635965,
+		Caption:             message,
+		Photo:               &models.InputFileUpload{Filename: "img.jpg", Data: bytes.NewReader(imgData)},
+		DisableNotification: true,
+		ReplyMarkup: &models.InlineKeyboardMarkup{
+			InlineKeyboard: [][]models.InlineKeyboardButton{
+				{
+					{Text: "View", WebApp: &models.WebAppInfo{URL: link}},
+				},
+			},
+		},
+	}
+
+	_, err = t.tg.SendPhoto(context.Background(), photoParams)
+	if err != nil {
+		log.Printf("Failed to send photo: %s", err)
+		return err
+	}
 
 	return nil
 }

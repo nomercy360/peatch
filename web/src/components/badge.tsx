@@ -6,7 +6,7 @@ export default function Badge(props: {
   return (
     <div
       class="flex h-5 flex-row items-center justify-center gap-[5px] rounded px-2.5"
-      style={{ 'background-color': props.color }}
+      style={{ 'background-color': `#${props.color}` }}
     >
       <span class="material-symbols-rounded text-[10px] text-white">
         {String.fromCharCode(parseInt(props.icon, 16))}

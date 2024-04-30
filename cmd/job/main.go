@@ -3,6 +3,7 @@ package main
 
 import (
 	"github.com/caarlos0/env/v11"
+	telegram "github.com/go-telegram/bot"
 	"github.com/peatch-io/peatch/internal/db"
 	"github.com/peatch-io/peatch/internal/job"
 	"github.com/peatch-io/peatch/internal/notification"
@@ -27,14 +28,20 @@ func main() {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 
-	notifier := &notification.TelegramNotifier{BotToken: cfg.BotToken}
+	bot, err := telegram.New(cfg.BotToken)
+
+	if err != nil {
+		log.Fatalf("Failed to initialize bot: %v", err)
+	}
+
+	notifier := notification.NewTelegramNotifier(bot)
 
 	notifyJob := job.NewNotifyJob(pg, notifier)
 
 	jobs := []*job.Job{
 		//job.NewJob("UserRegistrationJob", 10*time.Second, notifyJob.UserRegistrationJob),
 		job.NewJob("NotifyUserReceivedCollaborationRequest", 10*time.Second, notifyJob.NotifyUserReceivedCollaborationRequest),
-		//job.NewCollaborationRequestNotificationJob(notifier, pg, 1*time.Hour),
+		job.NewJob("NotifyNewCollaboration", 10*time.Second, notifyJob.NotifyNewCollaboration),
 		//job.NewCollaborationResponseNotificationJob(notifier, pg, 1*time.Hour),
 	}
 

@@ -55,7 +55,7 @@ module.exports = {
     },
     extend: {
       textColor: {
-        black: '#9932CC',
+        black: '#000100',
         gray: '#909092',
         pink: '#EF5DA8',
         red: '#FE5F55',

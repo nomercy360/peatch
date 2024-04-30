@@ -8,6 +8,7 @@ import (
 	telegram "github.com/go-telegram/bot"
 	tgModels "github.com/go-telegram/bot/models"
 	"github.com/peatch-io/peatch/internal/db"
+	"io"
 	"log"
 	"net/http"
 )
@@ -22,6 +23,7 @@ type bot struct {
 type storage interface {
 	GetUserByChatID(chatID int64) (*db.User, error)
 	CreateUser(user db.User) (*db.User, error)
+	UpdateUserAvatarURL(chatID int64, avatarURL string) error
 }
 
 type s3Client interface {
@@ -104,6 +106,7 @@ func (b *bot) handleMessage(update tgModels.Update, w http.ResponseWriter) {
 }
 
 func (b *bot) createUser(update tgModels.Update) *db.User {
+	// Extract user details from update
 	var firstName, lastName, langCode *string
 	if update.Message.Chat.FirstName != "" {
 		firstName = &update.Message.Chat.FirstName
@@ -126,13 +129,65 @@ func (b *bot) createUser(update tgModels.Update) *db.User {
 	}
 
 	newUser, err := b.storage.CreateUser(user)
-
 	if err != nil {
 		log.Printf("Failed to create user: %v", err)
 		return nil
 	}
 
+	go b.handleUserAvatar(newUser.ID, update.Message.From.ID, newUser.ChatID)
+
 	return newUser
+}
+
+func (b *bot) handleUserAvatar(userID, tgUserID, chatID int64) {
+	photos, err := b.tg.GetUserProfilePhotos(context.Background(), &telegram.GetUserProfilePhotosParams{UserID: tgUserID, Offset: 0, Limit: 1})
+	if err != nil {
+		log.Printf("Failed to get user profile photos: %v", err)
+		return
+	}
+
+	if photos.TotalCount > 0 {
+		photo := photos.Photos[0][0]
+
+		file, err := b.tg.GetFile(context.Background(), &telegram.GetFileParams{FileID: photo.FileID})
+		if err != nil {
+			log.Printf("Failed to get file: %v", err)
+			return
+		}
+
+		fileURL := b.tg.FileDownloadLink(file)
+
+		resp, err := http.Get(fileURL)
+
+		if err != nil {
+			log.Printf("Failed to download file: %v", err)
+			return
+		}
+
+		defer resp.Body.Close()
+
+		data, err := io.ReadAll(resp.Body)
+
+		if err != nil {
+			log.Printf("Failed to read file: %v", err)
+			return
+		}
+
+		fileName := fmt.Sprintf("%d/%d.jpg", userID, chatID)
+
+		if _, err = b.s3Client.UploadFile(data, fileName); err != nil {
+			log.Printf("Failed to upload user avatar to S3: %v", err)
+			return
+		}
+
+		log.Printf("Avatar uploaded successfully: %s", fileName)
+
+		if err := b.storage.UpdateUserAvatarURL(userID, fileName); err != nil {
+			log.Printf("Failed to update user avatar URL: %v", err)
+		}
+
+		log.Printf("Profile photo updated for user %d", chatID)
+	}
 }
 
 func (b *bot) SetWebhook() error {

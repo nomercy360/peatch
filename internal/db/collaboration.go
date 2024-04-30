@@ -289,3 +289,33 @@ func (s *storage) PublishCollaboration(userID int64, collaborationID int64) erro
 
 	return nil
 }
+
+func (s *storage) ListNewCollaborations(from time.Time) ([]Collaboration, error) {
+	collaborations := make([]Collaboration, 0)
+
+	query := `
+		SELECT c.id, c.user_id, c.opportunity_id, c.title, c.description, c.is_payable, c.published_at, c.created_at, c.updated_at, c.country, c.city, c.country_code, c.requests_count,
+			o.id, o.text, o.description, o.icon, o.color, o.created_at
+		FROM collaborations c
+		JOIN opportunities o ON c.opportunity_id = o.id
+		WHERE c.created_at > $1
+	`
+
+	rows, err := s.pg.Queryx(query, from)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		collaboration, err := scanCollaborationWithOpportunity(rows)
+		if err != nil {
+			return nil, err
+		}
+
+		collaborations = append(collaborations, collaboration)
+	}
+
+	return collaborations, nil
+}

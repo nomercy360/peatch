@@ -1,5 +1,4 @@
 import { createEffect, createSignal, For, Match, Show, Suspense, Switch } from 'solid-js';
-import { FormLayout } from './layout';
 import { Badge } from '../../../gen';
 
 export function SelectBadge(props: {
@@ -34,7 +33,7 @@ export function SelectBadge(props: {
     <>
       <div class="mt-5 flex h-10 w-full flex-row items-center justify-between rounded-lg bg-peatch-bg px-2.5">
         <input
-          class="w-full h-10 bg-transparent text-black placeholder:text-gray focus:outline-none"
+          class="h-10 w-full bg-transparent text-black placeholder:text-gray focus:outline-none"
           placeholder="Search for a badge"
           type="text"
           onInput={e => props.setSearch(e.currentTarget.value)}
@@ -53,12 +52,16 @@ export function SelectBadge(props: {
         <Switch>
           <Match when={filteredBadges().length > 0}>
             <div></div>
-            <div class="flex items-center justify-center text-sm text-gray h-11">{props.selected.length} / 10</div>
+            <div class="flex h-11 items-center justify-center text-sm text-gray">
+              {props.selected.length} / 10
+            </div>
           </Match>
           <Match when={filteredBadges().length === 0}>
             <button
               class="size-full text-start text-sm"
-              onClick={() => props.selected.length < 10 && props.setCreateBadgeModal(true)}
+              onClick={() =>
+                props.selected.length < 10 && props.setCreateBadgeModal(true)
+              }
             >
               Can’t find such thing.{' '}
               <span class="text-peatch-blue">Create it</span>
@@ -77,14 +80,14 @@ export function SelectBadge(props: {
                 onClick={() => onBadgeClick(badge.id!)}
                 class="flex h-10 flex-row items-center justify-center gap-[5px] rounded-2xl border px-2.5"
                 style={{
-                  'background-color': `${props.selected.includes(badge.id!) ? badge.color : 'white'}`,
-                  'border-color': `${props.selected.includes(badge.id!) ? badge.color : '#F6F6F6'}`,
+                  'background-color': `${props.selected.includes(badge.id!) ? `#${badge.color}` : 'white'}`,
+                  'border-color': `${props.selected.includes(badge.id!) ? `#${badge.color}` : '#F6F6F6'}`,
                 }}
               >
                 <span
                   class="material-symbols-rounded"
                   style={{
-                    color: `${props.selected.includes(badge.id!) ? 'white' : badge.color}`,
+                    color: `${props.selected.includes(badge.id!) ? 'white' : `#${badge.color}`}`,
                   }}
                 >
                   {String.fromCodePoint(parseInt(badge.icon!, 16))}

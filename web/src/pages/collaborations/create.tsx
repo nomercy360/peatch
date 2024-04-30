@@ -1,7 +1,7 @@
 import { createStore } from 'solid-js/store';
 import { createEffect, createSignal, Match, onCleanup, Switch } from 'solid-js';
 import { useButtons } from '../../hooks/useBackButton';
-import { Badge, CreateCollaboration, User } from '../../../gen';
+import { Badge, CreateCollaboration } from '../../../gen';
 import { useNavigate } from '@solidjs/router';
 import { SelectBadge } from '../../components/edit/selectBadge';
 import { createQuery } from '@tanstack/solid-query';
@@ -235,38 +235,5 @@ export default function Create() {
         </Match>
       </Switch>
     </div>
-  );
-}
-
-export function GeneralInfo(props: {
-  user: User;
-  setUser: (key: string, value: string) => void;
-}) {
-  return (
-    <FormLayout
-      title="Introduce yourself"
-      description="It will appears in your profile card, everyone will see it"
-    >
-      <div class="mt-5 flex w-full flex-col items-center justify-start gap-3">
-        <input
-          class="h-10 w-full rounded-lg bg-peatch-bg px-2.5 text-black placeholder:text-gray"
-          placeholder="First Name"
-          value={props.user.first_name}
-          onInput={e => props.setUser('first_name', e.currentTarget.value)}
-        />
-        <input
-          class="h-10 w-full rounded-lg bg-peatch-bg px-2.5 text-black placeholder:text-gray"
-          placeholder="Last Name"
-          value={props.user.last_name}
-          onInput={e => props.setUser('last_name', e.currentTarget.value)}
-        />
-        <input
-          class="h-10 w-full rounded-lg bg-peatch-bg px-2.5 text-black placeholder:text-gray"
-          placeholder="Title"
-          value={props.user.title}
-          onInput={e => props.setUser('title', e.currentTarget.value)}
-        />
-      </div>
-    </FormLayout>
   );
 }

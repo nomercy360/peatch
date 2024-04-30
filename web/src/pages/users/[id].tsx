@@ -153,8 +153,8 @@ export default function UserProfile() {
                     <div
                       class="flex h-10 flex-row items-center justify-center gap-[5px] rounded-2xl border border-peatch-stroke px-2.5"
                       style={{
-                        'background-color': badge.color,
-                        'border-color': badge.color,
+                        'background-color': `#${badge.color}`,
+                        'border-color': `#${badge.color}`,
                       }}
                     >
                       <span class="material-symbols-rounded text-white">
@@ -173,7 +173,7 @@ export default function UserProfile() {
                     <div
                       class="flex h-[60px] w-full flex-row items-center justify-start gap-2.5 rounded-2xl border border-peatch-stroke px-2.5"
                       style={{
-                        'background-color': op.color,
+                        'background-color': `#${op.color}`,
                       }}
                     >
                       <div class="flex size-10 items-center justify-center rounded-full bg-white">

@@ -1,7 +1,7 @@
 package job
 
 import (
-	"github.com/labstack/gommon/log"
+	"log"
 	"time"
 )
 
@@ -39,7 +39,7 @@ func (s *Scheduler) runJob(job *Job) {
 
 	for range ticker.C {
 		if err := job.run(); err != nil {
-			log.Errorf("Failed during job %s: %v", job.name, err)
+			log.Printf("error during job %s: %v", job.name, err)
 		}
 	}
 }

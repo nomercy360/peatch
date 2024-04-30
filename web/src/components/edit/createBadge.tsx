@@ -8,13 +8,13 @@ export default function CreateBadge(props: {
   setCreateBadge: any;
 }) {
   const colors = [
-    '#EF5DA8',
-    '#F9A826',
-    '#2D9CDB',
-    '#27AE60',
-    '#6D214F',
-    '#F2C94C',
-    '#F2994A',
+    'EF5DA8',
+    'F9A826',
+    '2D9CDB',
+    '27AE60',
+    '6D214F',
+    'F2C94C',
+    'F2994A',
   ];
 
   return (
@@ -27,7 +27,7 @@ export default function CreateBadge(props: {
           {color => (
             <button
               class="flex size-10 items-center justify-center rounded-full"
-              style={{ 'background-color': color }}
+              style={{ 'background-color': `#${color}` }}
               onClick={() =>
                 props.setCreateBadge({ ...props.createBadge, color: color })
               }
@@ -49,7 +49,7 @@ export default function CreateBadge(props: {
               style={{
                 'background-color':
                   icon === props.createBadge.icon
-                    ? props.createBadge.color
+                    ? `#${props.createBadge.color}`
                     : 'white',
               }}
               onClick={() =>
