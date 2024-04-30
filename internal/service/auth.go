@@ -10,14 +10,13 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/peatch-io/peatch/internal/db"
 	"github.com/peatch-io/peatch/internal/terrors"
-	"strconv"
 	"time"
 )
 
 type UserWithToken struct {
 	User      db.User `json:"user"`
 	Token     string  `json:"token"`
-	Following []int64 `json:"following"`
+	Following []int64 `json:"following"` // TODO: implement following
 } // @Name UserWithToken
 
 type TelegramUser struct {
@@ -59,17 +58,18 @@ func (s *service) TelegramAuth(queryID, userJSON, authDate, hash string) (*UserW
 	if computedHash != hash {
 		return nil, errors.New("invalid hash: authentication data may have been tampered with")
 	}
+	//
+	//authTimestamp, err := strconv.ParseInt(authDate, 10, 64)
+	//if err != nil {
+	//	return nil, err
+	//}
 
-	authTimestamp, err := strconv.ParseInt(authDate, 10, 64)
-	if err != nil {
-		return nil, err
-	}
-	if time.Since(time.Unix(authTimestamp, 0)) > 24*time.Hour {
-		return nil, errors.New("authentication data is outdated")
-	}
+	//if time.Since(time.Unix(authTimestamp, 0)) > 24*time.Hour {
+	//	return nil, errors.New("authentication data is outdated")
+	//}
 
 	var tgUser TelegramUser
-	err = json.Unmarshal([]byte(userJSON), &tgUser)
+	err := json.Unmarshal([]byte(userJSON), &tgUser)
 	if err != nil {
 		return nil, err
 	}

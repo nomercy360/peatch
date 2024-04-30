@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"github.com/peatch-io/peatch/internal/db"
 	"log"
+	"net/url"
 	"time"
 )
 
 type storage interface {
-	GetUserByID(id int64) (*db.User, error)
+	GetUserByID(id int64, showHidden bool) (*db.User, error)
 	CreateNotification(notification db.Notification) (*db.Notification, error)
 	SearchNotification(userID int64, notificationType db.NotificationType, entityType string, entityID int64) (*db.Notification, error)
 	ListUserCollaborations(from time.Time) ([]db.UserCollaborationRequest, error)
@@ -17,6 +18,8 @@ type storage interface {
 	ListCollaborations(params db.CollaborationQuery) ([]db.Collaboration, error)
 	FindMatchingUsers(opportunityIDs []int64, badgeIDs []int64) ([]db.User, error)
 	ListNewUserProfiles(from time.Time) ([]db.User, error)
+	ListCollaborationRequests(from time.Time) ([]db.CollaborationRequest, error)
+	GetCollaborationOwner(collaborationID int64) (*db.User, error)
 }
 
 type notifyJob struct {
@@ -48,7 +51,7 @@ func (j *notifyJob) NotifyNewUserProfile() error {
 	}
 
 	for _, user := range newUsers {
-		userDetails, err := j.storage.GetUserByID(user.ID)
+		userDetails, err := j.storage.GetUserByID(user.ID, true)
 
 		if err != nil {
 			return err
@@ -111,8 +114,6 @@ func (j *notifyJob) NotifyNewUserProfile() error {
 				}
 			} else if err != nil {
 				return err
-			} else {
-				log.Printf("Notification already sent for user %d and user %d", user.ID, user.ID)
 			}
 		}
 	}
@@ -145,7 +146,7 @@ func (j *notifyJob) NotifyNewCollaboration() error {
 			continue
 		}
 
-		creator, err := j.storage.GetUserByID(collaboration.UserID)
+		creator, err := j.storage.GetUserByID(collaboration.UserID, true)
 
 		if err != nil {
 			return err
@@ -191,8 +192,6 @@ func (j *notifyJob) NotifyNewCollaboration() error {
 				}
 			} else if err != nil {
 				return err
-			} else {
-				log.Printf("Notification already sent for user %d and collaboration %d", collaboration.UserID, collaboration.ID)
 			}
 		}
 	}
@@ -219,13 +218,13 @@ func (j *notifyJob) NotifyUserReceivedCollaborationRequest() error {
 		)
 
 		if err != nil && errors.Is(err, db.ErrNotFound) {
-			requester, err := j.storage.GetUserByID(collaboration.RequesterID)
+			requester, err := j.storage.GetUserByID(collaboration.RequesterID, true)
 
 			if err != nil {
 				return err
 			}
 
-			receiver, err := j.storage.GetUserByID(collaboration.UserID)
+			receiver, err := j.storage.GetUserByID(collaboration.UserID, true)
 
 			if err != nil {
 				return err
@@ -265,31 +264,108 @@ func (j *notifyJob) NotifyUserReceivedCollaborationRequest() error {
 			}
 		} else if err != nil {
 			return err
-		} else {
-			log.Printf("Notification already sent for user %d and collaboration %d", collaboration.UserID, collaboration.ID)
 		}
 	}
 
 	return nil
 }
 
-func createImgURL(baseUrl string, user *db.User) (string, error) {
-	// like https://peatch-image-preview.vercel.app/api/image?title=John Doe&subtitle=Product &avatar=https://d262mborv4z66f.cloudfront.net/users/149/KO7uaU43.svg&color=FF8C42&tags=Mentor,17BEBB,e8d3;Founder,FF8C42,eb39;Business Developer,93961F,e992;AI Engineer,685155,f882;Investor,FE5F55,e2eb;Dog Father,685155,f149;Entrepreneur,EF5DA8,e7c8
-	baseUrl = fmt.Sprintf("%s/api/image", baseUrl)
+func (j *notifyJob) NotifyCollaborationRequest() error {
+	// Here fetch latest collaboration requests. Send notification to user who received the request on their collaboration
+	log.Println("Checking for new collaboration requests")
 
-	if user.AvatarURL != nil && user.FirstName != nil && user.LastName != nil && user.Title != nil {
-		baseUrl = fmt.Sprintf("%s?title=%s %s&subtitle=%s&avatar=https://assets.peatch.io/%s", baseUrl, *user.FirstName, *user.LastName, *user.Title, *user.AvatarURL)
+	newRequests, err := j.storage.ListCollaborationRequests(time.Now().Add(-24 * time.Hour))
 
-		if len(user.Badges) > 0 {
-			baseUrl = fmt.Sprintf("%s&tags=", baseUrl)
-
-			for _, badge := range user.Badges {
-				baseUrl = fmt.Sprintf("%s%s,%s,%s;", baseUrl, badge.Text, badge.Color, badge.Icon)
-			}
-		}
-
-		return baseUrl, nil
+	if err != nil {
+		return err
 	}
 
-	return "", errors.New("user data is not complete")
+	for _, request := range newRequests {
+		// get the one who created the collaboration
+		creator, err := j.storage.GetCollaborationOwner(request.CollaborationID)
+
+		if err != nil {
+			return err
+		}
+
+		// check if  user already received exact same notification
+		if _, err := j.storage.SearchNotification(
+			creator.ID,
+			db.NotificationTypeCollaborationRequest,
+			"collaboration_requests",
+			request.ID,
+		); err != nil && errors.Is(err, db.ErrNotFound) {
+			// get the one who created the request
+			requester, err := j.storage.GetUserByID(request.UserID, true)
+
+			if err != nil {
+				return err
+			}
+
+			imgURL, err := createImgURL(j.imgServiceURL, requester)
+
+			if err != nil {
+				return err
+			}
+
+			notification := &db.Notification{
+				UserID:           creator.ID,
+				NotificationType: db.NotificationTypeCollaborationRequest,
+				Text:             fmt.Sprintf("%s wants to collaborate with you", *requester.FirstName),
+				EntityType:       "collaboration_requests",
+				EntityID:         request.ID,
+				ChatID:           creator.ChatID,
+				ImageURL:         imgURL,
+			}
+
+			created, err := j.storage.CreateNotification(*notification)
+
+			if err != nil {
+				return err
+			}
+
+			linkToProfile := fmt.Sprintf("https://peatch.pages.dev/users/%d", requester.ID)
+
+			if err = j.notifier.SendNotification(created.ChatID, created.Text, imgURL, linkToProfile); err != nil {
+				log.Printf("Failed to send notification to user %d", creator.ID)
+			}
+
+			if err = j.storage.UpdateNotificationSentAt(created.ID); err != nil {
+				return err
+			}
+		} else if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func createImgURL(baseUrl string, user *db.User) (string, error) {
+	if user.AvatarURL == nil || user.FirstName == nil || user.LastName == nil || user.Title == nil {
+		return "", errors.New("user data is not complete")
+	}
+
+	u, err := url.Parse(baseUrl)
+	if err != nil {
+		return "", err
+	}
+
+	u.Path += "/api/image"
+
+	params := url.Values{}
+	params.Add("title", fmt.Sprintf("%s %s", *user.FirstName, *user.LastName))
+	params.Add("subtitle", *user.Title)
+	params.Add("avatar", fmt.Sprintf("https://assets.peatch.io/%s", *user.AvatarURL))
+
+	if len(user.Badges) > 0 {
+		tags := ""
+		for _, badge := range user.Badges {
+			tags += fmt.Sprintf("%s,%s,%s;", badge.Text, badge.Color, badge.Icon)
+		}
+		params.Add("tags", tags)
+	}
+
+	u.RawQuery = params.Encode()
+
+	return u.String(), nil
 }

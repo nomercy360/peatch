@@ -22,11 +22,13 @@ func (h *handler) handleListCollaborations(c echo.Context) error {
 	page, _ := strconv.Atoi(c.QueryParam("page"))
 	limit, _ := strconv.Atoi(c.QueryParam("limit"))
 	search := c.QueryParam("search")
+	uid := getUserID(c)
 
 	query := db.CollaborationQuery{
-		Page:   page,
-		Limit:  limit,
-		Search: search,
+		Page:      page,
+		Limit:     limit,
+		Search:    search,
+		HiddenFor: &uid,
 	}
 
 	collaborations, err := h.svc.ListCollaborations(query)
@@ -49,7 +51,9 @@ func (h *handler) handleListCollaborations(c echo.Context) error {
 func (h *handler) handleGetCollaboration(c echo.Context) error {
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 
-	collaboration, err := h.svc.GetCollaborationByID(id)
+	uid := getUserID(c)
+
+	collaboration, err := h.svc.GetCollaborationByID(uid, id)
 
 	if err != nil {
 		return err

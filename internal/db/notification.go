@@ -1,6 +1,10 @@
 package db
 
-import "time"
+import (
+	"database/sql"
+	"errors"
+	"time"
+)
 
 type Notification struct {
 	ID               int64            `json:"id" db:"id"`
@@ -72,7 +76,9 @@ func (s *storage) SearchNotification(userID int64, notificationType Notification
 		&notification.SentAt, &notification.CreatedAt, &notification.NotificationType, &notification.EntityType, &notification.EntityID,
 	)
 
-	if err != nil {
+	if err != nil && errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrNotFound
+	} else if err != nil {
 		return nil, err
 	}
 

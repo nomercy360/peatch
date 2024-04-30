@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"time"
 )
 
 type TelegramNotifier struct {
@@ -23,11 +24,16 @@ func NewTelegramNotifier(bot *telegram.Bot) *TelegramNotifier {
 func (t *TelegramNotifier) SendNotification(chatID int64, message, imgUrl, link string) error {
 	log.Printf("Sending notification to chatID: %d", chatID)
 
-	resp, err := http.Get(imgUrl)
+	httpClient := http.Client{
+		Timeout: 20 * time.Second,
+	}
+
+	resp, err := httpClient.Get(imgUrl)
 	if err != nil {
 		log.Printf("Failed to download image: %s", err)
 		return err
 	}
+
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {

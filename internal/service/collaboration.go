@@ -18,12 +18,8 @@ func (s *service) ListCollaborations(query db.CollaborationQuery) ([]db.Collabor
 	return s.storage.ListCollaborations(query)
 }
 
-func (s *service) GetCollaborationByID(id int64) (*db.Collaboration, error) {
-	if id == 0 {
-		return nil, nil
-	}
-
-	res, err := s.storage.GetCollaborationByID(id)
+func (s *service) GetCollaborationByID(userID, id int64) (*db.Collaboration, error) {
+	res, err := s.storage.GetCollaborationByID(userID, id)
 
 	if err != nil && errors.Is(err, db.ErrNotFound) {
 		return nil, terrors.NotFound(err)

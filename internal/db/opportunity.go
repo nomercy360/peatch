@@ -15,6 +15,15 @@ type Opportunity struct {
 	CreatedAt   time.Time `json:"created_at" db:"created_at"`
 } // @Name Opportunity
 
+type LOpportunity struct {
+	ID          int64     `json:"id" db:"id"`
+	Text        string    `json:"text" db:"text"`
+	Description string    `json:"description" db:"description"`
+	Icon        string    `json:"icon" db:"icon"`
+	Color       string    `json:"color" db:"color"`
+	CreatedAt   time.Time `json:"created_at" db:"created_at"`
+}
+
 func (o *Opportunity) Scan(src interface{}) error {
 	var source []byte
 	switch src := src.(type) {
@@ -32,8 +41,8 @@ func (o *Opportunity) Scan(src interface{}) error {
 	return nil
 }
 
-func (s *storage) ListOpportunities() ([]Opportunity, error) {
-	opportunities := make([]Opportunity, 0)
+func (s *storage) ListOpportunities() ([]LOpportunity, error) {
+	opportunities := make([]LOpportunity, 0)
 
 	query := `
 		SELECT id, text, description, icon, color, created_at

@@ -13,9 +13,9 @@ type storage interface {
 	GetUserByChatID(chatID int64) (*db.User, error)
 	CreateUser(user db.User) (*db.User, error)
 	Ping() error
-	GetUserByID(id int64) (*db.User, error)
+	GetUserByID(id int64, showHidden bool) (*db.User, error)
 	UpdateUser(userID int64, user db.User, badges, opportunities []int64) (*db.User, error)
-	ListOpportunities() ([]db.Opportunity, error)
+	ListOpportunities() ([]db.LOpportunity, error)
 	ListBadges(search string) ([]db.Badge, error)
 	CreateBadge(badge db.Badge) (*db.Badge, error)
 	FollowUser(userID, followerID int64) error
@@ -23,7 +23,7 @@ type storage interface {
 	PublishUser(userID int64) error
 	HideUser(userID int64) error
 	ListCollaborations(query db.CollaborationQuery) ([]db.Collaboration, error)
-	GetCollaborationByID(id int64) (*db.Collaboration, error)
+	GetCollaborationByID(userID, id int64) (*db.Collaboration, error)
 	CreateCollaboration(userID int64, collaboration db.Collaboration, badges []int64) (*db.Collaboration, error)
 	UpdateCollaboration(userID int64, collaboration db.Collaboration) (*db.Collaboration, error)
 	PublishCollaboration(userID int64, collaborationID int64) error

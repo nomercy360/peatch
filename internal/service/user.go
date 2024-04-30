@@ -70,12 +70,14 @@ func (s *service) CreateUser(user db.User) (*db.User, error) {
 	return s.storage.CreateUser(user)
 }
 
-func (s *service) GetUserByID(id int64) (*db.User, error) {
-	if id == 0 {
-		return nil, nil
+func (s *service) GetUserByID(uid, id int64) (*db.User, error) {
+	showHidden := false
+
+	if uid == id {
+		showHidden = true
 	}
 
-	user, err := s.storage.GetUserByID(id)
+	user, err := s.storage.GetUserByID(id, showHidden)
 
 	if err != nil {
 		if errors.Is(err, db.ErrNotFound) {

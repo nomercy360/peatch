@@ -1,12 +1,5 @@
 import { useButtons } from '../../hooks/useBackButton';
-import {
-  createEffect,
-  createSignal,
-  For,
-  onCleanup,
-  Show,
-  Suspense,
-} from 'solid-js';
+import { createEffect, createSignal, For, onCleanup, Show, Suspense } from 'solid-js';
 import { User } from '../../../gen';
 import { useNavigate } from '@solidjs/router';
 import { fetchUsers } from '../../api';
@@ -42,7 +35,7 @@ export default function Index() {
   }));
 
   return (
-    <div>
+    <div class="pb-52">
       <div class="px-4 py-2.5">
         <input
           class="h-10 w-full rounded-lg bg-peatch-bg px-2.5 text-black placeholder:text-gray"

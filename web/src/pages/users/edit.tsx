@@ -223,6 +223,10 @@ export default function EditUserProfile() {
     backButton.offClick(goBack);
   });
 
+  createEffect(() => {
+    console.log(user.badge_ids);
+  });
+
   return (
     <div class="flex h-screen flex-col items-center justify-start p-3.5">
       <ProgressBar screen={screen()} totalScreens={totalScreens} />
@@ -282,6 +286,7 @@ export default function EditUserProfile() {
           <FillDescription
             setDescription={d => setUser('description', d)}
             description={user.description}
+            placeholder="For example: 32 y.o. serial entrepreneur & product director with architecture, product design, marketing & tech development background. "
           />
         </Match>
         <Match when={screen() === 6}>

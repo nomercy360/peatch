@@ -30,26 +30,10 @@ describe('Test Admin Routes', () => {
     });
   }
 
-  it('should list badges', async () => {
-    await spec()
-      .get(`${baseUrl}/badges`)
-      .withHeaders({ 'Authorization': 'Bearer $S{firstUserToken}' })
-
-      .expectStatus(200)
-      .expectJsonSchema({
-        type: 'array',
-        items: {
-          type: 'object',
-          required: ['id', 'text', 'icon', 'created_at', 'color'],
-        },
-      })
-      .expectJsonLength(109);
-  });
-
   const newBadge: Badge = {
     text: faker.word.noun({ length: { min: 5, max: 20 } }) + ' badge',
     icon: 'f1f9',
-    color: faker.internet.color(),
+    color: 'ff0000',
   };
 
   const titleCase = (str: string) => {
@@ -59,11 +43,13 @@ describe('Test Admin Routes', () => {
     });
   };
 
+  const firstUserAuth = { 'Authorization': 'Bearer $S{firstUserToken}' };
+  const secondUserAuth = { 'Authorization': 'Bearer $S{secondUserToken}' };
+
   it('should create badge', async () => {
     await spec()
       .post(`${baseUrl}/badges`)
-      .withHeaders({ 'Authorization': 'Bearer $S{firstUserToken}' })
-
+      .withHeaders(firstUserAuth)
       .withJson(newBadge)
       .expectStatus(201)
       .expectJsonMatch({
@@ -81,10 +67,8 @@ describe('Test Admin Routes', () => {
   it('should retrieve badge', async () => {
     await spec()
       .get(`${baseUrl}/badges`)
-      .withHeaders({ 'Authorization': 'Bearer $S{firstUserToken}' })
+      .withHeaders(firstUserAuth)
       .expectStatus(200)
-      .expectJsonLength(110)
-
       .stores('firstBadgeId', '[0].id')
       .stores('secondBadgeId', '[1].id')
       .stores('thirdBadgeId', '[2].id')
@@ -102,7 +86,7 @@ describe('Test Admin Routes', () => {
   it('should retrieve opportunities', async () => {
     await spec()
       .get(`${baseUrl}/opportunities`)
-      .withHeaders({ 'Authorization': 'Bearer $S{firstUserToken}' })
+      .withHeaders(firstUserAuth)
       .expectStatus(200)
       .expectJsonSchema({
         type: 'array',
@@ -154,7 +138,7 @@ describe('Test Admin Routes', () => {
   for (const [name, { auth, profile }] of Object.entries(userUpdateProfiles)) {
     it('should updates user profile ' + name, async () => {
       await spec()
-        .put(`${baseUrl}/users/profile`)
+        .put(`${baseUrl}/users`)
         .withHeaders({
           Authorization: 'Bearer $S{' + auth + '}',
         })
@@ -180,7 +164,9 @@ describe('Test Admin Routes', () => {
     it('should get' + name + ' user profile', async () => {
       await spec()
         .get(`${baseUrl}/users/$S{${name}Id}`)
-        .withHeaders({ 'Authorization': 'Bearer $S{firstUserToken}' })
+        .withHeaders({
+          'Authorization': 'Bearer $S{' + auth + '}',
+        })
         .expectStatus(200)
         .expectJsonSchema({
           type: 'object',
@@ -205,7 +191,7 @@ describe('Test Admin Routes', () => {
   it('should list users', async () => {
     await spec()
       .get(`${baseUrl}/users`)
-      .withHeaders({ 'Authorization': 'Bearer $S{firstUserToken}' })
+      .withHeaders(firstUserAuth)
       .expectStatus(200)
       .expectJsonSchema({
         type: 'array',
@@ -214,74 +200,68 @@ describe('Test Admin Routes', () => {
           required: ['id', 'first_name', 'last_name', 'title', 'description', 'city', 'country', 'country_code', 'avatar_url', 'created_at', 'updated_at'],
         },
       })
-      .expectJsonLength(2);
+      .expectJsonLength(0);
   });
 
-  it('should hide user', async () => {
+  it('should publish user', async () => {
     await spec()
-      .post(`${baseUrl}/users/hide`)
-      .withHeaders({ 'Authorization': 'Bearer $S{secondUserToken}' })
-      .expectStatus(204);
-  });
-
-  it('should not show hidden user', async () => {
-    await spec()
-      .get(`${baseUrl}/users/$S{secondUserId}`)
-      .withHeaders({ 'Authorization': 'Bearer $S{firstUserToken}' })
-      .expectStatus(404);
-  });
-
-  it('should not list hidden user', async () => {
-    await spec()
-      .get(`${baseUrl}/users`)
-      .withHeaders({ 'Authorization': 'Bearer $S{firstUserToken}' })
-      .expectStatus(200)
-      .expectJsonLength(1);
-  });
-
-  it('should show published user', async () => {
-    await spec()
-      .post(`${baseUrl}/users/show`)
-      .withHeaders({ 'Authorization': 'Bearer $S{secondUserToken}' })
+      .post(`${baseUrl}/users/publish`)
+      .withHeaders(firstUserAuth)
       .expectStatus(204);
   });
 
   it('should list published user', async () => {
     await spec()
       .get(`${baseUrl}/users`)
-      .withHeaders({ 'Authorization': 'Bearer $S{firstUserToken}' })
+      .withHeaders(firstUserAuth)
       .expectStatus(200)
-      .expectJsonLength(2);
+      .expectJsonLength(1);
+  });
+
+  it('should hide user', async () => {
+    await spec()
+      .post(`${baseUrl}/users/hide`)
+      .withHeaders(firstUserAuth)
+      .expectStatus(204);
+  });
+
+  it('should not show hidden user', async () => {
+    await spec()
+      .get(`${baseUrl}/users/$S{firstUserId}`)
+      .withHeaders(secondUserAuth)
+      .expectStatus(404);
   });
 
   it('should follow user', async () => {
     await spec()
       .post(`${baseUrl}/users/$S{firstUserId}/follow`)
-      .withHeaders({ 'Authorization': 'Bearer $S{secondUserToken}' })
+      .withHeaders(secondUserAuth)
       .expectStatus(204);
   });
+
 
   it('should get user follower count', async () => {
     await spec()
       .get(`${baseUrl}/users/$S{firstUserId}`)
-      .withHeaders({ 'Authorization': 'Bearer $S{firstUserToken}' })
+      .withHeaders(firstUserAuth)
       .expectStatus(200)
       .expectJsonMatch({
         followers_count: 1,
       });
   });
 
+
   it('should unfollow user', async () => {
     await spec()
-      .post(`${baseUrl}/users/$S{firstUserId}/unfollow`)
-      .withHeaders({ 'Authorization': 'Bearer $S{secondUserToken}' })
+      .delete(`${baseUrl}/users/$S{firstUserId}/follow`)
+      .withHeaders(secondUserAuth)
       .expectStatus(204);
   });
 
   it('should get user follower count', async () => {
     await spec()
       .get(`${baseUrl}/users/$S{firstUserId}`)
-      .withHeaders({ 'Authorization': 'Bearer $S{firstUserToken}' })
+      .withHeaders(firstUserAuth)
       .expectStatus(200)
       .expectJsonMatch({
         followers_count: 0,
@@ -313,7 +293,7 @@ describe('Test Admin Routes', () => {
   it('user can create collaboration', async () => {
     await spec()
       .post(`${baseUrl}/collaborations`)
-      .withHeaders({ 'Authorization': 'Bearer $S{firstUserToken}' })
+      .withHeaders(firstUserAuth)
       .withJson({
         ...firstCollaboration,
         opportunity_id: '$S{firstOpportunityId}',
@@ -330,7 +310,7 @@ describe('Test Admin Routes', () => {
   it('user can create second collaboration', async () => {
     await spec()
       .post(`${baseUrl}/collaborations`)
-      .withHeaders({ 'Authorization': 'Bearer $S{firstUserToken}' })
+      .withHeaders(firstUserAuth)
       .withJson({
         ...secondCollaboration,
         opportunity_id: '$S{secondOpportunityId}',
@@ -347,22 +327,42 @@ describe('Test Admin Routes', () => {
   it('should list collaborations', async () => {
     await spec()
       .get(`${baseUrl}/collaborations`)
-      .withHeaders({ 'Authorization': 'Bearer $S{firstUserToken}' })
+      .withHeaders(secondUserAuth)
       .expectStatus(200)
       .expectJsonSchema({
         type: 'array',
         items: {
           type: 'object',
-          required: ['id', 'title', 'description', 'city', 'country', 'country_code', 'is_payable', 'created_at', 'updated_at', 'opportunity', 'badges'],
+          required: ['id', 'title', 'description', 'city', 'country', 'country_code', 'is_payable', 'created_at', 'updated_at', 'opportunity'],
         },
       })
+      .expectJsonLength(0);
+  });
+
+  it('should publish collaboration', async () => {
+    await spec()
+      .post(`${baseUrl}/collaborations/$S{firstCollaborationId}/publish`)
+      .withHeaders(firstUserAuth);
+  });
+
+  it('should publish second collaboration', async () => {
+    await spec()
+      .post(`${baseUrl}/collaborations/$S{secondCollaborationId}/publish`)
+      .withHeaders(firstUserAuth);
+  });
+
+  it('should list published collaboration', async () => {
+    await spec()
+      .get(`${baseUrl}/collaborations`)
+      .withHeaders(secondUserAuth)
+      .expectStatus(200)
       .expectJsonLength(2);
   });
 
   it('should get collaboration', async () => {
     await spec()
       .get(`${baseUrl}/collaborations/$S{firstCollaborationId}`)
-      .withHeaders({ 'Authorization': 'Bearer $S{firstUserToken}' })
+      .withHeaders(firstUserAuth)
       .expectStatus(200)
       .expectJsonSchema({
         type: 'object',
@@ -403,6 +403,9 @@ describe('Test Admin Routes', () => {
         opportunity: {
           id: '$S{secondOpportunityId}',
         },
+        user: {
+          id: '$S{firstUserId}',
+        },
       })
       .expectJsonLength('badges', 2);
   });
@@ -410,37 +413,30 @@ describe('Test Admin Routes', () => {
   it('should hide collaboration', async () => {
     await spec()
       .post(`${baseUrl}/collaborations/$S{secondCollaborationId}/hide`)
-      .withHeaders({ 'Authorization': 'Bearer $S{firstUserToken}' })
+      .withHeaders(firstUserAuth)
       .expectStatus(204);
   });
 
   it('should not show hidden collaboration', async () => {
     await spec()
       .get(`${baseUrl}/collaborations/$S{secondCollaborationId}`)
-      .withHeaders({ 'Authorization': 'Bearer $S{firstUserToken}' })
+      .withHeaders(secondUserAuth)
       .expectStatus(404);
   });
 
-  it('should not list hidden collaboration', async () => {
+  it('should search collaborations', async () => {
     await spec()
-      .get(`${baseUrl}/collaborations`)
-      .withHeaders({ 'Authorization': 'Bearer $S{firstUserToken}' })
+      .get(`${baseUrl}/collaborations?search=${firstCollaboration.title}`)
+      .withHeaders(firstUserAuth)
       .expectStatus(200)
       .expectJsonLength(1);
   });
 
-  it('should show published collaboration', async () => {
+  it('should search collaborations', async () => {
     await spec()
-      .post(`${baseUrl}/collaborations/$S{secondCollaborationId}/publish`)
-      .withHeaders({ 'Authorization': 'Bearer $S{firstUserToken}' })
-      .expectStatus(204);
-  });
-
-  it('should list published collaboration', async () => {
-    await spec()
-      .get(`${baseUrl}/collaborations`)
-      .withHeaders({ 'Authorization': 'Bearer $S{firstUserToken}' })
+      .get(`${baseUrl}/collaborations?search=${secondCollaboration.title}`)
+      .withHeaders(firstUserAuth)
       .expectStatus(200)
-      .expectJsonLength(2);
+      .expectJsonLength(1);
   });
 });

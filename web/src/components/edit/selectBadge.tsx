@@ -20,6 +20,8 @@ export function SelectBadge(props: {
   };
 
   createEffect(() => {
+    console.log('SELECTED BADGES', props.selected);
+
     if (props.badges && props.badges.length > 0) {
       setFilteredBadges(
         props.badges.filter(badge =>

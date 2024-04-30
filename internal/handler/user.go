@@ -51,7 +51,9 @@ func (h *handler) handleListUsers(c echo.Context) error {
 func (h *handler) handleGetUser(c echo.Context) error {
 	chatID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 
-	user, err := h.svc.GetUserByID(chatID)
+	uid := getUserID(c)
+
+	user, err := h.svc.GetUserByID(uid, chatID)
 	if err != nil {
 		return err
 	}

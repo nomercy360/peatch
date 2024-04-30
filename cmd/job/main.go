@@ -29,21 +29,21 @@ func main() {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 
-	bot, err := telegram.New(cfg.BotToken)
+	_, err = telegram.New(cfg.BotToken)
 
 	if err != nil {
 		log.Fatalf("Failed to initialize bot: %v", err)
 	}
 
-	notifier := notification.NewTelegramNotifier(bot)
+	notifier := notification.NewDummyNotifier()
 
 	notifyJob := job.NewNotifyJob(pg, notifier, cfg.ImgServiceURL)
 
 	jobs := []*job.Job{
 		//job.NewJob("UserRegistrationJob", 10*time.Second, notifyJob.UserRegistrationJob),
-		job.NewJob("NotifyUserReceivedCollaborationRequest", 10*time.Second, notifyJob.NotifyUserReceivedCollaborationRequest),
-		job.NewJob("NotifyNewCollaboration", 10*time.Second, notifyJob.NotifyNewCollaboration),
-		job.NewJob("NotifyNewUserProfile", 10*time.Second, notifyJob.NotifyNewUserProfile),
+		job.NewJob("NotifyUserReceivedCollaborationRequest", 30*time.Second, notifyJob.NotifyUserReceivedCollaborationRequest),
+		job.NewJob("NotifyNewCollaboration", 30*time.Second, notifyJob.NotifyNewCollaboration),
+		job.NewJob("NotifyNewUserProfile", 30*time.Second, notifyJob.NotifyNewUserProfile),
 	}
 
 	sc := job.NewScheduler(jobs)

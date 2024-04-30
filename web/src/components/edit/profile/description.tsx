@@ -4,6 +4,7 @@ import TextArea from '../../TextArea';
 export default function FillDescription(props: {
   description: string;
   setDescription: (description: string) => void;
+  placeholder: string;
 }) {
   const resizer = (e: any) => {
     e.target.style.height = 'auto';
@@ -17,7 +18,11 @@ export default function FillDescription(props: {
       title="Introduce yourself"
       description="Tell others about your backround, achievments and goals"
     >
-      <TextArea value={props.description} setValue={props.setDescription} />
+      <TextArea
+        value={props.description}
+        setValue={props.setDescription}
+        placeholder={props.placeholder}
+      />
     </FormLayout>
   );
 }

@@ -27,10 +27,11 @@ type Collaboration struct {
 } // @Name Collaboration
 
 type CollaborationQuery struct {
-	Page   int
-	Limit  int
-	Search string
-	From   *time.Time
+	Page      int
+	Limit     int
+	Search    string
+	From      *time.Time
+	HiddenFor *int64
 }
 
 func (s *storage) ListCollaborations(params CollaborationQuery) ([]Collaboration, error) {
@@ -42,12 +43,20 @@ func (s *storage) ListCollaborations(params CollaborationQuery) ([]Collaboration
         FROM collaborations c
         LEFT JOIN opportunities o ON c.opportunity_id = o.id
 		LEFT JOIN users u ON c.user_id = u.id
+        WHERE 1=1
     `
 
 	paramIndex := 1
 	args := make([]interface{}, 0)
 
-	whereClauses := []string{"c.published_at IS NOT NULL AND c.hidden_at IS NULL"}
+	var whereClauses []string
+
+	if params.HiddenFor != nil {
+		// show only this user collaborations or published+not hidden
+		whereClauses = append(whereClauses, fmt.Sprintf("AND (c.user_id = $%d OR (c.published_at IS NOT NULL AND c.hidden_at IS NULL))", paramIndex))
+		args = append(args, *params.HiddenFor)
+		paramIndex++
+	}
 
 	if params.Search != "" {
 		searchClause := fmt.Sprintf("(c.title ILIKE $%d OR c.description ILIKE $%d)", paramIndex, paramIndex)
@@ -63,7 +72,7 @@ func (s *storage) ListCollaborations(params CollaborationQuery) ([]Collaboration
 		paramIndex++
 	}
 
-	query = fmt.Sprintf("%s WHERE %s", query, strings.Join(whereClauses, " AND "))
+	query = fmt.Sprintf("%s %s", query, strings.Join(whereClauses, " AND "))
 	//query += fmt.Sprintf(" GROUP BY c.id ORDER BY c.created_at DESC")
 	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", paramIndex, paramIndex+1)
 
@@ -78,8 +87,9 @@ func (s *storage) ListCollaborations(params CollaborationQuery) ([]Collaboration
 	return res, nil
 }
 
-func (s *storage) GetCollaborationByID(id int64) (*Collaboration, error) {
+func (s *storage) GetCollaborationByID(userID, id int64) (*Collaboration, error) {
 	var collaboration Collaboration
+	var args []interface{}
 
 	query := `
         SELECT 
@@ -92,11 +102,19 @@ func (s *storage) GetCollaborationByID(id int64) (*Collaboration, error) {
 		LEFT JOIN users u ON c.user_id = u.id
 		LEFT JOIN collaboration_badges cb ON c.id = cb.collaboration_id
 		LEFT JOIN badges b ON cb.badge_id = b.id
-		WHERE c.id = $1 AND c.published_at IS NOT NULL AND c.hidden_at IS NULL
-        GROUP BY c.id, o.id, u.id
+		WHERE c.id = $1
 	`
 
-	err := s.pg.Get(&collaboration, query, id)
+	args = append(args, id)
+
+	if userID != 0 {
+		query += " AND (c.user_id = $2 OR (c.published_at IS NOT NULL AND c.hidden_at IS NULL))"
+		args = append(args, userID)
+	}
+
+	query += fmt.Sprintf(" GROUP BY c.id, o.id, u.id")
+
+	err := s.pg.Get(&collaboration, query, args...)
 
 	if err != nil && IsNoRowsError(err) {
 		return nil, ErrNotFound
@@ -263,4 +281,22 @@ func (s *storage) PublishCollaboration(userID int64, collaborationID int64) erro
 	}
 
 	return nil
+}
+
+func (s *storage) ListCollaborationRequests(from time.Time) ([]CollaborationRequest, error) {
+	requests := make([]CollaborationRequest, 0)
+
+	query := `
+		SELECT id, collaboration_id, user_id, message, created_at, updated_at, status
+		FROM collaboration_requests
+		WHERE created_at >= $1
+	`
+
+	err := s.pg.Select(&requests, query, from)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return requests, nil
 }

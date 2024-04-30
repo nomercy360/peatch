@@ -20,9 +20,9 @@ type service interface {
 	TelegramAuth(queryID, userJSON, authDate, hash string) (*svc.UserWithToken, error)
 	GetUserByChatID(chatID int64) (*db.User, error)
 	CreateUser(user db.User) (*db.User, error)
-	GetUserByID(id int64) (*db.User, error)
+	GetUserByID(userID, id int64) (*db.User, error)
 	UpdateUser(userID int64, updateRequest svc.UpdateUserRequest) (*db.User, error)
-	ListOpportunities() ([]db.Opportunity, error)
+	ListOpportunities() ([]db.LOpportunity, error)
 	ListBadges(search string) ([]db.Badge, error)
 	CreateBadge(badge svc.CreateBadgeRequest) (*db.Badge, error)
 	FollowUser(userID, followingID int64) error
@@ -31,7 +31,7 @@ type service interface {
 	HideUser(userID int64) error
 	ShowUser(userID int64) error
 	ListCollaborations(query db.CollaborationQuery) ([]db.Collaboration, error)
-	GetCollaborationByID(id int64) (*db.Collaboration, error)
+	GetCollaborationByID(userID, id int64) (*db.Collaboration, error)
 	CreateCollaboration(userID int64, create svc.CreateCollaboration) (*db.Collaboration, error)
 	UpdateCollaboration(userID int64, update svc.CreateCollaboration) (*db.Collaboration, error)
 	PublishCollaboration(userID int64, collaborationID int64) error
@@ -39,7 +39,7 @@ type service interface {
 	CreateCollaborationRequest(userID int64, request svc.CreateCollaborationRequest) (*db.CollaborationRequest, error)
 	GetPresignedURL(userID int64, objectKey string) (*svc.PresignedURL, error)
 	CreateUserCollaboration(userID int64, request svc.CreateUserCollaboration) (*db.UserCollaborationRequest, error)
-	// ListUserPreview fetch 3 random user avatars for the home page
+	// GetUserPreview fetch 3 random user avatars for the home page
 	GetUserPreview() ([]svc.UserPreview, error)
 }
 

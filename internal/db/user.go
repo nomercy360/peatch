@@ -12,12 +12,15 @@ import (
 type BadgeSlice []Badge
 
 func (bs *BadgeSlice) Scan(src interface{}) error {
+	// how to handle [null]?
 	var source []byte
 	switch src := src.(type) {
 	case []byte:
 		source = src
 	case string:
 		source = []byte(src)
+	case nil:
+		return json.Unmarshal([]byte("[]"), bs)
 	default:
 		return fmt.Errorf("unsupported type for BadgeSlice: %T", src)
 	}
@@ -34,6 +37,8 @@ func (os *OpportunitySlice) Scan(src interface{}) error {
 		source = src
 	case string:
 		source = []byte(src)
+	case nil:
+		return json.Unmarshal([]byte("[]"), os)
 	default:
 		return fmt.Errorf("unsupported type for OpportunitySlice: %T", src)
 	}
@@ -171,8 +176,8 @@ func (s *storage) ListUsers(params UserQuery) ([]User, error) {
 func getUserQuery() string {
 	return `
 		SELECT u.*,
-		       json_agg(distinct to_jsonb(b)) as badges,
-		       json_agg(distinct to_jsonb(o)) as opportunities
+		       json_agg(distinct to_jsonb(b)) filter (where b.id is not null) as badges,
+		       json_agg(distinct to_jsonb(o)) filter (where o.id is not null) as opportunities
 		FROM users u
 		LEFT JOIN user_badges ub ON u.id = ub.user_id
 		LEFT JOIN badges b ON ub.badge_id = b.id
@@ -307,10 +312,19 @@ func (s *storage) UpdateUser(userID int64, user User, badges, opportunities []in
 	return &res, nil
 }
 
-func (s *storage) GetUserByID(id int64) (*User, error) {
+func (s *storage) GetUserByID(id int64, showHidden bool) (*User, error) {
 	user := new(User)
 
-	err := s.pg.Get(user, getUserQuery()+"WHERE u.id = $1 GROUP BY u.id", id)
+	query := getUserQuery() + "WHERE u.id = $1"
+
+	if !showHidden {
+		// should not return any hidden users or unpublished users
+		query += " AND u.hidden_at IS NULL AND u.published_at IS NOT NULL"
+	}
+
+	query += " GROUP BY u.id"
+
+	err := s.pg.Get(user, query, id)
 
 	if err != nil && IsNoRowsError(err) {
 		return nil, ErrNotFound
@@ -576,4 +590,25 @@ func (s *storage) GetUserPreview() ([]User, error) {
 	}
 
 	return users, nil
+}
+
+func (s *storage) GetCollaborationOwner(collaborationID int64) (*User, error) {
+	user := new(User)
+
+	query := `
+		SELECT u.*
+		FROM users u
+		JOIN collaborations c ON u.id = c.user_id
+		WHERE c.id = $1
+	`
+
+	err := s.pg.Get(user, query, collaborationID)
+
+	if err != nil {
+		if IsNoRowsError(err) {
+			return nil, ErrNotFound
+		}
+	}
+
+	return user, nil
 }
