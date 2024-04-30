@@ -1,21 +1,14 @@
 import { FormLayout } from '../layout';
-import TextArea from '../../textArea';
+import TextArea from '../../TextArea';
 
 export default function DescribeCollaboration(props: {
   description: string;
   setDescription: (description: string) => void;
-  isPayable: boolean;
+  isPayable?: boolean;
   setIsPayable: (isPayable: boolean) => void;
   title: string;
   setTitle: (title: string) => void;
 }) {
-  const resizer = (e: any) => {
-    e.target.style.height = 'auto';
-    e.target.style.height = e.target.scrollHeight + 'px';
-
-    props.setDescription(e.target.value);
-  };
-
   return (
     <FormLayout
       title="Describe collaboration"
@@ -41,8 +34,11 @@ export default function DescribeCollaboration(props: {
             }}
           ></span>
         </button>
-        <TextArea value={props.description} setValue={props.setDescription}
-                  placeholder="For example: 32 y.o. serial entrepreneur & product director with architecture, product design, marketing & tech development background."></TextArea>
+        <TextArea
+          value={props.description}
+          setValue={props.setDescription}
+          placeholder="For example: 32 y.o. serial entrepreneur & product director with architecture, product design, marketing & tech development background."
+        ></TextArea>
       </div>
     </FormLayout>
   );

@@ -1,5 +1,5 @@
 import { FormLayout } from '../layout';
-import TextArea from '../../textArea';
+import TextArea from '../../TextArea';
 
 export default function FillDescription(props: {
   description: string;

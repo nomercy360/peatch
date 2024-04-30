@@ -7,6 +7,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/peatch-io/peatch/internal/db"
 	svc "github.com/peatch-io/peatch/internal/service"
+	"io"
 	"net/http"
 )
 
@@ -61,6 +62,8 @@ func (h *handler) RegisterRoutes(e *echo.Echo) {
 	e.GET("/", h.handleIndex)
 	e.POST("/auth/telegram", h.handleTelegramAuth)
 
+	e.GET("/avatar", h.getRandomAvatar)
+
 	a := e.Group("/api")
 
 	config := echojwt.Config{
@@ -108,4 +111,24 @@ func (h *handler) handleGetPresignedURL(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, res)
+}
+
+func (h *handler) getRandomAvatar(c echo.Context) error {
+	// Set the URL of the avatar service
+	url := "https://source.boringavatars.com/beam/200?square"
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "Failed to request avatar")
+	}
+	defer resp.Body.Close()
+
+	c.Response().Header().Set(echo.HeaderContentType, resp.Header.Get("Content-Type"))
+
+	_, err = io.Copy(c.Response().Writer, resp.Body)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "Failed to stream avatar")
+	}
+
+	return nil
 }

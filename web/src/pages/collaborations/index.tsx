@@ -7,7 +7,7 @@ import {
   Show,
   Suspense,
 } from 'solid-js';
-import { User } from '../../../gen';
+import { Collaboration } from '../../../gen';
 import { useNavigate } from '@solidjs/router';
 import { fetchUsers } from '../../api';
 import { createQuery } from '@tanstack/solid-query';
@@ -53,19 +53,19 @@ export default function Index() {
         />
       </div>
       <Suspense fallback={<UserListPlaceholder />}>
-        <For each={query.data}>{profile => <UserCard user={profile} />}</For>
+        <For each={query.data}>
+          {profile => <CollaborationCard user={profile} />}
+        </For>
       </Suspense>
     </div>
   );
 }
 
-const UserCard = (props: { user: User }) => {
+const CollaborationCard = (props: { user: Collaboration }) => {
   const shortenDescription = (description: string) => {
     if (description.length <= 120) return description;
     return description.slice(0, 120) + '...';
   };
-
-  const imgUrl = `https://assets.peatch.io/${props.user.avatar_url}`;
 
   const badgeSlice = props.user.badges?.slice(0, 5);
 
@@ -74,13 +74,6 @@ const UserCard = (props: { user: User }) => {
       class="flex flex-col items-start px-4 pb-5 pt-4 text-start"
       href={`/users/${props.user.id}`}
     >
-      <img
-        class="size-10 rounded-2xl object-cover"
-        src={imgUrl}
-        alt="User Avatar"
-      />
-      <p class="mt-3 text-3xl text-blue">{props.user.first_name}:</p>
-      <p class="text-3xl">{props.user.title}</p>
       <p class="mt-2 text-sm text-gray">
         {shortenDescription(props.user.description!)}
       </p>

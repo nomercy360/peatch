@@ -1,116 +1,154 @@
-export interface Telegram {
-  WebView: WebView
-  Utils: Utils
-  WebApp: WebApp
+// CloudStorage Interface Definition
+interface CloudStorage {
+  setItem(
+    key: string,
+    value: string,
+    callback?: (error: Error | null, success: boolean) => void,
+  ): CloudStorage;
+
+  getItem(
+    key: string,
+    callback: (error: Error | null, value: string) => void,
+  ): string;
+
+  getItems(
+    keys: string[],
+    callback: (error: Error | null, values: string[]) => void,
+  ): void;
+
+  removeItem(
+    key: string,
+    callback?: (error: Error | null, success: boolean) => void,
+  ): CloudStorage;
+
+  removeItems(
+    keys: string[],
+    callback?: (error: Error | null, success: boolean) => void,
+  ): CloudStorage;
+
+  getKeys(callback: (error: Error | null, keys: string[]) => void): void;
 }
 
-export interface Utils {
-  result?: unknown
-
-  notificationOccurred(warning: string): void
+// Telegram Interface Definitions
+interface Telegram {
+  WebView: WebView;
+  Utils: Utils;
+  WebApp: WebApp;
 }
 
-export interface WebApp {
-  initData: string
-  initDataUnsafe: InitDataUnsafe
-  version: string
-  colorScheme: string
-  themeParams: ThemeParams
-  isExpanded: boolean
-  viewportHeight: number
-  viewportStableHeight: number
-  isClosingConfirmationEnabled: boolean
-  headerColor: string
-  backgroundColor: string
-  BackButton: BackButton
-  MainButton: MainButton
-  HapticFeedback: Utils
-
-  openTelegramLink(url: string): void
-
-  showAlert(message: string, callback?: () => void): void
-
-  showConfirm(message: string, callback: () => void): void
-
-  expand(): void
-
-  ready(): void
-
-  onEvent(event: string, callback: () => void): void
-
-  offEvent(event: string, callback: () => void): void
+interface Utils {
+  notificationOccurred(warning: string): void;
 }
 
-export interface BackButton {
-  isVisible: boolean
+interface WebApp {
+  initData: string;
+  initDataUnsafe: InitDataUnsafe;
+  version: string;
+  colorScheme: string;
+  themeParams: ThemeParams;
+  isExpanded: boolean;
+  viewportHeight: number;
+  viewportStableHeight: number;
+  isClosingConfirmationEnabled: boolean;
+  headerColor: string;
+  backgroundColor: string;
+  BackButton: BackButton;
+  MainButton: MainButton;
+  HapticFeedback: Utils;
+  CloudStorage: CloudStorage;
 
-  onClick(callback: () => void): void
+  openTelegramLink(url: string): void;
 
-  offClick(callback: () => void): void
+  showAlert(message: string, callback?: () => void): void;
 
-  show(): void
-  hide(): void
+  showConfirm(message: string, callback: () => void): void;
 
-  setParams(param: { text_color?: string }): any
+  expand(): void;
+
+  ready(): void;
+
+  onEvent(event: string, callback: () => void): void;
+
+  offEvent(event: string, callback: () => void): void;
 }
 
-export interface MainButton {
-  onClick: any
-  text: string
-  color: string
-  offClick: any
-  textColor: string
-  isVisible: boolean
-  isProgressVisible: boolean
-  isActive: boolean
+interface BackButton {
+  isVisible: boolean;
 
-  setParams(param: { text_color?: string; color?: string; text?: string, is_active?: boolean, is_visible?: boolean }): any
+  onClick(callback: () => void): void;
 
-  showProgress(leaveActive: boolean): void
+  offClick(callback: () => void): void;
 
-  hideProgress(): void
+  show(): void;
 
-  disable(): void
+  hide(): void;
 
-  setText(next: string): void;
+  setParams(params: { text_color?: string }): void;
+}
+
+interface MainButton {
+  onClick: any;
+  text: string;
+  color: string;
+  offClick: any;
+  textColor: string;
+  isVisible: boolean;
+  isProgressVisible: boolean;
+  isActive: boolean;
+
+  setParams(params: {
+    text_color?: string;
+    color?: string;
+    text?: string;
+    is_active?: boolean;
+    is_visible?: boolean;
+  }): void;
+
+  showProgress(leaveActive: boolean): void;
+
+  hideProgress(): void;
+
+  disable(): void;
+
+  setText(nextText: string): void;
 
   show(): void;
 
   enable(): void;
 }
 
-export interface InitDataUnsafe {
-  query_id: string
-  user: User
-  auth_date: string
-  hash: string
+interface InitDataUnsafe {
+  query_id: string;
+  user: User;
+  auth_date: string;
+  hash: string;
 }
 
-export interface User {
-  id: number
-  first_name: string
-  last_name: string
-  username: string
-  language_code: string
+interface User {
+  id: number;
+  first_name: string;
+  last_name: string;
+  username: string;
+  language_code: string;
 }
 
-export interface ThemeParams {
-  bg_color: string
-  text_color: string
-  hint_color: string
-  link_color: string
-  button_color: string
-  button_text_color: string
-  secondary_bg_color: string
+interface ThemeParams {
+  bg_color: string;
+  text_color: string;
+  hint_color: string;
+  link_color: string;
+  button_color: string;
+  button_text_color: string;
+  secondary_bg_color: string;
 }
 
-export interface WebView {
-  initParams: InitParams
-  isIframe: boolean
+interface WebView {
+  initParams: InitParams;
+  isIframe: boolean;
 }
 
-export interface InitParams {
-  tgWebAppData: string
-  tgWebAppVersion: string
-  tgWebAppThemeParams: string
+interface InitParams {
+  tgWebAppData: string;
+  tgWebAppVersion: string;
+  tgWebAppThemeParams: string;
 }

@@ -20,7 +20,7 @@ module.exports = {
       xl: [
         '17px',
         {
-          lineHeight: '32px',
+          lineHeight: '23px',
           fontWeight: '500',
         },
       ],

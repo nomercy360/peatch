@@ -2,11 +2,17 @@ import { createQuery } from '@tanstack/solid-query';
 import { CDN_URL, createUserCollaboration, fetchProfile } from '../../api';
 import { useNavigate, useParams } from '@solidjs/router';
 import { store } from '../../store';
-import { createEffect, createSignal, onCleanup, Show, Suspense } from 'solid-js';
+import {
+  createEffect,
+  createSignal,
+  onCleanup,
+  Show,
+  Suspense,
+} from 'solid-js';
 import { useButtons } from '../../hooks/useBackButton';
 import { createStore } from 'solid-js/store';
 import { CreateUserCollaboration } from '../../../gen';
-import TextArea from '../../components/textArea';
+import TextArea from '../../components/TextArea';
 import { usePopup } from '../../hooks/usePopup';
 
 export default function Collaborate() {
@@ -19,11 +25,12 @@ export default function Collaborate() {
   const navigate = useNavigate();
   const { showAlert } = usePopup();
 
-  const [collaborationRequest, setCollaborationRequest] = createStore<CreateUserCollaboration>({
-    user_id: Number(userId),
-    message: '',
-    requester_id: store.user.id!,
-  });
+  const [collaborationRequest, setCollaborationRequest] =
+    createStore<CreateUserCollaboration>({
+      user_id: Number(userId),
+      message: '',
+      requester_id: store.user.id!,
+    });
 
   const backToProfile = () => {
     navigate('/users/' + userId);
@@ -40,7 +47,7 @@ export default function Collaborate() {
       return;
     }
     try {
-      const resp = await  createUserCollaboration(collaborationRequest);
+      const resp = await createUserCollaboration(collaborationRequest);
       setCreated(true);
     } catch (e) {
       console.error(e);
@@ -53,9 +60,9 @@ export default function Collaborate() {
     if (created()) {
       mainButton.offClick(postCollaboration);
       mainButton.onClick(backToProfile);
-      mainButton.setText('Back to ' + query.data.first_name + '\'s profile');
+      mainButton.setText('Back to ' + query.data.first_name + "'s profile");
     } else {
-      mainButton.setVisible('Send message')
+      mainButton.setVisible('Send message');
       mainButton.onClick(postCollaboration);
       if (collaborationRequest.message === '') {
         mainButton.setActive(false);
@@ -92,7 +99,9 @@ export default function Collaborate() {
           <p class="text-sm text-gray">{query.data.description}</p>
           <TextArea
             value={collaborationRequest.message!}
-            setValue={(value: string) => setCollaborationRequest('message', value)}
+            setValue={(value: string) =>
+              setCollaborationRequest('message', value)
+            }
             placeholder="Write a message to start collaboration"
           />
         </div>

@@ -1,20 +1,43 @@
-import { For } from 'solid-js';
+import { createEffect, createSignal, For, Show } from 'solid-js';
 import { store } from '../store';
 import { CDN_URL } from '../api';
+import FillProfilePopup from '../components/FillProfilePopup';
 
 export default function Index() {
+  const [profilePopup, setProfilePopup] = createSignal(false);
+
   const images = ['/thumb.png', '/thumb.png', '/thumb.png'];
 
   const getUserLink = () => {
-    if (store.user.published_at && store.user.first_name) {
+    if (store.user.first_name && store.user.last_name) {
       return '/users/' + store.user?.id;
     } else {
       return '/users/edit';
     }
   };
 
+  const closePopup = () => {
+    setProfilePopup(false);
+    window.Telegram.WebApp.CloudStorage.setItem('profilePopup', 'closed');
+  };
+
+  const updateProfilePopup = (err: any, value: any) => {
+    setProfilePopup(value !== 'closed');
+  };
+
+  createEffect(() => {
+    window.Telegram.WebApp.CloudStorage.getItem(
+      'profilePopup',
+      updateProfilePopup,
+    );
+    // window.Telegram.WebApp.CloudStorage.removeItem('profilePopup');
+  });
+
   return (
     <div class="flex flex-col px-4">
+      <Show when={!store.user.published_at && profilePopup()}>
+        <FillProfilePopup onClose={closePopup} />
+      </Show>
       <a
         class="flex flex-row items-center justify-between py-4"
         href={getUserLink()}
@@ -60,21 +83,18 @@ export default function Index() {
       <div class="h-px w-full bg-peatch-stroke"></div>
       <a
         class="flex flex-col items-start justify-start py-4"
-        href="/collaborations/create"
+        href="/collaborations"
       >
         <div class="flex w-full flex-row items-center justify-start">
-          <div
-            class="z-20 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-white bg-orange">
+          <div class="z-20 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-white bg-orange">
             <span class="material-symbols-rounded text-white">
               self_improvement
             </span>
           </div>
-          <div
-            class="z-10 -ml-1 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-white bg-red">
+          <div class="z-10 -ml-1 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-white bg-red">
             <span class="material-symbols-rounded text-white">wine_bar</span>
           </div>
-          <div
-            class="-ml-1 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-white bg-blue">
+          <div class="-ml-1 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-white bg-blue">
             <span class="material-symbols-rounded text-white">
               directions_run
             </span>

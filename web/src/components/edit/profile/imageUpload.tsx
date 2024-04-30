@@ -1,5 +1,6 @@
 import { createSignal, Match, Switch } from 'solid-js';
 import { FormLayout } from '../layout';
+import { API_BASE_URL } from '../../../api';
 
 export default function ImageUpload(props: {
   imageFromCDN?: string;
@@ -23,7 +24,7 @@ export default function ImageUpload(props: {
   };
 
   const generateRandomAvatar = () => {
-    const url = 'https://source.boringavatars.com/beam';
+    const url = `${API_BASE_URL}/avatar`;
 
     const resp = fetch(url);
 
@@ -33,7 +34,8 @@ export default function ImageUpload(props: {
           type: 'image/svg+xml',
         });
         props.setImgFile(file);
-        setPreviewUrl(url);
+        setPreviewUrl('');
+        setPreviewUrl(URL.createObjectURL(file));
       });
     });
   };
@@ -63,9 +65,9 @@ export default function ImageUpload(props: {
 }
 
 function ImageBox({
-                    imgURL,
-                    onFileChange,
-                  }: {
+  imgURL,
+  onFileChange,
+}: {
   imgURL: string;
   onFileChange: any;
 }) {

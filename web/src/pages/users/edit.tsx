@@ -216,6 +216,8 @@ export default function EditUserProfile() {
   onCleanup(() => {
     mainButton.hide();
     mainButton.offClick(nextScreen);
+    mainButton.offClick(saveUser);
+    mainButton.offClick(publishBadge);
     backButton.hide();
     backButton.offClick(prevScreen);
     backButton.offClick(goBack);

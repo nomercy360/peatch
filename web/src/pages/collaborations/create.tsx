@@ -5,7 +5,12 @@ import { Badge, CreateCollaboration } from '../../../gen';
 import { useNavigate } from '@solidjs/router';
 import { SelectBadge } from '../../components/edit/selectBadge';
 import { createQuery } from '@tanstack/solid-query';
-import { createCollaboration, fetchBadges, fetchOpportunities, postBadge } from '../../api';
+import {
+  createCollaboration,
+  fetchBadges,
+  fetchOpportunities,
+  postBadge,
+} from '../../api';
 import CreateBadge from '../../components/edit/createBadge';
 import { SelectOpportunity } from '../../components/edit/selectOpp';
 import SelectLocation from '../../components/edit/selectLocation';
@@ -166,6 +171,8 @@ export default function Create() {
   onCleanup(() => {
     mainButton.hide();
     mainButton.offClick(nextScreen);
+    mainButton.offClick(publishBadge);
+    mainButton.offClick(createCollab);
     backButton.hide();
     backButton.offClick(prevScreen);
     backButton.offClick(goBack);

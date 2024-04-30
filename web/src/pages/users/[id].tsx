@@ -1,11 +1,27 @@
 import { useButtons } from '../../hooks/useBackButton';
-import { createEffect, createSignal, For, Match, onCleanup, Show, Suspense, Switch } from 'solid-js';
+import {
+  createEffect,
+  createSignal,
+  For,
+  Match,
+  onCleanup,
+  Suspense,
+  Switch,
+} from 'solid-js';
 import { useNavigate, useParams } from '@solidjs/router';
-import { CDN_URL, fetchProfile, followUser, hideProfile, publishProfile, showProfile, unfollowUser } from '../../api';
+import {
+  CDN_URL,
+  fetchProfile,
+  followUser,
+  hideProfile,
+  publishProfile,
+  showProfile,
+  unfollowUser,
+} from '../../api';
 import { createQuery } from '@tanstack/solid-query';
 import { setFollowing, setUser, store } from '../../store';
 import { usePopup } from '../../hooks/usePopup';
-import ProfilePublished from '../../components/profilePublished';
+import ProfilePublished from '../../components/ProfilePublished';
 
 export default function UserProfile() {
   const { mainButton, backButton } = useButtons();
@@ -132,10 +148,25 @@ export default function UserProfile() {
           <Match when={query.data}>
             <div class="min-h-screen">
               <Switch>
-                <Match when={isCurrentUserProfile && store.user.hidden_at}>
+                <Match when={isCurrentUserProfile && !store.user.published_at}>
+                  <ActionButton text="Edit" onClick={pushToEdit} />
+                </Match>
+                <Match
+                  when={
+                    isCurrentUserProfile &&
+                    store.user.hidden_at &&
+                    store.user.published_at
+                  }
+                >
                   <ActionButton text="Show" onClick={show} />
                 </Match>
-                <Match when={isCurrentUserProfile && !store.user.hidden_at}>
+                <Match
+                  when={
+                    isCurrentUserProfile &&
+                    !store.user.hidden_at &&
+                    store.user.published_at
+                  }
+                >
                   <ActionButton text="Hide" onClick={hide} />
                 </Match>
                 <Match
@@ -178,9 +209,9 @@ export default function UserProfile() {
                           'border-color': `#${badge.color}`,
                         }}
                       >
-                      <span class="material-symbols-rounded text-white">
-                        {String.fromCodePoint(parseInt(badge.icon!, 16))}
-                      </span>
+                        <span class="material-symbols-rounded text-white">
+                          {String.fromCodePoint(parseInt(badge.icon!, 16))}
+                        </span>
                         <p class="text-sm font-semibold text-white">
                           {badge.text}
                         </p>
@@ -198,9 +229,9 @@ export default function UserProfile() {
                         }}
                       >
                         <div class="flex size-10 items-center justify-center rounded-full bg-white">
-                        <span class="material-symbols-rounded text-black">
-                          {String.fromCodePoint(parseInt(op.icon!, 16))}
-                        </span>
+                          <span class="material-symbols-rounded text-black">
+                            {String.fromCodePoint(parseInt(op.icon!, 16))}
+                          </span>
                         </div>
                         <div class="text-start text-white">
                           <p class="text-sm font-semibold">{op.text}</p>
