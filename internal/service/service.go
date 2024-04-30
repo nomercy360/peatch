@@ -32,6 +32,7 @@ type storage interface {
 	GetUserFollowing(userID int64) ([]int64, error)
 	CreateUserCollaboration(collaboration db.UserCollaborationRequest) (*db.UserCollaborationRequest, error)
 	ShowUser(userID int64) error
+	GetUserPreview() ([]db.User, error)
 }
 
 type s3Client interface {

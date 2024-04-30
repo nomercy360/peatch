@@ -23,6 +23,7 @@ type Collaboration struct {
 	RequestsCount int         `json:"requests_count" db:"requests_count"`
 	Opportunity   Opportunity `json:"opportunity" db:"opportunity"`
 	User          UserProfile `json:"user" db:"user"`
+	Badges        BadgeSlice  `json:"badges,omitempty" db:"badges"`
 } // @Name Collaboration
 
 type CollaborationQuery struct {
@@ -49,7 +50,7 @@ func (s *storage) ListCollaborations(params CollaborationQuery) ([]Collaboration
 	whereClauses := []string{"c.published_at IS NOT NULL AND c.hidden_at IS NULL"}
 
 	if params.Search != "" {
-		searchClause := fmt.Sprintf("c.title ILIKE $%d", paramIndex)
+		searchClause := fmt.Sprintf("(c.title ILIKE $%d OR c.description ILIKE $%d)", paramIndex, paramIndex)
 		args = append(args, "%"+params.Search+"%")
 		whereClauses = append(whereClauses, searchClause)
 		paramIndex++
@@ -82,13 +83,17 @@ func (s *storage) GetCollaborationByID(id int64) (*Collaboration, error) {
 
 	query := `
         SELECT 
-            c.id, c.user_id, c.opportunity_id, c.title, c.description, c.is_payable, c.published_at, c.created_at, c.updated_at, c.country, c.city, c.country_code, c.requests_count,
+            c.*,
 			to_jsonb(o) as opportunity,
-			to_jsonb(u) as "user"
+			to_jsonb(u) as "user",
+			json_agg(distinct to_jsonb(b)) as badges
 		FROM collaborations c
 		LEFT JOIN opportunities o ON c.opportunity_id = o.id
 		LEFT JOIN users u ON c.user_id = u.id
-		WHERE c.id = $1
+		LEFT JOIN collaboration_badges cb ON c.id = cb.collaboration_id
+		LEFT JOIN badges b ON cb.badge_id = b.id
+		WHERE c.id = $1 AND c.published_at IS NOT NULL AND c.hidden_at IS NULL
+        GROUP BY c.id, o.id, u.id
 	`
 
 	err := s.pg.Get(&collaboration, query, id)

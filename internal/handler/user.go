@@ -215,3 +215,19 @@ func (h *handler) handleCreateUserCollaboration(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, collaboration)
 }
+
+// handleGetUserPreview godoc
+// @Summary List user preview
+// @Tags users
+// @Accept  json
+// @Produce  json
+// @Success 200 {array} UserPreview
+// @Router /api/users/preview [get]
+func (h *handler) handleGetUserPreview(c echo.Context) error {
+	users, err := h.svc.GetUserPreview()
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, users)
+}

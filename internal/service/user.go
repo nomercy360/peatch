@@ -135,3 +135,23 @@ func (s *service) CreateUserCollaboration(userID int64, request CreateUserCollab
 func (s *service) ShowUser(userID int64) error {
 	return s.storage.ShowUser(userID)
 }
+
+type UserPreview struct {
+	AvatarURL string `json:"avatar_url"`
+} // @Name UserPreview
+
+func (s *service) GetUserPreview() ([]UserPreview, error) {
+	res, err := s.storage.GetUserPreview()
+
+	if err != nil {
+		return nil, err
+	}
+
+	var previews []UserPreview
+
+	for _, user := range res {
+		previews = append(previews, UserPreview{AvatarURL: *user.AvatarURL})
+	}
+
+	return previews, nil
+}
