@@ -18,6 +18,7 @@ type bot struct {
 	config   Config
 	s3Client s3Client
 	tg       *telegram.Bot
+	messages map[string]map[string]string
 }
 
 type storage interface {
@@ -41,9 +42,27 @@ func New(s storage, s3 s3Client, config Config) *bot {
 		storage:  s,
 		s3Client: s3,
 		config:   config,
+		messages: loadTranslations(),
 	}
 	b.initTelegram()
 	return b
+}
+
+func loadTranslations() map[string]map[string]string {
+	return map[string]map[string]string{
+		"en": {
+			"welcome":        "Welcome!\n*Peatch* is a social network made for collaborations. Tap the button to open the web app!",
+			"openWebApp":     "You can open the web app by tapping the button below.",
+			"launch":         "Launch",
+			"openWebAppMenu": "Open Web App",
+		},
+		"ru": {
+			"welcome":        "Привет!\n*Peatch* - социальная сеть для совместной работы. Кнопка ниже, откроет веб-приложение!",
+			"openWebApp":     "Вы можете открыть веб-приложение, нажав кнопку ниже.",
+			"launch":         "Запустить",
+			"openWebAppMenu": "Открыть веб-app",
+		},
+	}
 }
 
 func (b *bot) initTelegram() {
@@ -71,37 +90,63 @@ func (b *bot) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 
 func (b *bot) handleMessage(update tgModels.Update, w http.ResponseWriter) {
 	user, err := b.storage.GetUserByChatID(update.Message.Chat.ID)
+
+	lang := "en"
+	if update.Message.From.LanguageCode != "" {
+		lang = update.Message.From.LanguageCode
+	}
+
+	msgs := b.messages[lang]
+
+	webApp := tgModels.InlineKeyboardMarkup{
+		InlineKeyboard: [][]tgModels.InlineKeyboardButton{
+			{
+				{Text: msgs["launch"], WebApp: &tgModels.WebAppInfo{URL: b.config.WebAppURL}},
+			},
+		},
+	}
+
 	if err != nil && errors.Is(err, db.ErrNotFound) {
-		log.Printf("User not found, creating new user")
+		log.Printf("User %d not found, creating new user", update.Message.Chat.ID)
 
 		user = b.createUser(update)
 		if user == nil {
 			http.Error(w, "Failed to create user", http.StatusInternalServerError)
 			return
 		}
+
+		message := msgs["welcome"]
+
+		photo := &tgModels.InputFileString{Data: "https://assets.peatch.io/peatch-preview.png"}
+
+		params := &telegram.SendPhotoParams{ChatID: update.Message.Chat.ID, Caption: message, ReplyMarkup: &webApp, Photo: photo, ParseMode: "Markdown"}
+
+		if _, err := b.tg.SendPhoto(context.Background(), params); err != nil {
+			log.Printf("Failed to send message: %v", err)
+			http.Error(w, "Failed to send message", http.StatusInternalServerError)
+			return
+		}
+
+		go b.setMenuButton(update.Message.Chat.ID, lang)
+
 	} else if err != nil {
 		log.Printf("Failed to get user: %v", err)
-		http.Error(w, "Database error", http.StatusInternalServerError)
+		http.Error(w, "Failed to get user", http.StatusInternalServerError)
 		return
+	} else {
+		log.Printf("User %d already exists, sending message", user.ChatID)
+
+		message := msgs["openWebApp"]
+
+		params := &telegram.SendMessageParams{ChatID: update.Message.Chat.ID, Text: message, ReplyMarkup: &webApp, ParseMode: "Markdown"}
+
+		if _, err := b.tg.SendMessage(context.Background(), params); err != nil {
+			log.Printf("Failed to send message: %v", err)
+			http.Error(w, "Failed to send message", http.StatusInternalServerError)
+			return
+		}
 	}
 
-	message := fmt.Sprintf("Hello, %s!", *user.FirstName)
-
-	webApp := tgModels.InlineKeyboardMarkup{
-		InlineKeyboard: [][]tgModels.InlineKeyboardButton{
-			{
-				{Text: "Open Me", WebApp: &tgModels.WebAppInfo{URL: b.config.WebAppURL}},
-			},
-		},
-	}
-
-	params := &telegram.SendMessageParams{ChatID: update.Message.Chat.ID, Text: message, ReplyMarkup: &webApp}
-
-	if _, err := b.tg.SendMessage(context.Background(), params); err != nil {
-		log.Printf("Failed to send message: %v", err)
-		http.Error(w, "Failed to send message", http.StatusInternalServerError)
-		return
-	}
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -198,4 +243,24 @@ func (b *bot) SetWebhook() error {
 	}
 
 	return nil
+}
+
+func (b *bot) setMenuButton(chatID int64, lang string) {
+	msg := b.messages[lang]
+
+	menu := telegram.SetChatMenuButtonParams{
+		ChatID: chatID,
+		MenuButton: tgModels.MenuButtonWebApp{
+			Type:   "web_app",
+			Text:   msg["openWebAppMenu"],
+			WebApp: tgModels.WebAppInfo{URL: b.config.WebAppURL},
+		},
+	}
+
+	if _, err := b.tg.SetChatMenuButton(context.Background(), &menu); err != nil {
+		log.Printf("Failed to set chat menu button: %v", err)
+		return
+	}
+
+	log.Printf("User %d menu button set", chatID)
 }
