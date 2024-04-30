@@ -1,4 +1,4 @@
-import type { Badge } from "./Badge";
+import { Badge } from "./Badge";
 import type { Opportunity } from "./Opportunity";
 
  export type User = {

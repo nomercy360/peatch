@@ -1,12 +1,15 @@
-import { createEffect, createSignal, For, Show } from 'solid-js';
+import { createEffect, createResource, createSignal, For, Match, Show, Suspense, Switch } from 'solid-js';
 import { store } from '../store';
-import { CDN_URL } from '../api';
+import { CDN_URL, fetchPreview } from '../api';
 import FillProfilePopup from '../components/FillProfilePopup';
 
 export default function Index() {
   const [profilePopup, setProfilePopup] = createSignal(false);
 
-  const images = ['/thumb.png', '/thumb.png', '/thumb.png'];
+  const [previewImages, setPreviewImages] = createResource(async () => {
+    const res = await fetchPreview();
+    return res.map((image: any) => CDN_URL + '/' + image.avatar_url);
+  });
 
   const getUserLink = () => {
     if (store.user.first_name && store.user.last_name) {
@@ -43,29 +46,40 @@ export default function Index() {
         href={getUserLink()}
       >
         <p class="text-3xl">Bonsoir, {store.user?.username}!</p>
-        <img
-          src={CDN_URL + '/' + store.user?.avatar_url}
-          alt="User Avatar"
-          class="size-10 rounded-xl object-cover object-center"
-        />
+        <Switch>
+          <Match when={store.user.avatar_url}>
+            <img
+              class="size-11 rounded-xl border-2 border-white object-cover object-center"
+              src={CDN_URL + '/' + store.user.avatar_url}
+              alt="User Avatar"
+            />
+          </Match>
+          <Match when={!store.user.avatar_url}>
+            <div class="size-11 rounded-xl border-2 border-white bg-peatch-stroke flex items-center justify-center">
+              <span class="material-symbols-rounded text-white">account_circle</span>
+            </div>
+          </Match>
+        </Switch>
       </a>
       <div class="h-px w-full bg-peatch-stroke"></div>
       <a class="flex flex-col items-start justify-start py-4" href="/users">
         <div class="flex w-full flex-row items-center justify-start">
-          <For each={images}>
-            {(image, idx) => (
-              <img
-                src={image}
-                alt="User Avatar"
-                class="-ml-1 size-11 rounded-xl border-2 border-white object-cover object-center"
-                classList={{
-                  'ml-0': idx() === 0,
-                  'z-20': idx() === 0,
-                  'z-10': idx() === 1,
-                }}
-              />
-            )}
-          </For>
+          <Suspense fallback={<ImagesLoader />}>
+            <For each={previewImages()}>
+              {(image, idx) => (
+                <img
+                  src={image}
+                  alt="User Avatar"
+                  class="-ml-1 size-11 rounded-xl border-2 border-white object-cover object-center"
+                  classList={{
+                    'ml-0': idx() === 0,
+                    'z-20': idx() === 0,
+                    'z-10': idx() === 1,
+                  }}
+                />
+              )}
+            </For>
+          </Suspense>
         </div>
         <div class="flex flex-row items-center justify-between">
           <p class="mt-2 text-3xl">
@@ -86,15 +100,18 @@ export default function Index() {
         href="/collaborations"
       >
         <div class="flex w-full flex-row items-center justify-start">
-          <div class="z-20 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-white bg-orange">
+          <div
+            class="z-20 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-white bg-orange">
             <span class="material-symbols-rounded text-white">
               self_improvement
             </span>
           </div>
-          <div class="z-10 -ml-1 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-white bg-red">
+          <div
+            class="z-10 -ml-1 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-white bg-red">
             <span class="material-symbols-rounded text-white">wine_bar</span>
           </div>
-          <div class="-ml-1 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-white bg-blue">
+          <div
+            class="-ml-1 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-white bg-blue">
             <span class="material-symbols-rounded text-white">
               directions_run
             </span>
@@ -128,3 +145,21 @@ export default function Index() {
     </div>
   );
 }
+
+const ImagesLoader = () => {
+  return (
+    <div class="flex w-full flex-row items-center justify-start">
+      <For each={[1, 2, 3] as any}>
+        {(image, idx) => (
+          <div
+            class="-ml-1 size-11 rounded-xl border-2 border-white bg-peatch-stroke"
+            classList={{
+              'ml-0': idx() === 0,
+              'z-20': idx() === 0,
+              'z-10': idx() === 1,
+            }}
+          />
+        )}
+      </For>
+    </div>);
+};

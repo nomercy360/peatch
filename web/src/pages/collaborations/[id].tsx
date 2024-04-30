@@ -1,17 +1,37 @@
 import { useButtons } from '../../hooks/useBackButton';
-import { createEffect, For, Match, onCleanup, Show, Suspense, Switch } from 'solid-js';
+import {
+  createEffect,
+  createSignal,
+  For,
+  Match,
+  onCleanup,
+  Suspense,
+  Switch,
+} from 'solid-js';
 import { useNavigate, useParams } from '@solidjs/router';
-import { CDN_URL, fetchProfile, followUser, hideProfile, showProfile, unfollowUser } from '../../api';
+import {
+  CDN_URL, fetchCollaboration, fetchCollaborations,
+  fetchProfile,
+  followUser, hideCollaboration,
+  hideProfile, publishCollaboration,
+  publishProfile, showCollaboration,
+  showProfile,
+  unfollowUser,
+} from '../../api';
 import { createQuery } from '@tanstack/solid-query';
-import { setUser, store } from '../../store';
+import { setFollowing, setUser, store } from '../../store';
+import { usePopup } from '../../hooks/usePopup';
+import ProfilePublished from '../../components/ProfilePublished';
 
 export default function Collaboration() {
   const { mainButton, backButton } = useButtons();
+  const [published, setPublished] = createSignal(false);
 
   const navigate = useNavigate();
   const params = useParams();
+  const { showAlert } = usePopup();
 
-  const userId = params.id;
+  const collabId = params.id;
 
   const back = () => {
     navigate('/');
@@ -28,51 +48,53 @@ export default function Collaboration() {
   });
 
   const query = createQuery(() => ({
-    queryKey: ['collaborations', userId],
-    queryFn: () => fetchProfile(Number(userId)),
+    queryKey: ['collaborations', collabId],
+    queryFn: () => fetchCollaboration(Number(collabId)),
   }));
 
-  const isCurrentUserCollab = store.user.id === Number(userId);
+  const [isCurrentUserCollab, setIsCurrentUserCollab] = createSignal(false);
+
+  createEffect(() => {
+    setIsCurrentUserCollab(query.data?.user_id === store.user.id);
+  });
 
   const publish = async () => {
-    setUser({
-      ...store.user,
-      published_at: new Date().toISOString(),
-    });
-    await showProfile();
+    await publishCollaboration(Number(collabId));
+    setPublished(true);
   };
 
   const hide = async () => {
-    setUser({
-      ...store.user,
-      published_at: undefined,
-    });
-    await hideProfile();
+    await hideCollaboration(Number(collabId));
   };
 
-  const follow = async () => {
-    store.following.push(Number(userId));
-    await followUser(Number(userId));
-  };
-
-  const unfollow = async () => {
-    store.following = store.following.filter(f => f !== Number(userId));
-    await unfollowUser(Number(userId));
+  const show = async () => {
+    await showCollaboration(Number(collabId));
   };
 
   const collaborate = async () => {
-    navigate(`/collaborate/${userId}`);
+    if (store.user.published_at && !store.user.hidden_at) {
+      navigate(`/collaborations/${collabId}/collaborate`);
+    } else {
+      showAlert('Fill and publish your profile first');
+    }
   };
 
   const pushToEdit = () => {
-    navigate(`/users/edit`);
+    navigate(`/collaborations/${collabId}/edit`);
   };
 
   createEffect(() => {
-    if (isCurrentUserCollab) {
+    if (isCurrentUserCollab()) {
+      if (published()) {
+        mainButton.offClick(publish);
+        mainButton.offClick(pushToEdit);
+        mainButton.setVisible('Just open the app');
+        mainButton.onClick(back);
+        return;
+      }
       if (!store.user.published_at) {
         mainButton.offClick(pushToEdit);
-        mainButton.setVisible('Collaborate');
+        mainButton.setVisible('Publish');
         mainButton.onClick(publish);
       } else {
         mainButton.offClick(publish);
@@ -90,100 +112,92 @@ export default function Collaboration() {
     mainButton.hide();
     mainButton.offClick(collaborate);
     mainButton.offClick(publish);
+    mainButton.offClick(back);
     mainButton.offClick(pushToEdit);
-  });
-
-  createEffect(() => {
-    console.error('User Published at: ', store.user.published_at);
   });
 
   return (
     <div>
       <Suspense fallback={<div>Loading...</div>}>
-        <Show when={query.data}>
-          <div class="min-h-screen">
-            <Switch>
-              <Match when={isCurrentUserCollab && store.user.published_at}>
-                <ActionButton text="Hide" onClick={hide} />
-              </Match>
-              <Match when={isCurrentUserCollab && !store.user.published_at}>
-                <ActionButton text="Edit" onClick={pushToEdit} />
-              </Match>
-              <Match
-                when={
-                  !isCurrentUserCollab &&
-                  !store.following.includes(Number(userId))
-                }
-              >
-                <ActionButton text="Follow" onClick={follow} />
-              </Match>
-              <Match
-                when={
-                  !isCurrentUserCollab &&
-                  store.following.includes(Number(userId))
-                }
-              >
-                <ActionButton text="Unfollow" onClick={unfollow} />
-              </Match>
-            </Switch>
-            <div class="image-container">
-              <img
-                src={CDN_URL + '/' + query.data.avatar_url}
-                alt="avatar"
-                class="aspect-square size-full object-cover"
-              />
-            </div>
-            <div class="px-4 py-2.5">
-              <p class="text-3xl text-pink">
-                {query.data.first_name} {query.data.last_name}:
-              </p>
-              <p class="text-3xl text-black">{query.data.title}</p>
-              <p class="text-lg font-normal"> {query.data.description}</p>
-              <div class="mt-5 flex flex-row flex-wrap items-center justify-start gap-1">
-                <For each={query.data.badges}>
-                  {badge => (
-                    <div
-                      class="flex h-10 flex-row items-center justify-center gap-[5px] rounded-2xl border border-peatch-stroke px-2.5"
-                      style={{
-                        'background-color': `#${badge.color}`,
-                        'border-color': `#${badge.color}`,
-                      }}
-                    >
-                      <span class="material-symbols-rounded text-white">
-                        {String.fromCodePoint(parseInt(badge.icon!, 16))}
-                      </span>
-                      <p class="text-sm font-semibold text-white">
-                        {badge.text}
-                      </p>
-                    </div>
-                  )}
-                </For>
+        <Switch>
+          <Match when={published() && isCurrentUserCollab()}>
+            <ProfilePublished />
+          </Match>
+          <Match when={query.data}>
+            <div class="min-h-screen">
+              <Switch>
+                <Match when={isCurrentUserCollab() && !query.data.published_at}>
+                  <ActionButton text="Edit" onClick={pushToEdit} />
+                </Match>
+                <Match
+                  when={
+                    isCurrentUserCollab() &&
+                    query.data.hidden_at &&
+                    query.data.published_at
+                  }
+                >
+                  <ActionButton text="Show" onClick={show} />
+                </Match>
+                <Match
+                  when={
+                    isCurrentUserCollab() &&
+                    !query.data.hidden_at &&
+                    query.data.published_at
+                  }
+                >
+                  <ActionButton text="Hide" onClick={hide} />
+                </Match>
+              </Switch>
+              <div class="bg-pink w-full flex flex-col items-start justify-start px-4 pb-5 pt-4">
+                <span class="material-symbols-rounded text-white text-[48px]">
+                   {String.fromCodePoint(parseInt(query.data.opportunity.icon!, 16))}
+                </span>
+                <p class="text-3xl text-white">
+                  {query.data.opportunity.text}:
+                </p>
+                <p class="text-3xl text-white">{query.data.title}:</p>
+                <div class="mt-4 gap-2 flex w-full flex-row items-center justify-start">
+                  <img
+                    class="size-10 rounded-2xl object-cover"
+                    src={CDN_URL + '/' + query.data.user?.avatar_url}
+                    alt="User Avatar"
+                  />
+                  <div>
+                    <p class="text-sm font-bold text-white">
+                      {query.data.user?.first_name} {query.data.user?.last_name}:
+                    </p>
+                    <p class="text-sm text-white">{query.data.user?.title}</p>
+                  </div>
+                </div>
               </div>
-              <div class="mt-5 flex w-full flex-col items-center justify-start gap-1">
-                <For each={query.data.opportunities}>
-                  {op => (
-                    <div
-                      class="flex h-[60px] w-full flex-row items-center justify-start gap-2.5 rounded-2xl border border-peatch-stroke px-2.5"
-                      style={{
-                        'background-color': `#${op.color}`,
-                      }}
-                    >
-                      <div class="flex size-10 items-center justify-center rounded-full bg-white">
-                        <span class="material-symbols-rounded text-black">
-                          {String.fromCodePoint(parseInt(op.icon!, 16))}
+              <div class="px-4 py-2.5">
+                <p class="text-lg font-normal text-black">
+                  {query.data.description}
+                </p>
+                <div class="mt-5 flex flex-row flex-wrap items-center justify-start gap-1">
+                  <For each={query.data.badges}>
+                    {badge => (
+                      <div
+                        class="flex h-10 flex-row items-center justify-center gap-[5px] rounded-2xl border border-peatch-stroke px-2.5"
+                        style={{
+                          'background-color': `#${badge.color}`,
+                          'border-color': `#${badge.color}`,
+                        }}
+                      >
+                        <span class="material-symbols-rounded text-white">
+                          {String.fromCodePoint(parseInt(badge.icon!, 16))}
                         </span>
+                        <p class="text-sm font-semibold text-white">
+                          {badge.text}
+                        </p>
                       </div>
-                      <div class="text-start text-white">
-                        <p class="text-sm font-semibold">{op.text}</p>
-                        <p class="text-xs text-white/60">{op.description}</p>
-                      </div>
-                    </div>
-                  )}
-                </For>
+                    )}
+                  </For>
+                </div>
               </div>
             </div>
-          </div>
-        </Show>
+          </Match>
+        </Switch>
       </Suspense>
     </div>
   );

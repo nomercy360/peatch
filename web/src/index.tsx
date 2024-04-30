@@ -7,6 +7,8 @@ import { lazy } from 'solid-js';
 import App from './App';
 
 const Users = lazy(() => import('./pages/users'));
+const Collaborations = lazy(() => import('./pages/collaborations'));
+const Collaboration = lazy(() => import('./pages/collaborations/[id]'));
 const Home = lazy(() => import('./pages'));
 const User = lazy(() => import('./pages/users/[id]'));
 const EditUser = lazy(() => import('./pages/users/edit'));
@@ -28,6 +30,8 @@ render(
     <Router root={App}>
       <Route path="/" component={Home} />
       <Route path="/users" component={Users} />
+      <Route path="/collaborations" component={Collaborations} />
+      <Route path="/collaborations/:id" component={Collaboration} />
       <Route path="/users/:id" component={User} />
       <Route path="/users/edit" component={EditUser} />
       <Route path="/collaborations/create" component={CreateCollaboration} />

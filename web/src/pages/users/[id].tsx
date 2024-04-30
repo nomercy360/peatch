@@ -90,7 +90,7 @@ export default function UserProfile() {
   };
 
   const collaborate = async () => {
-    if (store.user.published_at) {
+    if (store.user.published_at && !store.user.hidden_at) {
       navigate(`/users/${userId}/collaborate`);
     } else {
       showAlert('Fill and publish your profile first');
@@ -132,10 +132,6 @@ export default function UserProfile() {
     mainButton.offClick(publish);
     mainButton.offClick(back);
     mainButton.offClick(pushToEdit);
-  });
-
-  createEffect(() => {
-    console.error('User Published at: ', store.user.published_at);
   });
 
   return (

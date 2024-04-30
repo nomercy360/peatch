@@ -27,4 +27,5 @@ export * from "./PutApiCollaborationsIdPublish";
 export * from "./PutApiUsers";
 export * from "./UpdateUserRequest";
 export * from "./User";
+export * from "./UserProfile";
 export * from "./UserWithToken";

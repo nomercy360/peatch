@@ -39,6 +39,8 @@ type service interface {
 	CreateCollaborationRequest(userID int64, request svc.CreateCollaborationRequest) (*db.CollaborationRequest, error)
 	GetPresignedURL(userID int64, objectKey string) (*svc.PresignedURL, error)
 	CreateUserCollaboration(userID int64, request svc.CreateUserCollaboration) (*db.UserCollaborationRequest, error)
+	// ListUserPreview fetch 3 random user avatars for the home page
+	GetUserPreview() ([]svc.UserPreview, error)
 }
 
 type CustomValidator struct {
@@ -95,6 +97,7 @@ func (h *handler) RegisterRoutes(e *echo.Echo) {
 	a.POST("/collaborations/:id/hide", h.handleHideCollaboration)
 	a.POST("/collaborations/:id/requests", h.handleCreateCollaborationRequest)
 	a.GET("/presigned-url", h.handleGetPresignedURL)
+	a.GET("/user-preview", h.handleGetUserPreview)
 }
 
 func (h *handler) handleIndex(c echo.Context) error {

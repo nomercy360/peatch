@@ -5,13 +5,13 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
 export const CDN_URL = 'https://assets.peatch.io';
 
 export const apiFetch = async ({
-  endpoint,
-  method = 'GET',
-  body = null,
-  responseType = 'json',
-  catchError = true,
-  showProgress = true,
-}: {
+                                 endpoint,
+                                 method = 'GET',
+                                 body = null,
+                                 responseType = 'json',
+                                 catchError = true,
+                                 showProgress = true,
+                               }: {
   endpoint: string;
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
   body?: any;
@@ -172,8 +172,8 @@ export const updateCollaboration = async (collaboration: any) => {
   });
 };
 
-export const fetchCollaborations = async () => {
-  return await apiFetch({ endpoint: '/collaborations' });
+export const fetchCollaborations = async (search: any) => {
+  return await apiFetch({ endpoint: '/collaborations?search=' + search });
 };
 
 export const createUserCollaboration = async (
@@ -184,4 +184,33 @@ export const createUserCollaboration = async (
     method: 'POST',
     body: collaboration,
   });
+};
+
+export const fetchPreview = async () => {
+  return await apiFetch({ endpoint: `/user-preview` });
+};
+
+export const publishCollaboration = async (collaborationID: number) => {
+  return await apiFetch({
+    endpoint: `/collaborations/${collaborationID}/publish`,
+    method: 'POST',
+  });
+};
+
+export const hideCollaboration = async (collaborationID: number) => {
+  return await apiFetch({
+    endpoint: `/collaborations/${collaborationID}/hide`,
+    method: 'POST',
+  });
+};
+
+export const showCollaboration = async (collaborationID: number) => {
+  return await apiFetch({
+    endpoint: `/collaborations/${collaborationID}/show`,
+    method: 'POST',
+  });
+};
+
+export const fetchCollaboration = async (collaborationID: number) => {
+  return await apiFetch({ endpoint: `/collaborations/${collaborationID}` });
 };

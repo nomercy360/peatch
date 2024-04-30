@@ -15,10 +15,6 @@ definitions:
     type: object
   Collaboration:
     properties:
-      badges:
-        items:
-          $ref: '#/definitions/Badge'
-        type: array
       city:
         type: string
       country:
@@ -28,6 +24,8 @@ definitions:
       created_at:
         type: string
       description:
+        type: string
+      hidden_at:
         type: string
       id:
         type: integer
@@ -45,6 +43,8 @@ definitions:
         type: string
       updated_at:
         type: string
+      user:
+        $ref: '#/definitions/UserProfile'
       user_id:
         type: integer
     type: object
@@ -195,6 +195,45 @@ definitions:
       updated_at:
         type: string
       username:
+        type: string
+    type: object
+  UserProfile:
+    properties:
+      avatar_url:
+        type: string
+      badges:
+        items:
+          $ref: '#/definitions/Badge'
+        type: array
+      city:
+        type: string
+      country:
+        type: string
+      country_code:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      first_name:
+        type: string
+      followers_count:
+        type: integer
+      id:
+        type: integer
+      language_code:
+        type: string
+      last_name:
+        type: string
+      opportunities:
+        items:
+          $ref: '#/definitions/Opportunity'
+        type: array
+      requests_count:
+        type: integer
+      title:
+        type: string
+      updated_at:
         type: string
     type: object
   UserWithToken:

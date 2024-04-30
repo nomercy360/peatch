@@ -665,12 +665,6 @@ const docTemplate = `{
         "Collaboration": {
             "type": "object",
             "properties": {
-                "badges": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/Badge"
-                    }
-                },
                 "city": {
                     "type": "string"
                 },
@@ -684,6 +678,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "description": {
+                    "type": "string"
+                },
+                "hidden_at": {
                     "type": "string"
                 },
                 "id": {
@@ -709,6 +706,9 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/UserProfile"
                 },
                 "user_id": {
                     "type": "integer"
@@ -926,6 +926,65 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "UserProfile": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
+                "badges": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Badge"
+                    }
+                },
+                "city": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "country_code": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "first_name": {
+                    "type": "string"
+                },
+                "followers_count": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "language_code": {
+                    "type": "string"
+                },
+                "last_name": {
+                    "type": "string"
+                },
+                "opportunities": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Opportunity"
+                    }
+                },
+                "requests_count": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updated_at": {
                     "type": "string"
                 }
             }
