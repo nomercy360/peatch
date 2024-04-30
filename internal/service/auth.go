@@ -75,15 +75,13 @@ func (s *service) TelegramAuth(queryID, userJSON, authDate, hash string) (*UserW
 	}
 
 	user, err := s.storage.GetUserByChatID(tgUser.ID)
-	if err != nil {
-		if errors.As(err, &db.ErrNotFound) {
-			user, err = s.storage.CreateUser(tgUser.ToDBUser())
-			if err != nil {
-				return nil, err
-			}
-		} else {
+	if err != nil && errors.Is(err, db.ErrNotFound) {
+		user, err = s.storage.CreateUser(tgUser.ToDBUser())
+		if err != nil {
 			return nil, err
 		}
+	} else if err != nil {
+		return nil, err
 	}
 
 	// fetch following

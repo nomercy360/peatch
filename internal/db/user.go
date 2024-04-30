@@ -65,7 +65,26 @@ type User struct {
 	Opportunities          OpportunitySlice `json:"opportunities" db:"opportunities"`
 } // @Name User
 
-func (u *User) Scan(src interface{}) error {
+type UserProfile struct {
+	ID             int64         `json:"id" db:"id"`
+	FirstName      string        `json:"first_name" db:"first_name"`
+	LastName       string        `json:"last_name" db:"last_name"`
+	CreatedAt      time.Time     `json:"created_at" db:"created_at"`
+	UpdatedAt      time.Time     `json:"updated_at" db:"updated_at"`
+	AvatarURL      string        `json:"avatar_url" db:"avatar_url"`
+	Title          string        `json:"title" db:"title"`
+	Description    string        `json:"description" db:"description"`
+	LanguageCode   string        `json:"language_code" db:"language_code"`
+	Country        string        `json:"country" db:"country"`
+	City           *string       `json:"city" db:"city"`
+	CountryCode    string        `json:"country_code" db:"country_code"`
+	FollowersCount int           `json:"followers_count" db:"followers_count"`
+	RequestsCount  int           `json:"requests_count" db:"requests_count"`
+	Badges         []Badge       `json:"badges" db:"badges"`
+	Opportunities  []Opportunity `json:"opportunities" db:"opportunities"`
+} // @Name UserProfile
+
+func (u *UserProfile) Scan(src interface{}) error {
 	var source []byte
 	switch src := src.(type) {
 	case []byte:
@@ -80,6 +99,27 @@ func (u *User) Scan(src interface{}) error {
 		return fmt.Errorf("failed to unmarshal JSON into Opportunity: %v", err)
 	}
 	return nil
+}
+
+func (u *User) ToUserProfile() UserProfile {
+	return UserProfile{
+		ID:             u.ID,
+		FirstName:      *u.FirstName,
+		LastName:       *u.LastName,
+		CreatedAt:      u.CreatedAt,
+		UpdatedAt:      u.UpdatedAt,
+		AvatarURL:      *u.AvatarURL,
+		Title:          *u.Title,
+		Description:    *u.Description,
+		LanguageCode:   *u.LanguageCode,
+		Country:        *u.Country,
+		City:           u.City,
+		CountryCode:    *u.CountryCode,
+		FollowersCount: u.FollowersCount,
+		RequestsCount:  u.RequestsCount,
+		Badges:         u.Badges,
+		Opportunities:  u.Opportunities,
+	}
 }
 
 type UserQuery struct {
@@ -146,7 +186,9 @@ func (s *storage) GetUserByChatID(chatID int64) (*User, error) {
 
 	err := s.pg.Get(user, getUserQuery()+"WHERE u.chat_id = $1 GROUP BY u.id", chatID)
 
-	if err != nil {
+	if err != nil && IsNoRowsError(err) {
+		return nil, ErrNotFound
+	} else if err != nil {
 		return nil, err
 	}
 
@@ -268,7 +310,11 @@ func (s *storage) UpdateUser(userID int64, user User, badges, opportunities []in
 func (s *storage) GetUserByID(id int64) (*User, error) {
 	user := new(User)
 
-	if err := s.pg.Get(user, getUserQuery()+"WHERE u.id = $1 GROUP BY u.id", id); err != nil {
+	err := s.pg.Get(user, getUserQuery()+"WHERE u.id = $1 GROUP BY u.id", id)
+
+	if err != nil && IsNoRowsError(err) {
+		return nil, ErrNotFound
+	} else if err != nil {
 		return nil, err
 	}
 

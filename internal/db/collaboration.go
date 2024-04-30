@@ -22,7 +22,7 @@ type Collaboration struct {
 	HiddenAt      *time.Time  `json:"hidden_at" db:"hidden_at"`
 	RequestsCount int         `json:"requests_count" db:"requests_count"`
 	Opportunity   Opportunity `json:"opportunity" db:"opportunity"`
-	User          User        `json:"user" db:"user"`
+	User          UserProfile `json:"user" db:"user"`
 } // @Name Collaboration
 
 type CollaborationQuery struct {
@@ -93,7 +93,9 @@ func (s *storage) GetCollaborationByID(id int64) (*Collaboration, error) {
 
 	err := s.pg.Get(&collaboration, query, id)
 
-	if err != nil {
+	if err != nil && IsNoRowsError(err) {
+		return nil, ErrNotFound
+	} else if err != nil {
 		return nil, err
 	}
 

@@ -81,7 +81,7 @@ func (j *notifyJob) NotifyNewUserProfile() error {
 				user.ID,
 			)
 
-			if err != nil && errors.As(err, &db.ErrNotFound) {
+			if err != nil && errors.Is(err, db.ErrNotFound) {
 
 				notification := &db.Notification{
 					UserID:           receiver.ID,
@@ -161,7 +161,7 @@ func (j *notifyJob) NotifyNewCollaboration() error {
 				collaboration.ID,
 			)
 
-			if err != nil && errors.As(err, &db.ErrNotFound) {
+			if err != nil && errors.Is(err, db.ErrNotFound) {
 
 				notification := &db.Notification{
 					UserID:           receiver.ID,
@@ -218,7 +218,7 @@ func (j *notifyJob) NotifyUserReceivedCollaborationRequest() error {
 			collaboration.ID,
 		)
 
-		if err != nil && errors.As(err, &db.ErrNotFound) {
+		if err != nil && errors.Is(err, db.ErrNotFound) {
 			requester, err := j.storage.GetUserByID(collaboration.RequesterID)
 
 			if err != nil {

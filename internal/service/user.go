@@ -4,27 +4,7 @@ import (
 	"errors"
 	"github.com/peatch-io/peatch/internal/db"
 	"github.com/peatch-io/peatch/internal/terrors"
-	"time"
 )
-
-type UserProfile struct {
-	ID             int64            `json:"id" db:"id"`
-	FirstName      string           `json:"first_name" db:"first_name"`
-	LastName       string           `json:"last_name" db:"last_name"`
-	CreatedAt      time.Time        `json:"created_at" db:"created_at"`
-	UpdatedAt      time.Time        `json:"updated_at" db:"updated_at"`
-	AvatarURL      string           `json:"avatar_url" db:"avatar_url"`
-	Title          string           `json:"title" db:"title"`
-	Description    string           `json:"description" db:"description"`
-	LanguageCode   string           `json:"language_code" db:"language_code"`
-	Country        string           `json:"country" db:"country"`
-	City           *string          `json:"city" db:"city"`
-	CountryCode    string           `json:"country_code" db:"country_code"`
-	FollowersCount int              `json:"followers_count" db:"followers_count"`
-	RequestsCount  int              `json:"requests_count" db:"requests_count"`
-	Badges         []db.Badge       `json:"badges" db:"-"`
-	Opportunities  []db.Opportunity `json:"opportunities" db:"-"`
-} // @Name UserProfile
 
 type UpdateUserRequest struct {
 	FirstName      string  `json:"first_name" validate:"required"`
@@ -54,34 +34,7 @@ func (upd *UpdateUserRequest) ToUser() db.User {
 	return user
 }
 
-func toUserProfiles(users []db.User) []UserProfile {
-	res := make([]UserProfile, 0, len(users))
-
-	for _, user := range users {
-		res = append(res, UserProfile{
-			ID:             user.ID,
-			FirstName:      *user.FirstName,
-			LastName:       *user.LastName,
-			CreatedAt:      user.CreatedAt,
-			UpdatedAt:      user.UpdatedAt,
-			AvatarURL:      *user.AvatarURL,
-			Title:          *user.Title,
-			Description:    *user.Description,
-			LanguageCode:   *user.LanguageCode,
-			Country:        *user.Country,
-			City:           user.City,
-			CountryCode:    *user.CountryCode,
-			FollowersCount: user.FollowersCount,
-			RequestsCount:  user.RequestsCount,
-			Badges:         user.Badges,
-			Opportunities:  user.Opportunities,
-		})
-	}
-
-	return res
-}
-
-func (s *service) ListUserProfiles(query db.UserQuery) ([]UserProfile, error) {
+func (s *service) ListUserProfiles(query db.UserQuery) ([]db.UserProfile, error) {
 	if query.Limit <= 0 {
 		query.Limit = 40
 	}
@@ -96,7 +49,13 @@ func (s *service) ListUserProfiles(query db.UserQuery) ([]UserProfile, error) {
 		return nil, err
 	}
 
-	return toUserProfiles(res), nil
+	profiles := make([]db.UserProfile, 0, len(res))
+
+	for _, user := range res {
+		profiles = append(profiles, user.ToUserProfile())
+	}
+
+	return profiles, nil
 }
 
 func (s *service) GetUserByChatID(chatID int64) (*db.User, error) {
@@ -119,7 +78,7 @@ func (s *service) GetUserByID(id int64) (*db.User, error) {
 	user, err := s.storage.GetUserByID(id)
 
 	if err != nil {
-		if errors.As(err, &db.ErrNotFound) {
+		if errors.Is(err, db.ErrNotFound) {
 			return nil, terrors.NotFound(err)
 		}
 
