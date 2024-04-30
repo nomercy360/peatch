@@ -1,4 +1,5 @@
 import { FormLayout } from '../layout';
+import TextArea from '../../textArea';
 
 export default function DescribeCollaboration(props: {
   description: string;
@@ -40,15 +41,8 @@ export default function DescribeCollaboration(props: {
             }}
           ></span>
         </button>
-        <div class="relative h-fit min-h-56 w-full rounded-lg bg-peatch-bg">
-          <textarea
-            class="size-full bg-transparent p-2.5 text-black placeholder:text-gray"
-            placeholder="For example: 32 y.o. serial entrepreneur & product director with architecture, product design, marketing & tech development background. "
-            value={props.description}
-            onInput={e => resizer(e)}
-          ></textarea>
-          <span class="absolute bottom-2 right-2 text-sm text-gray">0/500</span>
-        </div>
+        <TextArea value={props.description} setValue={props.setDescription}
+                  placeholder="For example: 32 y.o. serial entrepreneur & product director with architecture, product design, marketing & tech development background."></TextArea>
       </div>
     </FormLayout>
   );

@@ -28,7 +28,7 @@ export interface WebApp {
 
   openTelegramLink(url: string): void
 
-  showAlert(message: string, callback: () => void): void
+  showAlert(message: string, callback?: () => void): void
 
   showConfirm(message: string, callback: () => void): void
 

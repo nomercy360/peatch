@@ -248,7 +248,7 @@ func (s *storage) UpdateUser(userID int64, user User, badges, opportunities []in
 
 	query := `
 		UPDATE users
-		SET first_name =$1, last_name = $2, updated_at = NOW(), avatar_url = $3, title = $4, description = $5, country = $6, city = $7, country_code = $8, published_at = NOW()
+		SET first_name =$1, last_name = $2, updated_at = NOW(), avatar_url = $3, title = $4, description = $5, country = $6, city = $7, country_code = $8
 		WHERE id = $9
 		RETURNING id, first_name, last_name, chat_id, username, created_at, updated_at, published_at, avatar_url, title, description, language_code, country, city, country_code, followers_count, requests_count, notifications_enabled_at, hidden_at;
 	`
