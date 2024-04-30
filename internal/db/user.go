@@ -438,7 +438,7 @@ type UserCollaborationRequest struct {
 	CreatedAt   time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
 	Status      string    `json:"status" db:"status"`
-}
+} // @Name UserCollaborationRequest
 
 func (s *storage) CreateUserCollaboration(request UserCollaborationRequest) (*UserCollaborationRequest, error) {
 	var res UserCollaborationRequest

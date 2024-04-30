@@ -59,21 +59,21 @@ func (s *storage) ListCollaborations(params CollaborationQuery) ([]Collaboration
 	}
 
 	if params.Search != "" {
-		searchClause := fmt.Sprintf("(c.title ILIKE $%d OR c.description ILIKE $%d)", paramIndex, paramIndex)
+		searchClause := fmt.Sprintf("AND (c.title ILIKE $%d OR c.description ILIKE $%d)", paramIndex, paramIndex)
 		args = append(args, "%"+params.Search+"%")
 		whereClauses = append(whereClauses, searchClause)
 		paramIndex++
 	}
 
 	if params.From != nil {
-		fromClause := fmt.Sprintf("c.created_at >= $%d", paramIndex)
+		fromClause := fmt.Sprintf("AND c.created_at >= $%d", paramIndex)
 		args = append(args, *params.From)
 		whereClauses = append(whereClauses, fromClause)
 		paramIndex++
 	}
 
-	query = fmt.Sprintf("%s %s", query, strings.Join(whereClauses, " AND "))
-	//query += fmt.Sprintf(" GROUP BY c.id ORDER BY c.created_at DESC")
+	query = query + strings.Join(whereClauses, " ")
+	query += fmt.Sprintf(" ORDER BY c.created_at DESC")
 	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", paramIndex, paramIndex+1)
 
 	offset := (params.Page - 1) * params.Limit

@@ -40,10 +40,10 @@ func main() {
 	notifyJob := job.NewNotifyJob(pg, notifier, cfg.ImgServiceURL)
 
 	jobs := []*job.Job{
-		//job.NewJob("UserRegistrationJob", 10*time.Second, notifyJob.UserRegistrationJob),
 		job.NewJob("NotifyUserReceivedCollaborationRequest", 30*time.Second, notifyJob.NotifyUserReceivedCollaborationRequest),
 		job.NewJob("NotifyNewCollaboration", 30*time.Second, notifyJob.NotifyNewCollaboration),
 		job.NewJob("NotifyNewUserProfile", 30*time.Second, notifyJob.NotifyNewUserProfile),
+		job.NewJob("NotifyCollaborationRequest", 30*time.Second, notifyJob.NotifyCollaborationRequest),
 	}
 
 	sc := job.NewScheduler(jobs)

@@ -239,7 +239,7 @@ func (j *notifyJob) NotifyUserReceivedCollaborationRequest() error {
 			notification := &db.Notification{
 				UserID:           collaboration.UserID,
 				NotificationType: db.NotificationTypeUserCollaboration,
-				Text:             fmt.Sprintf("%s sends you a collaboration message: %s", *requester.FirstName, collaboration.Message),
+				Text:             fmt.Sprintf("%s sends you a message: %s", *requester.FirstName, collaboration.Message),
 				EntityType:       "user_collaboration_requests",
 				EntityID:         collaboration.ID,
 				ChatID:           receiver.ChatID,
