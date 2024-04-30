@@ -608,3 +608,21 @@ func (s *storage) UpdateUserAvatarURL(userID int64, avatarURL string) error {
 
 	return nil
 }
+
+func (s *storage) ListNewUserProfiles(from time.Time) ([]User, error) {
+	query := `
+		SELECT u.id, u.first_name, u.last_name, u.chat_id, u.username, u.created_at, u.updated_at, u.published_at, u.avatar_url, u.title, u.description, u.language_code, u.country, u.city, u.country_code, u.followers_count, u.requests_count, u.notifications_enabled_at, u.hidden_at
+		FROM users u
+		WHERE u.published_at > $1 AND u.hidden_at IS NULL
+	`
+
+	users := make([]User, 0)
+
+	err := s.pg.Select(&users, query, from)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}

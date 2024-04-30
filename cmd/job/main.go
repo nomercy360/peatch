@@ -15,8 +15,9 @@ import (
 )
 
 type config struct {
-	DatabaseURL string `env:"DATABASE_URL,required"`
-	BotToken    string `env:"BOT_TOKEN,required"`
+	DatabaseURL   string `env:"DATABASE_URL,required"`
+	BotToken      string `env:"BOT_TOKEN,required"`
+	ImgServiceURL string `env:"IMG_SERVICE_URL,required"`
 }
 
 func main() {
@@ -36,13 +37,13 @@ func main() {
 
 	notifier := notification.NewTelegramNotifier(bot)
 
-	notifyJob := job.NewNotifyJob(pg, notifier)
+	notifyJob := job.NewNotifyJob(pg, notifier, cfg.ImgServiceURL)
 
 	jobs := []*job.Job{
 		//job.NewJob("UserRegistrationJob", 10*time.Second, notifyJob.UserRegistrationJob),
 		job.NewJob("NotifyUserReceivedCollaborationRequest", 10*time.Second, notifyJob.NotifyUserReceivedCollaborationRequest),
 		job.NewJob("NotifyNewCollaboration", 10*time.Second, notifyJob.NotifyNewCollaboration),
-		//job.NewCollaborationResponseNotificationJob(notifier, pg, 1*time.Hour),
+		job.NewJob("NotifyNewUserProfile", 10*time.Second, notifyJob.NotifyNewUserProfile),
 	}
 
 	sc := job.NewScheduler(jobs)
