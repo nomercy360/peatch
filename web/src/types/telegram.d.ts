@@ -86,7 +86,7 @@ interface BackButton {
   setParams(params: { text_color?: string }): void;
 }
 
-interface MainButton {
+export interface MainButton {
   onClick: any;
   text: string;
   color: string;
@@ -102,7 +102,7 @@ interface MainButton {
     text?: string;
     is_active?: boolean;
     is_visible?: boolean;
-  }): void;
+  }): MainButton;
 
   showProgress(leaveActive: boolean): void;
 

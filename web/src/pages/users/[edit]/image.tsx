@@ -1,18 +1,33 @@
-import { createSignal, Match, Switch } from 'solid-js';
-import { FormLayout } from '../layout';
-import { API_BASE_URL } from '../../../api';
+import { FormLayout } from '~/components/edit/layout';
+import { useMainButton } from '~/hooks/useMainButton';
+import { useNavigate } from '@solidjs/router';
+import { createEffect, createSignal, Match, onCleanup, Switch } from 'solid-js';
+import { editUser, setEditUser, setUser, store } from '~/store';
+import {
+  API_BASE_URL,
+  CDN_URL,
+  fetchPresignedUrl,
+  updateUser,
+  uploadToS3,
+} from '~/api';
 
-export default function ImageUpload(props: {
-  imageFromCDN?: string;
-  imgFile: File | null;
-  setImgFile: (file: File) => void;
-}) {
-  const [previewUrl, setPreviewUrl] = createSignal(props.imageFromCDN || '');
+export default function SelectBadges() {
+  const mainButton = useMainButton();
+  const [imgFile, setImgFile] = createSignal<File | null>(null);
+  const [_, setImgUploadProgress] = createSignal(0);
+
+  const navigate = useNavigate();
+
+  const imgFromCDN = store.user.avatar_url
+    ? CDN_URL + '/' + store.user.avatar_url
+    : '';
+
+  const [previewUrl, setPreviewUrl] = createSignal(imgFromCDN || '');
 
   const handleFileChange = (event: any) => {
     const file = event.target.files[0];
     if (file) {
-      props.setImgFile(file);
+      setImgFile(file);
       setPreviewUrl('');
 
       const reader = new FileReader();
@@ -33,17 +48,62 @@ export default function ImageUpload(props: {
         const file = new File([blob], 'avatar.svg', {
           type: 'image/svg+xml',
         });
-        props.setImgFile(file);
+        setImgFile(file);
         setPreviewUrl('');
         setPreviewUrl(URL.createObjectURL(file));
       });
     });
   };
 
+  const saveUser = async () => {
+    if (imgFile() && imgFile() !== null) {
+      try {
+        const { path, url } = await fetchPresignedUrl(imgFile()!.name);
+        mainButton.setParams({ isEnabled: false, isLoaderVisible: true });
+        await uploadToS3(
+          url,
+          imgFile()!,
+          e => {
+            setImgUploadProgress(Math.round((e.loaded / e.total) * 100));
+          },
+          () => {
+            setImgUploadProgress(0);
+          },
+        );
+
+        setEditUser('avatar_url', path);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        mainButton.setParams({ isEnabled: true, isLoaderVisible: false });
+      }
+    }
+
+    const updated = await updateUser(editUser);
+    setUser(updated);
+    navigate('/users/' + store.user.id);
+  };
+
+  mainButton
+    .setParams({ text: 'Save', isVisible: true, isEnabled: false })
+    .onClick( saveUser);
+
+  createEffect(() => {
+    if (editUser.avatar_url || imgFile()) {
+      mainButton.enable();
+    }
+  });
+
+  onCleanup(() => {
+    mainButton.offClick( saveUser);
+  });
+
   return (
     <FormLayout
       title="Upload your photo"
       description="Select one with good lighting and minimal background details"
+      screen={6}
+      totalScreens={6}
     >
       <div class="mt-5 flex h-full items-center justify-center">
         <div class="flex flex-col items-center justify-center gap-2">

@@ -1,13 +1,21 @@
-import { createEffect, createSignal, For, Match, Show, Suspense, Switch } from 'solid-js';
+import {
+  createEffect,
+  createSignal,
+  For,
+  Match,
+  Show,
+  Suspense,
+  Switch,
+} from 'solid-js';
 import { Badge } from '../../../gen';
 
 export function SelectBadge(props: {
   selected: number[];
   setSelected: (selected: number[]) => void;
-  setCreateBadgeModal: (open: boolean) => void;
   search: string;
   setSearch: (search: string) => void;
   badges: Badge[];
+  onCreateBadgeButtonClick: () => void;
 }) {
   const [filteredBadges, setFilteredBadges] = createSignal(props.badges);
 
@@ -20,8 +28,6 @@ export function SelectBadge(props: {
   };
 
   createEffect(() => {
-    console.log('SELECTED BADGES', props.selected);
-
     if (props.badges && props.badges.length > 0) {
       setFilteredBadges(
         props.badges.filter(badge =>
@@ -52,17 +58,17 @@ export function SelectBadge(props: {
       </div>
       <div class="flex h-11 w-full flex-row items-center justify-between">
         <Switch>
-          <Match when={filteredBadges().length > 0}>
+          <Match when={filteredBadges()?.length > 0}>
             <div></div>
             <div class="flex h-11 items-center justify-center text-sm text-gray">
               {props.selected.length} / 10
             </div>
           </Match>
-          <Match when={filteredBadges().length === 0}>
+          <Match when={filteredBadges()?.length === 0}>
             <button
               class="size-full text-start text-sm"
               onClick={() =>
-                props.selected.length < 10 && props.setCreateBadgeModal(true)
+                props.selected.length < 10 && props.onCreateBadgeButtonClick()
               }
             >
               Can’t find such thing.{' '}

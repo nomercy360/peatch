@@ -1,5 +1,4 @@
 import { createSignal, For, Show, Suspense } from 'solid-js';
-import { FormLayout } from './layout';
 import countryFlags from '../../assets/countries.json';
 import { createQuery } from '@tanstack/solid-query';
 import useDebounce from '../../hooks/useDebounce';
@@ -62,7 +61,7 @@ export default function SelectLocation(props: {
   };
 
   return (
-      <>
+    <>
       <div class="mt-5 flex h-10 w-full flex-row items-center justify-between rounded-lg bg-peatch-bg px-2.5">
         <input
           class="w-full bg-transparent text-black placeholder:text-gray focus:outline-none"

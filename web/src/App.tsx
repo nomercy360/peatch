@@ -1,7 +1,8 @@
-import { createEffect, createSignal, Match, Switch } from 'solid-js';
+import { createEffect, createSignal, Match, onCleanup, Switch } from 'solid-js';
 import { QueryClient, QueryClientProvider } from '@tanstack/solid-query';
 import { setToken, setUser } from './store';
 import { API_BASE_URL } from './api';
+import { NavigationProvider } from './hooks/useNavigation';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -39,18 +40,20 @@ export default function App(props: any) {
   });
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <Switch>
-        <Match when={isAuthenticated()}>
-          <div>{props.children}</div>
-        </Match>
-        <Match when={!isAuthenticated() && isLoading()}>
-          <div>Authenticating...</div>
-        </Match>
-        <Match when={!isAuthenticated() && !isLoading()}>
-          <div>Failed to authenticate user</div>
-        </Match>
-      </Switch>
-    </QueryClientProvider>
+    <NavigationProvider>
+      <QueryClientProvider client={queryClient}>
+        <Switch>
+          <Match when={isAuthenticated()}>
+            <div>{props.children}</div>
+          </Match>
+          <Match when={!isAuthenticated() && isLoading()}>
+            <div>Authenticating...</div>
+          </Match>
+          <Match when={!isAuthenticated() && !isLoading()}>
+            <div>Failed to authenticate user</div>
+          </Match>
+        </Switch>
+      </QueryClientProvider>
+    </NavigationProvider>
   );
 }

@@ -1,38 +1,16 @@
-import { useButtons } from '../../hooks/useBackButton';
 import {
-  createEffect,
   createSignal,
   For,
-  onCleanup,
-  Show,
   Suspense,
 } from 'solid-js';
 import { Collaboration } from '../../../gen';
-import { useNavigate } from '@solidjs/router';
-import { CDN_URL, fetchCollaborations } from '../../api';
+import { CDN_URL, fetchCollaborations } from '~/api';
 import { createQuery } from '@tanstack/solid-query';
-import useDebounce from '../../hooks/useDebounce';
-import Badge from '../../components/Badge';
+import useDebounce from '~/hooks/useDebounce';
+import { Link } from '~/components/Link';
 
 export default function Index() {
   const [search, setSearch] = createSignal('');
-  const { backButton } = useButtons();
-
-  const navigate = useNavigate();
-
-  const back = () => {
-    navigate('/');
-  };
-
-  createEffect(() => {
-    backButton.setVisible();
-    backButton.onClick(back);
-  });
-
-  onCleanup(() => {
-    backButton.hide();
-    backButton.offClick(back);
-  });
 
   const updateSearch = useDebounce(setSearch, 300);
 
@@ -68,7 +46,7 @@ const CollaborationCard = (props: { collab: Collaboration }) => {
   };
 
   return (
-    <a
+    <Link
       class="flex flex-col items-start px-4 pt-4 text-start"
       href={`/collaborations/${props.collab.id}`}
     >
@@ -91,7 +69,7 @@ const CollaborationCard = (props: { collab: Collaboration }) => {
         </div>
       </div>
       <div class="h-px bg-peatch-stroke w-full mt-5"></div>
-    </a>
+    </Link>
   );
 };
 

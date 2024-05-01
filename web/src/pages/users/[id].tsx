@@ -1,4 +1,3 @@
-import { useButtons } from '../../hooks/useBackButton';
 import {
   createEffect,
   createSignal,
@@ -17,35 +16,20 @@ import {
   publishProfile,
   showProfile,
   unfollowUser,
-} from '../../api';
+} from '~/api';
 import { createQuery } from '@tanstack/solid-query';
-import { setFollowing, setUser, store } from '../../store';
-import { usePopup } from '../../hooks/usePopup';
+import { setFollowing, setUser, store } from '~/store';
 import ProfilePublished from '../../components/ProfilePublished';
+import { useMainButton } from '~/hooks/useMainButton';
 
 export default function UserProfile() {
-  const { mainButton, backButton } = useButtons();
+  const mainButton = useMainButton();
   const [published, setPublished] = createSignal(false);
 
   const navigate = useNavigate();
   const params = useParams();
-  const { showAlert } = usePopup();
 
   const userId = params.id;
-
-  const back = () => {
-    navigate('/');
-  };
-
-  createEffect(() => {
-    backButton.setVisible();
-    backButton.onClick(back);
-  });
-
-  onCleanup(() => {
-    backButton.hide();
-    backButton.offClick(back);
-  });
 
   const query = createQuery(() => ({
     queryKey: ['profiles', userId],
@@ -89,49 +73,70 @@ export default function UserProfile() {
     await unfollowUser(Number(userId));
   };
 
-  const collaborate = async () => {
+  const navigateToCollaborate = async () => {
+    console.log('Navigate to collaborate');
     if (store.user.published_at && !store.user.hidden_at) {
       navigate(`/users/${userId}/collaborate`);
-    } else {
-      showAlert('Fill and publish your profile first');
     }
   };
 
-  const pushToEdit = () => {
-    navigate(`/users/edit`);
+  const navigateToEdit = () => {
+    navigate('/users/edit', { state: { from: '/users/' + userId } });
+  };
+
+  const navigateBack = () => {
+    navigate(-1);
   };
 
   createEffect(() => {
     if (isCurrentUserProfile) {
       if (published()) {
         mainButton.offClick(publish);
-        mainButton.offClick(pushToEdit);
-        mainButton.setVisible('Just open the app');
-        mainButton.onClick(back);
+        mainButton.onClick(navigateToEdit);
+        mainButton.setParams({
+          text: 'Just open the app',
+          isVisible: true,
+          isEnabled: true,
+        });
+        mainButton.onClick(navigateBack);
         return;
-      }
-      if (!store.user.published_at) {
-        mainButton.offClick(pushToEdit);
-        mainButton.setVisible('Publish');
+      } else if (!store.user.published_at) {
+        mainButton.setParams({
+          text: 'Publish',
+          isVisible: true,
+          isEnabled: true,
+        });
+        mainButton.offClick(navigateToEdit);
         mainButton.onClick(publish);
       } else {
+        mainButton.setParams({
+          text: 'Edit',
+          isVisible: true,
+          isEnabled: true,
+        });
         mainButton.offClick(publish);
-        mainButton.setVisible('Edit');
-        mainButton.onClick(pushToEdit);
+        mainButton.onClick(navigateToEdit);
       }
     } else {
-      mainButton.offClick(pushToEdit);
-      mainButton.setVisible('Collaborate');
-      mainButton.onClick(collaborate);
+      mainButton.setParams({
+        text: 'Collaborate',
+        isVisible: true,
+        isEnabled: true,
+      });
+      mainButton.offClick(navigateToEdit);
+      mainButton.onClick(navigateToCollaborate);
     }
+
+    onCleanup(() => {
+      mainButton.offClick(navigateToCollaborate);
+      mainButton.offClick(publish);
+      mainButton.offClick(navigateBack);
+      mainButton.offClick(navigateToEdit);
+    });
   });
 
-  onCleanup(() => {
+  onCleanup(async () => {
     mainButton.hide();
-    mainButton.offClick(collaborate);
-    mainButton.offClick(publish);
-    mainButton.offClick(back);
-    mainButton.offClick(pushToEdit);
   });
 
   return (
@@ -145,7 +150,7 @@ export default function UserProfile() {
             <div class="min-h-screen">
               <Switch>
                 <Match when={isCurrentUserProfile && !store.user.published_at}>
-                  <ActionButton text="Edit" onClick={pushToEdit} />
+                  <ActionButton text="Edit" onClick={navigateToEdit} />
                 </Match>
                 <Match
                   when={

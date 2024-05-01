@@ -12,6 +12,14 @@
     "types": [
       "vite/client"
     ],
+    "paths": {
+      "~/*": [
+        "./src/*"
+      ]
+    },
+    "include": [
+      "src"
+    ],
     "noEmit": true,
     "isolatedModules": true
   }
