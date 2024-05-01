@@ -13,7 +13,7 @@ export default function SelectOpportunities() {
   const navigate = useNavigate();
 
   const navigateNext = () => {
-    navigate('/collaborations/edit/location');
+    navigate('/collaborations/edit/location', { state: { back: true } });
   };
 
   const fetchOpportunityQuery = createQuery(() => ({
@@ -23,7 +23,7 @@ export default function SelectOpportunities() {
 
   mainButton
     .setParams({ text: 'Next', isVisible: true, isEnabled: false })
-    .onClick( navigateNext);
+    .onClick(navigateNext);
 
   createEffect(() => {
     if (editCollaboration.opportunity_id) {
@@ -32,7 +32,7 @@ export default function SelectOpportunities() {
   });
 
   onCleanup(() => {
-    mainButton.offClick( navigateNext);
+    mainButton.offClick(navigateNext);
   });
 
   return (

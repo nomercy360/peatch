@@ -1,10 +1,18 @@
-import { createSignal, For, Show, Suspense } from 'solid-js';
+import {
+  createEffect,
+  createSignal,
+  For,
+  onCleanup,
+  Show,
+  Suspense,
+} from 'solid-js';
 import { User } from '../../../gen';
 import { fetchUsers } from '~/api';
 import { createQuery } from '@tanstack/solid-query';
 import useDebounce from '~/hooks/useDebounce';
 import Badge from '~/components/Badge';
 import { Link } from '~/components/Link';
+import { useLocation } from '@solidjs/router';
 
 export default function Index() {
   const [search, setSearch] = createSignal('');
@@ -48,6 +56,7 @@ const UserCard = (props: { user: User }) => {
     <Link
       class="flex flex-col items-start px-4 pb-5 pt-4 text-start"
       href={`/users/${props.user.id}`}
+      state={{ from: '/users' }}
     >
       <img
         class="size-10 rounded-2xl object-cover"

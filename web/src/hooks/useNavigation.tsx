@@ -37,10 +37,14 @@ export function NavigationProvider(props: { children: any }) {
 
     const stateData = deserialize(state);
 
-    if (stateData.from && location !== stateData.from) {
+    const isObject = (value: any) => {
+      return value && typeof value === 'object' && value.constructor === Object;
+    };
+
+    if (isObject(stateData) && stateData.from) {
       console.log('navigating back to:', stateData.from);
       navigate(stateData.from);
-    } else if (stateData.back) {
+    } else if (isObject(stateData) && stateData.back) {
       console.log('navigating back');
       navigate(-1);
     } else {

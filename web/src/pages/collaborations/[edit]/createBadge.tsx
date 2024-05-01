@@ -34,12 +34,12 @@ export default function SelectBadges() {
 
   const onCreateBadgeButtonClick = async () => {
     await publishBadge();
-    navigate('/collaboration/edit/interests');
+    navigate('/collaboration/edit/interests', { state: { back: true } });
   };
 
   mainButton
     .setParams({ text: 'Next', isVisible: true, isEnabled: false })
-    .onClick( onCreateBadgeButtonClick);
+    .onClick(onCreateBadgeButtonClick);
 
   createEffect(() => {
     if (createBadge.icon && createBadge.color && createBadge.text) {
@@ -48,7 +48,7 @@ export default function SelectBadges() {
   });
 
   onCleanup(() => {
-    mainButton.offClick( onCreateBadgeButtonClick);
+    mainButton.offClick(onCreateBadgeButtonClick);
   });
 
   return (

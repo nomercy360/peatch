@@ -5,10 +5,10 @@ export default function EditCollaboration(props: RouteSectionProps) {
   const navigate = useNavigate();
 
   setEditCollaboration({});
-  //
-  // if (!editCollaboration.title || !editCollaboration.description) {
-  //   navigate('/collaborations/edit');
-  // }
+
+  if (!editCollaboration.title || !editCollaboration.description) {
+    navigate('/collaborations/edit');
+  }
 
   return <div>{props.children}</div>;
 }

@@ -13,12 +13,10 @@ export default function SelectBadges() {
 
   const createCollab = async () => {
     const created = await createCollaboration(editCollaboration);
-    // reload the page to get the new collaboration
-    location.reload();
     navigate('/collaborations/' + created.id);
   };
 
-  mainButton.onClick( createCollab);
+  mainButton.onClick(createCollab);
 
   createEffect(() => {
     if (editCollaboration.country && editCollaboration.country_code) {
@@ -37,7 +35,7 @@ export default function SelectBadges() {
   });
 
   onCleanup(() => {
-    mainButton.offClick( createCollab);
+    mainButton.offClick(createCollab);
   });
 
   return (

@@ -21,12 +21,16 @@ import { createQuery } from '@tanstack/solid-query';
 import { setFollowing, setUser, store } from '~/store';
 import ProfilePublished from '../../components/ProfilePublished';
 import { useMainButton } from '~/hooks/useMainButton';
+import { useNavigation } from '~/hooks/useNavigation';
 
 export default function UserProfile() {
   const mainButton = useMainButton();
   const [published, setPublished] = createSignal(false);
 
   const navigate = useNavigate();
+
+  const { navigateBack } = useNavigation();
+
   const params = useParams();
 
   const userId = params.id;
@@ -81,11 +85,7 @@ export default function UserProfile() {
   };
 
   const navigateToEdit = () => {
-    navigate('/users/edit', { state: { from: '/users/' + userId } });
-  };
-
-  const navigateBack = () => {
-    navigate(-1);
+    navigate('/users/edit', { state: { back: true } });
   };
 
   createEffect(() => {

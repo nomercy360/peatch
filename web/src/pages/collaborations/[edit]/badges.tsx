@@ -15,11 +15,13 @@ export default function SelectBadges() {
   const navigate = useNavigate();
 
   const navigateNext = () => {
-    navigate('/collaborations/edit/interests');
+    navigate('/collaborations/edit/interests', { state: { back: true } });
   };
 
   const navigateCreateBadge = () => {
-    navigate('/collaborations/edit/create-badge?badge_name=' + badgeSearch());
+    navigate('/collaborations/edit/create-badge?badge_name=' + badgeSearch(), {
+      state: { back: true },
+    });
   };
 
   const fetchBadgeQuery = createQuery(() => ({
@@ -29,7 +31,7 @@ export default function SelectBadges() {
 
   mainButton
     .setParams({ text: 'Next', isVisible: true, isEnabled: false })
-    .onClick( navigateNext);
+    .onClick(navigateNext);
 
   createEffect(() => {
     if (editCollaboration.badge_ids.length) {
@@ -38,7 +40,7 @@ export default function SelectBadges() {
   });
 
   onCleanup(() => {
-    mainButton.offClick( navigateNext);
+    mainButton.offClick(navigateNext);
   });
 
   return (

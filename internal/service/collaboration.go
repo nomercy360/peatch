@@ -38,7 +38,7 @@ type CreateCollaboration struct {
 	Country       string  `json:"country" validate:"max=255,required"`
 	City          string  `json:"city"`
 	CountryCode   string  `json:"country_code" validate:"max=2,required"`
-	BadgeIDs      []int64 `json:"badge_ids" validate:"dive,min=1"`
+	BadgeIDs      []int64 `json:"badge_ids" validate:"dive,min=1,required"`
 } // @Name CreateCollaboration
 
 func (cc *CreateCollaboration) toCollaboration() db.Collaboration {

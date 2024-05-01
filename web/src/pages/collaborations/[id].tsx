@@ -20,6 +20,7 @@ import { store } from '~/store';
 import { usePopup } from '~/hooks/usePopup';
 import ProfilePublished from '~/components/ProfilePublished';
 import { useMainButton } from '~/hooks/useMainButton';
+import { useNavigation } from '~/hooks/useNavigation';
 
 export default function Collaboration() {
   const mainButton = useMainButton();
@@ -27,6 +28,7 @@ export default function Collaboration() {
   const [published, setPublished] = createSignal(false);
 
   const navigate = useNavigate();
+  const { navigateBack } = useNavigation();
   const params = useParams();
   const { showAlert } = usePopup();
 
@@ -68,14 +70,6 @@ export default function Collaboration() {
     navigate(`/collaborations/${collabId}/edit`);
   };
 
-  const navigateToHome = () => {
-    navigate('/', {
-      replace: true,
-      state: { from: 'collaboration' },
-      resolve: true,
-    });
-  };
-
   createEffect(() => {
     if (isCurrentUserCollab()) {
       if (published()) {
@@ -86,7 +80,7 @@ export default function Collaboration() {
           isVisible: true,
           isEnabled: true,
         });
-        mainButton.onClick(navigateToHome);
+        mainButton.onClick(navigateBack);
         return;
       }
       if (!store.user.published_at) {

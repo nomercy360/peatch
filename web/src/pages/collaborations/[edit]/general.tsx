@@ -11,10 +11,10 @@ export default function GeneralInfo() {
   const navigate = useNavigate();
 
   const navigateNext = () => {
-    navigate('/collaborations/edit/badges');
+    navigate('/collaborations/edit/badges', { state: { back: true } });
   };
 
-  mainButton.onClick( navigateNext);
+  mainButton.onClick(navigateNext);
 
   createEffect(() => {
     if (editCollaboration.title && editCollaboration.description) {
@@ -33,7 +33,7 @@ export default function GeneralInfo() {
   });
 
   onCleanup(() => {
-    mainButton.offClick( navigateNext);
+    mainButton.offClick(navigateNext);
   });
 
   return (
