@@ -2,6 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+    :root {
+        --telegram-background-color: var(--tg-theme-bg-color, #f5f5f5);
+        --telegram-text-color: var(--tg-theme-text-color, #23241f);
+        --telegram-hint-color: var(--tg-theme-hint-color, #b0b0b0);
+        --telegram-link-color: var(--tg-theme-link-color, #0078d7);
+        --telegram-button-color: var(--tg-theme-button-color, #0078d7);
+        --telegram-button-text-color: var(--tg-theme-button-text-color, #ffffff);
+        --telegram-secondary-bg-color: var(--tg-theme-secondary-bg-color, #f5f5f5);
+        --telegram-header-bg-color: var(--tg-theme-header-bg-color, #0078d7);
+        --telegram-accent-text-color: var(--tg-theme-accent-text-color, #0078d7);
+        --telegram-section-bg-color: var(--tg-theme-section-bg-color, #f5f5f5);
+        --telegram-section-header-text-color: var(--tg-theme-section-header-text-color, #23241f);
+        --telegram-subtitle-text-color: var(--tg-theme-subtitle-text-color, #23241f);
+        --telegram-destructive-text-color: var(--tg-theme-destructive-text-color, #d93f51);
+    }
+}
 
 .image-container::before {
     content: '';

@@ -47,7 +47,7 @@ export default function Index() {
   });
 
   return (
-    <div class="flex flex-col px-4">
+    <div class="flex flex-col bg-peatch-bg px-4">
       <Show when={!store.user.published_at && profilePopup()}>
         <FillProfilePopup onClose={closePopup} />
       </Show>
@@ -55,7 +55,7 @@ export default function Index() {
         class="flex flex-row items-center justify-between py-4"
         href={getUserLink()}
       >
-        <p class="text-3xl">Bonsoir, {store.user?.username}!</p>
+        <p class="text-3xl text-black">Bonsoir, {store.user?.username}!</p>
         <Switch>
           <Match when={store.user.avatar_url}>
             <img
@@ -82,7 +82,7 @@ export default function Index() {
                 <img
                   src={image}
                   alt="User Avatar"
-                  class="-ml-1 size-11 rounded-xl border-2 border-white object-cover object-center"
+                  class="-ml-1 size-11 rounded-xl border-2 border-peatch-stroke object-cover object-center"
                   classList={{
                     'ml-0': idx() === 0,
                     'z-20': idx() === 0,
@@ -94,15 +94,15 @@ export default function Index() {
           </Suspense>
         </div>
         <div class="flex flex-row items-center justify-between">
-          <p class="mt-2 text-3xl">
-            <span class="text-pink">Explore people</span> you may like to
+          <p class="mt-2 text-3xl text-black">
+            <span class="text-accent">Explore people</span> you may like to
             collaborate
           </p>
           <span class="material-symbols-rounded text-[48px] text-pink">
             maps_ugc
           </span>
         </div>
-        <p class="mt-1.5 text-sm text-gray">
+        <p class="text-hint mt-1.5 text-sm">
           Figma Wizards, Consultants, Founders, and more
         </p>
       </Link>
