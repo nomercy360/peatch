@@ -20,9 +20,12 @@ import { store } from '~/store';
 import { usePopup } from '~/hooks/usePopup';
 import ProfilePublished from '~/components/ProfilePublished';
 import { useBackButton, useMainButton } from '@tma.js/sdk-solid';
+import { useNavigator } from '~/navigation/routes';
 
 export default function Collaboration() {
   const mainButton = useMainButton();
+  const backButton = useBackButton();
+
   const [published, setPublished] = createSignal(false);
 
   const navigate = useNavigate();
@@ -75,8 +78,6 @@ export default function Collaboration() {
     });
   };
 
-  const backButton = useBackButton();
-
   createEffect(() => {
     if (isCurrentUserCollab()) {
       if (published()) {
@@ -118,6 +119,7 @@ export default function Collaboration() {
     // mainButton.offClick(publish);
     // mainButton.offClick(back);
     // mainButton.offClick(pushToEdit);
+    backButton().off('click', navigateHome);
   });
 
   return (

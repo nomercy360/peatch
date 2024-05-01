@@ -1,5 +1,5 @@
 import { FormLayout } from '~/components/edit/layout';
-import { useMainButton, useBackButton } from '@tma.js/sdk-solid';
+import { useMainButton } from '@tma.js/sdk-solid';
 import { useNavigate } from '@solidjs/router';
 import { createEffect, onCleanup } from 'solid-js';
 import { editCollaboration, setEditCollaboration } from '~/store';

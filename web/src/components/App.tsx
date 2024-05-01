@@ -15,6 +15,7 @@ import EditCollaboration from '~/pages/collaborations/[edit]';
 import CollaborationLocation from '~/pages/collaborations/[edit]/location';
 import CollaborationBadges from '~/pages/collaborations/[edit]/badges';
 import CollaborationOpportunity from '~/pages/collaborations/[edit]/interests';
+import { NavigatorProvider } from '~/navigation/routes';
 
 const Users = lazy(() => import('~/pages/users'));
 const Collaborations = lazy(() => import('~/pages/collaborations'));
@@ -28,7 +29,7 @@ const UserCollaborate = lazy(() => import('~/pages/users/collaborate'));
 export function App() {
   // Create new application navigator and attach it to the browser history, so it could modify
   // it and listen to its changes.
-  const navigator = createNavigator();
+  const navigator = createNavigator({ debug: true });
 
   void navigator.attach();
 
@@ -39,32 +40,34 @@ export function App() {
   const Router = createRouter(navigator);
 
   return (
-    <Router>
-      <Route path="/" component={Home} />
-      <Route path="/users" component={Users} />
-      <Route path="/users/:id" component={User} />
-      <Route path="/users/edit" component={EditUser}>
-        <Route path="/" component={GeneralInfo} />
-        <Route path="/badges" component={SelectBadges} />
-        <Route path="/create-badge" component={CreateBadge} />
-        <Route path="/location" component={EditLocation} />
-        <Route path="/interests" component={SelectOpportunities} />
-        <Route path="/description" component={Description} />
+    <NavigatorProvider navigator={navigator}>
+      <Router>
+        <Route path="/" component={Home} />
+        <Route path="/users" component={Users} />
+        <Route path="/users/:id" component={User} />
+        <Route path="/users/edit" component={EditUser}>
+          <Route path="/" component={GeneralInfo} />
+          <Route path="/badges" component={SelectBadges} />
+          <Route path="/create-badge" component={CreateBadge} />
+          <Route path="/location" component={EditLocation} />
+          <Route path="/interests" component={SelectOpportunities} />
+          <Route path="/description" component={Description} />
 
-        <Route path="/image" component={ImageUpload} />
-      </Route>
-      <Route path="/collaborations/edit" component={EditCollaboration}>
-        <Route path="/" component={CollaborationInfo} />
-        <Route path="/location" component={CollaborationLocation} />
-        <Route path="/badges" component={CollaborationBadges} />
-        <Route path="/interests" component={CollaborationOpportunity} />
-      </Route>
-      <Route path="/collaborations" component={Collaborations} />
-      <Route path="/collaborations/create" component={CreateCollaboration} />
-      <Route path="/collaborations/:id" component={Collaboration} />
-      <Route path="/users/:id/collaborate" component={UserCollaborate} />
+          <Route path="/image" component={ImageUpload} />
+        </Route>
+        <Route path="/collaborations/edit" component={EditCollaboration}>
+          <Route path="/" component={CollaborationInfo} />
+          <Route path="/location" component={CollaborationLocation} />
+          <Route path="/badges" component={CollaborationBadges} />
+          <Route path="/interests" component={CollaborationOpportunity} />
+        </Route>
+        <Route path="/collaborations" component={Collaborations} />
+        <Route path="/collaborations/create" component={CreateCollaboration} />
+        <Route path="/collaborations/:id" component={Collaboration} />
+        <Route path="/users/:id/collaborate" component={UserCollaborate} />
 
-      <Route path="*" component={() => <Navigate href={'/'} />} />
-    </Router>
+        {/*<Route path="*" component={() => <Navigate href={'/'} />} />*/}
+      </Router>
+    </NavigatorProvider>
   );
 }

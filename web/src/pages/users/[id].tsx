@@ -20,16 +20,28 @@ import {
 import { createQuery } from '@tanstack/solid-query';
 import { setFollowing, setUser, store } from '~/store';
 import ProfilePublished from '../../components/ProfilePublished';
-import { useMainButton } from '@tma.js/sdk-solid';
+import { useBackButton, useMainButton } from '@tma.js/sdk-solid';
+import { useNavigator } from '~/navigation/routes';
 
 export default function UserProfile() {
   const mainButton = useMainButton();
+  const backButton = useBackButton();
   const [published, setPublished] = createSignal(false);
 
   const navigate = useNavigate();
   const params = useParams();
 
   const userId = params.id;
+
+  const navigator = useNavigator();
+
+  const navigateHome = () => {
+    navigate(-navigator.cursor, { replace: true });
+    //onsole.log(navigator.cursor);
+    // navigate('', { replace: true });
+  };
+
+  backButton().on('click', navigateHome);
 
   const query = createQuery(() => ({
     queryKey: ['profiles', userId],
@@ -138,6 +150,7 @@ export default function UserProfile() {
 
   onCleanup(async () => {
     mainButton().hide();
+    backButton().off('click', navigateHome);
   });
 
   return (
