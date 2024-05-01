@@ -1,8 +1,15 @@
 import { createEffect, createResource, createSignal, For, Match, Show, Suspense, Switch } from 'solid-js';
-import { store } from '../store';
-import { CDN_URL, fetchPreview } from '../api';
-import FillProfilePopup from '../components/FillProfilePopup';
+import { store } from '~/store';
+import { CDN_URL, fetchPreview } from '~/api';
+import FillProfilePopup from '~/components/FillProfilePopup';
+import { Link } from '~/components/Link';
+import { CloudStorage, postEvent } from '@tma.js/sdk';
 
+const cloudStorage = new CloudStorage(
+  '7.2',
+  () => Math.random().toString(),
+  postEvent,
+);
 export default function Index() {
   const [profilePopup, setProfilePopup] = createSignal(false);
 
@@ -19,21 +26,18 @@ export default function Index() {
     }
   };
 
-  const closePopup = () => {
+  const closePopup = async () => {
     setProfilePopup(false);
-    window.Telegram.WebApp.CloudStorage.setItem('profilePopup', 'closed');
+    await cloudStorage.set('profilePopup', 'closed');
   };
 
-  const updateProfilePopup = (err: any, value: any) => {
+  const updateProfilePopup = (value: any) => {
     setProfilePopup(value !== 'closed');
   };
 
-  createEffect(() => {
-    window.Telegram.WebApp.CloudStorage.getItem(
-      'profilePopup',
-      updateProfilePopup,
-    );
-    // window.Telegram.WebApp.CloudStorage.removeItem('profilePopup');
+  createEffect(async () => {
+    const resp = await cloudStorage.get('profilePopup');
+    updateProfilePopup(resp);
   });
 
   return (
@@ -41,7 +45,7 @@ export default function Index() {
       <Show when={!store.user.published_at && profilePopup()}>
         <FillProfilePopup onClose={closePopup} />
       </Show>
-      <a
+      <Link
         class="flex flex-row items-center justify-between py-4"
         href={getUserLink()}
       >
@@ -60,9 +64,9 @@ export default function Index() {
             </div>
           </Match>
         </Switch>
-      </a>
+      </Link>
       <div class="h-px w-full bg-peatch-stroke"></div>
-      <a class="flex flex-col items-start justify-start py-4" href="/users">
+      <Link class="flex flex-col items-start justify-start py-4" href="/users">
         <div class="flex w-full flex-row items-center justify-start">
           <Suspense fallback={<ImagesLoader />}>
             <For each={previewImages()}>
@@ -93,9 +97,9 @@ export default function Index() {
         <p class="mt-1.5 text-sm text-gray">
           Figma Wizards, Consultants, Founders, and more
         </p>
-      </a>
+      </Link>
       <div class="h-px w-full bg-peatch-stroke"></div>
-      <a
+      <Link
         class="flex flex-col items-start justify-start py-4"
         href="/collaborations"
       >
@@ -129,7 +133,7 @@ export default function Index() {
         <p class="mt-1.5 text-sm text-gray">
           Yoga practice, Running, Grabbing a coffee, and more
         </p>
-      </a>
+      </Link>
       <div class="h-px w-full bg-peatch-stroke"></div>
       <div class="flex flex-col items-start justify-start py-4">
         <div class="flex flex-row items-start justify-between">

@@ -1,31 +1,13 @@
-import { useButtons } from '../../hooks/useBackButton';
-import { createEffect, createSignal, For, onCleanup, Show, Suspense } from 'solid-js';
+import { createSignal, For, Show, Suspense } from 'solid-js';
 import { User } from '../../../gen';
-import { useNavigate } from '@solidjs/router';
-import { fetchUsers } from '../../api';
+import { fetchUsers } from '~/api';
 import { createQuery } from '@tanstack/solid-query';
-import useDebounce from '../../hooks/useDebounce';
-import Badge from '../../components/Badge';
+import useDebounce from '~/hooks/useDebounce';
+import Badge from '~/components/Badge';
+import { Link } from '~/components/Link';
 
 export default function Index() {
-  const { backButton } = useButtons();
   const [search, setSearch] = createSignal('');
-
-  const navigate = useNavigate();
-
-  const back = () => {
-    navigate('/');
-  };
-
-  createEffect(() => {
-    backButton.setVisible();
-    backButton.onClick(back);
-  });
-
-  onCleanup(() => {
-    backButton.hide();
-    backButton.offClick(back);
-  });
 
   const updateSearch = useDebounce(setSearch, 300);
 
@@ -63,7 +45,7 @@ const UserCard = (props: { user: User }) => {
   const badgeSlice = props.user.badges?.slice(0, 5);
 
   return (
-    <a
+    <Link
       class="flex flex-col items-start px-4 pb-5 pt-4 text-start"
       href={`/users/${props.user.id}`}
     >
@@ -89,7 +71,7 @@ const UserCard = (props: { user: User }) => {
           </div>
         </Show>
       </div>
-    </a>
+    </Link>
   );
 };
 

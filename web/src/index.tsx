@@ -1,19 +1,9 @@
 /* @refresh reload */
 import { render } from 'solid-js/web';
 
-import './index.css';
-import { Route, Router } from '@solidjs/router';
-import { lazy } from 'solid-js';
-import App from './App';
+import { Root } from '~/components/Root';
 
-const Users = lazy(() => import('./pages/users'));
-const Collaborations = lazy(() => import('./pages/collaborations'));
-const Collaboration = lazy(() => import('./pages/collaborations/[id]'));
-const Home = lazy(() => import('./pages'));
-const User = lazy(() => import('./pages/users/[id]'));
-const EditUser = lazy(() => import('./pages/users/edit'));
-const CreateCollaboration = lazy(() => import('./pages/collaborations/create'));
-const UserCollaborate = lazy(() => import('./pages/users/collaborate'));
+import './index.css';
 
 const root = document.getElementById('root');
 
@@ -23,21 +13,4 @@ if (import.meta.env.DEV && !(root instanceof HTMLElement)) {
   );
 }
 
-const NotFound = () => <div>Not Found</div>;
-
-render(
-  () => (
-    <Router root={App}>
-      <Route path="/" component={Home} />
-      <Route path="/users" component={Users} />
-      <Route path="/collaborations" component={Collaborations} />
-      <Route path="/collaborations/:id" component={Collaboration} />
-      <Route path="/users/:id" component={User} />
-      <Route path="/users/edit" component={EditUser} />
-      <Route path="/collaborations/create" component={CreateCollaboration} />
-      <Route path="/users/:id/collaborate" component={UserCollaborate} />
-      <Route path="/*all" component={NotFound} />
-    </Router>
-  ),
-  root!,
-);
+render(() => (<Root />), root!);

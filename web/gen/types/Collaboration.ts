@@ -1,7 +1,12 @@
+import { Badge } from "./Badge";
 import { Opportunity } from "./Opportunity";
 import { UserProfile } from "./UserProfile";
 
  export type Collaboration = {
+    /**
+     * @type array | undefined
+    */
+    badges?: Badge[];
     /**
      * @type string | undefined
     */

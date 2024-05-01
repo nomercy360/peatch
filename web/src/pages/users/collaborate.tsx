@@ -1,7 +1,7 @@
 import { createQuery } from '@tanstack/solid-query';
 import { CDN_URL, createUserCollaboration, fetchProfile } from '../../api';
 import { useNavigate, useParams } from '@solidjs/router';
-import { store } from '../../store';
+import { store } from '~/store';
 import {
   createEffect,
   createSignal,
@@ -9,21 +9,25 @@ import {
   Show,
   Suspense,
 } from 'solid-js';
-import { useButtons } from '../../hooks/useBackButton';
+
 import { createStore } from 'solid-js/store';
 import { CreateUserCollaboration } from '../../../gen';
-import TextArea from '../../components/TextArea';
-import { usePopup } from '../../hooks/usePopup';
+import TextArea from '~/components/TextArea';
+import { usePopup } from '~/hooks/usePopup';
+import { useMainButton } from '@tma.js/sdk-solid';
 
 export default function Collaborate() {
   const params = useParams();
   const userId = params.id;
 
-  const { mainButton, backButton } = useButtons();
   const [created, setCreated] = createSignal(false);
-
-  const navigate = useNavigate();
+  const mainButton = useMainButton();
   const { showAlert } = usePopup();
+  const navigate = useNavigate();
+
+  const navigateBack = () => {
+    navigate(-1 );
+  }
 
   const [collaborationRequest, setCollaborationRequest] =
     createStore<CreateUserCollaboration>({
@@ -32,9 +36,6 @@ export default function Collaborate() {
       requester_id: store.user.id!,
     });
 
-  const backToProfile = () => {
-    navigate('/users/' + userId);
-  };
 
   const query = createQuery(() => ({
     queryKey: ['profiles', userId],
@@ -47,7 +48,7 @@ export default function Collaborate() {
       return;
     }
     try {
-      const resp = await createUserCollaboration(collaborationRequest);
+      await createUserCollaboration(collaborationRequest);
       setCreated(true);
     } catch (e) {
       console.error(e);
@@ -55,27 +56,28 @@ export default function Collaborate() {
   };
 
   createEffect(() => {
-    backButton.setVisible();
-    backButton.onClick(backToProfile);
     if (created()) {
-      mainButton.offClick(postCollaboration);
-      mainButton.onClick(backToProfile);
-      mainButton.setText('Back to ' + query.data.first_name + "'s profile");
+      mainButton().off('click', postCollaboration);
+      mainButton().on('click', navigateBack);
+      mainButton().setParams({
+        text: 'Back to ' + query.data.first_name + '\'s profile',
+        isEnabled: true,
+        isVisible: true,
+      });
+
     } else {
-      mainButton.setVisible('Send message');
-      mainButton.onClick(postCollaboration);
-      if (collaborationRequest.message === '') {
-        mainButton.setActive(false);
-      } else {
-        mainButton.setActive(true);
-      }
+      mainButton().setParams({
+        text: 'Send message',
+        isEnabled: collaborationRequest.message !== '',
+        isVisible: true,
+      });
+      mainButton().on('click', postCollaboration);
     }
   });
 
   onCleanup(() => {
-    backButton.offClick(backToProfile);
-    backButton.offClick(backToProfile);
-    mainButton.offClick(postCollaboration);
+    mainButton().off('click', postCollaboration);
+    mainButton().off('click', navigateBack);
   });
 
   return (

@@ -25,9 +25,9 @@ export const apiFetch = async ({
   };
 
   try {
-    if (showProgress) {
-      window.Telegram.WebApp.MainButton.showProgress(false);
-    }
+    // if (showProgress) {
+    //   window.Telegram.WebApp.MainButton.showProgress(false);
+    // }
     const response = await fetch(`${API_BASE_URL}/api${endpoint}`, {
       method,
       headers,
@@ -38,7 +38,7 @@ export const apiFetch = async ({
       if (catchError) {
         const { message } = await response.json();
         console.error('Error:', message || 'Error! Please try again');
-        window.Telegram.WebApp.BackButton.isVisible = false;
+       // window.Telegram.WebApp.BackButton.isVisible = false;
       }
       return false;
     }
@@ -51,9 +51,9 @@ export const apiFetch = async ({
   } catch (error) {
     console.error('Error:', error);
   } finally {
-    if (showProgress) {
-      window.Telegram.WebApp.MainButton.hideProgress();
-    }
+    // if (showProgress) {
+    //   window.Telegram.WebApp.MainButton.hideProgress();
+    // }
   }
 };
 

@@ -1,4 +1,3 @@
-import { useButtons } from '../../hooks/useBackButton';
 import {
   createEffect,
   createSignal,
@@ -17,35 +16,20 @@ import {
   publishProfile,
   showProfile,
   unfollowUser,
-} from '../../api';
+} from '~/api';
 import { createQuery } from '@tanstack/solid-query';
-import { setFollowing, setUser, store } from '../../store';
-import { usePopup } from '../../hooks/usePopup';
+import { setFollowing, setUser, store } from '~/store';
 import ProfilePublished from '../../components/ProfilePublished';
+import { useBackButton, useMainButton } from '@tma.js/sdk-solid';
 
 export default function UserProfile() {
-  const { mainButton, backButton } = useButtons();
+  const mainButton = useMainButton();
   const [published, setPublished] = createSignal(false);
 
   const navigate = useNavigate();
   const params = useParams();
-  const { showAlert } = usePopup();
 
   const userId = params.id;
-
-  const back = () => {
-    navigate('/');
-  };
-
-  createEffect(() => {
-    backButton.setVisible();
-    backButton.onClick(back);
-  });
-
-  onCleanup(() => {
-    backButton.hide();
-    backButton.offClick(back);
-  });
 
   const query = createQuery(() => ({
     queryKey: ['profiles', userId],
@@ -79,6 +63,12 @@ export default function UserProfile() {
     await showProfile();
   };
 
+  const backBtn = useBackButton();
+
+  const logSomething = () => {
+    console.log('something');
+  }
+
   const follow = async () => {
     setFollowing([...store.following, Number(userId)]);
     await followUser(Number(userId));
@@ -89,49 +79,73 @@ export default function UserProfile() {
     await unfollowUser(Number(userId));
   };
 
-  const collaborate = async () => {
+  const navigateToCollaborate = async () => {
+    console.log('Navigate to collaborate');
     if (store.user.published_at && !store.user.hidden_at) {
       navigate(`/users/${userId}/collaborate`);
-    } else {
-      showAlert('Fill and publish your profile first');
     }
   };
 
-  const pushToEdit = () => {
-    navigate(`/users/edit`);
+  const navigateToEdit = () => {
+    navigate(`/users/${userId}/edit`);
+  };
+
+  const navigateBack = () => {
+    navigate(-1);
   };
 
   createEffect(() => {
     if (isCurrentUserProfile) {
       if (published()) {
-        mainButton.offClick(publish);
-        mainButton.offClick(pushToEdit);
-        mainButton.setVisible('Just open the app');
-        mainButton.onClick(back);
+        mainButton().off('click', publish);
+        mainButton().on('click', navigateToEdit);
+        mainButton().setParams({
+          text: 'Just open the app',
+          isVisible: true,
+          isEnabled: true,
+        });
+        mainButton().on('click', navigateBack);
         return;
       }
       if (!store.user.published_at) {
-        mainButton.offClick(pushToEdit);
-        mainButton.setVisible('Publish');
-        mainButton.onClick(publish);
+        mainButton().setParams({
+          text: 'Publish',
+          isVisible: true,
+          isEnabled: true,
+        });
+        mainButton().off('click', navigateToEdit);
+        mainButton().on('click', publish);
       } else {
-        mainButton.offClick(publish);
-        mainButton.setVisible('Edit');
-        mainButton.onClick(pushToEdit);
+        mainButton().setParams({
+          text: 'Edit',
+          isVisible: true,
+          isEnabled: true,
+        });
+        mainButton().off('click', publish);
+        mainButton().on('click', navigateToEdit);
       }
     } else {
-      mainButton.offClick(pushToEdit);
-      mainButton.setVisible('Collaborate');
-      mainButton.onClick(collaborate);
+      backBtn().on('click', logSomething);
+      mainButton().setParams({
+        text: 'Collaborate',
+        isVisible: true,
+        isEnabled: true,
+      });
+      mainButton().off('click', navigateToEdit);
+      mainButton().on('click', navigateToCollaborate);
     }
+
+    onCleanup(() => {
+      mainButton().off('click', navigateToCollaborate);
+      mainButton().off('click', publish);
+      mainButton().off('click', navigateBack);
+      mainButton().off('click', navigateToEdit);
+      backBtn().off('click', logSomething);
+    });
   });
 
-  onCleanup(() => {
-    mainButton.hide();
-    mainButton.offClick(collaborate);
-    mainButton.offClick(publish);
-    mainButton.offClick(back);
-    mainButton.offClick(pushToEdit);
+  onCleanup(async () => {
+    mainButton().hide();
   });
 
   return (
@@ -145,7 +159,7 @@ export default function UserProfile() {
             <div class="min-h-screen">
               <Switch>
                 <Match when={isCurrentUserProfile && !store.user.published_at}>
-                  <ActionButton text="Edit" onClick={pushToEdit} />
+                  <ActionButton text="Edit" onClick={navigateToEdit} />
                 </Match>
                 <Match
                   when={
