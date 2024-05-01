@@ -57,9 +57,9 @@ export default function SelectBadges() {
 
   const saveUser = async () => {
     if (imgFile() && imgFile() !== null) {
+      mainButton.showProgress(true);
       try {
         const { path, url } = await fetchPresignedUrl(imgFile()!.name);
-        mainButton.setParams({ isEnabled: false, isLoaderVisible: true });
         await uploadToS3(
           url,
           imgFile()!,
@@ -70,39 +70,38 @@ export default function SelectBadges() {
             setImgUploadProgress(0);
           },
         );
-
         setEditUser('avatar_url', path);
       } catch (e) {
         console.error(e);
-      } finally {
-        mainButton.setParams({ isEnabled: true, isLoaderVisible: false });
       }
     }
+    await updateUser(editUser);
 
-    const updated = await updateUser(editUser);
-    setUser(updated);
-    navigate('/users/' + store.user.id);
+    mainButton.hideProgress();
+    navigate('/users/' + store.user.id + '?refetch=true');
   };
 
   mainButton
     .setParams({ text: 'Save', isVisible: true, isEnabled: false })
-    .onClick( saveUser);
+    .onClick(saveUser);
 
   createEffect(() => {
     if (editUser.avatar_url || imgFile()) {
       mainButton.enable();
+    } else {
+      mainButton.disable();
     }
   });
 
   onCleanup(() => {
-    mainButton.offClick( saveUser);
+    mainButton.offClick(saveUser);
   });
 
   return (
     <FormLayout
       title="Upload your photo"
       description="Select one with good lighting and minimal background details"
-      screen={6}
+      screen={5}
       totalScreens={6}
     >
       <div class="mt-5 flex h-full items-center justify-center">
@@ -115,7 +114,7 @@ export default function SelectBadges() {
               <UploadBox onFileChange={handleFileChange} />
             </Match>
           </Switch>
-          <button class="h-10 text-peatch-blue" onClick={generateRandomAvatar}>
+          <button class="h-10 text-link" onClick={generateRandomAvatar}>
             Generate a random avatar
           </button>
         </div>
@@ -153,14 +152,14 @@ function ImageBox({
 function UploadBox({ onFileChange }: { onFileChange: any }) {
   return (
     <>
-      <div class="relative flex size-56 flex-col items-center justify-center rounded-xl bg-peatch-bg">
+      <div class="relative flex size-56 flex-col items-center justify-center rounded-xl bg-secondary">
         <input
           class="absolute size-full opacity-0"
           type="file"
           accept="image/*"
           onChange={onFileChange}
         />
-        <span class="material-symbols-rounded pointer-events-none z-10 text-[45px] text-peatch-light-black">
+        <span class="material-symbols-rounded text-peatch-light-black pointer-events-none z-10 text-[45px]">
           camera_alt
         </span>
       </div>

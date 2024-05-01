@@ -4,7 +4,7 @@ export default function ProfilePublished() {
   const images = ['/thumb.png', '/thumb.png', '/thumb.png'];
 
   return (
-    <div class="h-screen p-5 bg-peatch-bg w-full text-center flex flex-col items-center justify-between">
+    <div class="h-screen p-5 bg-secondary w-full text-center flex flex-col items-center justify-between">
       <img src="/confetti.png" alt="Confetti" class="w-full mx-auto absolute top-0 left-0 right-0" />
       <div class="flex flex-col items-center justify-start">
         <span class="material-symbols-rounded text-[60px] text-peatch-green">check_circle</span>
@@ -31,7 +31,7 @@ export default function ProfilePublished() {
         <p class="mt-4 text-lg max-w-xs">
           There are 12 people you might be interested to collaborate with
         </p>
-        <a class="mt-2 text-sm text-peatch-blue h-12 w-full flex items-center justify-center"
+        <a class="mt-2 text-sm text-button h-12 w-full flex items-center justify-center"
            href="/users">
           Show them</a>
       </div>

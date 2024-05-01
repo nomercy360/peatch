@@ -16,7 +16,7 @@ import { Link } from '~/components/Link';
 export default function Index() {
   const [profilePopup, setProfilePopup] = createSignal(false);
 
-  const [previewImages, setPreviewImages] = createResource(async () => {
+  const [previewImages, _] = createResource(async () => {
     const res = await fetchPreview();
     return res.map((image: any) => CDN_URL + '/' + image.avatar_url);
   });
@@ -43,11 +43,11 @@ export default function Index() {
       'profilePopup',
       updateProfilePopup,
     );
-    // window.Telegram.WebApp.CloudStorage.removeItem('profilePopup');
+    window.Telegram.WebApp.CloudStorage.removeItem('profilePopup');
   });
 
   return (
-    <div class="flex flex-col bg-peatch-secondary px-4 min-h-screen">
+    <div class="flex min-h-screen flex-col bg-secondary px-4">
       <Show when={!store.user.published_at && profilePopup()}>
         <FillProfilePopup onClose={closePopup} />
       </Show>
@@ -59,13 +59,13 @@ export default function Index() {
         <Switch>
           <Match when={store.user.avatar_url}>
             <img
-              class="size-11 rounded-xl border-2 border-peatch-main object-cover object-center"
+              class="size-11 rounded-xl border-2 border-main object-cover object-center"
               src={CDN_URL + '/' + store.user.avatar_url}
               alt="User Avatar"
             />
           </Match>
           <Match when={!store.user.avatar_url}>
-            <div class="flex size-11 items-center justify-center rounded-xl border-2 border-peatch-main bg-peatch-main">
+            <div class="flex size-11 items-center justify-center rounded-xl border-2 border-main bg-main">
               <span class="material-symbols-rounded text-peatch-main">
                 account_circle
               </span>
@@ -73,7 +73,7 @@ export default function Index() {
           </Match>
         </Switch>
       </Link>
-      <div class="h-px w-full bg-peatch-main"></div>
+      <div class="h-px w-full bg-main"></div>
       <Link class="flex flex-col items-start justify-start py-4" href="/users">
         <div class="flex w-full flex-row items-center justify-start">
           <Suspense fallback={<ImagesLoader />}>
@@ -82,7 +82,7 @@ export default function Index() {
                 <img
                   src={image}
                   alt="User Avatar"
-                  class="-ml-1 size-11 rounded-xl border-2 border-peatch-main object-cover object-center"
+                  class="-ml-1 size-11 rounded-xl border-2 border-main object-cover object-center"
                   classList={{
                     'ml-0': idx() === 0,
                     'z-20': idx() === 0,
@@ -102,25 +102,25 @@ export default function Index() {
             maps_ugc
           </span>
         </div>
-        <p class="text-hint mt-1.5 text-sm">
+        <p class="mt-1.5 text-sm text-hint">
           Figma Wizards, Consultants, Founders, and more
         </p>
       </Link>
-      <div class="h-px w-full bg-peatch-main"></div>
+      <div class="h-px w-full bg-main"></div>
       <Link
         class="flex flex-col items-start justify-start py-4"
         href="/collaborations"
       >
         <div class="flex w-full flex-row items-center justify-start">
-          <div class="z-20 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-peatch-main bg-orange">
+          <div class="z-20 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-main bg-orange">
             <span class="material-symbols-rounded text-white">
               self_improvement
             </span>
           </div>
-          <div class="z-10 -ml-1 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-peatch-main bg-red">
+          <div class="z-10 -ml-1 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-main bg-red">
             <span class="material-symbols-rounded text-white">wine_bar</span>
           </div>
-          <div class="-ml-1 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-peatch-main bg-blue">
+          <div class="-ml-1 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-main bg-blue">
             <span class="material-symbols-rounded text-white">
               directions_run
             </span>
@@ -139,7 +139,7 @@ export default function Index() {
           Yoga practice, Running, Grabbing a coffee, and more
         </p>
       </Link>
-      <div class="h-px w-full bg-peatch-main"></div>
+      <div class="h-px w-full bg-main"></div>
       <div class="flex flex-col items-start justify-start py-4">
         <div class="flex flex-row items-start justify-between">
           <p class="mt-2 text-3xl text-white">
@@ -161,7 +161,7 @@ const ImagesLoader = () => {
       <For each={[1, 2, 3] as any}>
         {(image, idx) => (
           <div
-            class="-ml-1 size-11 rounded-xl border-2 border-peatch-main bg-peatch-main"
+            class="-ml-1 size-11 rounded-xl border-2 border-main bg-main"
             classList={{
               'ml-0': idx() === 0,
               'z-20': idx() === 0,

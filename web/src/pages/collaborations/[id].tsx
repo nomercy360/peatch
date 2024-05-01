@@ -178,7 +178,7 @@ export default function Collaboration() {
                   <For each={query.data.badges}>
                     {badge => (
                       <div
-                        class="flex h-10 flex-row items-center justify-center gap-[5px] rounded-2xl border border-peatch-stroke px-2.5"
+                        class="flex h-10 flex-row items-center justify-center gap-[5px] rounded-2xl border border-main px-2.5"
                         style={{
                           'background-color': `#${badge.color}`,
                           'border-color': `#${badge.color}`,

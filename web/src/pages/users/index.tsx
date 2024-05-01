@@ -25,10 +25,10 @@ export default function Index() {
   }));
 
   return (
-    <div class="pb-52 bg-peatch-secondary min-h-screen">
+    <div class="pb-52 bg-secondary min-h-screen">
       <div class="px-4 py-2.5">
         <input
-          class="h-10 w-full rounded-lg bg-peatch-main px-2.5 text-main placeholder:text-hint"
+          class="h-10 w-full rounded-lg bg-main px-2.5 text-main placeholder:text-hint"
           placeholder="Search for profiles"
           type="text"
           value={search()}
@@ -55,7 +55,7 @@ const UserCard = (props: { user: User }) => {
 
   return (
     <Link
-      class="flex flex-col items-start px-4 pb-5 pt-4 text-start bg-peatch-secondary"
+      class="flex flex-col items-start px-4 pb-5 pt-4 text-start bg-secondary"
       href={`/users/${props.user.id}`}
       state={{ from: '/users' }}
     >
@@ -81,7 +81,7 @@ const UserCard = (props: { user: User }) => {
           </div>
         </Show>
       </div>
-      <div class="h-px bg-peatch-main w-full mt-5"></div>
+      <div class="h-px bg-main w-full mt-5"></div>
     </Link>
   );
 };
@@ -89,10 +89,10 @@ const UserCard = (props: { user: User }) => {
 const UserListPlaceholder = () => {
   return (
     <div class="flex flex-col items-start justify-start gap-4 px-4 py-2.5">
-      <div class="h-56 w-full rounded-2xl bg-peatch-main"></div>
-      <div class="h-56 w-full rounded-2xl bg-peatch-main"></div>
-      <div class="h-56 w-full rounded-2xl bg-peatch-main"></div>
-      <div class="h-56 w-full rounded-2xl bg-peatch-main"></div>
+      <div class="h-56 w-full rounded-2xl bg-main"></div>
+      <div class="h-56 w-full rounded-2xl bg-main"></div>
+      <div class="h-56 w-full rounded-2xl bg-main"></div>
+      <div class="h-56 w-full rounded-2xl bg-main"></div>
     </div>
   );
 };

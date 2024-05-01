@@ -62,7 +62,7 @@ export default function SelectLocation(props: {
 
   return (
     <>
-      <div class="mt-5 flex h-10 w-full flex-row items-center justify-between rounded-lg bg-peatch-bg px-2.5">
+      <div class="mt-5 flex h-10 w-full flex-row items-center justify-between rounded-lg bg-main px-2.5">
         <input
           class="w-full bg-transparent text-main placeholder:text-hint focus:outline-none"
           placeholder="City and country"
@@ -83,6 +83,9 @@ export default function SelectLocation(props: {
         <Show when={!search() && props.country && props.countryCode}>
           <LocationButton
             onClick={() => clearLocation()}
+            locationName={
+              props.city ? `${props.city}, ${props.country}` : props.country
+            }
             isActive={true}
             location={{
               address: {
@@ -94,10 +97,11 @@ export default function SelectLocation(props: {
             }}
           />
         </Show>
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<div class="text-sm text-hint">Loading...</div>}>
           <For each={query.data!}>
             {location => (
               <LocationButton
+                locationName={location.display_name}
                 isActive={
                   location.address.country === props.country &&
                   location.address.city === props.city &&
@@ -118,6 +122,7 @@ function LocationButton(props: {
   location: Location;
   onClick: () => void;
   isActive: boolean;
+  locationName: string;
 }) {
   const findFlag = (code: string) => {
     const flag = countryFlags.find(
@@ -126,33 +131,42 @@ function LocationButton(props: {
     return flag?.flag;
   };
 
+  const shortenLocation = (location: string) => {
+    if (location.length > 40) {
+      return location.slice(0, 40) + '...';
+    }
+    return location;
+  };
+
   return (
     <button
       onClick={() => props.onClick()}
-      class="flex h-10 w-full flex-row items-center justify-between"
+      class="flex h-16 w-full flex-row items-center justify-between rounded-2xl border border-main px-2.5 text-sm text-main"
       classList={{
-        'bg-peatch-bg': props.isActive,
+        'bg-main': !props.isActive,
+        'bg-secondary': props.isActive,
       }}
     >
       <p class="">
-        {props.location.address.country}
-        <Show when={props.location.address.city || props.location.address.town}>
-          , {props.location.address.city || props.location.address.town}
+        <Show
+          when={props.location.address.country && props.location.address.city}
+        >
+          {props.location.address.city}, {props.location.address.country}
+        </Show>
+        <Show when={!props.location.address.city}>
+          {shortenLocation(props.locationName)}
         </Show>
       </p>
-      <div class="flex size-10 items-center justify-center">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="26"
-          viewBox={
-            findFlag(props.location.address.country_code)
-              ? '0 0 512 512'
-              : '0 0 24 24'
-          }
-          class="size-6"
-          innerHTML={findFlag(props.location.address.country_code)}
-        ></svg>
-      </div>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox={
+          findFlag(props.location.address.country_code)
+            ? '0 0 512 512'
+            : '0 0 24 24'
+        }
+        class="mr-2 size-5"
+        innerHTML={findFlag(props.location.address.country_code)}
+      ></svg>
     </button>
   );
 }

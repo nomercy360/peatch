@@ -1,8 +1,4 @@
-import {
-  createSignal,
-  For,
-  Suspense,
-} from 'solid-js';
+import { createSignal, For, Suspense } from 'solid-js';
 import { Collaboration } from '../../../gen';
 import { CDN_URL, fetchCollaborations } from '~/api';
 import { createQuery } from '@tanstack/solid-query';
@@ -20,10 +16,10 @@ export default function Index() {
   }));
 
   return (
-    <div class="pb-52 bg-peatch-secondary min-h-screen">
+    <div class="bg-secondary min-h-screen pb-52">
       <div class="px-4 py-2.5">
         <input
-          class="h-10 w-full rounded-lg bg-peatch-main px-2.5 text-main placeholder:text-hint"
+          class="bg-main text-main placeholder:text-hint h-10 w-full rounded-lg px-2.5"
           placeholder="Search collaborations by type or keyword"
           type="text"
           value={search()}
@@ -51,24 +47,24 @@ const CollaborationCard = (props: { collab: Collaboration }) => {
       href={`/collaborations/${props.collab.id}`}
     >
       <p class="mt-3 text-3xl text-blue">{props.collab.opportunity?.text}:</p>
-      <p class="text-3xl text-main">{props.collab.title}</p>
-      <p class="mt-2 text-sm text-hint">
+      <p class="text-main text-3xl">{props.collab.title}</p>
+      <p class="text-hint mt-2 text-sm">
         {shortenDescription(props.collab.description!)}
       </p>
-      <div class="mt-4 gap-2 flex w-full flex-row items-center justify-start">
+      <div class="mt-4 flex w-full flex-row items-center justify-start gap-2">
         <img
           class="size-10 rounded-2xl object-cover"
           src={CDN_URL + '/' + props.collab.user?.avatar_url}
           alt="User Avatar"
         />
         <div>
-          <p class="text-sm font-bold text-main">
+          <p class="text-main text-sm font-bold">
             {props.collab.user?.first_name} {props.collab.user?.last_name}:
           </p>
-          <p class="text-sm text-main">{props.collab.user?.title}</p>
+          <p class="text-main text-sm">{props.collab.user?.title}</p>
         </div>
       </div>
-      <div class="h-px bg-peatch-main w-full mt-5"></div>
+      <div class="bg-main mt-5 h-px w-full"></div>
     </Link>
   );
 };
@@ -76,10 +72,10 @@ const CollaborationCard = (props: { collab: Collaboration }) => {
 const CollabListPlaceholder = () => {
   return (
     <div class="flex flex-col items-start justify-start gap-4 px-4 py-2.5">
-      <div class="h-48 w-full rounded-2xl bg-peatch-main"></div>
-      <div class="h-48 w-full rounded-2xl bg-peatch-main"></div>
-      <div class="h-48 w-full rounded-2xl bg-peatch-main"></div>
-      <div class="h-48 w-full rounded-2xl bg-peatch-main"></div>
+      <div class="bg-main h-48 w-full rounded-2xl"></div>
+      <div class="bg-main h-48 w-full rounded-2xl"></div>
+      <div class="bg-main h-48 w-full rounded-2xl"></div>
+      <div class="bg-main h-48 w-full rounded-2xl"></div>
     </div>
   );
 };

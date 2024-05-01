@@ -39,8 +39,13 @@ export function SelectBadge(props: {
 
   return (
     <>
-      <div class="bg-peatch-main mt-5 flex h-10 w-full flex-row items-center justify-between rounded-lg bg-peatch-bg px-2.5">
+      <div class="mt-5 flex h-10 w-full flex-row items-center justify-between rounded-lg bg-main px-2.5">
         <input
+          autofocus
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck={false}
           class="h-10 w-full bg-transparent text-main placeholder:text-hint focus:outline-none"
           placeholder="Search for a badge"
           type="text"
@@ -66,13 +71,12 @@ export function SelectBadge(props: {
           </Match>
           <Match when={filteredBadges()?.length === 0}>
             <button
-              class="size-full text-hint text-start text-sm"
+              class="size-full text-start text-sm text-hint"
               onClick={() =>
                 props.selected.length < 10 && props.onCreateBadgeButtonClick()
               }
             >
-              Can’t find such thing.{' '}
-              <span class="text-accent">Create it</span>
+              Can’t find such thing. <span class="text-accent">Create it</span>
             </button>
             <p class="text-nowrap text-sm text-hint">
               {props.selected.length} of 10
@@ -80,7 +84,7 @@ export function SelectBadge(props: {
           </Match>
         </Switch>
       </div>
-      <div class="min-h-fit flex w-full flex-row flex-wrap items-center justify-start gap-1">
+      <div class="flex min-h-fit w-full flex-row flex-wrap items-center justify-start gap-1">
         <Suspense fallback={<div>Loading...</div>}>
           <For each={filteredBadges()}>
             {badge => (
@@ -100,11 +104,7 @@ export function SelectBadge(props: {
                 >
                   {String.fromCodePoint(parseInt(badge.icon!, 16))}
                 </span>
-                <p
-                  class="text-sm font-semibold text-white"
-                >
-                  {badge.text}
-                </p>
+                <p class="text-sm font-semibold text-white">{badge.text}</p>
               </button>
             )}
           </For>

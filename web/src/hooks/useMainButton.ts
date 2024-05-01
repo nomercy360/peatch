@@ -25,19 +25,22 @@ export function useMainButton() {
     enable: () => {
       window.Telegram.WebApp.MainButton.enable();
     },
+    disable: () => {
+      window.Telegram.WebApp.MainButton.disable();
+    },
     setParams: (params: {
       text?: string;
       isVisible?: boolean;
-      isEnabled?: boolean;
-      isLoaderVisible?: boolean;
       color?: string;
       textColor?: string;
+      isEnabled?: boolean;
     }) => {
       return window.Telegram.WebApp.MainButton.setParams({
         is_visible: params.isVisible,
         text: params.text,
         color: params.color,
         text_color: params.textColor,
+        is_active: params.isEnabled,
       });
     },
     onClick: (callback: () => void) => {

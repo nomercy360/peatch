@@ -16,7 +16,7 @@ export default function Description() {
 
   mainButton
     .setParams({ text: 'Next', isVisible: true, isEnabled: false })
-    .onClick( navigateToImageUpload);
+    .onClick(navigateToImageUpload);
 
   createEffect(() => {
     if (editUser.description) {
@@ -25,14 +25,14 @@ export default function Description() {
   });
 
   onCleanup(() => {
-    mainButton.offClick( navigateToImageUpload);
+    mainButton.offClick(navigateToImageUpload);
   });
 
   return (
     <FormLayout
       title="Introduce yourself"
       description="Tell others about your backround, achievments and goals"
-      screen={3}
+      screen={5}
       totalScreens={6}
     >
       <TextArea

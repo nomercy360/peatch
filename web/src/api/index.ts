@@ -5,13 +5,13 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
 export const CDN_URL = 'https://assets.peatch.io';
 
 export const apiFetch = async ({
-                                 endpoint,
-                                 method = 'GET',
-                                 body = null,
-                                 responseType = 'json',
-                                 catchError = true,
-                                 showProgress = true,
-                               }: {
+  endpoint,
+  method = 'GET',
+  body = null,
+  responseType = 'json',
+  catchError = true,
+  showProgress = true,
+}: {
   endpoint: string;
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
   body?: any;
@@ -82,6 +82,7 @@ export const updateUser = async (user: any) => {
     endpoint: `/users`,
     method: 'PUT',
     body: user,
+    showProgress: false,
   });
 };
 
@@ -112,6 +113,7 @@ export const uploadToS3 = (
 export const fetchPresignedUrl = async (file: string) => {
   const { path, url } = await apiFetch({
     endpoint: `/presigned-url?filename=${file}`,
+    showProgress: false,
   });
 
   return { path, url };

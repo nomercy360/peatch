@@ -42,7 +42,7 @@ export function SelectOpportunity(props: {
 
   return (
     <>
-      <div class="mt-5 flex h-10 w-full flex-row items-center justify-between rounded-lg bg-peatch-main px-2.5">
+      <div class="mt-5 flex h-10 w-full flex-row items-center justify-between rounded-lg bg-main px-2.5">
         <input
           class="h-10 w-full bg-transparent text-main placeholder:text-hint focus:outline-none"
           placeholder="Search collaboration opportunities"
@@ -73,21 +73,19 @@ export function SelectOpportunity(props: {
             {op => (
               <button
                 onClick={() => onClick(op.id!)}
-                class="flex h-[60px] w-full flex-row items-center justify-start gap-2.5 rounded-2xl border border-peatch-stroke px-2.5"
+                class="flex h-[60px] w-full flex-row items-center justify-start gap-2.5 rounded-2xl border border-main px-2.5"
                 style={{
                   'background-color': `${includes(op.id!) ? `#${op.color}` : 'var(--tg-theme-section-bg-color)'}`,
                   'border-color': `${includes(op.id!) ? `#${op.color}` : 'var(--tg-theme-section-bg-color)'}`,
                 }}
               >
-                <div class="flex size-10 items-center justify-center rounded-full bg-peatch-hint  ">
+                <div class="flex size-10 items-center justify-center rounded-full bg-main">
                   <span class="material-symbols-rounded text-main">
                     {String.fromCodePoint(parseInt(op.icon!, 16))}
                   </span>
                 </div>
 
-                <div
-                  class="text-start text-main"
-                >
+                <div class="text-start text-main">
                   <p class="text-sm font-semibold">{op.text}</p>
                   <p class="text-xs">{op.description}</p>
                 </div>

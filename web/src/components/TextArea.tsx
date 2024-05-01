@@ -18,7 +18,7 @@ export default function TextArea(props: {
   };
 
   return (
-    <div class="relative mt-5 h-fit min-h-56 w-full rounded-lg bg-peatch-bg">
+    <div class="relative mt-5 h-fit min-h-56 w-full rounded-lg bg-main">
       <textarea
         class="size-full bg-transparent p-2.5 text-main placeholder:text-hint"
         placeholder={props.placeholder}

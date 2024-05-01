@@ -49,12 +49,12 @@ export default function App(props: any) {
           </Match>
           <Match when={!isAuthenticated() && isLoading()}>
             <div
-              class="h-screen w-full items-start flex-col justify-center bg-peatch-main">
+              class="h-screen w-full items-start flex-col justify-center bg-main">
             </div>
           </Match>
           <Match when={!isAuthenticated() && !isLoading()}>
             <div
-              class="min-h-screen h-screen w-full items-start flex-col justify-center text-3xl bg-peatch-main text-main">
+              class="min-h-screen h-screen w-full items-start flex-col justify-center text-3xl bg-main text-main">
             Something went wrong. Please try again later.
             </div>
           </Match>

@@ -34,7 +34,7 @@ export default function SelectBadges() {
 
   const onCreateBadgeButtonClick = async () => {
     await publishBadge();
-    navigate('/users/edit/interests', { state: { back: true } });
+    navigate('/users/edit/badges');
   };
 
   mainButton

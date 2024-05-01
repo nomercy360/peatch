@@ -41,12 +41,12 @@ export default function CreateBadge(props: {
         <For each={icons}>
           {icon => (
             <button
-              class="flex aspect-square items-center justify-center rounded-lg border border-peatch-stroke"
+              class="flex aspect-square items-center justify-center rounded-lg border border-main"
               style={{
                 'background-color':
                   icon === props.createBadge.icon
                     ? `#${props.createBadge.color}`
-                    : 'white',
+                    : 'var(--tg-theme-section-bg-color)',
               }}
               onClick={() =>
                 props.setCreateBadge({ ...props.createBadge, icon: icon })

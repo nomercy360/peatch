@@ -7,7 +7,7 @@ import {
   Suspense,
   Switch,
 } from 'solid-js';
-import { useNavigate, useParams } from '@solidjs/router';
+import { useNavigate, useParams, useSearchParams } from '@solidjs/router';
 import {
   CDN_URL,
   fetchProfile,
@@ -32,15 +32,35 @@ export default function UserProfile() {
   const { navigateBack } = useNavigation();
 
   const params = useParams();
+  const [searchParams, _] = useSearchParams();
 
   const userId = params.id;
+
+  const isCurrentUserProfile = store.user.id === Number(userId);
 
   const query = createQuery(() => ({
     queryKey: ['profiles', userId],
     queryFn: () => fetchProfile(Number(userId)),
   }));
 
-  const isCurrentUserProfile = store.user.id === Number(userId);
+  createEffect(async () => {
+    if (searchParams.refetch) {
+      await query.refetch();
+      if (query.data.id === store.user.id) {
+        setUser(query.data);
+      }
+    }
+  });
+
+  const navigateToCollaborate = async () => {
+    if (store.user.published_at && !store.user.hidden_at) {
+      navigate(`/users/${userId}/collaborate`);
+    }
+  };
+
+  const navigateToEdit = () => {
+    navigate('/users/edit', { state: { back: true } });
+  };
 
   const publish = async () => {
     setUser({
@@ -75,17 +95,6 @@ export default function UserProfile() {
   const unfollow = async () => {
     setFollowing(store.following.filter(id => id !== Number(userId)));
     await unfollowUser(Number(userId));
-  };
-
-  const navigateToCollaborate = async () => {
-    console.log('Navigate to collaborate');
-    if (store.user.published_at && !store.user.hidden_at) {
-      navigate(`/users/${userId}/collaborate`);
-    }
-  };
-
-  const navigateToEdit = () => {
-    navigate('/users/edit', { state: { back: true } });
   };
 
   createEffect(() => {
@@ -147,7 +156,7 @@ export default function UserProfile() {
             <ProfilePublished />
           </Match>
           <Match when={query.data}>
-            <div class="min-h-screen">
+            <div class="h-fit min-h-screen bg-secondary">
               <Switch>
                 <Match when={isCurrentUserProfile && !store.user.published_at}>
                   <ActionButton text="Edit" onClick={navigateToEdit} />
@@ -204,7 +213,7 @@ export default function UserProfile() {
                   <For each={query.data.badges}>
                     {badge => (
                       <div
-                        class="flex h-10 flex-row items-center justify-center gap-[5px] rounded-2xl border border-peatch-stroke px-2.5"
+                        class="flex h-10 flex-row items-center justify-center gap-[5px] rounded-2xl border border-main px-2.5"
                         style={{
                           'background-color': `#${badge.color}`,
                           'border-color': `#${badge.color}`,
@@ -224,13 +233,13 @@ export default function UserProfile() {
                   <For each={query.data.opportunities}>
                     {op => (
                       <div
-                        class="flex h-[60px] w-full flex-row items-center justify-start gap-2.5 rounded-2xl border border-peatch-stroke px-2.5"
+                        class="flex h-[60px] w-full flex-row items-center justify-start gap-2.5 rounded-2xl border border-main px-2.5"
                         style={{
                           'background-color': `#${op.color}`,
                         }}
                       >
-                        <div class="flex size-10 items-center justify-center rounded-full bg-peatch-bg">
-                          <span class="material-symbols-rounded text-black">
+                        <div class="flex size-10 items-center justify-center rounded-full bg-secondary">
+                          <span class="material-symbols-rounded text-main">
                             {String.fromCodePoint(parseInt(op.icon!, 16))}
                           </span>
                         </div>
@@ -255,9 +264,8 @@ export default function UserProfile() {
 const ActionButton = (props: { text: string; onClick: () => void }) => {
   return (
     <button
-      class="absolute left-4 top-4 z-10 h-8 w-20 rounded-lg px-2.5 text-white"
+      class="absolute left-4 top-4 z-10 h-8 w-20 rounded-lg bg-button px-2.5 text-main"
       onClick={props.onClick}
-      style={{ background: 'rgba(255, 255, 255, 0.20)' }}
     >
       {props.text}
     </button>

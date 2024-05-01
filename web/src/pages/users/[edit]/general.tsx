@@ -44,19 +44,19 @@ export default function GeneralInfo() {
     >
       <div class="mt-5 flex w-full flex-col items-center justify-start gap-3">
         <input
-          class="h-10 w-full rounded-lg bg-peatch-main px-2.5 text-main placeholder:text-hint"
+          class="h-10 w-full rounded-lg bg-main px-2.5 text-main placeholder:text-hint"
           placeholder="First Name"
           value={editUser.first_name}
           onInput={e => setEditUser('first_name', e.currentTarget.value)}
         />
         <input
-          class="h-10 w-full rounded-lg bg-peatch-main px-2.5 text-main placeholder:text-hint"
+          class="h-10 w-full rounded-lg bg-main px-2.5 text-main placeholder:text-hint"
           placeholder="Last Name"
           value={editUser.last_name}
           onInput={e => setEditUser('last_name', e.currentTarget.value)}
         />
         <input
-          class="h-10 w-full rounded-lg bg-peatch-main px-2.5 text-main placeholder:text-hint"
+          class="h-10 w-full rounded-lg bg-main px-2.5 text-main placeholder:text-hint"
           placeholder="Title"
           value={editUser.title}
           onInput={e => setEditUser('title', e.currentTarget.value)}
