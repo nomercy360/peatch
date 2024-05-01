@@ -1,5 +1,5 @@
 import { retrieveLaunchParams, setDebug } from '@tma.js/sdk';
-import { DisplayGate, SDKProvider, useInitData, useInitDataRaw, useLaunchParams } from '@tma.js/sdk-solid';
+import { DisplayGate, SDKProvider, useLaunchParams } from '@tma.js/sdk-solid';
 import { Component, createEffect, createSignal, Match, Switch } from 'solid-js';
 
 import { App } from '~/components/App';
@@ -7,7 +7,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/solid-query';
 import { API_BASE_URL } from '~/api';
 import { setToken, setUser } from '~/store';
 
-const Err: Component<{ error: unknown }> = (props) => (
+const Err: Component<{ error: unknown }> = props => (
   <div>
     <p>An error occurred while initializing the SDK</p>
     <blockquote>
@@ -20,9 +20,7 @@ const Err: Component<{ error: unknown }> = (props) => (
   </div>
 );
 
-const Loading: Component = () => (
-  <div>Application is loading</div>
-);
+const Loading: Component = () => <div>Application is loading</div>;
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,7 +33,7 @@ const { initDataRaw } = retrieveLaunchParams();
 export const Root: Component = () => {
   if (useLaunchParams().startParam === 'debug') {
     setDebug(true);
-    import('eruda').then((lib) => lib.default.init());
+    import('eruda').then(lib => lib.default.init());
   }
 
   const [isAuthenticated, setIsAuthenticated] = createSignal(false);
@@ -61,15 +59,18 @@ export const Root: Component = () => {
     }
   });
 
-
   return (
-    <SDKProvider options={{ acceptCustomStyles: true, cssVars: true, complete: true }}>
+    <SDKProvider
+      options={{ acceptCustomStyles: true, cssVars: true, complete: true }}
+    >
       <DisplayGate error={Err} loading={Loading} initial={Loading}>
         <QueryClientProvider client={queryClient}>
           <Switch>
             <Match when={isLoading()}>Loading...</Match>
             <Match when={!isAuthenticated()}>Not authenticated</Match>
-            <Match when={isAuthenticated()}><App /></Match>
+            <Match when={isAuthenticated()}>
+              <App />
+            </Match>
           </Switch>
         </QueryClientProvider>
       </DisplayGate>

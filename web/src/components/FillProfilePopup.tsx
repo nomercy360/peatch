@@ -21,7 +21,7 @@ export default function FillProfilePopup({ onClose }: { onClose: () => void }) {
       </p>
       <a
         class="mt-4 flex h-12 w-full items-center justify-center rounded-2xl bg-white text-center text-peatch-blue"
-        href="/users/edit"
+        href="/users/[edit]"
       >
         Set up profile
       </a>

@@ -1,4 +1,13 @@
-import { createEffect, createResource, createSignal, For, Match, Show, Suspense, Switch } from 'solid-js';
+import {
+  createEffect,
+  createResource,
+  createSignal,
+  For,
+  Match,
+  Show,
+  Suspense,
+  Switch,
+} from 'solid-js';
 import { store } from '~/store';
 import { CDN_URL, fetchPreview } from '~/api';
 import FillProfilePopup from '~/components/FillProfilePopup';
@@ -59,8 +68,10 @@ export default function Index() {
             />
           </Match>
           <Match when={!store.user.avatar_url}>
-            <div class="size-11 rounded-xl border-2 border-white bg-peatch-stroke flex items-center justify-center">
-              <span class="material-symbols-rounded text-white">account_circle</span>
+            <div class="flex size-11 items-center justify-center rounded-xl border-2 border-white bg-peatch-stroke">
+              <span class="material-symbols-rounded text-white">
+                account_circle
+              </span>
             </div>
           </Match>
         </Switch>
@@ -101,21 +112,18 @@ export default function Index() {
       <div class="h-px w-full bg-peatch-stroke"></div>
       <Link
         class="flex flex-col items-start justify-start py-4"
-        href="/collaborations"
+        href="/collaborations/edit"
       >
         <div class="flex w-full flex-row items-center justify-start">
-          <div
-            class="z-20 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-white bg-orange">
+          <div class="z-20 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-white bg-orange">
             <span class="material-symbols-rounded text-white">
               self_improvement
             </span>
           </div>
-          <div
-            class="z-10 -ml-1 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-white bg-red">
+          <div class="z-10 -ml-1 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-white bg-red">
             <span class="material-symbols-rounded text-white">wine_bar</span>
           </div>
-          <div
-            class="-ml-1 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-white bg-blue">
+          <div class="-ml-1 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-white bg-blue">
             <span class="material-symbols-rounded text-white">
               directions_run
             </span>
@@ -165,5 +173,6 @@ const ImagesLoader = () => {
           />
         )}
       </For>
-    </div>);
+    </div>
+  );
 };

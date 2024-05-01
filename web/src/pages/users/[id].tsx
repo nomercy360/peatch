@@ -20,7 +20,7 @@ import {
 import { createQuery } from '@tanstack/solid-query';
 import { setFollowing, setUser, store } from '~/store';
 import ProfilePublished from '../../components/ProfilePublished';
-import { useBackButton, useMainButton } from '@tma.js/sdk-solid';
+import { useMainButton } from '@tma.js/sdk-solid';
 
 export default function UserProfile() {
   const mainButton = useMainButton();
@@ -63,12 +63,6 @@ export default function UserProfile() {
     await showProfile();
   };
 
-  const backBtn = useBackButton();
-
-  const logSomething = () => {
-    console.log('something');
-  }
-
   const follow = async () => {
     setFollowing([...store.following, Number(userId)]);
     await followUser(Number(userId));
@@ -87,7 +81,7 @@ export default function UserProfile() {
   };
 
   const navigateToEdit = () => {
-    navigate(`/users/${userId}/edit`);
+    navigate('/users/edit');
   };
 
   const navigateBack = () => {
@@ -125,7 +119,6 @@ export default function UserProfile() {
         mainButton().on('click', navigateToEdit);
       }
     } else {
-      backBtn().on('click', logSomething);
       mainButton().setParams({
         text: 'Collaborate',
         isVisible: true,
@@ -140,7 +133,6 @@ export default function UserProfile() {
       mainButton().off('click', publish);
       mainButton().off('click', navigateBack);
       mainButton().off('click', navigateToEdit);
-      backBtn().off('click', logSomething);
     });
   });
 

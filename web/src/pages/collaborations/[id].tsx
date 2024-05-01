@@ -1,4 +1,3 @@
-import { useButtons } from '../../hooks/useBackButton';
 import {
   createEffect,
   createSignal,
@@ -10,21 +9,20 @@ import {
 } from 'solid-js';
 import { useNavigate, useParams } from '@solidjs/router';
 import {
-  CDN_URL, fetchCollaboration, fetchCollaborations,
-  fetchProfile,
-  followUser, hideCollaboration,
-  hideProfile, publishCollaboration,
-  publishProfile, showCollaboration,
-  showProfile,
-  unfollowUser,
-} from '../../api';
+  CDN_URL,
+  fetchCollaboration,
+  hideCollaboration,
+  publishCollaboration,
+  showCollaboration,
+} from '~/api';
 import { createQuery } from '@tanstack/solid-query';
-import { setFollowing, setUser, store } from '../../store';
-import { usePopup } from '../../hooks/usePopup';
-import ProfilePublished from '../../components/ProfilePublished';
+import { store } from '~/store';
+import { usePopup } from '~/hooks/usePopup';
+import ProfilePublished from '~/components/ProfilePublished';
+import { useBackButton, useMainButton } from '@tma.js/sdk-solid';
 
 export default function Collaboration() {
-  const { mainButton, backButton } = useButtons();
+  const mainButton = useMainButton();
   const [published, setPublished] = createSignal(false);
 
   const navigate = useNavigate();
@@ -32,20 +30,6 @@ export default function Collaboration() {
   const { showAlert } = usePopup();
 
   const collabId = params.id;
-
-  const back = () => {
-    navigate('/');
-  };
-
-  createEffect(() => {
-    backButton.setVisible();
-    backButton.onClick(back);
-  });
-
-  onCleanup(() => {
-    backButton.hide();
-    backButton.offClick(back);
-  });
 
   const query = createQuery(() => ({
     queryKey: ['collaborations', collabId],
@@ -83,37 +67,57 @@ export default function Collaboration() {
     navigate(`/collaborations/${collabId}/edit`);
   };
 
+  const navigateToHome = () => {
+    navigate('/', {
+      replace: true,
+      state: { from: 'collaboration' },
+      resolve: true,
+    });
+  };
+
+  const backButton = useBackButton();
+
   createEffect(() => {
     if (isCurrentUserCollab()) {
       if (published()) {
-        mainButton.offClick(publish);
-        mainButton.offClick(pushToEdit);
-        mainButton.setVisible('Just open the app');
-        mainButton.onClick(back);
+        mainButton().off('click', publish);
+        mainButton().off('click', pushToEdit);
+        mainButton().setParams({
+          text: 'Just open the app',
+          isVisible: true,
+          isEnabled: true,
+        });
+        mainButton().on('click', navigateToHome);
         return;
       }
       if (!store.user.published_at) {
-        mainButton.offClick(pushToEdit);
-        mainButton.setVisible('Publish');
-        mainButton.onClick(publish);
+        // mainButton.offClick(pushToEdit);
+        // mainButton.setVisible('Publish');
+        // mainButton.onClick(publish);
+        mainButton().setParams({
+          text: 'Publish',
+          isVisible: true,
+          isEnabled: true,
+        });
+        mainButton().on('click', publish);
       } else {
-        mainButton.offClick(publish);
-        mainButton.setVisible('Edit');
-        mainButton.onClick(pushToEdit);
+        // mainButton.offClick(publish);
+        // mainButton.setVisible('Edit');
+        // mainButton.onClick(pushToEdit);
       }
     } else {
-      mainButton.offClick(pushToEdit);
-      mainButton.setVisible('Collaborate');
-      mainButton.onClick(collaborate);
+      // mainButton.offClick(pushToEdit);
+      // mainButton.setVisible('Collaborate');
+      // mainButton.onClick(collaborate);
     }
   });
 
   onCleanup(() => {
-    mainButton.hide();
-    mainButton.offClick(collaborate);
-    mainButton.offClick(publish);
-    mainButton.offClick(back);
-    mainButton.offClick(pushToEdit);
+    // mainButton.hide();
+    // mainButton.offClick(collaborate);
+    // mainButton.offClick(publish);
+    // mainButton.offClick(back);
+    // mainButton.offClick(pushToEdit);
   });
 
   return (
@@ -148,15 +152,17 @@ export default function Collaboration() {
                   <ActionButton text="Hide" onClick={hide} />
                 </Match>
               </Switch>
-              <div class="bg-pink w-full flex flex-col items-start justify-start px-4 pb-5 pt-4">
-                <span class="material-symbols-rounded text-white text-[48px]">
-                   {String.fromCodePoint(parseInt(query.data.opportunity.icon!, 16))}
+              <div class="flex w-full flex-col items-start justify-start bg-pink px-4 pb-5 pt-4">
+                <span class="material-symbols-rounded text-[48px] text-white">
+                  {String.fromCodePoint(
+                    parseInt(query.data.opportunity.icon!, 16),
+                  )}
                 </span>
                 <p class="text-3xl text-white">
                   {query.data.opportunity.text}:
                 </p>
                 <p class="text-3xl text-white">{query.data.title}:</p>
-                <div class="mt-4 gap-2 flex w-full flex-row items-center justify-start">
+                <div class="mt-4 flex w-full flex-row items-center justify-start gap-2">
                   <img
                     class="size-10 rounded-2xl object-cover"
                     src={CDN_URL + '/' + query.data.user?.avatar_url}
@@ -164,7 +170,8 @@ export default function Collaboration() {
                   />
                   <div>
                     <p class="text-sm font-bold text-white">
-                      {query.data.user?.first_name} {query.data.user?.last_name}:
+                      {query.data.user?.first_name} {query.data.user?.last_name}
+                      :
                     </p>
                     <p class="text-sm text-white">{query.data.user?.title}</p>
                   </div>

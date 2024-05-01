@@ -1,4 +1,4 @@
-import { User } from '../gen';
+import { CreateCollaboration, UpdateUserRequest, User } from '../gen';
 import { createStore } from 'solid-js/store';
 
 export const [store, setStore] = createStore<{
@@ -17,3 +17,28 @@ export const setToken = (token: string) => setStore('token', token);
 
 export const setFollowing = (following: number[]) =>
   setStore('following', following);
+
+export const [editUser, setEditUser] = createStore<UpdateUserRequest>({
+  first_name: '',
+  last_name: '',
+  title: '',
+  description: '',
+  avatar_url: '',
+  city: '',
+  country: '',
+  country_code: '',
+  badge_ids: [],
+  opportunity_ids: [],
+});
+
+export const [editCollaboration, setEditCollaboration] =
+  createStore<CreateCollaboration>({
+    badge_ids: [],
+    city: '',
+    country: '',
+    country_code: '',
+    description: '',
+    is_payable: false,
+    opportunity_id: 0,
+    title: '',
+  });

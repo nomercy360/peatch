@@ -1,6 +1,5 @@
 import { For, Show } from 'solid-js';
 import icons from '../../assets/icons.json';
-import { FormLayout } from './layout';
 import { Badge } from '../../../gen';
 
 export default function CreateBadge(props: {
@@ -18,10 +17,7 @@ export default function CreateBadge(props: {
   ];
 
   return (
-    <FormLayout
-      title={`Creating ${props.createBadge.text}`}
-      description="Choose a color and icon for badge"
-    >
+    <>
       <div class="mt-5 flex w-full flex-row items-center justify-between gap-2.5">
         <For each={colors}>
           {color => (
@@ -68,6 +64,6 @@ export default function CreateBadge(props: {
           )}
         </For>
       </div>
-    </FormLayout>
+    </>
   );
 }
