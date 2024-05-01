@@ -64,7 +64,7 @@ export default function SelectLocation(props: {
     <>
       <div class="mt-5 flex h-10 w-full flex-row items-center justify-between rounded-lg bg-peatch-bg px-2.5">
         <input
-          class="w-full bg-transparent text-black placeholder:text-gray focus:outline-none"
+          class="w-full bg-transparent text-main placeholder:text-hint focus:outline-none"
           placeholder="City and country"
           type="text"
           onInput={e => updateSearch(e.currentTarget.value)}
@@ -72,7 +72,7 @@ export default function SelectLocation(props: {
         />
         <Show when={search()}>
           <button
-            class="flex h-full items-center justify-center px-2.5 text-sm text-peatch-dark-gray"
+            class="flex h-full items-center justify-center px-2.5 text-sm text-hint"
             onClick={() => setSearch('')}
           >
             Clear

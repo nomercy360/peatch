@@ -96,7 +96,7 @@ export default function Collaborate() {
             />
           </div>
           <p class="text-3xl">{query.data.title}</p>
-          <p class="text-sm text-gray">{query.data.description}</p>
+          <p class="text-sm text-hint">{query.data.description}</p>
           <TextArea
             value={collaborationRequest.message!}
             setValue={(value: string) =>

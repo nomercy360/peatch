@@ -45,7 +45,7 @@ export default function GeneralInfo() {
     >
       <div class="mt-5 flex w-full flex-col items-center justify-start gap-3">
         <input
-          class="h-10 w-full rounded-lg bg-peatch-bg px-2.5 text-black placeholder:text-gray"
+          class="h-10 w-full rounded-lg bg-peatch-bg px-2.5 text-main placeholder:text-hint"
           placeholder="Title"
           value={editCollaboration.title}
           onInput={e => setEditCollaboration('title', e.currentTarget.value)}
@@ -56,7 +56,7 @@ export default function GeneralInfo() {
             setEditCollaboration('is_payable', !editCollaboration.is_payable)
           }
         >
-          <p class="text-sm text-black">Is it this opportunity payable?</p>
+          <p class="text-sm text-main">Is it this opportunity payable?</p>
           <span
             class="size-6 rounded-lg border border-peatch-stroke"
             classList={{

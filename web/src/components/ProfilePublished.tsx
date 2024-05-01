@@ -4,7 +4,7 @@ export default function ProfilePublished() {
   const images = ['/thumb.png', '/thumb.png', '/thumb.png'];
 
   return (
-    <div class="h-screen p-5 bg-white w-full text-center flex flex-col items-center justify-between">
+    <div class="h-screen p-5 bg-peatch-bg w-full text-center flex flex-col items-center justify-between">
       <img src="/confetti.png" alt="Confetti" class="w-full mx-auto absolute top-0 left-0 right-0" />
       <div class="flex flex-col items-center justify-start">
         <span class="material-symbols-rounded text-[60px] text-peatch-green">check_circle</span>

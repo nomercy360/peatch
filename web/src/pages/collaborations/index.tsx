@@ -20,10 +20,10 @@ export default function Index() {
   }));
 
   return (
-    <div>
+    <div class="pb-52 bg-peatch-secondary min-h-screen">
       <div class="px-4 py-2.5">
         <input
-          class="h-10 w-full rounded-lg bg-peatch-bg px-2.5 text-black placeholder:text-gray"
+          class="h-10 w-full rounded-lg bg-peatch-main px-2.5 text-main placeholder:text-hint"
           placeholder="Search collaborations by type or keyword"
           type="text"
           value={search()}
@@ -47,12 +47,12 @@ const CollaborationCard = (props: { collab: Collaboration }) => {
 
   return (
     <Link
-      class="flex flex-col items-start px-4 pt-4 text-start"
+      class="flex flex-col items-start px-4 pt-4 text-start "
       href={`/collaborations/${props.collab.id}`}
     >
       <p class="mt-3 text-3xl text-blue">{props.collab.opportunity?.text}:</p>
-      <p class="text-3xl">{props.collab.title}</p>
-      <p class="mt-2 text-sm text-gray">
+      <p class="text-3xl text-main">{props.collab.title}</p>
+      <p class="mt-2 text-sm text-hint">
         {shortenDescription(props.collab.description!)}
       </p>
       <div class="mt-4 gap-2 flex w-full flex-row items-center justify-start">
@@ -62,13 +62,13 @@ const CollaborationCard = (props: { collab: Collaboration }) => {
           alt="User Avatar"
         />
         <div>
-          <p class="text-sm font-bold text-black">
+          <p class="text-sm font-bold text-main">
             {props.collab.user?.first_name} {props.collab.user?.last_name}:
           </p>
-          <p class="text-sm text-black">{props.collab.user?.title}</p>
+          <p class="text-sm text-main">{props.collab.user?.title}</p>
         </div>
       </div>
-      <div class="h-px bg-peatch-stroke w-full mt-5"></div>
+      <div class="h-px bg-peatch-main w-full mt-5"></div>
     </Link>
   );
 };
@@ -76,10 +76,10 @@ const CollaborationCard = (props: { collab: Collaboration }) => {
 const CollabListPlaceholder = () => {
   return (
     <div class="flex flex-col items-start justify-start gap-4 px-4 py-2.5">
-      <div class="h-48 w-full rounded-2xl bg-peatch-stroke"></div>
-      <div class="h-48 w-full rounded-2xl bg-peatch-stroke"></div>
-      <div class="h-48 w-full rounded-2xl bg-peatch-stroke"></div>
-      <div class="h-48 w-full rounded-2xl bg-peatch-stroke"></div>
+      <div class="h-48 w-full rounded-2xl bg-peatch-main"></div>
+      <div class="h-48 w-full rounded-2xl bg-peatch-main"></div>
+      <div class="h-48 w-full rounded-2xl bg-peatch-main"></div>
+      <div class="h-48 w-full rounded-2xl bg-peatch-main"></div>
     </div>
   );
 };

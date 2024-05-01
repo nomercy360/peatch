@@ -39,9 +39,9 @@ export function SelectBadge(props: {
 
   return (
     <>
-      <div class="mt-5 flex h-10 w-full flex-row items-center justify-between rounded-lg bg-peatch-bg px-2.5">
+      <div class="bg-peatch-main mt-5 flex h-10 w-full flex-row items-center justify-between rounded-lg bg-peatch-bg px-2.5">
         <input
-          class="h-10 w-full bg-transparent text-black placeholder:text-gray focus:outline-none"
+          class="h-10 w-full bg-transparent text-main placeholder:text-hint focus:outline-none"
           placeholder="Search for a badge"
           type="text"
           onInput={e => props.setSearch(e.currentTarget.value)}
@@ -49,7 +49,7 @@ export function SelectBadge(props: {
         />
         <Show when={props.search}>
           <button
-            class="flex h-10 items-center justify-center px-2.5 text-sm text-peatch-dark-gray"
+            class="flex h-10 items-center justify-center px-2.5 text-sm text-hint"
             onClick={() => props.setSearch('')}
           >
             Clear
@@ -60,27 +60,27 @@ export function SelectBadge(props: {
         <Switch>
           <Match when={filteredBadges()?.length > 0}>
             <div></div>
-            <div class="flex h-11 items-center justify-center text-sm text-gray">
+            <div class="flex h-11 items-center justify-center text-sm text-hint">
               {props.selected.length} / 10
             </div>
           </Match>
           <Match when={filteredBadges()?.length === 0}>
             <button
-              class="size-full text-start text-sm"
+              class="size-full text-hint text-start text-sm"
               onClick={() =>
                 props.selected.length < 10 && props.onCreateBadgeButtonClick()
               }
             >
               Can’t find such thing.{' '}
-              <span class="text-peatch-blue">Create it</span>
+              <span class="text-accent">Create it</span>
             </button>
-            <p class="text-nowrap text-sm text-gray">
+            <p class="text-nowrap text-sm text-hint">
               {props.selected.length} of 10
             </p>
           </Match>
         </Switch>
       </div>
-      <div class="flex w-full flex-row flex-wrap items-center justify-start gap-1">
+      <div class="min-h-fit flex w-full flex-row flex-wrap items-center justify-start gap-1">
         <Suspense fallback={<div>Loading...</div>}>
           <For each={filteredBadges()}>
             {badge => (
@@ -88,8 +88,8 @@ export function SelectBadge(props: {
                 onClick={() => onBadgeClick(badge.id!)}
                 class="flex h-10 flex-row items-center justify-center gap-[5px] rounded-2xl border px-2.5"
                 style={{
-                  'background-color': `${props.selected.includes(badge.id!) ? `#${badge.color}` : 'white'}`,
-                  'border-color': `${props.selected.includes(badge.id!) ? `#${badge.color}` : '#F6F6F6'}`,
+                  'background-color': `${props.selected.includes(badge.id!) ? `#${badge.color}` : 'var(--tg-theme-section-bg-color)'}`,
+                  'border-color': `${props.selected.includes(badge.id!) ? `#${badge.color}` : 'var(--tg-theme-section-bg-color)'}`,
                 }}
               >
                 <span
@@ -101,10 +101,7 @@ export function SelectBadge(props: {
                   {String.fromCodePoint(parseInt(badge.icon!, 16))}
                 </span>
                 <p
-                  class="text-sm font-semibold"
-                  classList={{
-                    'text-white': props.selected.includes(badge.id!),
-                  }}
+                  class="text-sm font-semibold text-white"
                 >
                   {badge.text}
                 </p>

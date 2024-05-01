@@ -171,7 +171,7 @@ export default function Collaboration() {
                 </div>
               </div>
               <div class="px-4 py-2.5">
-                <p class="text-lg font-normal text-black">
+                <p class="text-lg font-normal text-main">
                   {query.data.description}
                 </p>
                 <div class="mt-5 flex flex-row flex-wrap items-center justify-start gap-1">

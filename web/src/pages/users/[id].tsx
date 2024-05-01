@@ -198,7 +198,7 @@ export default function UserProfile() {
                 <p class="text-3xl text-pink">
                   {query.data.first_name} {query.data.last_name}:
                 </p>
-                <p class="text-3xl text-black">{query.data.title}</p>
+                <p class="text-3xl text-main">{query.data.title}</p>
                 <p class="text-lg font-normal"> {query.data.description}</p>
                 <div class="mt-5 flex flex-row flex-wrap items-center justify-start gap-1">
                   <For each={query.data.badges}>
@@ -229,7 +229,7 @@ export default function UserProfile() {
                           'background-color': `#${op.color}`,
                         }}
                       >
-                        <div class="flex size-10 items-center justify-center rounded-full bg-white">
+                        <div class="flex size-10 items-center justify-center rounded-full bg-peatch-bg">
                           <span class="material-symbols-rounded text-black">
                             {String.fromCodePoint(parseInt(op.icon!, 16))}
                           </span>

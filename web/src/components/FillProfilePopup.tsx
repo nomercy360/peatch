@@ -20,7 +20,7 @@ export default function FillProfilePopup({ onClose }: { onClose: () => void }) {
         collaborate with within the first three days.
       </p>
       <a
-        class="mt-4 flex h-12 w-full items-center justify-center rounded-2xl bg-white text-center text-peatch-blue"
+        class="mt-4 flex h-12 w-full items-center justify-center rounded-2xl bg-peatch-bg text-center text-peatch-blue"
         href="/users/[edit]"
       >
         Set up profile

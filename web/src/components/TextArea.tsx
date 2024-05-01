@@ -20,19 +20,19 @@ export default function TextArea(props: {
   return (
     <div class="relative mt-5 h-fit min-h-56 w-full rounded-lg bg-peatch-bg">
       <textarea
-        class="size-full bg-transparent p-2.5 text-black placeholder:text-gray"
+        class="size-full bg-transparent p-2.5 text-main placeholder:text-hint"
         placeholder={props.placeholder}
         value={props.value}
         onInput={e => resizer(e)}
       ></textarea>
       <Switch>
         <Match when={count() > 0}>
-          <div class="absolute bottom-2 left-2 text-sm text-gray">
+          <div class="absolute bottom-2 left-2 text-sm text-hint">
             {count()} / 500
           </div>
         </Match>
         <Match when={count() === 0}>
-          <div class="absolute bottom-2 left-2 text-sm text-gray">
+          <div class="absolute bottom-2 left-2 text-sm text-hint">
             max 500 characters
           </div>
         </Match>

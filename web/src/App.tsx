@@ -17,6 +17,7 @@ export default function App(props: any) {
   createEffect(async () => {
     const initData = window.Telegram.WebApp.initData;
 
+    // test sleep
     try {
       const resp = await fetch(`${API_BASE_URL}/auth/telegram?` + initData, {
         method: 'POST',
@@ -47,10 +48,15 @@ export default function App(props: any) {
             <div>{props.children}</div>
           </Match>
           <Match when={!isAuthenticated() && isLoading()}>
-            <div>Authenticating...</div>
+            <div
+              class="h-screen w-full items-start flex-col justify-center bg-peatch-main">
+            </div>
           </Match>
           <Match when={!isAuthenticated() && !isLoading()}>
-            <div>Failed to authenticate user</div>
+            <div
+              class="min-h-screen h-screen w-full items-start flex-col justify-center text-3xl bg-peatch-main text-main">
+            Something went wrong. Please try again later.
+            </div>
           </Match>
         </Switch>
       </QueryClientProvider>
