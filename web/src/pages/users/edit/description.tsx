@@ -11,7 +11,7 @@ export default function Description() {
   const navigate = useNavigate();
 
   const navigateToImageUpload = async () => {
-    navigate('/users/edit/image');
+    navigate('/users/edit/image', { state: { back: true } });
   };
 
   mainButton

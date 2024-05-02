@@ -34,7 +34,9 @@ export default function SelectBadges() {
 
   const onCreateBadgeButtonClick = async () => {
     await publishBadge();
-    navigate('/collaboration/edit/badges', { state: { back: true } });
+    navigate('/collaboration/edit/badges', {
+      state: { from: '/collaborations/edit' },
+    });
   };
 
   mainButton
