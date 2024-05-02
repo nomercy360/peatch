@@ -267,7 +267,7 @@ export default function UserProfile() {
 const ActionButton = (props: { text: string; onClick: () => void }) => {
   return (
     <button
-      class="absolute left-4 top-4 z-10 h-8 w-20 rounded-lg bg-button px-2.5 text-main"
+      class="absolute left-4 top-4 z-10 h-8 w-20 rounded-lg bg-button px-2.5 text-button"
       onClick={props.onClick}
     >
       {props.text}
