@@ -1,4 +1,4 @@
-import { store } from '../store';
+import { store } from '~/store';
 import { CreateUserCollaboration } from '../../gen';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
@@ -8,16 +8,14 @@ export const apiFetch = async ({
   endpoint,
   method = 'GET',
   body = null,
-  responseType = 'json',
-  catchError = true,
   showProgress = true,
+                                 responseContentType = 'json' as 'json' | 'blob',
 }: {
   endpoint: string;
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
   body?: any;
-  responseType?: 'json' | 'blob';
-  catchError?: boolean;
   showProgress?: boolean;
+  responseContentType?: string;
 }) => {
   const headers: { [key: string]: string } = {
     'Content-Type': 'application/json',
@@ -25,9 +23,8 @@ export const apiFetch = async ({
   };
 
   try {
-    if (showProgress) {
-      window.Telegram.WebApp.MainButton.showProgress(false);
-    }
+    showProgress && window.Telegram.WebApp.MainButton.showProgress(false);
+
     const response = await fetch(`${API_BASE_URL}/api${endpoint}`, {
       method,
       headers,
@@ -35,25 +32,18 @@ export const apiFetch = async ({
     });
 
     if (!response.ok) {
-      if (catchError) {
-        const { message } = await response.json();
-        console.error('Error:', message || 'Error! Please try again');
-        window.Telegram.WebApp.BackButton.isVisible = false;
-      }
-      return false;
+      const errorResponse = await response.json();
+      throw { code: response.status, message: errorResponse.message };
     }
 
-    if (response.status === 204) {
-      return true;
-    } else {
-      return responseType === 'json' ? response.json() : response.blob();
+    switch (response.status) {
+      case 204:
+        return true;
+      default:
+        return response[responseContentType as 'json' | 'blob']();
     }
-  } catch (error) {
-    console.error('Error:', error);
   } finally {
-    if (showProgress) {
-      window.Telegram.WebApp.MainButton.hideProgress();
-    }
+    showProgress && window.Telegram.WebApp.MainButton.hideProgress();
   }
 };
 
@@ -182,7 +172,7 @@ export const createUserCollaboration = async (
   collaboration: CreateUserCollaboration,
 ) => {
   return await apiFetch({
-    endpoint: '/users/' + collaboration.user_id + '/collaborations',
+    endpoint: '/users/' + collaboration.user_id + '/collaborations/requests',
     method: 'POST',
     body: collaboration,
   });
@@ -215,4 +205,10 @@ export const showCollaboration = async (collaborationID: number) => {
 
 export const fetchCollaboration = async (collaborationID: number) => {
   return await apiFetch({ endpoint: `/collaborations/${collaborationID}` });
+};
+
+export const findUserCollaborationRequest = async (userID: number) => {
+  return await apiFetch({
+    endpoint: `/users/${userID}/collaborations/requests`,
+  });
 };

@@ -233,3 +233,15 @@ func (h *handler) handleGetUserPreview(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, users)
 }
+
+func (h *handler) handleFindUserCollaborationRequest(c echo.Context) error {
+	requesterID := getUserID(c)
+	userID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+
+	requests, err := h.svc.FindUserCollaborationRequest(requesterID, userID)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, requests)
+}

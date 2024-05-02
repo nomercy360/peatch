@@ -29,20 +29,20 @@ func main() {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 
-	_, err = telegram.New(cfg.BotToken)
+	bot, err := telegram.New(cfg.BotToken)
 
 	if err != nil {
 		log.Fatalf("Failed to initialize bot: %v", err)
 	}
 
-	notifier := notification.NewDummyNotifier()
+	notifier := notification.NewTelegramNotifier(bot)
 
 	notifyJob := job.NewNotifyJob(pg, notifier, cfg.ImgServiceURL)
 
 	jobs := []*job.Job{
 		job.NewJob("NotifyUserReceivedCollaborationRequest", 30*time.Second, notifyJob.NotifyUserReceivedCollaborationRequest),
 		job.NewJob("NotifyNewCollaboration", 30*time.Second, notifyJob.NotifyNewCollaboration),
-		job.NewJob("NotifyNewUserProfile", 30*time.Second, notifyJob.NotifyNewUserProfile),
+		// job.NewJob("NotifyNewUserProfile", 30*time.Second, notifyJob.NotifyNewUserProfile),
 		job.NewJob("NotifyCollaborationRequest", 30*time.Second, notifyJob.NotifyCollaborationRequest),
 	}
 

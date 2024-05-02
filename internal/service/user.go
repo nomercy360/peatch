@@ -157,3 +157,17 @@ func (s *service) GetUserPreview() ([]UserPreview, error) {
 
 	return previews, nil
 }
+
+func (s *service) FindUserCollaborationRequest(requesterID, userID int64) (*db.UserCollaborationRequest, error) {
+	res, err := s.storage.FindUserCollaborationRequest(requesterID, userID)
+
+	if err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			return nil, terrors.NotFound(err)
+		}
+
+		return nil, err
+	}
+
+	return res, nil
+}

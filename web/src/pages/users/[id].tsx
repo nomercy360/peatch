@@ -1,25 +1,9 @@
-import {
-  createEffect,
-  createSignal,
-  For,
-  Match,
-  onCleanup,
-  Suspense,
-  Switch,
-} from 'solid-js';
+import { createEffect, createSignal, For, Match, onCleanup, Suspense, Switch } from 'solid-js';
 import { useNavigate, useParams, useSearchParams } from '@solidjs/router';
-import {
-  CDN_URL,
-  fetchProfile,
-  followUser,
-  hideProfile,
-  publishProfile,
-  showProfile,
-  unfollowUser,
-} from '~/api';
+import { CDN_URL, fetchProfile, followUser, hideProfile, publishProfile, showProfile, unfollowUser } from '~/api';
 import { createQuery } from '@tanstack/solid-query';
 import { setFollowing, setUser, store } from '~/store';
-import ProfilePublished from '../../components/ProfilePublished';
+import ActionDonePopup from '../../components/ActionDonePopup';
 import { useMainButton } from '~/hooks/useMainButton';
 import { useNavigation } from '~/hooks/useNavigation';
 
@@ -153,7 +137,7 @@ export default function UserProfile() {
       <Suspense fallback={<div>Loading...</div>}>
         <Switch>
           <Match when={published() && isCurrentUserProfile}>
-            <ProfilePublished />
+            <ActionDonePopup />
           </Match>
           <Match when={query.data}>
             <div class="h-fit min-h-screen bg-secondary">

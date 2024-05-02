@@ -3,8 +3,8 @@ import { User } from '../../../gen';
 import { fetchUsers } from '~/api';
 import { createQuery } from '@tanstack/solid-query';
 import useDebounce from '~/hooks/useDebounce';
-import Badge from '~/components/Badge';
 import { Link } from '~/components/Link';
+import BadgeList from '~/components/BadgeList';
 
 export default function Index() {
   const [search, setSearch] = createSignal('');
@@ -42,8 +42,6 @@ const UserCard = (props: { user: User }) => {
 
   const imgUrl = `https://assets.peatch.io/${props.user.avatar_url}`;
 
-  const badgeSlice = props.user.badges?.slice(0, 5);
-
   return (
     <Link
       class="flex flex-col items-start bg-secondary px-4 pb-5 pt-4 text-start"
@@ -51,7 +49,7 @@ const UserCard = (props: { user: User }) => {
       state={{ from: '/users' }}
     >
       <img
-        class="size-10 rounded-2xl object-cover"
+        class="size-10 rounded-xl object-cover"
         src={imgUrl}
         alt="User Avatar"
       />
@@ -60,18 +58,9 @@ const UserCard = (props: { user: User }) => {
       <p class="mt-2 text-sm text-hint">
         {shortenDescription(props.user.description!)}
       </p>
-      <div class="mt-3 flex w-full flex-row flex-wrap items-center justify-start gap-1">
-        <For each={badgeSlice}>
-          {badge => (
-            <Badge icon={badge.icon!} name={badge.text!} color={badge.color!} />
-          )}
-        </For>
-        <Show when={props.user.badges && props.user.badges.length > 5}>
-          <div class="flex h-5 flex-row items-center justify-center rounded bg-black px-2.5 text-xs text-white">
-            + {props.user.badges!.length - 5} more
-          </div>
-        </Show>
-      </div>
+      <Show when={props.user.badges && props.user.badges.length > 0}>
+        <BadgeList badges={props.user.badges!} position="start" />
+      </Show>
       <div class="mt-5 h-px w-full bg-main"></div>
     </Link>
   );

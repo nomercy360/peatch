@@ -1,24 +1,10 @@
-import {
-  createEffect,
-  createSignal,
-  For,
-  Match,
-  onCleanup,
-  Suspense,
-  Switch,
-} from 'solid-js';
+import { createEffect, createSignal, For, Match, onCleanup, Suspense, Switch } from 'solid-js';
 import { useNavigate, useParams } from '@solidjs/router';
-import {
-  CDN_URL,
-  fetchCollaboration,
-  hideCollaboration,
-  publishCollaboration,
-  showCollaboration,
-} from '~/api';
+import { CDN_URL, fetchCollaboration, hideCollaboration, publishCollaboration, showCollaboration } from '~/api';
 import { createQuery } from '@tanstack/solid-query';
 import { store } from '~/store';
 import { usePopup } from '~/hooks/usePopup';
-import ProfilePublished from '~/components/ProfilePublished';
+import ActionDonePopup from '~/components/ActionDonePopup';
 import { useMainButton } from '~/hooks/useMainButton';
 import { useNavigation } from '~/hooks/useNavigation';
 
@@ -118,7 +104,11 @@ export default function Collaboration() {
       <Suspense fallback={<div>Loading...</div>}>
         <Switch>
           <Match when={published() && isCurrentUserCollab()}>
-            <ProfilePublished />
+            <ActionDonePopup
+              action="Profile published"
+              description="Now you can find people, create and join collaborations. Have fun!"
+              callToAction="There are 12 people you might be interested to collaborate with"
+            />
           </Match>
           <Match when={query.data}>
             <div class="min-h-screen">

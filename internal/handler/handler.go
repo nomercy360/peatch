@@ -41,6 +41,7 @@ type service interface {
 	CreateUserCollaboration(userID int64, request svc.CreateUserCollaboration) (*db.UserCollaborationRequest, error)
 	// GetUserPreview fetch 3 random user avatars for the home page
 	GetUserPreview() ([]svc.UserPreview, error)
+	FindUserCollaborationRequest(requesterID, userID int64) (*db.UserCollaborationRequest, error)
 }
 
 type CustomValidator struct {
@@ -85,7 +86,8 @@ func (h *handler) RegisterRoutes(e *echo.Echo) {
 	a.POST("/badges", h.handleCreateBadge)
 	a.POST("/users/:id/follow", h.handleFollowUser)
 	a.DELETE("/users/:id/follow", h.handleUnfollowUser)
-	a.POST("/users/:id/collaborations", h.handleCreateUserCollaboration)
+	a.POST("/users/:id/collaborations/requests", h.handleCreateUserCollaboration)
+	a.GET("/users/:id/collaborations/requests", h.handleFindUserCollaborationRequest)
 	a.POST("/users/show", h.handleShowUser)
 	a.POST("/users/publish", h.handlePublishUser)
 	a.POST("/users/hide", h.handleHideUser)

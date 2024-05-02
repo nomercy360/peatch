@@ -2,7 +2,11 @@ import { createResource, For } from 'solid-js';
 import { A } from '@solidjs/router';
 import { CDN_URL, fetchPreview } from '~/api';
 
-export default function ProfilePublished() {
+export default function ActionDonePopup(props: {
+  action: string;
+  description: string;
+  callToAction: string;
+}) {
   const [previewImages, _] = createResource(async () => {
     const res = await fetchPreview();
     return res.map((image: any) => CDN_URL + '/' + image.avatar_url);
@@ -16,13 +20,11 @@ export default function ProfilePublished() {
         class="absolute inset-x-0 top-0 mx-auto w-full"
       />
       <div class="flex flex-col items-center justify-start">
-        <span class="material-symbols-rounded text-peatch-green text-[60px] text-main">
+        <span class="material-symbols-rounded text-peatch-green text-[60px] text-green">
           check_circle
         </span>
-        <p class="text-3xl text-main">Profile published</p>
-        <p class="mt-2 text-2xl text-secondary">
-          Now you can find people, create and join collaborations. Have fun!
-        </p>
+        <p class="text-3xl text-main">{props.action}</p>
+        <p class="mt-2 text-2xl text-secondary">{props.description}</p>
       </div>
       <div class="flex flex-col items-center justify-center">
         <div class="flex w-full flex-row items-center justify-center">
@@ -41,9 +43,7 @@ export default function ProfilePublished() {
             )}
           </For>
         </div>
-        <p class="mt-4 max-w-xs text-lg text-secondary">
-          There are 12 people you might be interested to collaborate with
-        </p>
+        <p class="mt-4 max-w-xs text-lg text-secondary">{props.callToAction}</p>
         <A
           class="mt-2 flex h-12 w-full items-center justify-center text-sm font-medium text-link"
           href="/users"

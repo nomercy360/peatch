@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/peatch-io/peatch/internal/db"
+	"io"
 	"log"
+	"net/http"
 	"net/url"
 	"time"
 )
@@ -29,7 +31,7 @@ type notifyJob struct {
 }
 
 type notifier interface {
-	SendNotification(chatID int64, message string, imgUrl string, link string) error
+	SendNotification(chatID int64, message string, link string, img []byte) error
 }
 
 func NewNotifyJob(storage storage, notifier notifier, imgServiceURL string) *notifyJob {
@@ -74,7 +76,7 @@ func (j *notifyJob) NotifyNewUserProfile() error {
 			continue
 		}
 
-		imgURL, err := createImgURL(j.imgServiceURL, userDetails)
+		img, err := fetchPreviewImage(j.imgServiceURL, userDetails)
 
 		for _, receiver := range receivers {
 			_, err := j.storage.SearchNotification(
@@ -89,12 +91,12 @@ func (j *notifyJob) NotifyNewUserProfile() error {
 				notification := &db.Notification{
 					UserID:           receiver.ID,
 					NotificationType: db.NotificationTypeUserPublished,
-					Text:             fmt.Sprintf("%s has just published profile", *user.FirstName),
 					EntityType:       "users",
 					EntityID:         user.ID,
 					ChatID:           receiver.ChatID,
-					ImageURL:         imgURL,
 				}
+
+				text := fmt.Sprintf("Someone has just published a new profile")
 
 				created, err := j.storage.CreateNotification(*notification)
 
@@ -104,7 +106,7 @@ func (j *notifyJob) NotifyNewUserProfile() error {
 
 				linkToProfile := fmt.Sprintf("https://peatch.pages.dev/users/%d", user.ID)
 
-				if err = j.notifier.SendNotification(created.ChatID, created.Text, imgURL, linkToProfile); err != nil {
+				if err = j.notifier.SendNotification(created.ChatID, text, linkToProfile, img); err != nil {
 					log.Printf("Failed to send notification to user %d", user.ID)
 					return err
 				}
@@ -127,7 +129,10 @@ func (j *notifyJob) NotifyNewCollaboration() error {
 	dayAgo := time.Now().Add(-24 * time.Hour)
 
 	newCollaborations, err := j.storage.ListCollaborations(db.CollaborationQuery{
-		From: &dayAgo,
+		Limit:   10,
+		Page:    1,
+		From:    &dayAgo,
+		Visible: true,
 	})
 
 	if err != nil {
@@ -152,7 +157,7 @@ func (j *notifyJob) NotifyNewCollaboration() error {
 			return err
 		}
 
-		imgURL, err := createImgURL(j.imgServiceURL, creator)
+		img, err := fetchPreviewImage(j.imgServiceURL, creator)
 
 		for _, receiver := range receivers {
 			_, err := j.storage.SearchNotification(
@@ -167,12 +172,12 @@ func (j *notifyJob) NotifyNewCollaboration() error {
 				notification := &db.Notification{
 					UserID:           receiver.ID,
 					NotificationType: db.NotificationTypeCollaborationPublished,
-					Text:             fmt.Sprintf("%s wants to collaborate with you", *creator.FirstName),
 					EntityType:       "collaborations",
 					EntityID:         collaboration.ID,
 					ChatID:           receiver.ChatID,
-					ImageURL:         imgURL,
 				}
+
+				text := fmt.Sprintf("Someone has just posted a new opportunity: *%s*\n*%s*\n*%s*", collaboration.Title, collaboration.Description, collaboration.GetLocation())
 
 				created, err := j.storage.CreateNotification(*notification)
 
@@ -182,7 +187,7 @@ func (j *notifyJob) NotifyNewCollaboration() error {
 
 				linkToCollaboration := fmt.Sprintf("https://peatch.pages.dev/collaborations/%d", collaboration.ID)
 
-				if err = j.notifier.SendNotification(created.ChatID, created.Text, imgURL, linkToCollaboration); err != nil {
+				if err = j.notifier.SendNotification(created.ChatID, text, linkToCollaboration, img); err != nil {
 					log.Printf("Failed to send notification to user %d", collaboration.UserID)
 					return err
 				}
@@ -200,7 +205,7 @@ func (j *notifyJob) NotifyNewCollaboration() error {
 }
 
 func (j *notifyJob) NotifyUserReceivedCollaborationRequest() error {
-	log.Println("Checking for new collaboration requests")
+	log.Println("Checking for new user collaboration requests")
 
 	newCollaborations, err := j.storage.ListUserCollaborations(time.Now().Add(-24 * time.Hour))
 
@@ -230,7 +235,7 @@ func (j *notifyJob) NotifyUserReceivedCollaborationRequest() error {
 				return err
 			}
 
-			imgURL, err := createImgURL(j.imgServiceURL, requester)
+			img, err := fetchPreviewImage(j.imgServiceURL, requester)
 
 			if err != nil {
 				return err
@@ -239,12 +244,12 @@ func (j *notifyJob) NotifyUserReceivedCollaborationRequest() error {
 			notification := &db.Notification{
 				UserID:           collaboration.UserID,
 				NotificationType: db.NotificationTypeUserCollaboration,
-				Text:             fmt.Sprintf("%s sends you a message: %s", *requester.FirstName, collaboration.Message),
 				EntityType:       "user_collaboration_requests",
 				EntityID:         collaboration.ID,
 				ChatID:           receiver.ChatID,
-				ImageURL:         imgURL,
 			}
+
+			text := fmt.Sprintf("%s sends you a message:\n%s", *requester.FirstName, collaboration.Message)
 
 			created, err := j.storage.CreateNotification(*notification)
 
@@ -254,7 +259,7 @@ func (j *notifyJob) NotifyUserReceivedCollaborationRequest() error {
 
 			linkToProfile := fmt.Sprintf("https://peatch.pages.dev/users/%d", collaboration.RequesterID)
 
-			if err = j.notifier.SendNotification(created.ChatID, created.Text, imgURL, linkToProfile); err != nil {
+			if err = j.notifier.SendNotification(created.ChatID, text, linkToProfile, img); err != nil {
 				log.Printf("Failed to send notification to user %d", collaboration.UserID)
 				return err
 			}
@@ -302,7 +307,7 @@ func (j *notifyJob) NotifyCollaborationRequest() error {
 				return err
 			}
 
-			imgURL, err := createImgURL(j.imgServiceURL, requester)
+			img, err := fetchPreviewImage(j.imgServiceURL, requester)
 
 			if err != nil {
 				return err
@@ -311,12 +316,12 @@ func (j *notifyJob) NotifyCollaborationRequest() error {
 			notification := &db.Notification{
 				UserID:           creator.ID,
 				NotificationType: db.NotificationTypeCollaborationRequest,
-				Text:             fmt.Sprintf("%s wants to collaborate with you", *requester.FirstName),
 				EntityType:       "collaboration_requests",
 				EntityID:         request.ID,
 				ChatID:           creator.ChatID,
-				ImageURL:         imgURL,
 			}
+
+			text := fmt.Sprintf("*%s wants to collaborate with you on your opportunity*\n%s", *requester.FirstName, request.Message)
 
 			created, err := j.storage.CreateNotification(*notification)
 
@@ -326,7 +331,7 @@ func (j *notifyJob) NotifyCollaborationRequest() error {
 
 			linkToProfile := fmt.Sprintf("https://peatch.pages.dev/users/%d", requester.ID)
 
-			if err = j.notifier.SendNotification(created.ChatID, created.Text, imgURL, linkToProfile); err != nil {
+			if err = j.notifier.SendNotification(created.ChatID, text, linkToProfile, img); err != nil {
 				log.Printf("Failed to send notification to user %d", creator.ID)
 			}
 
@@ -340,14 +345,14 @@ func (j *notifyJob) NotifyCollaborationRequest() error {
 	return nil
 }
 
-func createImgURL(baseUrl string, user *db.User) (string, error) {
+func fetchPreviewImage(baseUrl string, user *db.User) ([]byte, error) {
 	if user.AvatarURL == nil || user.FirstName == nil || user.LastName == nil || user.Title == nil {
-		return "", errors.New("user data is not complete")
+		return nil, errors.New("user data is not complete")
 	}
 
 	u, err := url.Parse(baseUrl)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	u.Path += "/api/image"
@@ -367,5 +372,28 @@ func createImgURL(baseUrl string, user *db.User) (string, error) {
 
 	u.RawQuery = params.Encode()
 
-	return u.String(), nil
+	httpClient := http.Client{
+		Timeout: 30 * time.Second,
+	}
+
+	resp, err := httpClient.Get(u.String())
+	if err != nil {
+		log.Printf("Failed to download image: %s", err)
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("Failed to download image, got status code: %d", resp.StatusCode)
+		return nil, errors.New("failed to download image")
+	}
+
+	imgData, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("Failed to read image data: %s", err)
+		return nil, err
+	}
+
+	return imgData, nil
 }

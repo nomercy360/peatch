@@ -26,12 +26,21 @@ type Collaboration struct {
 	Badges        BadgeSlice  `json:"badges,omitempty" db:"badges"`
 } // @Name Collaboration
 
+func (c *Collaboration) GetLocation() string {
+	if c.City != nil {
+		return fmt.Sprintf("%s, %s", *c.City, c.Country)
+	}
+
+	return c.Country
+}
+
 type CollaborationQuery struct {
 	Page      int
 	Limit     int
 	Search    string
 	From      *time.Time
 	HiddenFor *int64
+	Visible   bool
 }
 
 func (s *storage) ListCollaborations(params CollaborationQuery) ([]Collaboration, error) {
@@ -70,6 +79,10 @@ func (s *storage) ListCollaborations(params CollaborationQuery) ([]Collaboration
 		args = append(args, *params.From)
 		whereClauses = append(whereClauses, fromClause)
 		paramIndex++
+	}
+
+	if params.Visible {
+		whereClauses = append(whereClauses, "AND c.published_at IS NOT NULL AND c.hidden_at IS NULL")
 	}
 
 	query = query + strings.Join(whereClauses, " ")

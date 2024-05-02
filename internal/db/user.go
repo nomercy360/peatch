@@ -612,3 +612,23 @@ func (s *storage) GetCollaborationOwner(collaborationID int64) (*User, error) {
 
 	return user, nil
 }
+
+func (s *storage) FindUserCollaborationRequest(requesterID, userID int64) (*UserCollaborationRequest, error) {
+	var request UserCollaborationRequest
+
+	query := `
+		SELECT id, user_id, requester_id, message, created_at, updated_at, status
+		FROM user_collaboration_requests
+		WHERE user_id = $1 AND requester_id = $2
+	`
+
+	err := s.pg.Get(&request, query, userID, requesterID)
+
+	if err != nil {
+		if IsNoRowsError(err) {
+			return nil, ErrNotFound
+		}
+	}
+
+	return &request, nil
+}

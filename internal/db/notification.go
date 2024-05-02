@@ -11,8 +11,6 @@ type Notification struct {
 	UserID           int64            `json:"user_id" db:"user_id"`
 	MessageID        *string          `json:"message_id" db:"message_id"`
 	ChatID           int64            `json:"chat_id" db:"chat_id"`
-	Text             string           `json:"text" db:"text"`
-	ImageURL         string           `json:"image_url" db:"image_url"`
 	SentAt           *time.Time       `json:"sent_at" db:"sent_at"`
 	CreatedAt        time.Time        `json:"created_at" db:"created_at"`
 	NotificationType NotificationType `json:"notification_type" db:"notification_type"`
@@ -35,20 +33,20 @@ const (
 
 func (s *storage) CreateNotification(notification Notification) (*Notification, error) {
 	query := `
-		INSERT INTO notifications (user_id, message_id, chat_id, text, image_url, sent_at, notification_type, entity_type, entity_id)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-		RETURNING id, user_id, message_id, chat_id, text, image_url, sent_at, notification_type, created_at, entity_type, entity_id
+		INSERT INTO notifications (user_id, message_id, chat_id, sent_at, notification_type, entity_type, entity_id)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		RETURNING id, user_id, message_id, chat_id, sent_at, notification_type, created_at, entity_type, entity_id
 	`
 
 	row := s.pg.QueryRow(
 		query, notification.UserID, notification.MessageID, notification.ChatID,
-		notification.Text, notification.ImageURL, notification.SentAt,
-		notification.NotificationType, notification.EntityType, notification.EntityID,
+		notification.SentAt, notification.NotificationType, notification.EntityType,
+		notification.EntityID,
 	)
 
 	var request Notification
 	err := row.Scan(
-		&request.ID, &request.UserID, &request.MessageID, &request.ChatID, &request.Text, &request.ImageURL,
+		&request.ID, &request.UserID, &request.MessageID, &request.ChatID,
 		&request.SentAt, &request.NotificationType, &request.CreatedAt, &request.EntityType, &request.EntityID,
 	)
 
@@ -61,7 +59,7 @@ func (s *storage) CreateNotification(notification Notification) (*Notification, 
 
 func (s *storage) SearchNotification(userID int64, notificationType NotificationType, entityType string, entityID int64) (*Notification, error) {
 	query := `
-		SELECT id, user_id, message_id, chat_id, text, image_url, sent_at, created_at, notification_type, entity_type, entity_id
+		SELECT id, user_id, message_id, chat_id, sent_at, created_at, notification_type, entity_type, entity_id
 		FROM notifications
 		WHERE user_id = $1 AND notification_type = $2 AND entity_type = $3 AND entity_id = $4
 		LIMIT 1
@@ -72,7 +70,7 @@ func (s *storage) SearchNotification(userID int64, notificationType Notification
 	var notification Notification
 
 	err := row.Scan(
-		&notification.ID, &notification.UserID, &notification.MessageID, &notification.ChatID, &notification.Text, &notification.ImageURL,
+		&notification.ID, &notification.UserID, &notification.MessageID, &notification.ChatID,
 		&notification.SentAt, &notification.CreatedAt, &notification.NotificationType, &notification.EntityType, &notification.EntityID,
 	)
 
