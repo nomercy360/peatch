@@ -33,7 +33,7 @@ type service interface {
 	ListCollaborations(query db.CollaborationQuery) ([]db.Collaboration, error)
 	GetCollaborationByID(userID, id int64) (*db.Collaboration, error)
 	CreateCollaboration(userID int64, create svc.CreateCollaboration) (*db.Collaboration, error)
-	UpdateCollaboration(userID int64, update svc.CreateCollaboration) (*db.Collaboration, error)
+	UpdateCollaboration(userID, collabID int64, update svc.CreateCollaboration) (*db.Collaboration, error)
 	PublishCollaboration(userID int64, collaborationID int64) error
 	HideCollaboration(userID int64, collaborationID int64) error
 	ShowCollaboration(userID int64, collaborationID int64) error

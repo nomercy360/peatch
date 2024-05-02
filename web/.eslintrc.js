@@ -5,7 +5,12 @@ module.exports = {
     es2022: true,
     browser: true,
   },
-  extends: ['eslint:recommended', 'plugin:tailwindcss/recommended'],
+  plugins: ['solid'],
+  extends: [
+    'eslint:recommended',
+    'plugin:tailwindcss/recommended',
+    'plugin:solid/typescript',
+  ],
   parserOptions: {
     ecmaVersion: 'latest',
     sourceType: 'module',

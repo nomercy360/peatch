@@ -1,6 +1,20 @@
-import { createEffect, createSignal, For, Match, onCleanup, Suspense, Switch } from 'solid-js';
+import {
+  createEffect,
+  createSignal,
+  For,
+  Match,
+  onCleanup,
+  Suspense,
+  Switch,
+} from 'solid-js';
 import { useNavigate, useParams, useSearchParams } from '@solidjs/router';
-import { CDN_URL, fetchCollaboration, hideCollaboration, publishCollaboration, showCollaboration } from '~/api';
+import {
+  CDN_URL,
+  fetchCollaboration,
+  hideCollaboration,
+  publishCollaboration,
+  showCollaboration,
+} from '~/api';
 import { createQuery } from '@tanstack/solid-query';
 import { setUser, store } from '~/store';
 import ActionDonePopup from '~/components/ActionDonePopup';
@@ -48,12 +62,12 @@ export default function Collaboration() {
 
   const hide = async () => {
     await hideCollaboration(Number(collabId));
-    query.refetch()
+    query.refetch();
   };
 
   const show = async () => {
     await showCollaboration(Number(collabId));
-    query.refetch()
+    query.refetch();
   };
 
   const navigateToCollaborate = async () => {
@@ -65,7 +79,8 @@ export default function Collaboration() {
   };
 
   const navigateToEdit = () => {
-    navigate(`/collaborations/edit/${collabId}`, { state: { back: true } });
+    console.log('navigateToEdit: ', collabId);
+    navigate('/collaborations/edit/' + collabId);
   };
 
   createEffect(() => {
@@ -90,7 +105,7 @@ export default function Collaboration() {
         mainButton.onClick(publish);
       } else {
         mainButton.setParams({
-          text: 'Edit',
+          text: 'Edit s',
           isVisible: true,
           isEnabled: true,
         });
@@ -106,13 +121,17 @@ export default function Collaboration() {
       mainButton.offClick(navigateToEdit);
       mainButton.onClick(navigateToCollaborate);
     }
+
+    onCleanup(() => {
+      mainButton.offClick(navigateToCollaborate);
+      mainButton.offClick(publish);
+      mainButton.offClick(navigateBack);
+      mainButton.offClick(navigateToEdit);
+    });
   });
 
-  onCleanup(() => {
+  onCleanup(async () => {
     mainButton.hide();
-    mainButton.offClick(publish);
-    mainButton.offClick(navigateToCollaborate);
-    mainButton.offClick(navigateToEdit);
   });
 
   return (

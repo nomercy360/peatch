@@ -28,20 +28,24 @@ export default function Index() {
 
   createEffect(() => {
     if (store.user.published_at !== null) {
-      mainButton.setParams({ text: 'Create Collaboration', isEnabled: true, isVisible: true });
+      mainButton.setParams({
+        text: 'Create Collaboration',
+        isEnabled: true,
+        isVisible: true,
+      });
       mainButton.onClick(pushToCreate);
     }
-  })
+  });
 
   onCleanup(() => {
     mainButton.offClick(pushToCreate);
   });
 
   return (
-    <div class="bg-secondary min-h-screen pb-52">
+    <div class="min-h-screen bg-secondary pb-52">
       <div class="px-4 py-2.5">
         <input
-          class="bg-main text-main placeholder:text-hint h-10 w-full rounded-lg px-2.5"
+          class="h-10 w-full rounded-lg bg-main px-2.5 text-main placeholder:text-hint"
           placeholder="Search collaborations by type or keyword"
           type="text"
           value={search()}
@@ -67,10 +71,11 @@ const CollaborationCard = (props: { collab: Collaboration }) => {
     <Link
       class="flex flex-col items-start px-4 pt-4 text-start "
       href={`/collaborations/${props.collab.id}`}
+      state={{ from: '/collaborations' }}
     >
       <p class="mt-3 text-3xl text-blue">{props.collab.opportunity?.text}:</p>
-      <p class="text-main text-3xl">{props.collab.title}</p>
-      <p class="text-hint mt-2 text-sm">
+      <p class="text-3xl text-main">{props.collab.title}</p>
+      <p class="mt-2 text-sm text-hint">
         {shortenDescription(props.collab.description!)}
       </p>
       <div class="mt-4 flex w-full flex-row items-center justify-start gap-2">
@@ -80,13 +85,13 @@ const CollaborationCard = (props: { collab: Collaboration }) => {
           alt="User Avatar"
         />
         <div>
-          <p class="text-main text-sm font-bold">
+          <p class="text-sm font-bold text-main">
             {props.collab.user?.first_name} {props.collab.user?.last_name}:
           </p>
-          <p class="text-main text-sm">{props.collab.user?.title}</p>
+          <p class="text-sm text-main">{props.collab.user?.title}</p>
         </div>
       </div>
-      <div class="bg-main mt-5 h-px w-full"></div>
+      <div class="mt-5 h-px w-full bg-main"></div>
     </Link>
   );
 };
@@ -94,10 +99,10 @@ const CollaborationCard = (props: { collab: Collaboration }) => {
 const CollabListPlaceholder = () => {
   return (
     <div class="flex flex-col items-start justify-start gap-4 px-4 py-2.5">
-      <div class="bg-main h-48 w-full rounded-2xl"></div>
-      <div class="bg-main h-48 w-full rounded-2xl"></div>
-      <div class="bg-main h-48 w-full rounded-2xl"></div>
-      <div class="bg-main h-48 w-full rounded-2xl"></div>
+      <div class="h-48 w-full rounded-2xl bg-main"></div>
+      <div class="h-48 w-full rounded-2xl bg-main"></div>
+      <div class="h-48 w-full rounded-2xl bg-main"></div>
+      <div class="h-48 w-full rounded-2xl bg-main"></div>
     </div>
   );
 };

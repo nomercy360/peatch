@@ -117,14 +117,12 @@ export default function Index() {
         href="/collaborations"
       >
         <div class="flex w-full flex-row items-center justify-start">
-          <div
-            class="z-20 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-main bg-orange">
+          <div class="z-20 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-main bg-orange">
             <span class="material-symbols-rounded text-white">
               self_improvement
             </span>
           </div>
-          <div
-            class="z-10 -ml-1 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-main bg-red">
+          <div class="z-10 -ml-1 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-main bg-red">
             <span class="material-symbols-rounded text-white">wine_bar</span>
           </div>
           <div class="-ml-1 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-main bg-blue">
@@ -147,9 +145,13 @@ export default function Index() {
         </p>
       </Link>
       <div class="h-px w-full bg-main"></div>
-      <button class="flex flex-col items-start justify-start py-4"
-              onClick={() => window.Telegram.WebApp.openTelegramLink('https://t.me/telegram')}>
-        <div class="flex flex-row items-start justify-between">
+      <button
+        class="flex flex-col items-start justify-start py-4"
+        onClick={() =>
+          window.Telegram.WebApp.openTelegramLink('https://t.me/telegram')
+        }
+      >
+        <div class="flex flex-row items-start justify-between text-start">
           <p class="mt-2 text-3xl text-main">
             <span class="text-green">Join community</span> to talk with founders
             and users. Discuss and solve problems together

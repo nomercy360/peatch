@@ -1,5 +1,6 @@
 import { CreateCollaboration, UpdateUserRequest, User } from '../gen';
 import { createStore } from 'solid-js/store';
+import { createSignal } from 'solid-js';
 
 export const [store, setStore] = createStore<{
   user: User;
@@ -42,3 +43,6 @@ export const [editCollaboration, setEditCollaboration] =
     opportunity_id: 0,
     title: '',
   });
+
+export const [editCollaborationId, setEditCollaborationId] =
+  createSignal<number>(0);

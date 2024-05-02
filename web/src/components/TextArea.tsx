@@ -24,7 +24,6 @@ export default function TextArea(props: {
         placeholder={props.placeholder}
         value={props.value}
         onInput={e => resizer(e)}
-        autofocus={true}
         autocomplete="off"
         autocapitalize="off"
         spellcheck={false}

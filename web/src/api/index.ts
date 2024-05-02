@@ -1,5 +1,5 @@
 import { store } from '~/store';
-import { CreateUserCollaboration } from '../../gen';
+import { CreateCollaboration, CreateUserCollaboration } from '../../gen';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
 export const CDN_URL = 'https://assets.peatch.io';
@@ -9,7 +9,7 @@ export const apiFetch = async ({
   method = 'GET',
   body = null,
   showProgress = true,
-                                 responseContentType = 'json' as 'json' | 'blob',
+  responseContentType = 'json' as 'json' | 'blob',
 }: {
   endpoint: string;
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
@@ -156,9 +156,12 @@ export const createCollaboration = async (collaboration: any) => {
   });
 };
 
-export const updateCollaboration = async (collaboration: any) => {
+export const updateCollaboration = async (
+  id: number,
+  collaboration: CreateCollaboration,
+) => {
   return await apiFetch({
-    endpoint: '/collaborations',
+    endpoint: '/collaborations/' + id,
     method: 'PUT',
     body: collaboration,
   });

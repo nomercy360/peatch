@@ -2,21 +2,37 @@ import { FormLayout } from '~/components/edit/layout';
 import { useMainButton } from '~/hooks/useMainButton';
 import { useNavigate } from '@solidjs/router';
 import { createEffect, onCleanup } from 'solid-js';
-import { editCollaboration, setEditCollaboration } from '~/store';
+import {
+  editCollaboration,
+  editCollaborationId,
+  setEditCollaboration,
+} from '~/store';
 import SelectLocation from '~/components/edit/selectLocation';
-import { createCollaboration } from '~/api';
+import { createCollaboration, updateCollaboration } from '~/api';
 
 export default function SelectBadges() {
   const mainButton = useMainButton();
 
   const navigate = useNavigate();
-
   const createCollab = async () => {
     const created = await createCollaboration(editCollaboration);
     navigate('/collaborations/' + created.id);
   };
 
-  mainButton.onClick(createCollab);
+  const editCollab = async () => {
+    await updateCollaboration(editCollaborationId(), editCollaboration);
+    navigate('/collaborations/' + editCollaborationId() + '?refetch=true');
+  };
+
+  const createOrEditCollab = async () => {
+    if (editCollaborationId()) {
+      await editCollab();
+    } else {
+      await createCollab();
+    }
+  };
+
+  mainButton.onClick(createOrEditCollab);
 
   createEffect(() => {
     if (editCollaboration.country && editCollaboration.country_code) {
@@ -35,7 +51,7 @@ export default function SelectBadges() {
   });
 
   onCleanup(() => {
-    mainButton.offClick(createCollab);
+    mainButton.offClick(createOrEditCollab);
   });
 
   return (

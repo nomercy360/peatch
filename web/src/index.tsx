@@ -36,8 +36,6 @@ if (import.meta.env.DEV && !(root instanceof HTMLElement)) {
   );
 }
 
-const NotFound = () => <div>Not Found</div>;
-
 render(
   () => (
     <Router root={App}>
@@ -53,17 +51,16 @@ render(
         <Route path="/description" component={Description} />
         <Route path="/image" component={ImageUpload} />
       </Route>
-      <Route path="/collaborations/edit/:id" component={EditCollaboration}>
+      <Route path="/collaborations" component={Collaborations} />
+      <Route path="/collaborations/:id" component={Collaboration} />
+      <Route path="/collaborations/edit/:id?" component={EditCollaboration}>
         <Route path="/" component={CollaborationInfo} />
         <Route path="/location" component={CollaborationLocation} />
         <Route path="/create-badge" component={CollaborationCreateBadge} />
         <Route path="/badges" component={CollaborationBadges} />
         <Route path="/interests" component={CollaborationOpportunity} />
       </Route>
-      <Route path="/collaborations" component={Collaborations} />
-      <Route path="/collaborations/:id" component={Collaboration} />
       <Route path="/users/:id/collaborate" component={UserCollaborate} />
-
       <Route path="*" component={() => <Navigate href={'/'} />} />
     </Router>
   ),

@@ -1,9 +1,4 @@
-import {
-  createContext,
-  useContext,
-  createEffect,
-  onCleanup,
-} from 'solid-js';
+import { createContext, useContext, createEffect, onCleanup } from 'solid-js';
 import { useBackButton } from './useBackButton';
 import { useLocation, useNavigate } from '@solidjs/router';
 
@@ -20,7 +15,7 @@ export function NavigationProvider(props: { children: any }) {
   const location = useLocation();
 
   const navigateBack = () => {
-    console.log('location:', location.pathname);
+    console.log('Navigating back:', location.state);
 
     const state = location.state;
 

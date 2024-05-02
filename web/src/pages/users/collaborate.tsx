@@ -1,8 +1,21 @@
 import { createQuery } from '@tanstack/solid-query';
-import { CDN_URL, createUserCollaboration, fetchProfile, findUserCollaborationRequest } from '~/api';
+import {
+  CDN_URL,
+  createUserCollaboration,
+  fetchProfile,
+  findUserCollaborationRequest,
+} from '~/api';
 import { useNavigate, useParams } from '@solidjs/router';
 import { store } from '~/store';
-import { createEffect, createResource, createSignal, Match, onCleanup, Show, Switch } from 'solid-js';
+import {
+  createEffect,
+  createResource,
+  createSignal,
+  Match,
+  onCleanup,
+  Show,
+  Switch,
+} from 'solid-js';
 
 import { createStore } from 'solid-js/store';
 import { CreateUserCollaboration } from '../../../gen';
@@ -94,7 +107,7 @@ export default function Collaborate() {
         />
       </Match>
       <Match when={existedRequest.loading && !query.data}>
-        <div></div>
+        <div />
       </Match>
       <Match when={!existedRequest.loading && query.data}>
         <Show when={existedRequest()}>
