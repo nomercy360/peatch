@@ -147,7 +147,7 @@ export default function Index() {
       <div class="h-px w-full bg-main"></div>
       <div class="flex flex-col items-start justify-start py-4">
         <div class="flex flex-row items-start justify-between">
-          <p class="mt-2 text-3xl text-white">
+          <p class="mt-2 text-3xl text-main">
             <span class="text-green">Join community</span> to talk with founders
             and users. Discuss and solve problems together
           </p>
