@@ -12,6 +12,7 @@ import { store } from '~/store';
 import { CDN_URL, fetchPreview } from '~/api';
 import FillProfilePopup from '~/components/FillProfilePopup';
 import { Link } from '~/components/Link';
+import { useMainButton } from '~/hooks/useMainButton';
 
 export default function Index() {
   const [profilePopup, setProfilePopup] = createSignal(false);
@@ -29,6 +30,10 @@ export default function Index() {
     }
   };
 
+  const mainButton = useMainButton();
+
+  mainButton.hide();
+
   const closePopup = () => {
     setProfilePopup(false);
     window.Telegram.WebApp.CloudStorage.setItem('profilePopup', 'closed');
@@ -43,7 +48,7 @@ export default function Index() {
       'profilePopup',
       updateProfilePopup,
     );
-    window.Telegram.WebApp.CloudStorage.removeItem('profilePopup');
+    // window.Telegram.WebApp.CloudStorage.removeItem('profilePopup');
   });
 
   return (

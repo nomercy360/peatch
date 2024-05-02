@@ -1,18 +1,10 @@
-import {
-  createEffect,
-  createSignal,
-  For,
-  onCleanup,
-  Show,
-  Suspense,
-} from 'solid-js';
+import { createSignal, For, Show, Suspense } from 'solid-js';
 import { User } from '../../../gen';
 import { fetchUsers } from '~/api';
 import { createQuery } from '@tanstack/solid-query';
 import useDebounce from '~/hooks/useDebounce';
 import Badge from '~/components/Badge';
 import { Link } from '~/components/Link';
-import { useLocation } from '@solidjs/router';
 
 export default function Index() {
   const [search, setSearch] = createSignal('');
@@ -25,7 +17,7 @@ export default function Index() {
   }));
 
   return (
-    <div class="pb-52 bg-secondary min-h-screen">
+    <div class="min-h-screen bg-secondary pb-52">
       <div class="px-4 py-2.5">
         <input
           class="h-10 w-full rounded-lg bg-main px-2.5 text-main placeholder:text-hint"
@@ -36,8 +28,7 @@ export default function Index() {
         />
       </div>
       <Suspense fallback={<UserListPlaceholder />}>
-        <For each={query.data}>{profile => <UserCard user={profile} />}
-        </For>
+        <For each={query.data}>{profile => <UserCard user={profile} />}</For>
       </Suspense>
     </div>
   );
@@ -55,7 +46,7 @@ const UserCard = (props: { user: User }) => {
 
   return (
     <Link
-      class="flex flex-col items-start px-4 pb-5 pt-4 text-start bg-secondary"
+      class="flex flex-col items-start bg-secondary px-4 pb-5 pt-4 text-start"
       href={`/users/${props.user.id}`}
       state={{ from: '/users' }}
     >
@@ -81,7 +72,7 @@ const UserCard = (props: { user: User }) => {
           </div>
         </Show>
       </div>
-      <div class="h-px bg-main w-full mt-5"></div>
+      <div class="mt-5 h-px w-full bg-main"></div>
     </Link>
   );
 };

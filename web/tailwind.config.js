@@ -103,6 +103,7 @@ module.exports = {
         red: '#FE5F55',
         orange: '#FF8C42',
         blue: '#3478F6',
+        text: 'var(--telegram-text-color)',
         hint: 'var(--telegram-hint-color)',
         accent: 'var(--telegram-accent-text-color)',
         main: 'var(--telegram-secondary-bg-color)',

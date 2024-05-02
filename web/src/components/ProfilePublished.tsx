@@ -1,24 +1,37 @@
-import { For } from 'solid-js';
+import { createResource, For } from 'solid-js';
+import { A } from '@solidjs/router';
+import { CDN_URL, fetchPreview } from '~/api';
 
 export default function ProfilePublished() {
-  const images = ['/thumb.png', '/thumb.png', '/thumb.png'];
+  const [previewImages, _] = createResource(async () => {
+    const res = await fetchPreview();
+    return res.map((image: any) => CDN_URL + '/' + image.avatar_url);
+  });
 
   return (
-    <div class="h-screen p-5 bg-secondary w-full text-center flex flex-col items-center justify-between">
-      <img src="/confetti.png" alt="Confetti" class="w-full mx-auto absolute top-0 left-0 right-0" />
+    <div class="flex h-screen w-full flex-col items-center justify-between bg-secondary p-5 text-center">
+      <img
+        src="/confetti.png"
+        alt="Confetti"
+        class="absolute inset-x-0 top-0 mx-auto w-full"
+      />
       <div class="flex flex-col items-center justify-start">
-        <span class="material-symbols-rounded text-[60px] text-peatch-green">check_circle</span>
-        <p class="text-3xl">Profile published</p>
-        <p class="text-2xl mt-2">Now you can find people, create and join collaborations. Have fun!</p>
+        <span class="material-symbols-rounded text-peatch-green text-[60px] text-main">
+          check_circle
+        </span>
+        <p class="text-3xl text-main">Profile published</p>
+        <p class="mt-2 text-2xl text-secondary">
+          Now you can find people, create and join collaborations. Have fun!
+        </p>
       </div>
       <div class="flex flex-col items-center justify-center">
         <div class="flex w-full flex-row items-center justify-center">
-          <For each={images}>
+          <For each={previewImages()}>
             {(image, idx) => (
               <img
                 src={image}
                 alt="User Avatar"
-                class="-ml-1 size-11 rounded-xl border-2 border-white object-cover object-center"
+                class="-ml-1 size-11 rounded-lg border-2 border-main object-cover object-center"
                 classList={{
                   'ml-0': idx() === 0,
                   'z-20': idx() === 0,
@@ -28,12 +41,15 @@ export default function ProfilePublished() {
             )}
           </For>
         </div>
-        <p class="mt-4 text-lg max-w-xs">
+        <p class="mt-4 max-w-xs text-lg text-secondary">
           There are 12 people you might be interested to collaborate with
         </p>
-        <a class="mt-2 text-sm text-button h-12 w-full flex items-center justify-center"
-           href="/users">
-          Show them</a>
+        <A
+          class="mt-2 flex h-12 w-full items-center justify-center text-sm font-medium text-link"
+          href="/users"
+        >
+          Show them
+        </A>
       </div>
     </div>
   );

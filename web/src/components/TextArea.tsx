@@ -8,8 +8,8 @@ export default function TextArea(props: {
   const [count, setCount] = createSignal(0);
 
   const resizer = (e: any) => {
-    e.target.style.height = 'auto';
-    e.target.style.height = e.target.scrollHeight + 'px';
+    // e.target.style.height = 'auto';
+    // e.target.style.height = e.target.scrollHeight + 'px';
 
     props.setValue(e.target.value);
 
@@ -18,9 +18,9 @@ export default function TextArea(props: {
   };
 
   return (
-    <div class="relative mt-5 h-fit min-h-56 w-full rounded-lg bg-main">
+    <div class="relative mt-5 h-80 w-full rounded-lg bg-main">
       <textarea
-        class="size-full bg-transparent p-2.5 text-main placeholder:text-hint"
+        class="size-full resize-none bg-transparent p-2.5 text-main placeholder:text-hint"
         placeholder={props.placeholder}
         value={props.value}
         onInput={e => resizer(e)}

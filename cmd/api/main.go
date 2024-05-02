@@ -148,7 +148,7 @@ func main() {
 	// Start server
 	go func() {
 		if err := e.Start(cfg.Server.Host + ":" + cfg.Server.Port); err != nil {
-			e.Logger.Fatal("shutting down the server")
+			e.Logger.Fatalf("shutting down the server, here is why: %v", err)
 		}
 	}()
 
