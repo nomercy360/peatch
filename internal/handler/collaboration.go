@@ -97,8 +97,10 @@ func (h *handler) handleCreateCollaboration(c echo.Context) error {
 // @Produce  json
 // @Param collaboration body Collaboration true "Collaboration data"
 // @Success 200 {object} Collaboration
-// @Router /api/collaborations [put]
+// @Router /api/collaborations/{id} [put]
 func (h *handler) handleUpdateCollaboration(c echo.Context) error {
+	cid, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+
 	var collaboration svc.CreateCollaboration
 	if err := c.Bind(&collaboration); err != nil {
 		return err
@@ -110,7 +112,7 @@ func (h *handler) handleUpdateCollaboration(c echo.Context) error {
 
 	uid := getUserID(c)
 
-	res, err := h.svc.UpdateCollaboration(uid, collaboration)
+	res, err := h.svc.UpdateCollaboration(uid, cid, collaboration)
 	if err != nil {
 		return err
 	}

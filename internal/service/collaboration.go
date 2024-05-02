@@ -42,7 +42,7 @@ type CreateCollaboration struct {
 } // @Name CreateCollaboration
 
 func (cc *CreateCollaboration) toCollaboration() db.Collaboration {
-	return db.Collaboration{
+	collab := db.Collaboration{
 		OpportunityID: cc.OpportunityID,
 		Title:         cc.Title,
 		Description:   cc.Description,
@@ -51,14 +51,20 @@ func (cc *CreateCollaboration) toCollaboration() db.Collaboration {
 		City:          &cc.City,
 		CountryCode:   cc.CountryCode,
 	}
+
+	if cc.City == "" {
+		collab.City = nil
+	}
+
+	return collab
 }
 
 func (s *service) CreateCollaboration(userID int64, create CreateCollaboration) (*db.Collaboration, error) {
 	return s.storage.CreateCollaboration(userID, create.toCollaboration(), create.BadgeIDs)
 }
 
-func (s *service) UpdateCollaboration(userID int64, update CreateCollaboration) (*db.Collaboration, error) {
-	res, err := s.storage.UpdateCollaboration(userID, update.toCollaboration())
+func (s *service) UpdateCollaboration(userID, collabID int64, update CreateCollaboration) (*db.Collaboration, error) {
+	res, err := s.storage.UpdateCollaboration(userID, collabID, update.toCollaboration())
 
 	if err != nil && errors.Is(err, db.ErrNotFound) {
 		return nil, terrors.NotFound(err)

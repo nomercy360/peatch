@@ -13,7 +13,7 @@ type Collaboration struct {
 	Title         string      `json:"title" db:"title"`
 	Description   string      `json:"description" db:"description"`
 	IsPayable     bool        `json:"is_payable" db:"is_payable"`
-	PublishedAt   *string     `json:"published_at" db:"published_at"`
+	PublishedAt   *time.Time  `json:"published_at" db:"published_at"`
 	CreatedAt     time.Time   `json:"created_at" db:"created_at"`
 	UpdatedAt     time.Time   `json:"updated_at" db:"updated_at"`
 	Country       string      `json:"country" db:"country"`
@@ -183,10 +183,10 @@ func (s *storage) CreateCollaboration(userID int64, collaboration Collaboration,
 	return &res, nil
 }
 
-func (s *storage) UpdateCollaboration(userID int64, collaboration Collaboration) (*Collaboration, error) {
+func (s *storage) UpdateCollaboration(userID, collabID int64, collaboration Collaboration) (*Collaboration, error) {
 	query := `
 		UPDATE collaborations
-		SET title = $1, description = $2, is_payable = $3, country = $4, city = $5, country_code = $6
+		SET title = $1, description = $2, is_payable = $3, country = $4, city = $5, country_code = $6, updated_at = NOW()
 		WHERE id = $7 AND user_id = $8
 		RETURNING updated_at
 	`
@@ -199,7 +199,7 @@ func (s *storage) UpdateCollaboration(userID int64, collaboration Collaboration)
 		collaboration.Country,
 		collaboration.City,
 		collaboration.CountryCode,
-		collaboration.ID,
+		collabID,
 		userID,
 	).StructScan(&collaboration)
 
