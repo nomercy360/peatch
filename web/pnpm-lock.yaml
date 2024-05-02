@@ -14,6 +14,9 @@ dependencies:
   '@tanstack/solid-query':
     specifier: ^5.32.0
     version: 5.32.0(solid-js@1.8.11)
+  eruda:
+    specifier: ^3.0.1
+    version: 3.0.1
   solid-js:
     specifier: ^1.8.11
     version: 1.8.11
@@ -2240,6 +2243,10 @@ packages:
     dependencies:
       is-arrayish: 0.2.1
     dev: true
+
+  /eruda@3.0.1:
+    resolution: {integrity: sha512-6q1Xdwga4JTr1mKSW4mzuWSSbmXgqpm/8Wa1QGFGfCWRjC0bCQjbS4u06M1te1moucIS3hBLlbSTPWYH2W0qbQ==}
+    dev: false
 
   /es-abstract@1.23.3:
     resolution: {integrity: sha512-e+HfNH61Bj1X9/jLc5v1owaLYuHdeHHSQlkhCBiTK8rBvKaULl/beGMxwrMXjpYrv4pz22BlY570vVePA2ho4A==}

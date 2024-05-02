@@ -48,14 +48,11 @@ export default function App(props: any) {
             <div>{props.children}</div>
           </Match>
           <Match when={!isAuthenticated() && isLoading()}>
-            <div
-              class="h-screen w-full items-start flex-col justify-center bg-main">
-            </div>
+            <div class="h-screen w-full flex-col items-start justify-center bg-main"></div>
           </Match>
           <Match when={!isAuthenticated() && !isLoading()}>
-            <div
-              class="min-h-screen h-screen w-full items-start flex-col justify-center text-3xl bg-main text-main">
-            Something went wrong. Please try again later.
+            <div class="h-screen min-h-screen w-full flex-col items-start justify-center bg-main text-3xl text-main">
+              Something went wrong. Please try again later.
             </div>
           </Match>
         </Switch>

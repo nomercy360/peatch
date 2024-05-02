@@ -208,7 +208,10 @@ export default function UserProfile() {
                   {query.data.first_name} {query.data.last_name}:
                 </p>
                 <p class="text-3xl text-main">{query.data.title}</p>
-                <p class="text-lg font-normal"> {query.data.description}</p>
+                <p class="mt-1 text-lg font-normal text-secondary">
+                  {' '}
+                  {query.data.description}
+                </p>
                 <div class="mt-5 flex flex-row flex-wrap items-center justify-start gap-1">
                   <For each={query.data.badges}>
                     {badge => (
