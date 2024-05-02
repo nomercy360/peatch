@@ -75,8 +75,8 @@ export function SelectOpportunity(props: {
                 onClick={() => onClick(op.id!)}
                 class="flex h-[60px] w-full flex-row items-center justify-start gap-2.5 rounded-2xl border border-main px-2.5"
                 style={{
-                  'background-color': `${includes(op.id!) ? `#${op.color}` : 'var(--tg-theme-section-bg-color)'}`,
-                  'border-color': `${includes(op.id!) ? `#${op.color}` : 'var(--tg-theme-section-bg-color)'}`,
+                  'background-color': `${includes(op.id!) ? `#${op.color}` : 'var(--tg-theme-secondary-bg-color)'}`,
+                  'border-color': `${includes(op.id!) ? `#${op.color}` : 'var(--tg-theme-secondary-bg-color)'}`,
                 }}
               >
                 <div class="flex size-10 items-center justify-center rounded-full bg-main">

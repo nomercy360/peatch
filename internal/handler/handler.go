@@ -36,6 +36,7 @@ type service interface {
 	UpdateCollaboration(userID int64, update svc.CreateCollaboration) (*db.Collaboration, error)
 	PublishCollaboration(userID int64, collaborationID int64) error
 	HideCollaboration(userID int64, collaborationID int64) error
+	ShowCollaboration(userID int64, collaborationID int64) error
 	CreateCollaborationRequest(userID int64, request svc.CreateCollaborationRequest) (*db.CollaborationRequest, error)
 	GetPresignedURL(userID int64, objectKey string) (*svc.PresignedURL, error)
 	CreateUserCollaboration(userID int64, request svc.CreateUserCollaboration) (*db.UserCollaborationRequest, error)
@@ -97,6 +98,7 @@ func (h *handler) RegisterRoutes(e *echo.Echo) {
 	a.PUT("/collaborations/:id", h.handleUpdateCollaboration)
 	a.POST("/collaborations/:id/publish", h.handlePublishCollaboration)
 	a.POST("/collaborations/:id/hide", h.handleHideCollaboration)
+	a.POST("/collaborations/:id/show", h.handleShowCollaboration)
 	a.POST("/collaborations/:id/requests", h.handleCreateCollaborationRequest)
 	a.GET("/presigned-url", h.handleGetPresignedURL)
 	a.GET("/user-preview", h.handleGetUserPreview)

@@ -143,8 +143,8 @@ function LocationButton(props: {
       onClick={() => props.onClick()}
       class="flex h-16 w-full flex-row items-center justify-between rounded-2xl border border-main px-2.5 text-sm text-main"
       classList={{
-        'bg-main': !props.isActive,
-        'bg-secondary': props.isActive,
+        'bg-secondary': !props.isActive,
+        'bg-main': props.isActive,
       }}
     >
       <p class="">

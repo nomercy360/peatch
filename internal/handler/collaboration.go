@@ -187,3 +187,24 @@ func (h *handler) handleCreateCollaborationRequest(c echo.Context) error {
 
 	return c.JSON(http.StatusCreated, createdRequest)
 }
+
+// handleShowCollaboration godoc
+// @Summary Show collaboration
+// @Tags collaborations
+// @Accept  json
+// @Produce  json
+// @Param id path int true "Collaboration ID"
+// @Success 200
+// @Router /api/collaborations/{id}/show [put]
+func (h *handler) handleShowCollaboration(c echo.Context) error {
+	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+
+	uid := getUserID(c)
+
+	err := h.svc.ShowCollaboration(uid, id)
+	if err != nil {
+		return err
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}

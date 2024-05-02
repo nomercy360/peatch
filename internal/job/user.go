@@ -3,6 +3,7 @@ package job
 import (
 	"errors"
 	"fmt"
+	"github.com/go-telegram/bot"
 	"github.com/peatch-io/peatch/internal/db"
 	"io"
 	"log"
@@ -28,17 +29,19 @@ type notifyJob struct {
 	storage       storage
 	notifier      notifier
 	imgServiceURL string
+	webAppURL     string
 }
 
 type notifier interface {
 	SendNotification(chatID int64, message string, link string, img []byte) error
 }
 
-func NewNotifyJob(storage storage, notifier notifier, imgServiceURL string) *notifyJob {
+func NewNotifyJob(storage storage, notifier notifier, imgServiceURL, webAppURL string) *notifyJob {
 	return &notifyJob{
 		storage:       storage,
 		notifier:      notifier,
 		imgServiceURL: imgServiceURL,
+		webAppURL:     webAppURL,
 	}
 }
 
@@ -78,6 +81,10 @@ func (j *notifyJob) NotifyNewUserProfile() error {
 
 		img, err := fetchPreviewImage(j.imgServiceURL, userDetails)
 
+		if err != nil {
+			return err
+		}
+
 		for _, receiver := range receivers {
 			_, err := j.storage.SearchNotification(
 				receiver.ID,
@@ -104,7 +111,7 @@ func (j *notifyJob) NotifyNewUserProfile() error {
 					return err
 				}
 
-				linkToProfile := fmt.Sprintf("https://peatch.pages.dev/users/%d", user.ID)
+				linkToProfile := fmt.Sprintf("%s/users/%d", j.webAppURL, user.ID)
 
 				if err = j.notifier.SendNotification(created.ChatID, text, linkToProfile, img); err != nil {
 					log.Printf("Failed to send notification to user %d", user.ID)
@@ -159,6 +166,10 @@ func (j *notifyJob) NotifyNewCollaboration() error {
 
 		img, err := fetchPreviewImage(j.imgServiceURL, creator)
 
+		if err != nil {
+			return err
+		}
+
 		for _, receiver := range receivers {
 			_, err := j.storage.SearchNotification(
 				receiver.ID,
@@ -177,7 +188,13 @@ func (j *notifyJob) NotifyNewCollaboration() error {
 					ChatID:           receiver.ChatID,
 				}
 
-				text := fmt.Sprintf("Someone has just posted a new opportunity: *%s*\n*%s*\n*%s*", collaboration.Title, collaboration.Description, collaboration.GetLocation())
+				text := fmt.Sprintf(
+					"*%s has just posted a new opportunity* %s\n%s\n%s",
+					bot.EscapeMarkdown(*creator.FirstName),
+					bot.EscapeMarkdown(collaboration.Title),
+					bot.EscapeMarkdown(collaboration.Description),
+					bot.EscapeMarkdown(collaboration.GetLocation()),
+				)
 
 				created, err := j.storage.CreateNotification(*notification)
 
@@ -185,7 +202,7 @@ func (j *notifyJob) NotifyNewCollaboration() error {
 					return err
 				}
 
-				linkToCollaboration := fmt.Sprintf("https://peatch.pages.dev/collaborations/%d", collaboration.ID)
+				linkToCollaboration := fmt.Sprintf("%s/collaborations/%d", j.webAppURL, collaboration.ID)
 
 				if err = j.notifier.SendNotification(created.ChatID, text, linkToCollaboration, img); err != nil {
 					log.Printf("Failed to send notification to user %d", collaboration.UserID)
@@ -249,7 +266,11 @@ func (j *notifyJob) NotifyUserReceivedCollaborationRequest() error {
 				ChatID:           receiver.ChatID,
 			}
 
-			text := fmt.Sprintf("%s sends you a message:\n%s", *requester.FirstName, collaboration.Message)
+			text := fmt.Sprintf(
+				"%s sends you a message:\n%s",
+				bot.EscapeMarkdown(*requester.FirstName),
+				bot.EscapeMarkdown(collaboration.Message),
+			)
 
 			created, err := j.storage.CreateNotification(*notification)
 
@@ -257,7 +278,7 @@ func (j *notifyJob) NotifyUserReceivedCollaborationRequest() error {
 				return err
 			}
 
-			linkToProfile := fmt.Sprintf("https://peatch.pages.dev/users/%d", collaboration.RequesterID)
+			linkToProfile := fmt.Sprintf("%s/users/%d", j.webAppURL, collaboration.RequesterID)
 
 			if err = j.notifier.SendNotification(created.ChatID, text, linkToProfile, img); err != nil {
 				log.Printf("Failed to send notification to user %d", collaboration.UserID)
@@ -321,7 +342,10 @@ func (j *notifyJob) NotifyCollaborationRequest() error {
 				ChatID:           creator.ChatID,
 			}
 
-			text := fmt.Sprintf("*%s wants to collaborate with you on your opportunity*\n%s", *requester.FirstName, request.Message)
+			text := fmt.Sprintf(
+				"*%s wants to collaborate with you on your opportunity*\n%s",
+				bot.EscapeMarkdown(*requester.FirstName),
+				bot.EscapeMarkdown(request.Message))
 
 			created, err := j.storage.CreateNotification(*notification)
 
@@ -329,7 +353,7 @@ func (j *notifyJob) NotifyCollaborationRequest() error {
 				return err
 			}
 
-			linkToProfile := fmt.Sprintf("https://peatch.pages.dev/users/%d", requester.ID)
+			linkToProfile := fmt.Sprintf("%s/users/%d", j.webAppURL, requester.ID)
 
 			if err = j.notifier.SendNotification(created.ChatID, text, linkToProfile, img); err != nil {
 				log.Printf("Failed to send notification to user %d", creator.ID)

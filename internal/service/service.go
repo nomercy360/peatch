@@ -34,6 +34,7 @@ type storage interface {
 	ShowUser(userID int64) error
 	GetUserPreview() ([]db.User, error)
 	FindUserCollaborationRequest(requesterID, userID int64) (*db.UserCollaborationRequest, error)
+	ShowCollaboration(userID int64, collaborationID int64) error
 }
 
 type s3Client interface {

@@ -152,14 +152,14 @@ function ImageBox({
 function UploadBox({ onFileChange }: { onFileChange: any }) {
   return (
     <>
-      <div class="relative flex size-56 flex-col items-center justify-center rounded-xl bg-secondary">
+      <div class="relative flex size-56 flex-col items-center justify-center rounded-xl bg-main">
         <input
           class="absolute size-full opacity-0"
           type="file"
           accept="image/*"
           onChange={onFileChange}
         />
-        <span class="material-symbols-rounded text-peatch-light-black pointer-events-none z-10 text-[45px]">
+        <span class="material-symbols-rounded text-secondary pointer-events-none z-10 text-[45px]">
           camera_alt
         </span>
       </div>

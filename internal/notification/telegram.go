@@ -25,6 +25,7 @@ func (t *TelegramNotifier) SendNotification(chatID int64, message, link string, 
 		//ChatID:              chatID,
 		ChatID:              927635965,
 		Caption:             message,
+		ParseMode:           models.ParseModeMarkdown,
 		Photo:               &models.InputFileUpload{Filename: "img.jpg", Data: bytes.NewReader(img)},
 		DisableNotification: true,
 		ReplyMarkup: &models.InlineKeyboardMarkup{

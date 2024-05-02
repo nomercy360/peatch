@@ -116,3 +116,15 @@ func (s *service) CreateCollaborationRequest(userID int64, request CreateCollabo
 
 	return res, nil
 }
+
+func (s *service) ShowCollaboration(userID int64, collaborationID int64) error {
+	err := s.storage.ShowCollaboration(userID, collaborationID)
+
+	if err != nil && errors.Is(err, db.ErrNotFound) {
+		return terrors.NotFound(err)
+	} else if err != nil {
+		return err
+	}
+
+	return nil
+}

@@ -1,9 +1,8 @@
 import { createEffect, createSignal, For, Match, onCleanup, Suspense, Switch } from 'solid-js';
-import { useNavigate, useParams } from '@solidjs/router';
+import { useNavigate, useParams, useSearchParams } from '@solidjs/router';
 import { CDN_URL, fetchCollaboration, hideCollaboration, publishCollaboration, showCollaboration } from '~/api';
 import { createQuery } from '@tanstack/solid-query';
-import { store } from '~/store';
-import { usePopup } from '~/hooks/usePopup';
+import { setUser, store } from '~/store';
 import ActionDonePopup from '~/components/ActionDonePopup';
 import { useMainButton } from '~/hooks/useMainButton';
 import { useNavigation } from '~/hooks/useNavigation';
@@ -14,9 +13,11 @@ export default function Collaboration() {
   const [published, setPublished] = createSignal(false);
 
   const navigate = useNavigate();
+
   const { navigateBack } = useNavigation();
+
   const params = useParams();
-  const { showAlert } = usePopup();
+  const [searchParams, _] = useSearchParams();
 
   const collabId = params.id;
 
@@ -24,6 +25,15 @@ export default function Collaboration() {
     queryKey: ['collaborations', collabId],
     queryFn: () => fetchCollaboration(Number(collabId)),
   }));
+
+  createEffect(async () => {
+    if (searchParams.refetch) {
+      await query.refetch();
+      if (query.data.id === store.user.id) {
+        setUser(query.data);
+      }
+    }
+  });
 
   const [isCurrentUserCollab, setIsCurrentUserCollab] = createSignal(false);
 
@@ -38,29 +48,31 @@ export default function Collaboration() {
 
   const hide = async () => {
     await hideCollaboration(Number(collabId));
+    query.refetch()
   };
 
   const show = async () => {
     await showCollaboration(Number(collabId));
+    query.refetch()
   };
 
-  const collaborate = async () => {
+  const navigateToCollaborate = async () => {
     if (store.user.published_at && !store.user.hidden_at) {
       navigate(`/collaborations/${collabId}/collaborate`);
     } else {
-      showAlert('Fill and publish your profile first');
+      window.Telegram.WebApp.showAlert('Fill and publish your profile first');
     }
   };
 
-  const pushToEdit = () => {
-    navigate(`/collaborations/${collabId}/edit`);
+  const navigateToEdit = () => {
+    navigate(`/collaborations/edit/${collabId}`, { state: { back: true } });
   };
 
   createEffect(() => {
     if (isCurrentUserCollab()) {
       if (published()) {
         mainButton.offClick(publish);
-        mainButton.offClick(pushToEdit);
+        mainButton.offClick(navigateToEdit);
         mainButton.setParams({
           text: 'Just open the app',
           isVisible: true,
@@ -68,35 +80,39 @@ export default function Collaboration() {
         });
         mainButton.onClick(navigateBack);
         return;
-      }
-      if (!store.user.published_at) {
-        // mainButton.offClick(pushToEdit);
-        // mainButton.setVisible('Publish');
-        // mainButton.onClick(publish);
+      } else if (!query.data.published_at) {
         mainButton.setParams({
           text: 'Publish',
           isVisible: true,
           isEnabled: true,
         });
+        mainButton.offClick(navigateToEdit);
         mainButton.onClick(publish);
       } else {
-        // mainButton.offClick(publish);
-        // mainButton.setVisible('Edit');
-        // mainButton.onClick(pushToEdit);
+        mainButton.setParams({
+          text: 'Edit',
+          isVisible: true,
+          isEnabled: true,
+        });
+        mainButton.offClick(publish);
+        mainButton.onClick(navigateToEdit);
       }
     } else {
-      // mainButton.offClick(pushToEdit);
-      // mainButton.setVisible('Collaborate');
-      // mainButton.onClick(collaborate);
+      mainButton.setParams({
+        text: 'Collaborate',
+        isVisible: true,
+        isEnabled: true,
+      });
+      mainButton.offClick(navigateToEdit);
+      mainButton.onClick(navigateToCollaborate);
     }
   });
 
   onCleanup(() => {
-    // mainButton.hide();
-    // mainButton.offClick(collaborate);
-    // mainButton.offClick(publish);
-    // mainButton.offClick(back);
-    // mainButton.offClick(pushToEdit);
+    mainButton.hide();
+    mainButton.offClick(publish);
+    mainButton.offClick(navigateToCollaborate);
+    mainButton.offClick(navigateToEdit);
   });
 
   return (
@@ -105,16 +121,16 @@ export default function Collaboration() {
         <Switch>
           <Match when={published() && isCurrentUserCollab()}>
             <ActionDonePopup
-              action="Profile published"
-              description="Now you can find people, create and join collaborations. Have fun!"
+              action="Collaboration published!"
+              description="We have shared your collaboration with the community"
               callToAction="There are 12 people you might be interested to collaborate with"
             />
           </Match>
           <Match when={query.data}>
-            <div class="min-h-screen">
+            <div class="h-fit min-h-screen bg-secondary">
               <Switch>
                 <Match when={isCurrentUserCollab() && !query.data.published_at}>
-                  <ActionButton text="Edit" onClick={pushToEdit} />
+                  <ActionButton text="Edit" onClick={navigateToEdit} />
                 </Match>
                 <Match
                   when={
@@ -161,7 +177,7 @@ export default function Collaboration() {
                 </div>
               </div>
               <div class="px-4 py-2.5">
-                <p class="text-lg font-normal text-main">
+                <p class="text-lg font-normal text-secondary">
                   {query.data.description}
                 </p>
                 <div class="mt-5 flex flex-row flex-wrap items-center justify-start gap-1">
@@ -197,9 +213,8 @@ export default function Collaboration() {
 const ActionButton = (props: { text: string; onClick: () => void }) => {
   return (
     <button
-      class="absolute left-4 top-4 z-10 h-8 w-20 rounded-lg px-2.5 text-white"
+      class="absolute right-4 top-4 z-10 h-8 w-20 rounded-lg bg-button px-2.5 text-button"
       onClick={props.onClick}
-      style={{ background: 'rgba(255, 255, 255, 0.20)' }}
     >
       {props.text}
     </button>

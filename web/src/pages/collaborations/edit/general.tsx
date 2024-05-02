@@ -45,8 +45,8 @@ export default function GeneralInfo() {
     >
       <div class="mt-5 flex w-full flex-col items-center justify-start gap-3">
         <input
-          class="h-10 w-full rounded-lg bg-secondary px-2.5 text-main placeholder:text-hint"
-          placeholder="Title"
+          class="h-10 w-full rounded-lg bg-main px-2.5 text-main placeholder:text-hint"
+          placeholder="Name it!"
           value={editCollaboration.title}
           onInput={e => setEditCollaboration('title', e.currentTarget.value)}
         />
@@ -68,7 +68,7 @@ export default function GeneralInfo() {
         <TextArea
           value={editCollaboration.description}
           setValue={d => setEditCollaboration('description', d)}
-          placeholder="For example: 32 y.o. serial entrepreneur & product director with architecture, product design, marketing & tech development background."
+          placeholder="For example: I'm looking for a designer to participate in non-profit hackaton"
         ></TextArea>
       </div>
     </FormLayout>

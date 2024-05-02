@@ -1,9 +1,12 @@
-import { createSignal, For, Suspense } from 'solid-js';
+import { createEffect, createSignal, For, onCleanup, Suspense } from 'solid-js';
 import { Collaboration } from '../../../gen';
 import { CDN_URL, fetchCollaborations } from '~/api';
 import { createQuery } from '@tanstack/solid-query';
 import useDebounce from '~/hooks/useDebounce';
 import { Link } from '~/components/Link';
+import { useMainButton } from '~/hooks/useMainButton';
+import { useNavigate } from '@solidjs/router';
+import { store } from '~/store';
 
 export default function Index() {
   const [search, setSearch] = createSignal('');
@@ -14,6 +17,25 @@ export default function Index() {
     queryKey: ['collaborations', search()],
     queryFn: () => fetchCollaborations(search()),
   }));
+
+  const navigate = useNavigate();
+
+  const mainButton = useMainButton();
+
+  const pushToCreate = () => {
+    navigate('/collaborations/edit');
+  };
+
+  createEffect(() => {
+    if (store.user.published_at !== null) {
+      mainButton.setParams({ text: 'Create Collaboration', isEnabled: true, isVisible: true });
+      mainButton.onClick(pushToCreate);
+    }
+  })
+
+  onCleanup(() => {
+    mainButton.offClick(pushToCreate);
+  });
 
   return (
     <div class="bg-secondary min-h-screen pb-52">

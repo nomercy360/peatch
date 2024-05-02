@@ -92,8 +92,8 @@ export function SelectBadge(props: {
                 onClick={() => onBadgeClick(badge.id!)}
                 class="flex h-10 flex-row items-center justify-center gap-[5px] rounded-2xl border px-2.5"
                 style={{
-                  'background-color': `${props.selected.includes(badge.id!) ? `#${badge.color}` : 'var(--tg-theme-section-bg-color)'}`,
-                  'border-color': `${props.selected.includes(badge.id!) ? `#${badge.color}` : 'var(--tg-theme-section-bg-color)'}`,
+                  'background-color': `${props.selected.includes(badge.id!) ? `#${badge.color}` : 'var(--tg-theme-secondary-bg-color)'}`,
+                  'border-color': `${props.selected.includes(badge.id!) ? `#${badge.color}` : 'var(--tg-theme-secondary-bg-color)'}`,
                 }}
               >
                 <span

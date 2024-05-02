@@ -85,7 +85,7 @@ export default function UserProfile() {
     if (isCurrentUserProfile) {
       if (published()) {
         mainButton.offClick(publish);
-        mainButton.onClick(navigateToEdit);
+        mainButton.offClick(navigateToEdit);
         mainButton.setParams({
           text: 'Just open the app',
           isVisible: true,
@@ -137,7 +137,11 @@ export default function UserProfile() {
       <Suspense fallback={<div>Loading...</div>}>
         <Switch>
           <Match when={published() && isCurrentUserProfile}>
-            <ActionDonePopup />
+            <ActionDonePopup
+              action="Profile published"
+              description="Now you can find people, create and join collaborations. Have fun!"
+              callToAction="There are 12 people you might be interested to collaborate with"
+            />
           </Match>
           <Match when={query.data}>
             <div class="h-fit min-h-screen bg-secondary">
