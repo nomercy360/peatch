@@ -12,6 +12,7 @@ RUN go mod download
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o /api ./cmd/api/main.go
 RUN CGO_ENABLED=0 GOOS=linux go build -o /bot ./cmd/bot/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o /job ./cmd/job/main.go
 
 FROM alpine:3.19 AS build-release-stage
 
@@ -21,6 +22,8 @@ WORKDIR /app
 
 COPY --from=build-stage /api /app/api
 COPY --from=build-stage /bot /app/bot
+COPY --from=build-stage /job /app/job
+
 COPY /scripts/migrations /app/migrations
 
 RUN curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.1/migrate.linux-amd64.tar.gz | tar xvz && \

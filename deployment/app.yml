@@ -19,20 +19,22 @@ spec:
       initContainers:
         - name: db-migrations
           image: maksim1111/peatch:latest
-          command: ["/app/migrate", "-path", "/app/migrations", "-database", "$(DATABASE_URL)", "up"]
+          command: [ "/app/migrate", "-path", "/app/migrations", "-database", "$(DATABASE_URL)", "up" ]
           envFrom:
-              - secretRef:
-                  name: peatch-secrets
+            - secretRef:
+                name: peatch-secrets
       containers:
         - image: maksim1111/peatch:latest
           name: peatch
           imagePullPolicy: Always
-          command: ["/app/api"]
+          command: [ "/app/api" ]
           ports:
             - containerPort: 8080
               name: http
               protocol: TCP
-          resources: {}
+          resources:
+            limits:
+              memory: "512Mi"
           envFrom:
             - secretRef:
                 name: peatch-secrets
@@ -60,15 +62,52 @@ spec:
         - image: maksim1111/peatch:latest
           name: peatch-bot
           imagePullPolicy: Always
-          command: ["/app/bot"]
+          command: [ "/app/bot" ]
           ports:
             - containerPort: 8080
               name: http
               protocol: TCP
-          resources: {}
           envFrom:
             - secretRef:
                 name: peatch-secrets
+          resources:
+            limits:
+              memory: "512Mi"
+      restartPolicy: Always
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    service: peatch-job
+  name: peatch-job
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      service: peatch-job
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        service: peatch-job
+    spec:
+      containers:
+        - image: maksim1111/peatch:latest
+          name: peatch-job
+          imagePullPolicy: Always
+          command: [ "/app/job" ]
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          envFrom:
+            - secretRef:
+                name: peatch-secrets
+          resources:
+            limits:
+              memory: "512Mi"
       restartPolicy: Always
 ---
 apiVersion: v1
@@ -126,9 +165,9 @@ spec:
             pathType: Prefix
             backend:
               service:
-                  name: peatch-bot
-                  port:
-                    number: 8080
+                name: peatch-bot
+                port:
+                  number: 8080
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -190,7 +229,7 @@ metadata:
 spec:
   storageClassName: "do-block-storage"
   accessModes:
-      - ReadWriteOnce
+    - ReadWriteOnce
   resources:
-      requests:
-        storage: 2Gi
+    requests:
+      storage: 2Gi
