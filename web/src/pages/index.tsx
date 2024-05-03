@@ -60,7 +60,7 @@ export default function Index() {
         class="flex flex-row items-center justify-between py-4"
         href={getUserLink()}
       >
-        <p class="text-3xl text-main">Bonsoir, {store.user?.username}!</p>
+        <p class="text-3xl text-main">Bonsoir, {store.user?.first_name || store.user?.username}!</p>
         <Switch>
           <Match when={store.user.avatar_url}>
             <img
@@ -117,12 +117,14 @@ export default function Index() {
         href="/collaborations"
       >
         <div class="flex w-full flex-row items-center justify-start">
-          <div class="z-20 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-main bg-orange">
+          <div
+            class="z-20 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-main bg-orange">
             <span class="material-symbols-rounded text-white">
               self_improvement
             </span>
           </div>
-          <div class="z-10 -ml-1 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-main bg-red">
+          <div
+            class="z-10 -ml-1 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-main bg-red">
             <span class="material-symbols-rounded text-white">wine_bar</span>
           </div>
           <div class="-ml-1 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-main bg-blue">

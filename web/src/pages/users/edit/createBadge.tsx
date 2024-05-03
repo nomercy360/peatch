@@ -40,12 +40,13 @@ export default function SelectBadges() {
   };
 
   mainButton
-    .setParams({ text: 'Next', isVisible: true, isEnabled: false })
     .onClick(onCreateBadgeButtonClick);
 
   createEffect(() => {
     if (createBadge.icon && createBadge.color && createBadge.text) {
-      mainButton.enable();
+      mainButton.enable('Next');
+    } else {
+      mainButton.disable('Next');
     }
   });
 

@@ -17,17 +17,9 @@ export default function GeneralInfo() {
 
   createEffect(() => {
     if (editUser.first_name && editUser.last_name && editUser.title) {
-      mainButton.setParams({
-        isEnabled: true,
-        isVisible: true,
-        text: 'Next',
-      });
+      mainButton.enable('Next');
     } else {
-      mainButton.setParams({
-        isEnabled: false,
-        isVisible: true,
-        text: 'Next',
-      });
+      mainButton.disable();
     }
   });
 
@@ -46,18 +38,21 @@ export default function GeneralInfo() {
         <input
           class="h-10 w-full rounded-lg bg-main px-2.5 text-main placeholder:text-hint"
           placeholder="First Name"
+          maxLength={50}
           value={editUser.first_name}
           onInput={e => setEditUser('first_name', e.currentTarget.value)}
         />
         <input
           class="h-10 w-full rounded-lg bg-main px-2.5 text-main placeholder:text-hint"
           placeholder="Last Name"
+          maxLength={50}
           value={editUser.last_name}
           onInput={e => setEditUser('last_name', e.currentTarget.value)}
         />
         <input
           class="h-10 w-full rounded-lg bg-main px-2.5 text-main placeholder:text-hint"
           placeholder="Title"
+          maxLength={70}
           value={editUser.title}
           onInput={e => setEditUser('title', e.currentTarget.value)}
         />

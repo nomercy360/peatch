@@ -1,11 +1,12 @@
 import { A } from '@solidjs/router';
 
-export default function FillProfilePopup({ onClose }: { onClose: () => void }) {
+export default function FillProfilePopup(props: { onClose: () => void }) {
   return (
-    <div class="fixed bottom-0 right-0 flex w-full flex-col items-center justify-center rounded-t-3xl bg-button px-4 py-3">
+    <div
+      class="z-30 fixed bottom-0 right-0 flex w-full flex-col items-center justify-center rounded-t-3xl bg-button px-4 py-3">
       <button
         class="flex w-full flex-row items-start justify-between gap-4 text-start"
-        onClick={onClose}
+        onClick={() => props.onClose()}
       >
         <span class="text-[24px] font-bold leading-tight text-button">
           Set up your profile to collaborate with others.

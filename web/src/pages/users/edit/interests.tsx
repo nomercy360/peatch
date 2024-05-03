@@ -22,12 +22,13 @@ export default function SelectOpportunities() {
   }));
 
   mainButton
-    .setParams({ text: 'Next', isVisible: true, isEnabled: false })
     .onClick(navigateNext);
 
   createEffect(() => {
     if (editUser.opportunity_ids.length) {
-      mainButton.enable();
+      mainButton.enable('Next');
+    } else {
+      mainButton.disable('Next');
     }
   });
 

@@ -79,15 +79,21 @@ export function SelectOpportunity(props: {
                   'border-color': `${includes(op.id!) ? `#${op.color}` : 'var(--tg-theme-secondary-bg-color)'}`,
                 }}
               >
-                <div class="flex size-10 items-center justify-center rounded-full bg-main">
-                  <span class="material-symbols-rounded text-main">
+                <div class="flex size-10 items-center justify-center rounded-full bg-main shrink-0">
+                  <span class="material-symbols-rounded text-main shrink-0">
                     {String.fromCodePoint(parseInt(op.icon!, 16))}
                   </span>
                 </div>
 
-                <div class="text-start text-main">
-                  <p class="text-sm font-semibold">{op.text}</p>
-                  <p class="text-xs">{op.description}</p>
+                <div class="text-start">
+                  <p class="text-sm font-semibold"
+                     classList={{ 'text-white': includes(op.id!), 'text-main': !includes(op.id!) }}>
+                    {op.text}
+                  </p>
+                  <p class="text-xs leading-tight"
+                     classList={{ 'text-white/60': includes(op.id!), 'text-hint': !includes(op.id!) }}>
+                    {op.description}
+                  </p>
                 </div>
               </button>
             )}

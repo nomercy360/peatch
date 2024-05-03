@@ -61,7 +61,7 @@ interface WebApp {
 
   showAlert(message: string, callback?: () => void): void;
 
-  showConfirm(message: string, callback: () => void): void;
+  showConfirm(message: string, callback: (ok: boolean) => void): void;
 
   expand(): void;
 

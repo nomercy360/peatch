@@ -77,25 +77,20 @@ export default function Collaborate() {
     if (created() || existedRequest()) {
       mainButton.offClick(postCollaboration);
       mainButton.onClick(backToProfile);
-      mainButton.setParams({
-        text: 'Back to ' + query.data.first_name + "'s profile",
-        isEnabled: true,
-        isVisible: true,
-      });
+      mainButton.enable(`Back to ${query.data.first_name}'s profile`);
     } else if (!existedRequest.loading && !existedRequest()) {
-      mainButton.setParams({
-        text: 'Send message',
-        isEnabled: collaborationRequest.message !== '',
-        isVisible: true,
-      });
+      mainButton.disable('Send message');
       mainButton.onClick(postCollaboration);
+    } else if (collaborationRequest.message) {
+      mainButton.enable('Send message');
     }
+
+    onCleanup(() => {
+      mainButton.offClick(postCollaboration);
+      mainButton.offClick(backToProfile);
+    });
   });
 
-  onCleanup(() => {
-    mainButton.offClick(postCollaboration);
-    mainButton.offClick(backToProfile);
-  });
 
   return (
     <Switch>

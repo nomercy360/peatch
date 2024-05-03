@@ -2,7 +2,7 @@ import { FormLayout } from '~/components/edit/layout';
 import { useMainButton } from '~/hooks/useMainButton';
 import { useNavigate } from '@solidjs/router';
 import { createEffect, createSignal, Match, onCleanup, Switch } from 'solid-js';
-import { editUser, setEditUser, setUser, store } from '~/store';
+import { editUser, setEditUser, store } from '~/store';
 import {
   API_BASE_URL,
   CDN_URL,
@@ -10,6 +10,7 @@ import {
   updateUser,
   uploadToS3,
 } from '~/api';
+import { usePopup } from '~/hooks/usePopup';
 
 export default function SelectBadges() {
   const mainButton = useMainButton();
@@ -17,6 +18,7 @@ export default function SelectBadges() {
   const [_, setImgUploadProgress] = createSignal(0);
 
   const navigate = useNavigate();
+  const { showAlert } = usePopup();
 
   const imgFromCDN = store.user.avatar_url
     ? CDN_URL + '/' + store.user.avatar_url
@@ -27,6 +29,13 @@ export default function SelectBadges() {
   const handleFileChange = (event: any) => {
     const file = event.target.files[0];
     if (file) {
+      const maxSize = 1024 * 1024 * 5; // 7MB
+
+      if (file.size > maxSize) {
+        showAlert('Try to select a smaller file');
+        return;
+      }
+
       setImgFile(file);
       setPreviewUrl('');
 
@@ -81,15 +90,13 @@ export default function SelectBadges() {
     navigate('/users/' + store.user.id + '?refetch=true');
   };
 
-  mainButton
-    .setParams({ text: 'Save', isVisible: true, isEnabled: false })
-    .onClick(saveUser);
+  mainButton.onClick(saveUser);
 
   createEffect(() => {
     if (editUser.avatar_url || imgFile()) {
-      mainButton.enable();
+      mainButton.enable('Save');
     } else {
-      mainButton.disable();
+      mainButton.disable('Save');
     }
   });
 
@@ -124,9 +131,9 @@ export default function SelectBadges() {
 }
 
 function ImageBox({
-  imgURL,
-  onFileChange,
-}: {
+                    imgURL,
+                    onFileChange,
+                  }: {
   imgURL: string;
   onFileChange: any;
 }) {

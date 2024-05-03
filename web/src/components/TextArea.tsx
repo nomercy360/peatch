@@ -1,4 +1,4 @@
-import { createSignal, Match, Switch } from 'solid-js';
+import { createEffect, createSignal, Match, Switch } from 'solid-js';
 
 export default function TextArea(props: {
   value: string;
@@ -6,37 +6,33 @@ export default function TextArea(props: {
   placeholder: string;
 }) {
   const [count, setCount] = createSignal(0);
+  const maxLength = 500;
 
-  const resizer = (e: any) => {
-    // e.target.style.height = 'auto';
-    // e.target.style.height = e.target.scrollHeight + 'px';
-
-    props.setValue(e.target.value);
-
-    const count = e.target.value.length;
-    setCount(count);
-  };
+  createEffect(() => {
+    setCount(props.value.length);
+  });
 
   return (
-    <div class="relative mt-5 h-80 w-full rounded-lg bg-main">
+    <div class="relative mt-5 h-80 w-full rounded-lg bg-main pb-6">
       <textarea
         class="size-full resize-none bg-transparent p-2.5 text-main placeholder:text-hint"
         placeholder={props.placeholder}
         value={props.value}
-        onInput={e => resizer(e)}
+        onInput={(e) => props.setValue((e.target as HTMLTextAreaElement).value)}
         autocomplete="off"
         autocapitalize="off"
         spellcheck={false}
-      ></textarea>
+        maxLength={maxLength}
+      />
       <Switch>
         <Match when={count() > 0}>
           <div class="absolute bottom-2 left-2 text-sm text-hint">
-            {count()} / 500
+            {count()} / {maxLength}
           </div>
         </Match>
         <Match when={count() === 0}>
           <div class="absolute bottom-2 left-2 text-sm text-hint">
-            max 500 characters
+            max {maxLength} characters
           </div>
         </Match>
       </Switch>

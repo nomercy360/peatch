@@ -104,7 +104,12 @@ export function SelectBadge(props: {
                 >
                   {String.fromCodePoint(parseInt(badge.icon!, 16))}
                 </span>
-                <p class="text-sm font-semibold text-main">{badge.text}</p>
+                <p class="text-sm font-semibold"
+                   classList={{
+                     'text-white': props.selected.includes(badge.id!),
+                     'text-main': !props.selected.includes(badge.id!),
+                   }}
+                >{badge.text}</p>
               </button>
             )}
           </For>

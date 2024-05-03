@@ -30,12 +30,13 @@ export default function SelectBadges() {
   }));
 
   mainButton
-    .setParams({ text: 'Next', isVisible: true, isEnabled: false })
     .onClick(navigateNext);
 
   createEffect(() => {
     if (editUser.badge_ids.length) {
-      mainButton.enable();
+      mainButton.enable('Next');
+    } else {
+      mainButton.disable('Next');
     }
   });
 

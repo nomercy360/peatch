@@ -4,10 +4,19 @@ export function usePopup() {
 
     return {
       showAlert,
-    }
-  }
+    };
+  };
+
+  const showConfirm = (text: string, callback: (ok: boolean) => any) => {
+    window.Telegram.WebApp.showConfirm(text, callback);
+
+    return {
+      showConfirm,
+    };
+  };
 
   return {
     showAlert,
-  }
+    showConfirm,
+  };
 }

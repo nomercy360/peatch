@@ -37,6 +37,7 @@ export default function GeneralInfo() {
     >
       <div class="mt-5 flex w-full flex-col items-center justify-start gap-3">
         <input
+          maxLength={70}
           class="h-10 w-full rounded-lg bg-main px-2.5 text-main placeholder:text-hint"
           placeholder="Name it!"
           value={editCollaboration.title}

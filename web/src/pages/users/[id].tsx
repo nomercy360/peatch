@@ -6,6 +6,7 @@ import { setFollowing, setUser, store } from '~/store';
 import ActionDonePopup from '../../components/ActionDonePopup';
 import { useMainButton } from '~/hooks/useMainButton';
 import { useNavigation } from '~/hooks/useNavigation';
+import { usePopup } from '~/hooks/usePopup';
 
 export default function UserProfile() {
   const mainButton = useMainButton();
@@ -17,6 +18,8 @@ export default function UserProfile() {
 
   const params = useParams();
   const [searchParams, _] = useSearchParams();
+
+  const { showConfirm } = usePopup();
 
   const userId = params.id;
 
@@ -39,6 +42,11 @@ export default function UserProfile() {
   const navigateToCollaborate = async () => {
     if (store.user.published_at && !store.user.hidden_at) {
       navigate(`/users/${userId}/collaborate`);
+    } else {
+      showConfirm(
+        'You must publish your profile first',
+        (ok: boolean) => ok && navigate('/users/edit'),
+      );
     }
   };
 
@@ -86,36 +94,20 @@ export default function UserProfile() {
       if (published()) {
         mainButton.offClick(publish);
         mainButton.offClick(navigateToEdit);
-        mainButton.setParams({
-          text: 'Just open the app',
-          isVisible: true,
-          isEnabled: true,
-        });
+        mainButton.enable('Get back');
         mainButton.onClick(navigateBack);
         return;
       } else if (!store.user.published_at) {
-        mainButton.setParams({
-          text: 'Publish',
-          isVisible: true,
-          isEnabled: true,
-        });
+        mainButton.enable('Publish');
         mainButton.offClick(navigateToEdit);
         mainButton.onClick(publish);
       } else {
-        mainButton.setParams({
-          text: 'Edit',
-          isVisible: true,
-          isEnabled: true,
-        });
+        mainButton.enable('Edit');
         mainButton.offClick(publish);
         mainButton.onClick(navigateToEdit);
       }
     } else {
-      mainButton.setParams({
-        text: 'Collaborate',
-        isVisible: true,
-        isEnabled: true,
-      });
+      mainButton.enable('Collaborate');
       mainButton.offClick(navigateToEdit);
       mainButton.onClick(navigateToCollaborate);
     }
@@ -229,14 +221,14 @@ export default function UserProfile() {
                           'background-color': `#${op.color}`,
                         }}
                       >
-                        <div class="flex size-10 items-center justify-center rounded-full bg-secondary">
-                          <span class="material-symbols-rounded text-main">
+                        <div class="flex size-10 items-center shrink-0 justify-center rounded-full bg-secondary">
+                          <span class="material-symbols-rounded text-main shrink-0">
                             {String.fromCodePoint(parseInt(op.icon!, 16))}
                           </span>
                         </div>
                         <div class="text-start text-white">
                           <p class="text-sm font-semibold">{op.text}</p>
-                          <p class="text-xs text-white/60">{op.description}</p>
+                          <p class="text-xs text-white/60 leading-tight">{op.description}</p>
                         </div>
                       </div>
                     )}

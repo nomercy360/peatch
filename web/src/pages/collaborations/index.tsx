@@ -28,11 +28,7 @@ export default function Index() {
 
   createEffect(() => {
     if (store.user.published_at !== null) {
-      mainButton.setParams({
-        text: 'Create Collaboration',
-        isEnabled: true,
-        isVisible: true,
-      });
+      mainButton.enable('Post a collaboration');
       mainButton.onClick(pushToCreate);
     }
   });

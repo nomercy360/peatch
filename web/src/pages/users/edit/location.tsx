@@ -15,12 +15,13 @@ export default function SelectBadges() {
   };
 
   mainButton
-    .setParams({ text: 'Next', isVisible: true, isEnabled: false })
     .onClick(navigateToDescription);
 
   createEffect(() => {
     if (editUser.country && editUser.country_code) {
-      mainButton.enable();
+      mainButton.enable('Next');
+    } else {
+      mainButton.disable('Next');
     }
   });
 

@@ -6,6 +6,7 @@ import { setUser, store } from '~/store';
 import ActionDonePopup from '~/components/ActionDonePopup';
 import { useMainButton } from '~/hooks/useMainButton';
 import { useNavigation } from '~/hooks/useNavigation';
+import { usePopup } from '~/hooks/usePopup';
 
 export default function Collaboration() {
   const mainButton = useMainButton();
@@ -13,6 +14,8 @@ export default function Collaboration() {
   const [published, setPublished] = createSignal(false);
 
   const navigate = useNavigate();
+
+  const { showConfirm } = usePopup();
 
   const { navigateBack } = useNavigation();
 
@@ -48,19 +51,22 @@ export default function Collaboration() {
 
   const hide = async () => {
     await hideCollaboration(Number(collabId));
-    query.refetch();
+    await query.refetch();
   };
 
   const show = async () => {
     await showCollaboration(Number(collabId));
-    query.refetch();
+    await query.refetch();
   };
 
   const navigateToCollaborate = async () => {
     if (store.user.published_at && !store.user.hidden_at) {
       navigate(`/collaborations/${collabId}/collaborate`);
     } else {
-      window.Telegram.WebApp.showAlert('Fill and publish your profile first');
+      showConfirm(
+        'You must publish your profile first',
+        (ok: boolean) => ok && navigate('/users/edit'),
+      );
     }
   };
 
@@ -75,36 +81,20 @@ export default function Collaboration() {
       if (published()) {
         mainButton.offClick(publish);
         mainButton.offClick(navigateToEdit);
-        mainButton.setParams({
-          text: 'Just open the app',
-          isVisible: true,
-          isEnabled: true,
-        });
+        mainButton.enable('Get back');
         mainButton.onClick(navigateBack);
         return;
       } else if (!query.data.published_at) {
-        mainButton.setParams({
-          text: 'Publish',
-          isVisible: true,
-          isEnabled: true,
-        });
+        mainButton.enable('Publish');
         mainButton.offClick(navigateToEdit);
         mainButton.onClick(publish);
       } else {
-        mainButton.setParams({
-          text: 'Edit s',
-          isVisible: true,
-          isEnabled: true,
-        });
+        mainButton.enable('Edit');
         mainButton.offClick(publish);
         mainButton.onClick(navigateToEdit);
       }
     } else {
-      mainButton.setParams({
-        text: 'Collaborate',
-        isVisible: true,
-        isEnabled: true,
-      });
+      mainButton.enable('Collaborate');
       mainButton.offClick(navigateToEdit);
       mainButton.onClick(navigateToCollaborate);
     }
@@ -220,7 +210,7 @@ const ActionButton = (props: { text: string; onClick: () => void }) => {
   return (
     <button
       class="absolute right-4 top-4 z-10 h-8 w-20 rounded-lg bg-button px-2.5 text-button"
-      onClick={props.onClick}
+      onClick={() => props.onClick()}
     >
       {props.text}
     </button>

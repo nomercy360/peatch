@@ -1,6 +1,6 @@
 import { useMainButton } from '~/hooks/useMainButton';
 import { useNavigate } from '@solidjs/router';
-import { createEffect, onCleanup } from 'solid-js';
+import { createEffect, createSignal, onCleanup } from 'solid-js';
 import { editUser, setEditUser } from '~/store';
 import TextArea from '~/components/TextArea';
 import { FormLayout } from '~/components/edit/layout';
@@ -14,13 +14,13 @@ export default function Description() {
     navigate('/users/edit/image', { state: { back: true } });
   };
 
-  mainButton
-    .setParams({ text: 'Next', isVisible: true, isEnabled: false })
-    .onClick(navigateToImageUpload);
+  mainButton.onClick(navigateToImageUpload);
 
   createEffect(() => {
     if (editUser.description) {
-      mainButton.enable();
+      mainButton.enable('Next');
+    } else {
+      mainButton.disable('Next');
     }
   });
 

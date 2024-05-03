@@ -1,14 +1,5 @@
 export function useMainButton() {
   return {
-    setText: (text: string) => {
-      window.Telegram.WebApp.MainButton.setText(text);
-    },
-    setColor: (color: string) => {
-      window.Telegram.WebApp.MainButton.setParams({ color });
-    },
-    setTextColor: (textColor: string) => {
-      window.Telegram.WebApp.MainButton.setParams({ text_color: textColor });
-    },
     setVisible: (text: string) => {
       window.Telegram.WebApp.MainButton.setParams({
         is_visible: true,
@@ -31,11 +22,10 @@ export function useMainButton() {
       });
     },
     disable: (text?: string) => {
-      console.log('disable');
       return window.Telegram.WebApp.MainButton.setParams({
         is_active: false,
-        color: '#3C3C3E',
-        text_color: '#606060',
+        color: window.Telegram.WebApp.colorScheme === 'dark' ? '#3C3C3E' : '#F7F7F7',
+        text_color: window.Telegram.WebApp.colorScheme === 'dark' ? '#FFFFFF' : '#3C3C3E',
         is_visible: true,
         text,
       });

@@ -17,7 +17,8 @@ export default function App(props: any) {
   createEffect(async () => {
     const initData = window.Telegram.WebApp.initData;
 
-    // test sleep
+    console.log('WEBAPP:', window.Telegram);
+
     try {
       const resp = await fetch(`${API_BASE_URL}/auth/telegram?` + initData, {
         method: 'POST',
