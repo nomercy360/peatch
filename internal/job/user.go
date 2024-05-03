@@ -17,7 +17,7 @@ import (
 type storage interface {
 	GetUserByID(id int64, showHidden bool) (*db.User, error)
 	CreateNotification(notification db.Notification) (*db.Notification, error)
-	SearchNotification(userID int64, notificationType db.NotificationType, entityType string, entityID int64) (*db.Notification, error)
+	SearchNotification(params db.NotificationQuery) (*db.Notification, error)
 	ListUserCollaborations(from time.Time) ([]db.UserCollaborationRequest, error)
 	UpdateNotificationSentAt(notificationID int64) error
 	ListCollaborations(params db.CollaborationQuery) ([]db.Collaboration, error)
@@ -32,18 +32,20 @@ type notifyJob struct {
 	notifier      notifier
 	imgServiceURL string
 	webAppURL     string
+	groupChatID   int64
 }
 
 type notifier interface {
 	SendNotification(chatID int64, message string, link string, img []byte) error
 }
 
-func NewNotifyJob(storage storage, notifier notifier, imgServiceURL, webAppURL string) *notifyJob {
+func NewNotifyJob(storage storage, notifier notifier, imgServiceURL, webAppURL string, groupChatID int64) *notifyJob {
 	return &notifyJob{
 		storage:       storage,
 		notifier:      notifier,
 		imgServiceURL: imgServiceURL,
 		webAppURL:     webAppURL,
+		groupChatID:   groupChatID,
 	}
 }
 
@@ -58,74 +60,61 @@ func (j *notifyJob) NotifyNewUserProfile() error {
 	}
 
 	for _, user := range newUsers {
-		userDetails, err := j.storage.GetUserByID(user.ID, false)
-
-		if err != nil {
-			return err
+		q := db.NotificationQuery{
+			ChatID:           &j.groupChatID,
+			NotificationType: db.NotificationTypeUserPublished,
+			EntityType:       "users",
+			EntityID:         user.ID,
 		}
 
-		opportunityIDs := make([]int64, len(userDetails.Opportunities))
+		_, err := j.storage.SearchNotification(q)
 
-		for i, opportunity := range userDetails.Opportunities {
-			opportunityIDs[i] = opportunity.ID
-		}
+		if err != nil && errors.Is(err, db.ErrNotFound) {
+			userDetails, err := j.storage.GetUserByID(user.ID, false)
 
-		receivers, err := j.storage.FindMatchingUsers(opportunityIDs, []int64{})
-
-		if err != nil {
-			return err
-		}
-
-		if len(receivers) == 0 {
-			log.Printf("No users that match user %d opportunities", user.ID)
-			continue
-		}
-
-		img, err := fetchPreviewImage(j.imgServiceURL, userDetails)
-
-		if err != nil {
-			return err
-		}
-
-		for _, receiver := range receivers {
-			_, err := j.storage.SearchNotification(
-				receiver.ID,
-				db.NotificationTypeUserPublished,
-				"users",
-				user.ID,
-			)
-
-			if err != nil && errors.Is(err, db.ErrNotFound) {
-
-				notification := &db.Notification{
-					UserID:           receiver.ID,
-					NotificationType: db.NotificationTypeUserPublished,
-					EntityType:       "users",
-					EntityID:         user.ID,
-					ChatID:           receiver.ChatID,
-				}
-
-				text := fmt.Sprintf("Someone has just published a new profile")
-
-				created, err := j.storage.CreateNotification(*notification)
-
-				if err != nil {
-					return err
-				}
-
-				linkToProfile := fmt.Sprintf("%s/users/%d", j.webAppURL, user.ID)
-
-				if err = j.notifier.SendNotification(created.ChatID, text, linkToProfile, img); err != nil {
-					log.Printf("Failed to send notification to user %d", user.ID)
-					return err
-				}
-
-				if err = j.storage.UpdateNotificationSentAt(created.ID); err != nil {
-					return err
-				}
-			} else if err != nil {
+			if err != nil {
 				return err
 			}
+
+			opportunityIDs := make([]int64, len(userDetails.Opportunities))
+
+			for i, opportunity := range userDetails.Opportunities {
+				opportunityIDs[i] = opportunity.ID
+			}
+
+			img, err := fetchPreviewImage(j.imgServiceURL, userDetails)
+
+			if err != nil {
+				return err
+			}
+
+			notification := &db.Notification{
+				NotificationType: db.NotificationTypeUserPublished,
+				EntityType:       "users",
+				EntityID:         user.ID,
+				ChatID:           j.groupChatID,
+			}
+
+			text := fmt.Sprintf("Someone has just published a new profile")
+
+			created, err := j.storage.CreateNotification(*notification)
+
+			if err != nil {
+				return err
+			}
+
+			linkToProfile := fmt.Sprintf("%s/users/%d", j.webAppURL, user.ID)
+
+			if err = j.notifier.SendNotification(created.ChatID, text, linkToProfile, img); err != nil {
+				log.Printf("Failed to send notification to user %d", user.ID)
+				return err
+			}
+
+			if err = j.storage.UpdateNotificationSentAt(created.ID); err != nil {
+				return err
+			}
+		} else if err != nil {
+			return err
 		}
 	}
 
@@ -149,74 +138,61 @@ func (j *notifyJob) NotifyNewCollaboration() error {
 	}
 
 	for _, collaboration := range newCollaborations {
-		receivers, err := j.storage.FindMatchingUsers([]int64{collaboration.OpportunityID}, []int64{})
-
-		if err != nil {
-			return err
+		q := db.NotificationQuery{
+			ChatID:           &j.groupChatID,
+			NotificationType: db.NotificationTypeCollaborationPublished,
+			EntityType:       "collaborations",
+			EntityID:         collaboration.ID,
 		}
 
-		if len(receivers) == 0 {
-			log.Printf("No users found for collaboration %d", collaboration.ID)
-			continue
-		}
+		_, err := j.storage.SearchNotification(q)
 
-		creator, err := j.storage.GetUserByID(collaboration.UserID, false)
+		if err != nil && errors.Is(err, db.ErrNotFound) {
+			creator, err := j.storage.GetUserByID(collaboration.UserID, false)
 
-		if err != nil {
-			return err
-		}
-
-		img, err := fetchPreviewImage(j.imgServiceURL, creator)
-
-		if err != nil {
-			return err
-		}
-
-		for _, receiver := range receivers {
-			_, err := j.storage.SearchNotification(
-				receiver.ID,
-				db.NotificationTypeCollaborationPublished,
-				"collaborations",
-				collaboration.ID,
-			)
-
-			if err != nil && errors.Is(err, db.ErrNotFound) {
-
-				notification := &db.Notification{
-					UserID:           receiver.ID,
-					NotificationType: db.NotificationTypeCollaborationPublished,
-					EntityType:       "collaborations",
-					EntityID:         collaboration.ID,
-					ChatID:           receiver.ChatID,
-				}
-
-				text := fmt.Sprintf(
-					"*%s has just posted a new opportunity* %s\n%s\n%s",
-					bot.EscapeMarkdown(*creator.FirstName),
-					bot.EscapeMarkdown(collaboration.Title),
-					bot.EscapeMarkdown(collaboration.Description),
-					bot.EscapeMarkdown(collaboration.GetLocation()),
-				)
-
-				created, err := j.storage.CreateNotification(*notification)
-
-				if err != nil {
-					return err
-				}
-
-				linkToCollaboration := fmt.Sprintf("%s/collaborations/%d", j.webAppURL, collaboration.ID)
-
-				if err = j.notifier.SendNotification(created.ChatID, text, linkToCollaboration, img); err != nil {
-					log.Printf("Failed to send notification to user %d", collaboration.UserID)
-					return err
-				}
-
-				if err = j.storage.UpdateNotificationSentAt(created.ID); err != nil {
-					return err
-				}
-			} else if err != nil {
+			if err != nil {
 				return err
 			}
+
+			img, err := fetchPreviewImage(j.imgServiceURL, creator)
+
+			if err != nil {
+				return err
+			}
+
+			text := fmt.Sprintf(
+				"*%s has just posted a new opportunity* %s\n%s\n%s",
+				bot.EscapeMarkdown(*creator.FirstName),
+				bot.EscapeMarkdown(collaboration.Title),
+				bot.EscapeMarkdown(collaboration.Description),
+				bot.EscapeMarkdown(collaboration.GetLocation()),
+			)
+
+			notification := &db.Notification{
+				NotificationType: db.NotificationTypeCollaborationPublished,
+				EntityType:       "collaborations",
+				EntityID:         collaboration.ID,
+				ChatID:           j.groupChatID,
+			}
+
+			created, err := j.storage.CreateNotification(*notification)
+
+			if err != nil {
+				return err
+			}
+
+			linkToCollaboration := fmt.Sprintf("%s/collaborations/%d", j.webAppURL, collaboration.ID)
+
+			if err = j.notifier.SendNotification(created.ChatID, text, linkToCollaboration, img); err != nil {
+				log.Printf("Failed to send notification to user %d", collaboration.UserID)
+				return err
+			}
+
+			if err = j.storage.UpdateNotificationSentAt(created.ID); err != nil {
+				return err
+			}
+		} else if err != nil {
+			return err
 		}
 	}
 
@@ -234,12 +210,14 @@ func (j *notifyJob) NotifyUserReceivedCollaborationRequest() error {
 
 	for _, collaboration := range newCollaborations {
 		// check if  user already received exact same notification
-		_, err := j.storage.SearchNotification(
-			collaboration.UserID,
-			db.NotificationTypeUserCollaboration,
-			"user_collaboration_requests",
-			collaboration.ID,
-		)
+		q := db.NotificationQuery{
+			UserID:           &collaboration.UserID,
+			NotificationType: db.NotificationTypeUserCollaboration,
+			EntityType:       "user_collaboration_requests",
+			EntityID:         collaboration.ID,
+		}
+
+		_, err := j.storage.SearchNotification(q)
 
 		if err != nil && errors.Is(err, db.ErrNotFound) {
 			requester, err := j.storage.GetUserByID(collaboration.RequesterID, false)
@@ -317,12 +295,14 @@ func (j *notifyJob) NotifyCollaborationRequest() error {
 		}
 
 		// check if  user already received exact same notification
-		if _, err := j.storage.SearchNotification(
-			creator.ID,
-			db.NotificationTypeCollaborationRequest,
-			"collaboration_requests",
-			request.ID,
-		); err != nil && errors.Is(err, db.ErrNotFound) {
+		q := db.NotificationQuery{
+			UserID:           &creator.ID,
+			NotificationType: db.NotificationTypeCollaborationRequest,
+			EntityType:       "collaboration_requests",
+			EntityID:         request.ID,
+		}
+
+		if _, err := j.storage.SearchNotification(q); err != nil && errors.Is(err, db.ErrNotFound) {
 			// get the one who created the request
 			requester, err := j.storage.GetUserByID(request.UserID, false)
 

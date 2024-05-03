@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -57,15 +58,37 @@ func (s *storage) CreateNotification(notification Notification) (*Notification, 
 	return &request, nil
 }
 
-func (s *storage) SearchNotification(userID int64, notificationType NotificationType, entityType string, entityID int64) (*Notification, error) {
+type NotificationQuery struct {
+	UserID           *int64
+	NotificationType NotificationType
+	EntityType       string
+	EntityID         int64
+	ChatID           *int64
+}
+
+func (s *storage) SearchNotification(params NotificationQuery) (*Notification, error) {
 	query := `
 		SELECT id, user_id, message_id, chat_id, sent_at, created_at, notification_type, entity_type, entity_id
 		FROM notifications
-		WHERE user_id = $1 AND notification_type = $2 AND entity_type = $3 AND entity_id = $4
-		LIMIT 1
+		WHERE 1=1
 	`
 
-	row := s.pg.QueryRow(query, userID, notificationType, entityType, entityID)
+	var queryArgs []interface{}
+
+	if params.UserID != nil {
+		query += " AND user_id = $1"
+		queryArgs = append(queryArgs, *params.UserID)
+	} else if params.ChatID != nil {
+		query += " AND chat_id = $1"
+		queryArgs = append(queryArgs, *params.ChatID)
+	} else {
+		return nil, errors.New("either user_id or chat_id must be provided")
+	}
+
+	query += fmt.Sprintf(" AND notification_type = $2 AND entity_type = $3 AND entity_id = $4 ORDER BY created_at DESC LIMIT 1")
+	queryArgs = append(queryArgs, params.NotificationType, params.EntityType, params.EntityID)
+
+	row := s.pg.QueryRow(query, queryArgs...)
 
 	var notification Notification
 

@@ -172,7 +172,7 @@ CREATE table collaboration_badges
 CREATE table notifications
 (
     id                SERIAL PRIMARY KEY,
-    user_id           INTEGER REFERENCES users (id),
+    user_id BIGINT,
     message_id        VARCHAR(255),
     chat_id           BIGINT,
     sent_at           timestamptz,

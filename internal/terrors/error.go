@@ -37,3 +37,11 @@ func InternalServerError(err error) *Error {
 		Message: "internal server error",
 	}
 }
+
+func Unauthorized(err error, message string) *Error {
+	return &Error{
+		Code:    http.StatusUnauthorized,
+		E:       err,
+		Message: message,
+	}
+}

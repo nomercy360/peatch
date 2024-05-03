@@ -17,12 +17,9 @@ import (
 // @Success 200 {object} UserWithToken
 // @Router /api/auth/telegram [get]
 func (h *handler) handleTelegramAuth(c echo.Context) error {
-	queryID := c.QueryParam("query_id")
-	userJSON := c.QueryParam("user")
-	authDate := c.QueryParam("auth_date")
-	receivedHash := c.QueryParam("hash")
+	query := c.QueryString()
 
-	user, err := h.svc.TelegramAuth(queryID, userJSON, authDate, receivedHash)
+	user, err := h.svc.TelegramAuth(query)
 
 	if err != nil {
 		return err

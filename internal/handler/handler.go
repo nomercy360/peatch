@@ -17,7 +17,7 @@ type handler struct {
 
 type service interface {
 	ListUserProfiles(userQuery db.UserQuery) ([]db.UserProfile, error)
-	TelegramAuth(queryID, userJSON, authDate, hash string) (*svc.UserWithToken, error)
+	TelegramAuth(query string) (*svc.UserWithToken, error)
 	GetUserByChatID(chatID int64) (*db.User, error)
 	CreateUser(user db.User) (*db.User, error)
 	GetUserByID(userID, id int64) (*db.User, error)

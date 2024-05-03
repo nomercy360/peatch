@@ -22,8 +22,8 @@ func (t *TelegramNotifier) SendNotification(chatID int64, message, link string, 
 	log.Printf("Sending notification to chatID: %d", chatID)
 
 	photoParams := &telegram.SendPhotoParams{
-		//ChatID:              chatID,
-		ChatID:              927635965,
+		//ChatID:              927635965,
+		ChatID:              chatID,
 		Caption:             message,
 		ParseMode:           models.ParseModeMarkdown,
 		Photo:               &models.InputFileUpload{Filename: "img.jpg", Data: bytes.NewReader(img)},
@@ -31,7 +31,7 @@ func (t *TelegramNotifier) SendNotification(chatID int64, message, link string, 
 		ReplyMarkup: &models.InlineKeyboardMarkup{
 			InlineKeyboard: [][]models.InlineKeyboardButton{
 				{
-					{Text: "View", WebApp: &models.WebAppInfo{URL: link}},
+					{Text: "View", URL: "t.me/peatcher_testing_bot/peatch"},
 				},
 			},
 		},

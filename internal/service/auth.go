@@ -1,15 +1,11 @@
 package service
 
 import (
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/hex"
-	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/peatch-io/peatch/internal/db"
 	"github.com/peatch-io/peatch/internal/terrors"
+	"github.com/telegram-mini-apps/init-data-golang"
 	"time"
 )
 
@@ -29,54 +25,45 @@ type TelegramUser struct {
 	AllowsPM  bool    `json:"allows_write_to_pm"`
 }
 
-func (tu *TelegramUser) ToDBUser() db.User {
-	return db.User{
-		FirstName:    tu.FirstName,
-		LastName:     tu.LastName,
-		Username:     tu.Username,
-		LanguageCode: tu.Language,
-		ChatID:       tu.ID,
-	}
-}
-
-func (s *service) TelegramAuth(queryID, userJSON, authDate, hash string) (*UserWithToken, error) {
-	if queryID == "" || userJSON == "" || authDate == "" || hash == "" {
-		return nil, terrors.BadRequest(errors.New(fmt.Sprintf("missing required query parameters: query_id=%s, user=%s, auth_date=%s, hash=%s", queryID, userJSON, authDate, hash)))
-	}
-
+func (s *service) TelegramAuth(query string) (*UserWithToken, error) {
+	expIn := 24 * time.Hour
 	botToken := s.config.BotToken
 
-	dataCheck := fmt.Sprintf("auth_date=%s\nquery_id=%s\nuser=%s", authDate, queryID, userJSON)
-
-	h1 := hmac.New(sha256.New, []byte("WebAppData"))
-	h1.Write([]byte(botToken))
-	h2 := hmac.New(sha256.New, h1.Sum(nil))
-	h2.Write([]byte(dataCheck))
-
-	computedHash := hex.EncodeToString(h2.Sum(nil))
-
-	if computedHash != hash {
-		return nil, errors.New("invalid hash: authentication data may have been tampered with")
+	if err := initdata.Validate(query, botToken, expIn); err != nil {
+		return nil, terrors.Unauthorized(err, "invalid data")
 	}
-	//
-	//authTimestamp, err := strconv.ParseInt(authDate, 10, 64)
-	//if err != nil {
-	//	return nil, err
-	//}
 
-	//if time.Since(time.Unix(authTimestamp, 0)) > 24*time.Hour {
-	//	return nil, errors.New("authentication data is outdated")
-	//}
+	data, err := initdata.Parse(query)
 
-	var tgUser TelegramUser
-	err := json.Unmarshal([]byte(userJSON), &tgUser)
 	if err != nil {
-		return nil, err
+		return nil, terrors.Unauthorized(err, "invalid data")
 	}
 
-	user, err := s.storage.GetUserByChatID(tgUser.ID)
+	user, err := s.storage.GetUserByChatID(data.User.ID)
 	if err != nil && errors.Is(err, db.ErrNotFound) {
-		user, err = s.storage.CreateUser(tgUser.ToDBUser())
+		var firstName, lastName, langCode *string
+
+		if data.User.FirstName != "" {
+			firstName = &data.User.FirstName
+		}
+
+		if data.User.LastName != "" {
+			lastName = &data.User.LastName
+		}
+
+		if data.User.LanguageCode != "" {
+			langCode = &data.User.LanguageCode
+		}
+
+		create := db.User{
+			FirstName:    firstName,
+			LastName:     lastName,
+			Username:     data.User.Username,
+			LanguageCode: langCode,
+			ChatID:       data.User.ID,
+		}
+
+		user, err = s.storage.CreateUser(create)
 		if err != nil {
 			return nil, err
 		}
