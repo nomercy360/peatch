@@ -41,10 +41,10 @@ func main() {
 	notifyJob := job.NewNotifyJob(pg, notifier, cfg.ImgServiceURL, cfg.WebAppURL)
 
 	jobs := []*job.Job{
-		job.NewJob("NotifyUserReceivedCollaborationRequest", 15*time.Second, notifyJob.NotifyUserReceivedCollaborationRequest),
-		job.NewJob("NotifyNewCollaboration", 15*time.Second, notifyJob.NotifyNewCollaboration),
+		job.NewJob("NotifyUserReceivedCollaborationRequest", 120*time.Second, notifyJob.NotifyUserReceivedCollaborationRequest),
+		job.NewJob("NotifyNewCollaboration", 100*time.Second, notifyJob.NotifyNewCollaboration),
 		// job.NewJob("NotifyNewUserProfile", 30*time.Second, notifyJob.NotifyNewUserProfile),
-		job.NewJob("NotifyCollaborationRequest", 15*time.Second, notifyJob.NotifyCollaborationRequest),
+		job.NewJob("NotifyCollaborationRequest", 110*time.Second, notifyJob.NotifyCollaborationRequest),
 	}
 
 	sc := job.NewScheduler(jobs)
