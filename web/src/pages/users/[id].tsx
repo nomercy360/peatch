@@ -1,6 +1,22 @@
-import { createEffect, createSignal, For, Match, onCleanup, Suspense, Switch } from 'solid-js';
+import {
+  createEffect,
+  createSignal,
+  For,
+  Match,
+  onCleanup,
+  Suspense,
+  Switch,
+} from 'solid-js';
 import { useNavigate, useParams, useSearchParams } from '@solidjs/router';
-import { CDN_URL, fetchProfile, followUser, hideProfile, publishProfile, showProfile, unfollowUser } from '~/api';
+import {
+  CDN_URL,
+  fetchProfile,
+  followUser,
+  hideProfile,
+  publishProfile,
+  showProfile,
+  unfollowUser,
+} from '~/api';
 import { createQuery } from '@tanstack/solid-query';
 import { setFollowing, setUser, store } from '~/store';
 import ActionDonePopup from '../../components/ActionDonePopup';
@@ -176,11 +192,11 @@ export default function UserProfile() {
                   <ActionButton text="Unfollow" onClick={unfollow} />
                 </Match>
               </Switch>
-              <div class="image-container">
+              <div class="p-2">
                 <img
                   src={CDN_URL + '/' + query.data.avatar_url}
                   alt="avatar"
-                  class="aspect-square size-full object-cover"
+                  class="aspect-square size-full rounded-xl object-cover"
                 />
               </div>
               <div class="px-4 py-2.5">
@@ -221,14 +237,16 @@ export default function UserProfile() {
                           'background-color': `#${op.color}`,
                         }}
                       >
-                        <div class="flex size-10 items-center shrink-0 justify-center rounded-full bg-secondary">
-                          <span class="material-symbols-rounded text-main shrink-0">
+                        <div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary">
+                          <span class="material-symbols-rounded shrink-0 text-main">
                             {String.fromCodePoint(parseInt(op.icon!, 16))}
                           </span>
                         </div>
                         <div class="text-start text-white">
                           <p class="text-sm font-semibold">{op.text}</p>
-                          <p class="text-xs text-white/60 leading-tight">{op.description}</p>
+                          <p class="text-xs leading-tight text-white/60">
+                            {op.description}
+                          </p>
                         </div>
                       </div>
                     )}
@@ -247,7 +265,7 @@ export default function UserProfile() {
 const ActionButton = (props: { text: string; onClick: () => void }) => {
   return (
     <button
-      class="absolute left-4 top-4 z-10 h-8 w-20 rounded-lg bg-button px-2.5 text-button"
+      class="absolute right-4 top-4 z-10 h-9 w-[90px] rounded-xl bg-black/80 px-2.5 text-button"
       onClick={props.onClick}
     >
       {props.text}

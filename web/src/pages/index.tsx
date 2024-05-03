@@ -60,11 +60,13 @@ export default function Index() {
         class="flex flex-row items-center justify-between py-4"
         href={getUserLink()}
       >
-        <p class="text-3xl text-main">Bonsoir, {store.user?.first_name || store.user?.username}!</p>
+        <p class="text-3xl text-main">
+          Bonsoir, {store.user?.first_name || store.user?.username}!
+        </p>
         <Switch>
           <Match when={store.user.avatar_url}>
             <img
-              class="size-11 rounded-xl border-2 border-main object-cover object-center"
+              class="size-11 rounded-xl border border-main object-cover object-center"
               src={CDN_URL + '/' + store.user.avatar_url}
               alt="User Avatar"
             />
@@ -78,7 +80,7 @@ export default function Index() {
           </Match>
         </Switch>
       </Link>
-      <div class="h-px w-full bg-main"></div>
+      <div class="h-px w-full bg-main" />
       <Link class="flex flex-col items-start justify-start py-4" href="/users">
         <div class="flex w-full flex-row items-center justify-start">
           <Suspense fallback={<ImagesLoader />}>
@@ -87,7 +89,7 @@ export default function Index() {
                 <img
                   src={image}
                   alt="User Avatar"
-                  class="-ml-1 size-11 rounded-xl border-2 border-main object-cover object-center"
+                  class="-ml-1 size-11 rounded-xl border border-main object-cover object-center"
                   classList={{
                     'ml-0': idx() === 0,
                     'z-20': idx() === 0,
@@ -111,23 +113,21 @@ export default function Index() {
           Figma Wizards, Consultants, Founders, and more
         </p>
       </Link>
-      <div class="h-px w-full bg-main"></div>
+      <div class="h-px w-full bg-main" />
       <Link
         class="flex flex-col items-start justify-start py-4"
         href="/collaborations"
       >
         <div class="flex w-full flex-row items-center justify-start">
-          <div
-            class="z-20 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-main bg-orange">
+          <div class="z-20 flex size-11 flex-col items-center justify-center rounded-xl border border-main bg-orange">
             <span class="material-symbols-rounded text-white">
               self_improvement
             </span>
           </div>
-          <div
-            class="z-10 -ml-1 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-main bg-red">
+          <div class="z-10 -ml-1 flex size-11 flex-col items-center justify-center rounded-xl border border-main bg-red">
             <span class="material-symbols-rounded text-white">wine_bar</span>
           </div>
-          <div class="-ml-1 flex size-11 flex-col items-center justify-center rounded-2xl border-2 border-main bg-blue">
+          <div class="-ml-1 flex size-11 flex-col items-center justify-center rounded-xl border border-main bg-blue">
             <span class="material-symbols-rounded text-white">
               directions_run
             </span>
@@ -146,7 +146,7 @@ export default function Index() {
           Yoga practice, Running, Grabbing a coffee, and more
         </p>
       </Link>
-      <div class="h-px w-full bg-main"></div>
+      <div class="h-px w-full bg-main" />
       <button
         class="flex flex-col items-start justify-start py-4"
         onClick={() =>
@@ -173,7 +173,7 @@ const ImagesLoader = () => {
       <For each={[1, 2, 3] as any}>
         {(image, idx) => (
           <div
-            class="-ml-1 size-11 rounded-xl border-2 border-main bg-main"
+            class="-ml-1 size-11 rounded-xl border border-main bg-hint"
             classList={{
               'ml-0': idx() === 0,
               'z-20': idx() === 0,

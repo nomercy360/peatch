@@ -1,6 +1,20 @@
-import { createEffect, createSignal, For, Match, onCleanup, Suspense, Switch } from 'solid-js';
+import {
+  createEffect,
+  createSignal,
+  For,
+  Match,
+  onCleanup,
+  Suspense,
+  Switch,
+} from 'solid-js';
 import { useNavigate, useParams, useSearchParams } from '@solidjs/router';
-import { CDN_URL, fetchCollaboration, hideCollaboration, publishCollaboration, showCollaboration } from '~/api';
+import {
+  CDN_URL,
+  fetchCollaboration,
+  hideCollaboration,
+  publishCollaboration,
+  showCollaboration,
+} from '~/api';
 import { createQuery } from '@tanstack/solid-query';
 import { setUser, store } from '~/store';
 import ActionDonePopup from '~/components/ActionDonePopup';
@@ -209,7 +223,7 @@ export default function Collaboration() {
 const ActionButton = (props: { text: string; onClick: () => void }) => {
   return (
     <button
-      class="absolute right-4 top-4 z-10 h-8 w-20 rounded-lg bg-button px-2.5 text-button"
+      class="absolute right-4 top-4 z-10 h-9 w-[90px] rounded-xl bg-black/80 px-2.5 text-button"
       onClick={() => props.onClick()}
     >
       {props.text}

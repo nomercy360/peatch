@@ -49,7 +49,7 @@ const UserCard = (props: { user: User }) => {
       state={{ from: '/users' }}
     >
       <img
-        class="size-10 rounded-xl object-cover"
+        class="size-11 rounded-xl object-cover"
         src={imgUrl}
         alt="User Avatar"
       />
@@ -61,7 +61,7 @@ const UserCard = (props: { user: User }) => {
       <Show when={props.user.badges && props.user.badges.length > 0}>
         <BadgeList badges={props.user.badges!} position="start" />
       </Show>
-      <div class="mt-5 h-px w-full bg-main"></div>
+      <div class="mt-5 h-px w-full bg-main" />
     </Link>
   );
 };
@@ -69,10 +69,10 @@ const UserCard = (props: { user: User }) => {
 const UserListPlaceholder = () => {
   return (
     <div class="flex flex-col items-start justify-start gap-4 px-4 py-2.5">
-      <div class="h-56 w-full rounded-2xl bg-main"></div>
-      <div class="h-56 w-full rounded-2xl bg-main"></div>
-      <div class="h-56 w-full rounded-2xl bg-main"></div>
-      <div class="h-56 w-full rounded-2xl bg-main"></div>
+      <div class="h-56 w-full rounded-2xl bg-main" />
+      <div class="h-56 w-full rounded-2xl bg-main" />
+      <div class="h-56 w-full rounded-2xl bg-main" />
+      <div class="h-56 w-full rounded-2xl bg-main" />
     </div>
   );
 };
