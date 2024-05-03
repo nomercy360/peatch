@@ -31,7 +31,7 @@ func (t *TelegramNotifier) SendNotification(chatID int64, message, link string, 
 		ReplyMarkup: &models.InlineKeyboardMarkup{
 			InlineKeyboard: [][]models.InlineKeyboardButton{
 				{
-					{Text: "View", URL: "t.me/peatcher_testing_bot/peatch"},
+					{Text: "View", URL: link},
 				},
 			},
 		},

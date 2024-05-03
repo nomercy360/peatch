@@ -31,7 +31,7 @@ type notifyJob struct {
 	storage       storage
 	notifier      notifier
 	imgServiceURL string
-	webAppURL     string
+	botWebApp     string
 	groupChatID   int64
 }
 
@@ -39,12 +39,12 @@ type notifier interface {
 	SendNotification(chatID int64, message string, link string, img []byte) error
 }
 
-func NewNotifyJob(storage storage, notifier notifier, imgServiceURL, webAppURL string, groupChatID int64) *notifyJob {
+func NewNotifyJob(storage storage, notifier notifier, imgServiceURL, BotWebApp string, groupChatID int64) *notifyJob {
 	return &notifyJob{
 		storage:       storage,
 		notifier:      notifier,
 		imgServiceURL: imgServiceURL,
-		webAppURL:     webAppURL,
+		botWebApp:     BotWebApp,
 		groupChatID:   groupChatID,
 	}
 }
@@ -103,7 +103,7 @@ func (j *notifyJob) NotifyNewUserProfile() error {
 				return err
 			}
 
-			linkToProfile := fmt.Sprintf("%s/users/%d", j.webAppURL, user.ID)
+			linkToProfile := fmt.Sprintf("%s?startapp=redirect-to=/users/%d", j.botWebApp, user.ID)
 
 			if err = j.notifier.SendNotification(created.ChatID, text, linkToProfile, img); err != nil {
 				log.Printf("Failed to send notification to user %d", user.ID)
@@ -181,7 +181,7 @@ func (j *notifyJob) NotifyNewCollaboration() error {
 				return err
 			}
 
-			linkToCollaboration := fmt.Sprintf("%s/collaborations/%d", j.webAppURL, collaboration.ID)
+			linkToCollaboration := fmt.Sprintf("%s/collaborations/%d", j.botWebApp, collaboration.ID)
 
 			if err = j.notifier.SendNotification(created.ChatID, text, linkToCollaboration, img); err != nil {
 				log.Printf("Failed to send notification to user %d", collaboration.UserID)
@@ -258,7 +258,7 @@ func (j *notifyJob) NotifyUserReceivedCollaborationRequest() error {
 				return err
 			}
 
-			linkToProfile := fmt.Sprintf("%s/users/%d", j.webAppURL, collaboration.RequesterID)
+			linkToProfile := fmt.Sprintf("%s/users/%d", j.botWebApp, collaboration.RequesterID)
 
 			if err = j.notifier.SendNotification(created.ChatID, text, linkToProfile, img); err != nil {
 				log.Printf("Failed to send notification to user %d", collaboration.UserID)
@@ -335,7 +335,7 @@ func (j *notifyJob) NotifyCollaborationRequest() error {
 				return err
 			}
 
-			linkToProfile := fmt.Sprintf("%s/users/%d", j.webAppURL, requester.ID)
+			linkToProfile := fmt.Sprintf("%s/users/%d", j.botWebApp, requester.ID)
 
 			if err = j.notifier.SendNotification(created.ChatID, text, linkToProfile, img); err != nil {
 				log.Printf("Failed to send notification to user %d", creator.ID)

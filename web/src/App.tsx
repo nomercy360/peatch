@@ -1,4 +1,4 @@
-import { createEffect, createSignal, Match, onCleanup, Switch } from 'solid-js';
+import { createEffect, createSignal, Match, Switch } from 'solid-js';
 import { QueryClient, QueryClientProvider } from '@tanstack/solid-query';
 import { setToken, setUser } from './store';
 import { API_BASE_URL } from './api';
@@ -34,6 +34,9 @@ export default function App(props: any) {
 
       setIsAuthenticated(true);
       setIsLoading(false);
+
+      // if there is a redirect url, redirect to it
+      // ?startapp=redirect-to=/users/
     } catch (e) {
       console.error('Failed to authenticate user:', e);
       setIsAuthenticated(false);

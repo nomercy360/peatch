@@ -18,7 +18,7 @@ type config struct {
 	DatabaseURL   string `env:"DATABASE_URL,required"`
 	BotToken      string `env:"BOT_TOKEN,required"`
 	ImgServiceURL string `env:"IMG_SERVICE_URL,required"`
-	WebAppURL     string `env:"WEB_APP_URL,required"`
+	BotWebApp     string `env:"BOT_WEB_APP,required"`
 	GroupChatID   int64  `env:"GROUP_CHAT_ID,required"`
 }
 
@@ -39,12 +39,12 @@ func main() {
 
 	notifier := notification.NewTelegramNotifier(bot)
 
-	notifyJob := job.NewNotifyJob(pg, notifier, cfg.ImgServiceURL, cfg.WebAppURL, cfg.GroupChatID)
+	notifyJob := job.NewNotifyJob(pg, notifier, cfg.ImgServiceURL, cfg.BotWebApp, cfg.GroupChatID)
 
 	jobs := []*job.Job{
 		job.NewJob("NotifyUserReceivedCollaborationRequest", 120*time.Second, notifyJob.NotifyUserReceivedCollaborationRequest),
 		job.NewJob("NotifyNewCollaboration", 100*time.Second, notifyJob.NotifyNewCollaboration),
-		job.NewJob("NotifyNewUserProfile", 10*time.Second, notifyJob.NotifyNewUserProfile),
+		job.NewJob("NotifyNewUserProfile", 140*time.Second, notifyJob.NotifyNewUserProfile),
 		job.NewJob("NotifyCollaborationRequest", 110*time.Second, notifyJob.NotifyCollaborationRequest),
 	}
 
