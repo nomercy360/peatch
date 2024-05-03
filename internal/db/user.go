@@ -633,3 +633,59 @@ func (s *storage) FindUserCollaborationRequest(requesterID, userID int64) (*User
 
 	return &request, nil
 }
+
+func (s *storage) DeleteUserByID(userID int64) error {
+	// first delete collaboration_requests -> collaboration_badges, collborations, user_collaboration_requests, user_opportunities, user_badges, user_followers, users
+
+	tx, err := s.pg.Beginx()
+
+	if err != nil {
+		return err
+	}
+
+	if _, err := tx.Exec("DELETE FROM collaboration_requests WHERE user_id = $1", userID); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if _, err := tx.Exec("DELETE FROM collaboration_badges WHERE collaboration_id IN (SELECT id FROM collaborations WHERE user_id = $1)", userID); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if _, err := tx.Exec("DELETE FROM collaborations WHERE user_id = $1", userID); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if _, err := tx.Exec("DELETE FROM user_collaboration_requests WHERE user_id = $1 OR requester_id = $1", userID); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if _, err := tx.Exec("DELETE FROM user_opportunities WHERE user_id = $1", userID); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if _, err := tx.Exec("DELETE FROM user_badges WHERE user_id = $1", userID); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if _, err := tx.Exec("DELETE FROM user_followers WHERE user_id = $1 OR follower_id = $1", userID); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if _, err := tx.Exec("DELETE FROM users WHERE id = $1", userID); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
+}

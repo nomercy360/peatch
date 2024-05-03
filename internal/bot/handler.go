@@ -25,6 +25,7 @@ type storage interface {
 	GetUserByChatID(chatID int64) (*db.User, error)
 	CreateUser(user db.User) (*db.User, error)
 	UpdateUserAvatarURL(chatID int64, avatarURL string) error
+	DeleteUserByID(id int64) error
 }
 
 type s3Client interface {
@@ -90,6 +91,29 @@ func (b *bot) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 
 func (b *bot) handleMessage(update tgModels.Update, w http.ResponseWriter) {
 	user, err := b.storage.GetUserByChatID(update.Message.Chat.ID)
+
+	// if its /reset command
+	if update.Message.Text == "/reset" && user != nil {
+		err := b.storage.DeleteUserByID(user.ID)
+
+		if err != nil {
+			log.Printf("Failed to delete user: %v", err)
+			http.Error(w, "Failed to delete user", http.StatusInternalServerError)
+			return
+
+		}
+
+		msg := telegram.SendMessageParams{
+			ChatID: update.Message.Chat.ID,
+			Text:   "User deleted",
+		}
+
+		if _, err := b.tg.SendMessage(context.Background(), &msg); err != nil {
+			log.Printf("Failed to send message: %v", err)
+			http.Error(w, "Failed to send message", http.StatusInternalServerError)
+			return
+		}
+	}
 
 	lang := "en"
 	if update.Message.From.LanguageCode != "" {
