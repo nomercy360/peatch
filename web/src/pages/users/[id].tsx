@@ -1,11 +1,26 @@
-import { createEffect, createSignal, For, Match, onCleanup, Suspense, Switch } from 'solid-js';
+import {
+  createEffect,
+  createSignal,
+  For,
+  Match,
+  onCleanup,
+  Suspense,
+  Switch,
+} from 'solid-js';
 import { useNavigate, useParams, useSearchParams } from '@solidjs/router';
-import { CDN_URL, fetchProfile, followUser, hideProfile, publishProfile, showProfile, unfollowUser } from '~/api';
+import {
+  CDN_URL,
+  fetchProfile,
+  followUser,
+  hideProfile,
+  publishProfile,
+  showProfile,
+  unfollowUser,
+} from '~/api';
 import { createQuery } from '@tanstack/solid-query';
 import { setFollowing, setUser, store } from '~/store';
 import ActionDonePopup from '../../components/ActionDonePopup';
 import { useMainButton } from '~/hooks/useMainButton';
-import { useNavigation } from '~/hooks/useNavigation';
 import { usePopup } from '~/hooks/usePopup';
 
 export default function UserProfile() {
@@ -13,8 +28,6 @@ export default function UserProfile() {
   const [published, setPublished] = createSignal(false);
 
   const navigate = useNavigate();
-
-  const { navigateBack } = useNavigation();
 
   const params = useParams();
   const [searchParams, _] = useSearchParams();
@@ -39,6 +52,10 @@ export default function UserProfile() {
     }
   });
 
+  const navigateToEdit = () => {
+    navigate('/users/edit', { state: { back: true } });
+  };
+
   const navigateToCollaborate = async () => {
     if (store.user.published_at && !store.user.hidden_at) {
       navigate(`/users/${userId}/collaborate`);
@@ -51,8 +68,8 @@ export default function UserProfile() {
     }
   };
 
-  const navigateToEdit = () => {
-    navigate('/users/edit', { state: { back: true } });
+  const closePopup = () => {
+    setPublished(false);
   };
 
   const publish = async () => {
@@ -92,31 +109,27 @@ export default function UserProfile() {
 
   createEffect(() => {
     if (isCurrentUserProfile) {
-      if (published()) {
-        mainButton.offClick(publish);
-        mainButton.offClick(navigateToEdit);
-        mainButton.enable('Get back');
-        mainButton.onClick(navigateBack);
-        return;
-      } else if (!store.user.published_at) {
+      if (!store.user.published_at) {
         mainButton.enable('Publish');
-        mainButton.offClick(navigateToEdit);
         mainButton.onClick(publish);
       } else {
-        mainButton.enable('Edit');
-        mainButton.offClick(publish);
-        mainButton.onClick(navigateToEdit);
+        if (published()) {
+          mainButton.onClick(closePopup);
+          mainButton.enable('Back to profile');
+        } else {
+          mainButton.enable('Edit');
+          mainButton.onClick(navigateToEdit);
+        }
       }
     } else {
       mainButton.enable('Collaborate');
-      mainButton.offClick(navigateToEdit);
       mainButton.onClick(navigateToCollaborate);
     }
 
     onCleanup(() => {
       mainButton.offClick(navigateToCollaborate);
       mainButton.offClick(publish);
-      mainButton.offClick(navigateBack);
+      mainButton.offClick(closePopup);
       mainButton.offClick(navigateToEdit);
     });
   });

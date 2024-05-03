@@ -1,4 +1,12 @@
-import { createEffect, createSignal, For, Match, Show, Suspense, Switch } from 'solid-js';
+import {
+  createEffect,
+  createSignal,
+  For,
+  Match,
+  Show,
+  Suspense,
+  Switch,
+} from 'solid-js';
 import { Badge } from '../../../gen';
 
 export function SelectBadge(props: {
@@ -38,6 +46,7 @@ export function SelectBadge(props: {
           autocorrect="off"
           autocapitalize="off"
           spellcheck={false}
+          maxLength={50}
           class="h-10 w-full bg-transparent text-main placeholder:text-hint focus:outline-none"
           placeholder="Search for a badge"
           type="text"

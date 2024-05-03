@@ -1,6 +1,20 @@
-import { createEffect, createSignal, For, Match, onCleanup, Suspense, Switch } from 'solid-js';
+import {
+  createEffect,
+  createSignal,
+  For,
+  Match,
+  onCleanup,
+  Suspense,
+  Switch,
+} from 'solid-js';
 import { useNavigate, useParams, useSearchParams } from '@solidjs/router';
-import { CDN_URL, fetchCollaboration, hideCollaboration, publishCollaboration, showCollaboration } from '~/api';
+import {
+  CDN_URL,
+  fetchCollaboration,
+  hideCollaboration,
+  publishCollaboration,
+  showCollaboration,
+} from '~/api';
 import { createQuery } from '@tanstack/solid-query';
 import { setUser, store } from '~/store';
 import ActionDonePopup from '~/components/ActionDonePopup';
@@ -11,7 +25,6 @@ export default function Collaboration() {
   const mainButton = useMainButton();
 
   const [wasPublished, setWasPublished] = createSignal(false);
-  const [isPublished, setIsPublished] = createSignal(false);
   const [isCurrentUserCollab, setIsCurrentUserCollab] = createSignal(false);
 
   const navigate = useNavigate();
@@ -40,7 +53,6 @@ export default function Collaboration() {
   createEffect(() => {
     if (query.data) {
       setIsCurrentUserCollab(store.user.id === query.data.user.id);
-      setIsPublished(!!query.data.published_at);
     }
   });
 
@@ -72,7 +84,8 @@ export default function Collaboration() {
     } else {
       showConfirm(
         'You must publish your profile first',
-        (ok: boolean) => ok && navigate('/users/edit'),
+        (ok: boolean) =>
+          ok && navigate('/users/edit', { state: { back: true } }),
       );
     }
   };
@@ -85,15 +98,17 @@ export default function Collaboration() {
 
   createEffect(() => {
     if (isCurrentUserCollab()) {
-      if (wasPublished()) {
-        mainButton.onClick(closePopup);
-        mainButton.enable('Back to collaboration');
-      } else if (!isPublished()) {
-        mainButton.onClick(publish);
+      if (!query.data.published_at) {
         mainButton.enable('Publish');
+        mainButton.onClick(publish);
       } else {
-        mainButton.onClick(navigateToEdit);
-        mainButton.enable('Edit');
+        if (wasPublished()) {
+          mainButton.enable('Back to collaboration');
+          mainButton.onClick(closePopup);
+        } else {
+          mainButton.enable('Edit');
+          mainButton.onClick(navigateToEdit);
+        }
       }
     } else {
       mainButton.onClick(navigateToCollaborate);
