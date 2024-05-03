@@ -141,13 +141,18 @@ func (s *storage) GetCollaborationByID(userID, id int64) (*Collaboration, error)
 func (s *storage) CreateCollaboration(userID int64, collaboration Collaboration, badges []int64) (*Collaboration, error) {
 	var res Collaboration
 
+	tx, err := s.pg.Beginx()
+	if err != nil {
+		return nil, err
+	}
+
 	query := `
 		INSERT INTO collaborations (user_id, opportunity_id, title, description, is_payable, country, city, country_code)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING id, user_id, opportunity_id, title, description, is_payable, published_at, hidden_at, created_at, updated_at, country, city, country_code, requests_count
 	`
 
-	err := s.pg.QueryRowx(
+	if err := tx.QueryRowx(
 		query,
 		userID,
 		collaboration.OpportunityID,
@@ -157,9 +162,8 @@ func (s *storage) CreateCollaboration(userID int64, collaboration Collaboration,
 		collaboration.Country,
 		collaboration.City,
 		collaboration.CountryCode,
-	).StructScan(&res)
-
-	if err != nil {
+	).StructScan(&res); err != nil {
+		tx.Rollback()
 		return nil, err
 	}
 
@@ -172,18 +176,27 @@ func (s *storage) CreateCollaboration(userID int64, collaboration Collaboration,
 		}
 
 		stmt := `INSERT INTO collaboration_badges (collaboration_id, badge_id) VALUES ` + strings.Join(valueStrings, ", ")
-		stmt = s.pg.Rebind(stmt)
+		stmt = tx.Rebind(stmt)
 
-		_, err = s.pg.Exec(stmt, valueArgs...)
-		if err != nil {
+		if _, err := tx.Exec(stmt, valueArgs...); err != nil {
+			tx.Rollback()
 			return nil, err
 		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
 	}
 
 	return &res, nil
 }
 
-func (s *storage) UpdateCollaboration(userID, collabID int64, collaboration Collaboration) (*Collaboration, error) {
+func (s *storage) UpdateCollaboration(userID, collabID int64, collaboration Collaboration, badges []int64) (*Collaboration, error) {
+	tx, err := s.pg.Beginx()
+	if err != nil {
+		return nil, err
+	}
+
 	query := `
 		UPDATE collaborations
 		SET title = $1, description = $2, is_payable = $3, country = $4, city = $5, country_code = $6, updated_at = NOW()
@@ -191,7 +204,7 @@ func (s *storage) UpdateCollaboration(userID, collabID int64, collaboration Coll
 		RETURNING updated_at
 	`
 
-	err := s.pg.QueryRowx(
+	err = tx.QueryRowx(
 		query,
 		collaboration.Title,
 		collaboration.Description,
@@ -203,11 +216,37 @@ func (s *storage) UpdateCollaboration(userID, collabID int64, collaboration Coll
 		userID,
 	).StructScan(&collaboration)
 
-	if err != nil {
-		if IsNoRowsError(err) {
-			return nil, ErrNotFound
+	if err != nil && IsNoRowsError(err) {
+		return nil, err
+	} else if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	if len(badges) > 0 {
+		_, err = tx.Exec("DELETE FROM collaboration_badges WHERE collaboration_id = $1", collabID)
+		if err != nil {
+			tx.Rollback()
+			return nil, err
 		}
 
+		var valueStrings []string
+		var valueArgs []interface{}
+		for _, badge := range badges {
+			valueStrings = append(valueStrings, "(?, ?)")
+			valueArgs = append(valueArgs, collabID, badge)
+		}
+
+		stmt := `INSERT INTO collaboration_badges (collaboration_id, badge_id) VALUES ` + strings.Join(valueStrings, ", ")
+		stmt = tx.Rebind(stmt)
+
+		if _, err := tx.Exec(stmt, valueArgs...); err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 

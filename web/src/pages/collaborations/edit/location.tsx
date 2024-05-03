@@ -10,6 +10,7 @@ export default function SelectBadges() {
   const mainButton = useMainButton();
 
   const navigate = useNavigate();
+
   const createCollab = async () => {
     const created = await createCollaboration(editCollaboration);
     navigate('/collaborations/' + created.id);

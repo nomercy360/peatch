@@ -1,6 +1,6 @@
 import { FormLayout } from '~/components/edit/layout';
 import { useMainButton } from '~/hooks/useMainButton';
-import { useNavigate, useSearchParams } from '@solidjs/router';
+import { useNavigate, useParams, useSearchParams } from '@solidjs/router';
 import { createEffect, onCleanup } from 'solid-js';
 import { editCollaboration, setEditCollaboration } from '~/store';
 import { postBadge } from '~/api';
@@ -18,6 +18,8 @@ export default function SelectBadges() {
     icon: '',
   });
 
+  const idPath = useParams().id ? '/' + useParams().id : '';
+
   const publishBadge = async () => {
     if (createBadge.text && createBadge.color && createBadge.icon) {
       const { id } = await postBadge(
@@ -34,8 +36,8 @@ export default function SelectBadges() {
 
   const onCreateBadgeButtonClick = async () => {
     await publishBadge();
-    navigate('/collaboration/edit/badges', {
-      state: { from: '/collaborations/edit' },
+    navigate(`/collaborations/edit${idPath}/badges?refetch=true`, {
+      state: { from: '/collaborations/edit' + idPath },
     });
   };
 
@@ -43,9 +45,9 @@ export default function SelectBadges() {
 
   createEffect(() => {
     if (createBadge.icon && createBadge.color && createBadge.text) {
-      mainButton.enable();
+      mainButton.enable('Create ' + createBadge.text);
     } else {
-      mainButton.disable();
+      mainButton.disable('Create ' + createBadge.text);
     }
   });
 

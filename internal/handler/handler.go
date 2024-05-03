@@ -21,7 +21,7 @@ type service interface {
 	GetUserByChatID(chatID int64) (*db.User, error)
 	CreateUser(user db.User) (*db.User, error)
 	GetUserByID(userID, id int64) (*db.User, error)
-	UpdateUser(userID int64, updateRequest svc.UpdateUserRequest) (*db.User, error)
+	UpdateUser(userID int64, updateRequest svc.UpdateUserRequest) error
 	ListOpportunities() ([]db.LOpportunity, error)
 	ListBadges(search string) ([]db.Badge, error)
 	CreateBadge(badge svc.CreateBadgeRequest) (*db.Badge, error)

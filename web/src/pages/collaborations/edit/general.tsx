@@ -2,16 +2,17 @@ import { FormLayout } from '~/components/edit/layout';
 import { editCollaboration, setEditCollaboration } from '~/store';
 import { useMainButton } from '~/hooks/useMainButton';
 import { createEffect, onCleanup } from 'solid-js';
-import { useNavigate } from '@solidjs/router';
+import { useLocation, useNavigate } from '@solidjs/router';
 import TextArea from '~/components/TextArea';
 
 export default function GeneralInfo() {
   const mainButton = useMainButton();
 
   const navigate = useNavigate();
+  const path = useLocation().pathname;
 
   const navigateNext = () => {
-    navigate('/collaborations/edit/badges', { state: { back: true } });
+    navigate(path + '/badges', { state: { back: true } });
   };
 
   mainButton.onClick(navigateNext);

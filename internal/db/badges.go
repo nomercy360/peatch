@@ -18,6 +18,7 @@ func (s *storage) ListBadges(search string) ([]Badge, error) {
 	query := `
         SELECT id, text, icon, color, created_at
         FROM badges
+        ORDER BY created_at DESC
     `
 
 	if search != "" {

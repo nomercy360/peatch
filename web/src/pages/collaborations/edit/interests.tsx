@@ -1,6 +1,6 @@
 import { FormLayout } from '~/components/edit/layout';
 import { useMainButton } from '~/hooks/useMainButton';
-import { useNavigate } from '@solidjs/router';
+import { useNavigate, useParams } from '@solidjs/router';
 import { createEffect, onCleanup } from 'solid-js';
 import { editCollaboration, setEditCollaboration } from '~/store';
 import { fetchOpportunities } from '~/api';
@@ -11,9 +11,13 @@ export default function SelectOpportunities() {
   const mainButton = useMainButton();
 
   const navigate = useNavigate();
+  const params = useParams();
+  const idPath = params.id ? '/' + params.id : '';
 
   const navigateNext = () => {
-    navigate('/collaborations/edit/location', { state: { back: true } });
+    navigate(`/collaborations/edit${idPath}/location`, {
+      state: { back: true },
+    });
   };
 
   const fetchOpportunityQuery = createQuery(() => ({
@@ -25,9 +29,9 @@ export default function SelectOpportunities() {
 
   createEffect(() => {
     if (editCollaboration.opportunity_id) {
-      mainButton.enable();
+      mainButton.enable('Next');
     } else {
-      mainButton.disable();
+      mainButton.disable('Next');
     }
   });
 

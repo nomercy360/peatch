@@ -34,19 +34,18 @@ export default function SelectBadges() {
 
   const onCreateBadgeButtonClick = async () => {
     await publishBadge();
-    navigate('/users/edit/badges', {
+    navigate('/users/edit/badges?refetch=true', {
       state: { from: '/users/edit' },
     });
   };
 
-  mainButton
-    .onClick(onCreateBadgeButtonClick);
+  mainButton.onClick(onCreateBadgeButtonClick);
 
   createEffect(() => {
     if (createBadge.icon && createBadge.color && createBadge.text) {
-      mainButton.enable('Next');
+      mainButton.enable('Create ' + createBadge.text);
     } else {
-      mainButton.disable('Next');
+      mainButton.disable('Create ' + createBadge.text);
     }
   });
 

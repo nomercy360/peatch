@@ -1,11 +1,12 @@
 import { SelectBadge } from '~/components/edit/selectBadge';
 import { FormLayout } from '~/components/edit/layout';
 import { useMainButton } from '~/hooks/useMainButton';
-import { useNavigate } from '@solidjs/router';
+import { useNavigate, useParams, useSearchParams } from '@solidjs/router';
 import { createEffect, createSignal, onCleanup } from 'solid-js';
 import { editCollaboration, setEditCollaboration } from '~/store';
 import { fetchBadges } from '~/api';
 import { createQuery } from '@tanstack/solid-query';
+import { Badge } from '../../../../gen';
 
 export default function SelectBadges() {
   const mainButton = useMainButton();
@@ -13,21 +14,43 @@ export default function SelectBadges() {
   const [badgeSearch, setBadgeSearch] = createSignal('');
 
   const navigate = useNavigate();
+  const idPath = useParams().id ? '/' + useParams().id : '';
+
+  const [searchParams, _] = useSearchParams();
 
   const navigateNext = () => {
-    navigate('/collaborations/edit/interests', { state: { back: true } });
-  };
-
-  const navigateCreateBadge = () => {
-    navigate('/collaborations/edit/create-badge?badge_name=' + badgeSearch(), {
+    navigate(`/collaborations/edit${idPath}/interests`, {
       state: { back: true },
     });
   };
 
+  const navigateCreateBadge = () => {
+    navigate(
+      `/collaborations/edit${idPath}/create-badge?badge_name=` + badgeSearch(),
+      {
+        state: { back: true },
+      },
+    );
+  };
+
   const fetchBadgeQuery = createQuery(() => ({
     queryKey: ['badges'],
-    queryFn: () => fetchBadges(),
+    // then push selected to the top
+    queryFn: () =>
+      fetchBadges().then(badges => {
+        const selected = editCollaboration.badge_ids;
+        return [
+          ...selected.map(id => badges.find((b: Badge) => b.id === id)),
+          ...badges.filter((b: Badge) => !selected.includes(b.id!)),
+        ];
+      }),
   }));
+
+  createEffect(async () => {
+    if (searchParams.refetch) {
+      await fetchBadgeQuery.refetch();
+    }
+  });
 
   mainButton.onClick(navigateNext);
 
@@ -56,7 +79,7 @@ export default function SelectBadges() {
         onCreateBadgeButtonClick={navigateCreateBadge}
         search={badgeSearch()}
         setSearch={setBadgeSearch}
-        badges={fetchBadgeQuery.data}
+        badges={fetchBadgeQuery.data!}
       />
     </FormLayout>
   );

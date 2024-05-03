@@ -90,7 +90,7 @@ func (s *service) GetUserByID(uid, id int64) (*db.User, error) {
 	return user, nil
 }
 
-func (s *service) UpdateUser(userID int64, updateRequest UpdateUserRequest) (*db.User, error) {
+func (s *service) UpdateUser(userID int64, updateRequest UpdateUserRequest) error {
 	return s.storage.UpdateUser(userID, updateRequest.ToUser(), updateRequest.BadgeIDs, updateRequest.OpportunityIDs)
 }
 

@@ -14,7 +14,7 @@ type storage interface {
 	CreateUser(user db.User) (*db.User, error)
 	Ping() error
 	GetUserByID(id int64, showHidden bool) (*db.User, error)
-	UpdateUser(userID int64, user db.User, badges, opportunities []int64) (*db.User, error)
+	UpdateUser(userID int64, user db.User, badges, opportunities []int64) error
 	ListOpportunities() ([]db.LOpportunity, error)
 	ListBadges(search string) ([]db.Badge, error)
 	CreateBadge(badge db.Badge) (*db.Badge, error)
@@ -25,7 +25,7 @@ type storage interface {
 	ListCollaborations(query db.CollaborationQuery) ([]db.Collaboration, error)
 	GetCollaborationByID(userID, id int64) (*db.Collaboration, error)
 	CreateCollaboration(userID int64, collaboration db.Collaboration, badges []int64) (*db.Collaboration, error)
-	UpdateCollaboration(userID, collabID int64, collaboration db.Collaboration) (*db.Collaboration, error)
+	UpdateCollaboration(userID, collabID int64, collaboration db.Collaboration, badges []int64) (*db.Collaboration, error)
 	PublishCollaboration(userID int64, collaborationID int64) error
 	HideCollaboration(userID int64, collaborationID int64) error
 	CreateCollaborationRequest(userID int64, request db.CollaborationRequest) (*db.CollaborationRequest, error)

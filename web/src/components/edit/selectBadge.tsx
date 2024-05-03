@@ -1,12 +1,4 @@
-import {
-  createEffect,
-  createSignal,
-  For,
-  Match,
-  Show,
-  Suspense,
-  Switch,
-} from 'solid-js';
+import { createEffect, createSignal, For, Match, Show, Suspense, Switch } from 'solid-js';
 import { Badge } from '../../../gen';
 
 export function SelectBadge(props: {
@@ -64,7 +56,7 @@ export function SelectBadge(props: {
       <div class="flex h-11 w-full flex-row items-center justify-between">
         <Switch>
           <Match when={filteredBadges()?.length > 0}>
-            <div></div>
+            <div />
             <div class="flex h-11 items-center justify-center text-sm text-hint">
               {props.selected.length} / 10
             </div>
@@ -90,7 +82,7 @@ export function SelectBadge(props: {
             {badge => (
               <button
                 onClick={() => onBadgeClick(badge.id!)}
-                class="flex h-10 flex-row items-center justify-center gap-[5px] rounded-2xl border px-2.5"
+                class="flex h-10 flex-row items-center justify-center gap-[5px] rounded-2xl border px-2.5 transition-colors duration-200 ease-in-out"
                 style={{
                   'background-color': `${props.selected.includes(badge.id!) ? `#${badge.color}` : 'var(--tg-theme-secondary-bg-color)'}`,
                   'border-color': `${props.selected.includes(badge.id!) ? `#${badge.color}` : 'var(--tg-theme-secondary-bg-color)'}`,
@@ -104,12 +96,15 @@ export function SelectBadge(props: {
                 >
                   {String.fromCodePoint(parseInt(badge.icon!, 16))}
                 </span>
-                <p class="text-sm font-semibold"
-                   classList={{
-                     'text-white': props.selected.includes(badge.id!),
-                     'text-main': !props.selected.includes(badge.id!),
-                   }}
-                >{badge.text}</p>
+                <p
+                  class="text-sm font-semibold"
+                  classList={{
+                    'text-white': props.selected.includes(badge.id!),
+                    'text-main': !props.selected.includes(badge.id!),
+                  }}
+                >
+                  {badge.text}
+                </p>
               </button>
             )}
           </For>

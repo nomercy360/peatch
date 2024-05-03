@@ -64,7 +64,7 @@ func (s *service) CreateCollaboration(userID int64, create CreateCollaboration) 
 }
 
 func (s *service) UpdateCollaboration(userID, collabID int64, update CreateCollaboration) (*db.Collaboration, error) {
-	res, err := s.storage.UpdateCollaboration(userID, collabID, update.toCollaboration())
+	res, err := s.storage.UpdateCollaboration(userID, collabID, update.toCollaboration(), update.BadgeIDs)
 
 	if err != nil && errors.Is(err, db.ErrNotFound) {
 		return nil, terrors.NotFound(err)

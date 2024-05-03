@@ -87,12 +87,12 @@ func (h *handler) handleUpdateUser(c echo.Context) error {
 		return err
 	}
 
-	updatedUser, err := h.svc.UpdateUser(uid, user)
+	err := h.svc.UpdateUser(uid, user)
 	if err != nil {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, updatedUser)
+	return c.NoContent(http.StatusNoContent)
 }
 
 // handleDeleteUser godoc

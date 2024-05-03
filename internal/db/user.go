@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/lib/pq"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -231,8 +230,13 @@ func (s *storage) CreateUser(user User) (*User, error) {
 	return &res, nil
 }
 
-func (s *storage) UpdateUser(userID int64, user User, badges, opportunities []int64) (*User, error) {
+func (s *storage) UpdateUser(userID int64, user User, badges, opportunities []int64) error {
 	var res User
+
+	tx, err := s.pg.Beginx()
+	if err != nil {
+		return err
+	}
 
 	query := `
 		UPDATE users
@@ -241,75 +245,72 @@ func (s *storage) UpdateUser(userID int64, user User, badges, opportunities []in
 		RETURNING id, first_name, last_name, chat_id, username, created_at, updated_at, published_at, avatar_url, title, description, language_code, country, city, country_code, followers_count, requests_count, notifications_enabled_at, hidden_at;
 	`
 
-	err := s.pg.QueryRowx(query, user.FirstName, user.LastName, user.AvatarURL, user.Title, user.Description, user.Country, user.City, user.CountryCode, userID).StructScan(&res)
+	err = s.pg.QueryRowx(
+		query, user.FirstName, user.LastName, user.AvatarURL,
+		user.Title, user.Description, user.Country, user.City,
+		user.CountryCode, userID,
+	).StructScan(&res)
 
-	if err != nil {
-		if IsNoRowsError(err) {
-			return nil, ErrNotFound
-		}
-
-		return nil, err
+	if err != nil && IsNoRowsError(err) {
+		return ErrNotFound
+	} else if err != nil {
+		tx.Rollback()
+		return err
 	}
 
-	wg := sync.WaitGroup{}
-
-	wg.Add(2)
-
-	go func() {
-		defer wg.Done()
-		query := `
-			DELETE FROM user_badges
-			WHERE user_id = $1;
-		`
-
-		_, err := s.pg.Exec(query, userID)
-
+	// update badges
+	if len(badges) > 0 {
+		_, err = tx.Exec("DELETE FROM user_badges WHERE user_id = $1", userID)
 		if err != nil {
-			return
+			tx.Rollback()
+			return err
 		}
 
-		query = `
-			INSERT INTO user_badges (user_id, badge_id)
-			VALUES ($1, $2);
-		`
-
-		for _, badgeID := range badges {
-			_, err := s.pg.Exec(query, userID, badgeID)
-			if err != nil {
-				return
-			}
+		var valueStrings []string
+		var valueArgs []interface{}
+		for _, badge := range badges {
+			valueStrings = append(valueStrings, "(?, ?)")
+			valueArgs = append(valueArgs, userID, badge)
 		}
-	}()
 
-	go func() {
-		defer wg.Done()
-		query := `
-			DELETE FROM user_opportunities
-			WHERE user_id = $1;
-		`
+		stmt := `INSERT INTO user_badges (user_id, badge_id) VALUES ` + strings.Join(valueStrings, ", ")
+		stmt = tx.Rebind(stmt)
 
-		_, err := s.pg.Exec(query, userID)
+		if _, err := tx.Exec(stmt, valueArgs...); err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
 
+	// update opportunities
+	if len(opportunities) > 0 {
+		_, err = tx.Exec("DELETE FROM user_opportunities WHERE user_id = $1", userID)
 		if err != nil {
-			return
+			tx.Rollback()
+			return err
 		}
 
-		query = `
-			INSERT INTO user_opportunities (user_id, opportunity_id)
-			VALUES ($1, $2);
-		`
-
-		for _, opportunityID := range opportunities {
-			_, err := s.pg.Exec(query, userID, opportunityID)
-			if err != nil {
-				return
-			}
+		var valueStrings []string
+		var valueArgs []interface{}
+		for _, opportunity := range opportunities {
+			valueStrings = append(valueStrings, "(?, ?)")
+			valueArgs = append(valueArgs, userID, opportunity)
 		}
-	}()
 
-	wg.Wait()
+		stmt := `INSERT INTO user_opportunities (user_id, opportunity_id) VALUES ` + strings.Join(valueStrings, ", ")
+		stmt = tx.Rebind(stmt)
 
-	return &res, nil
+		if _, err := tx.Exec(stmt, valueArgs...); err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *storage) GetUserByID(id int64, showHidden bool) (*User, error) {

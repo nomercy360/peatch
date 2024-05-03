@@ -60,7 +60,7 @@ export function SelectOpportunity(props: {
         </Show>
       </div>
       <div class="flex h-11 w-full flex-row items-center justify-between">
-        <div></div>
+        <div />
         <div class="flex h-11 items-center justify-center text-sm text-hint">
           {Array.isArray(props.selected)
             ? `${props.selected.length} / 10`
@@ -79,19 +79,29 @@ export function SelectOpportunity(props: {
                   'border-color': `${includes(op.id!) ? `#${op.color}` : 'var(--tg-theme-secondary-bg-color)'}`,
                 }}
               >
-                <div class="flex size-10 items-center justify-center rounded-full bg-main shrink-0">
-                  <span class="material-symbols-rounded text-main shrink-0">
+                <div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-main">
+                  <span class="material-symbols-rounded shrink-0 text-main">
                     {String.fromCodePoint(parseInt(op.icon!, 16))}
                   </span>
                 </div>
 
                 <div class="text-start">
-                  <p class="text-sm font-semibold"
-                     classList={{ 'text-white': includes(op.id!), 'text-main': !includes(op.id!) }}>
+                  <p
+                    class="text-sm font-semibold"
+                    classList={{
+                      'text-white': includes(op.id!),
+                      'text-main': !includes(op.id!),
+                    }}
+                  >
                     {op.text}
                   </p>
-                  <p class="text-xs leading-tight"
-                     classList={{ 'text-white/60': includes(op.id!), 'text-hint': !includes(op.id!) }}>
+                  <p
+                    class="text-xs leading-tight"
+                    classList={{
+                      'text-white/60': includes(op.id!),
+                      'text-hint': !includes(op.id!),
+                    }}
+                  >
                     {op.description}
                   </p>
                 </div>
