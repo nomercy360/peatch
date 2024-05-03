@@ -2,11 +2,7 @@ import { FormLayout } from '~/components/edit/layout';
 import { useMainButton } from '~/hooks/useMainButton';
 import { useNavigate } from '@solidjs/router';
 import { createEffect, onCleanup } from 'solid-js';
-import {
-  editCollaboration,
-  editCollaborationId,
-  setEditCollaboration,
-} from '~/store';
+import { editCollaboration, editCollaborationId, setEditCollaboration } from '~/store';
 import SelectLocation from '~/components/edit/selectLocation';
 import { createCollaboration, updateCollaboration } from '~/api';
 
@@ -36,17 +32,9 @@ export default function SelectBadges() {
 
   createEffect(() => {
     if (editCollaboration.country && editCollaboration.country_code) {
-      mainButton.setParams({
-        text: 'Choose & Save',
-        isVisible: true,
-        isEnabled: true,
-      });
+      mainButton.enable('Choose & Save');
     } else {
-      mainButton.setParams({
-        text: 'Choose & Save',
-        isVisible: true,
-        isEnabled: false,
-      });
+      mainButton.disable('Choose & Save');
     }
   });
 

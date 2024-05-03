@@ -29,13 +29,13 @@ export default function SelectBadges() {
     queryFn: () => fetchBadges(),
   }));
 
-  mainButton
-    .setParams({ text: 'Next', isVisible: true, isEnabled: false })
-    .onClick(navigateNext);
+  mainButton.onClick(navigateNext);
 
   createEffect(() => {
-    if (editCollaboration.badge_ids.length) {
-      mainButton.enable();
+    if (editCollaboration.badge_ids.length > 0) {
+      mainButton.enable('Next');
+    } else {
+      mainButton.disable('Next');
     }
   });
 

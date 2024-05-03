@@ -1,5 +1,3 @@
-import { MainButton } from '~/types/telegram';
-
 export function useMainButton() {
   return {
     setText: (text: string) => {
@@ -22,11 +20,25 @@ export function useMainButton() {
     hide: () => {
       window.Telegram.WebApp.MainButton.isVisible = false;
     },
-    enable: () => {
-      window.Telegram.WebApp.MainButton.enable();
+    enable: (text?: string) => {
+      console.log(window.Telegram);
+      return window.Telegram.WebApp.MainButton.setParams({
+        is_active: true,
+        is_visible: true,
+        text_color: window.Telegram.WebApp.themeParams.button_text_color,
+        color: window.Telegram.WebApp.themeParams.button_color,
+        text,
+      });
     },
-    disable: () => {
-      window.Telegram.WebApp.MainButton.disable();
+    disable: (text?: string) => {
+      console.log('disable');
+      return window.Telegram.WebApp.MainButton.setParams({
+        is_active: false,
+        color: '#3C3C3E',
+        text_color: '#606060',
+        is_visible: true,
+        text,
+      });
     },
     setParams: (params: {
       text?: string;

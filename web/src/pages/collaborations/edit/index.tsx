@@ -24,18 +24,22 @@ export default function EditCollaboration(props: RouteSectionProps) {
     });
 
     createEffect(() => {
-      setEditCollaboration({
-        badge_ids: collaboration().badges.map((badge: { id: any }) => badge.id),
-        city: collaboration().city,
-        country: collaboration().country,
-        country_code: collaboration().country_code,
-        description: collaboration().description,
-        is_payable: collaboration().is_payable,
-        opportunity_id: collaboration().opportunity.id,
-        title: collaboration().title,
-      });
+      if (!collaboration.loading) {
+        setEditCollaboration({
+          badge_ids: collaboration().badges.map(
+            (badge: { id: any }) => badge.id,
+          ),
+          city: collaboration().city,
+          country: collaboration().country,
+          country_code: collaboration().country_code,
+          description: collaboration().description,
+          is_payable: collaboration().is_payable,
+          opportunity_id: collaboration().opportunity.id,
+          title: collaboration().title,
+        });
 
-      setEditCollaborationId(collaboration().id);
+        setEditCollaborationId(collaboration().id);
+      }
     });
 
     return (

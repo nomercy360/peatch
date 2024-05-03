@@ -1,6 +1,8 @@
 package job
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/go-telegram/bot"
@@ -369,6 +371,19 @@ func (j *notifyJob) NotifyCollaborationRequest() error {
 	return nil
 }
 
+type ImageRequest struct {
+	Title    string `json:"title"`
+	Subtitle string `json:"subtitle"`
+	Avatar   string `json:"avatar"`
+	Tags     []Tag  `json:"tags"`
+}
+
+type Tag struct {
+	Text  string `json:"text"`
+	Color string `json:"color"`
+	Icon  string `json:"icon"`
+}
+
 func fetchPreviewImage(baseUrl string, user *db.User) ([]byte, error) {
 	if user.AvatarURL == nil || user.FirstName == nil || user.LastName == nil || user.Title == nil {
 		return nil, errors.New("user data is not complete")
@@ -381,26 +396,41 @@ func fetchPreviewImage(baseUrl string, user *db.User) ([]byte, error) {
 
 	u.Path += "/api/image"
 
-	params := url.Values{}
-	params.Add("title", fmt.Sprintf("%s %s", *user.FirstName, *user.LastName))
-	params.Add("subtitle", *user.Title)
-	params.Add("avatar", fmt.Sprintf("https://assets.peatch.io/%s", *user.AvatarURL))
-
-	if len(user.Badges) > 0 {
-		tags := ""
-		for _, badge := range user.Badges {
-			tags += fmt.Sprintf("%s,%s,%s;", badge.Text, badge.Color, badge.Icon)
-		}
-		params.Add("tags", tags)
+	body := ImageRequest{
+		Title:    fmt.Sprintf("%s %s", *user.FirstName, *user.LastName),
+		Subtitle: *user.Title,
+		Avatar:   fmt.Sprintf("https://assets.peatch.io/%s", *user.AvatarURL),
 	}
 
-	u.RawQuery = params.Encode()
+	tags := make([]Tag, len(user.Badges))
+
+	for i, badge := range user.Badges {
+		tags[i] = Tag{
+			Text:  badge.Text,
+			Color: badge.Color,
+			Icon:  badge.Icon,
+		}
+	}
+
+	body.Tags = tags
+
+	jsonData, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", u.String(), bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
 
 	httpClient := http.Client{
 		Timeout: 30 * time.Second,
 	}
 
-	resp, err := httpClient.Get(u.String())
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		log.Printf("Failed to download image: %s", err)
 		return nil, err
@@ -410,7 +440,7 @@ func fetchPreviewImage(baseUrl string, user *db.User) ([]byte, error) {
 
 	if resp.StatusCode != http.StatusOK {
 		log.Printf("Failed to download image, got status code: %d", resp.StatusCode)
-		return nil, errors.New("failed to download image")
+		return nil, errors.New(fmt.Sprintf("failed to download image, status code: %d", resp.StatusCode))
 	}
 
 	imgData, err := io.ReadAll(resp.Body)

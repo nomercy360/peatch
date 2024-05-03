@@ -21,13 +21,13 @@ export default function SelectOpportunities() {
     queryFn: () => fetchOpportunities(),
   }));
 
-  mainButton
-    .setParams({ text: 'Next', isVisible: true, isEnabled: false })
-    .onClick(navigateNext);
+  mainButton.onClick(navigateNext);
 
   createEffect(() => {
     if (editCollaboration.opportunity_id) {
       mainButton.enable();
+    } else {
+      mainButton.disable();
     }
   });
 

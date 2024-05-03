@@ -39,13 +39,13 @@ export default function SelectBadges() {
     });
   };
 
-  mainButton
-    .setParams({ text: 'Next', isVisible: true, isEnabled: false })
-    .onClick(onCreateBadgeButtonClick);
+  mainButton.onClick(onCreateBadgeButtonClick);
 
   createEffect(() => {
     if (createBadge.icon && createBadge.color && createBadge.text) {
       mainButton.enable();
+    } else {
+      mainButton.disable();
     }
   });
 

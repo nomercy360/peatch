@@ -1,5 +1,5 @@
 import { FormLayout } from '~/components/edit/layout';
-import { editCollaboration, editUser, setEditCollaboration } from '~/store';
+import { editCollaboration, setEditCollaboration } from '~/store';
 import { useMainButton } from '~/hooks/useMainButton';
 import { createEffect, onCleanup } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
@@ -18,17 +18,9 @@ export default function GeneralInfo() {
 
   createEffect(() => {
     if (editCollaboration.title && editCollaboration.description) {
-      mainButton.setParams({
-        isEnabled: true,
-        isVisible: true,
-        text: 'Next',
-      });
+      mainButton.enable('Next');
     } else {
-      mainButton.setParams({
-        isEnabled: false,
-        isVisible: true,
-        text: 'Next',
-      });
+      mainButton.disable('Next');
     }
   });
 
@@ -63,13 +55,13 @@ export default function GeneralInfo() {
               'bg-button': !editCollaboration.is_payable,
               'bg-secondary': editCollaboration.is_payable,
             }}
-          ></span>
+          />
         </button>
         <TextArea
           value={editCollaboration.description}
           setValue={d => setEditCollaboration('description', d)}
           placeholder="For example: I'm looking for a designer to participate in non-profit hackaton"
-        ></TextArea>
+        />
       </div>
     </FormLayout>
   );

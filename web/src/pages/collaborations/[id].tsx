@@ -1,20 +1,6 @@
-import {
-  createEffect,
-  createSignal,
-  For,
-  Match,
-  onCleanup,
-  Suspense,
-  Switch,
-} from 'solid-js';
+import { createEffect, createSignal, For, Match, onCleanup, Suspense, Switch } from 'solid-js';
 import { useNavigate, useParams, useSearchParams } from '@solidjs/router';
-import {
-  CDN_URL,
-  fetchCollaboration,
-  hideCollaboration,
-  publishCollaboration,
-  showCollaboration,
-} from '~/api';
+import { CDN_URL, fetchCollaboration, hideCollaboration, publishCollaboration, showCollaboration } from '~/api';
 import { createQuery } from '@tanstack/solid-query';
 import { setUser, store } from '~/store';
 import ActionDonePopup from '~/components/ActionDonePopup';
@@ -79,8 +65,9 @@ export default function Collaboration() {
   };
 
   const navigateToEdit = () => {
-    console.log('navigateToEdit: ', collabId);
-    navigate('/collaborations/edit/' + collabId);
+    navigate('/collaborations/edit/' + collabId, {
+      state: { from: '/collaborations/' + collabId },
+    });
   };
 
   createEffect(() => {
