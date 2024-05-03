@@ -1,37 +1,40 @@
 import { createQuery } from '@tanstack/solid-query';
-import { CDN_URL, createUserCollaboration, fetchProfile, findUserCollaborationRequest } from '~/api';
+import { CDN_URL, createCollaborationRequest, fetchCollaboration, findCollaborationRequest } from '~/api';
 import { useNavigate, useParams } from '@solidjs/router';
 import { store } from '~/store';
 import { createEffect, createResource, createSignal, Match, onCleanup, Show, Switch } from 'solid-js';
-import TextArea from '~/components/TextArea';
+
 import { usePopup } from '~/hooks/usePopup';
 import { useMainButton } from '~/hooks/useMainButton';
-import BadgeList from '~/components/BadgeList';
 import ActionDonePopup from '~/components/ActionDonePopup';
+import TextArea from '~/components/TextArea';
+import { Badge } from '../../../gen';
 
 export default function Collaborate() {
   const params = useParams();
-  const userId = params.id;
+  const collabId = Number(params.id);
 
   const [created, setCreated] = createSignal(false);
   const mainButton = useMainButton();
-  const { showConfirm } = usePopup();
+  const { showAlert } = usePopup();
   const navigate = useNavigate();
 
-  const backToProfile = () => {
-    navigate(`/users/${userId}`, { state: { from: '/users' } });
+  const backToCollab = () => {
+    navigate(`/collaborations/${collabId}`, {
+      state: { from: '/collaborations' },
+    });
   };
 
   const [message, setMessage] = createSignal('');
 
   const query = createQuery(() => ({
-    queryKey: ['profiles', userId],
-    queryFn: () => fetchProfile(Number(userId)),
+    queryKey: ['collaborations', collabId],
+    queryFn: () => fetchCollaboration(collabId),
   }));
 
   const [existedRequest, _] = createResource(async () => {
     try {
-      return await findUserCollaborationRequest(Number(userId));
+      return await findCollaborationRequest(collabId);
     } catch (e: any) {
       if (e.status === 404) {
         return null;
@@ -41,15 +44,11 @@ export default function Collaborate() {
 
   const postCollaboration = async () => {
     if (!store.user.published_at) {
-      showConfirm(
-        'You must publish your profile first',
-        (ok: boolean) =>
-          ok && navigate('/users/edit', { state: { back: true } }),
-      );
+      showAlert('You must publish your profile first');
       return;
     }
     try {
-      await createUserCollaboration(query.data.id, message());
+      await createCollaborationRequest(collabId, message());
       setCreated(true);
     } catch (e) {
       console.error(e);
@@ -59,11 +58,11 @@ export default function Collaborate() {
   createEffect(() => {
     if (created() || existedRequest()) {
       mainButton.offClick(postCollaboration);
-      mainButton.onClick(backToProfile);
-      mainButton.enable(`Back to ${query.data.first_name}'s profile`);
+      mainButton.onClick(backToCollab);
+      mainButton.enable(`Back to collaboration`);
     } else if (!existedRequest.loading && !existedRequest()) {
       mainButton.onClick(postCollaboration);
-      if (message()) {
+      if (message() !== '') {
         mainButton.enable('Send message');
       } else {
         mainButton.disable('Send message');
@@ -72,7 +71,7 @@ export default function Collaborate() {
 
     onCleanup(() => {
       mainButton.offClick(postCollaboration);
-      mainButton.offClick(backToProfile);
+      mainButton.offClick(backToCollab);
     });
   });
 
@@ -81,8 +80,8 @@ export default function Collaborate() {
       <Match when={created()}>
         <ActionDonePopup
           action="Message sent"
-          description={`Once ${query.data.first_name} accepts your invitation, we'll share your contacts`}
-          callToAction={`There are 12 people with a similar profiles like ${query.data.first_name}`}
+          description={`Once ${query.data.user.first_name} accepts your invitation, we'll share your contacts`}
+          callToAction={`There are 12 more collaborations like this`}
         />
       </Match>
       <Match when={existedRequest.loading && !query.data}>
@@ -92,15 +91,17 @@ export default function Collaborate() {
         <Show when={existedRequest()}>
           <ActionDonePopup
             action="Message sent"
-            description={`Once ${query.data.first_name} accepts your invitation, we'll share your contacts`}
-            callToAction={`There are 12 people with a similar profiles like ${query.data.first_name}`}
+            description={`Once ${query.data.user.first_name} accepts your invitation, we'll share your contacts`}
+            callToAction={`There are 12 more collaborations like this`}
           />
         </Show>
         <Show when={!existedRequest()}>
           <div class="flex flex-col items-center justify-center bg-secondary p-4">
             <div class="mb-4 mt-1 flex flex-col items-center justify-center text-center">
-              <p class="max-w-[220px] text-3xl text-main">
-                Collaborate with {query.data.first_name}
+              <p class="max-w-[220px] text-3xl text-main">Express interest</p>
+              <p class="mt-2 text-sm text-secondary">
+                Say hello, ask question and let {query.data.user.first_name}{' '}
+                know you’re interested
               </p>
               <div class="my-5 flex w-full flex-row items-center justify-center">
                 <img
@@ -110,18 +111,19 @@ export default function Collaborate() {
                 />
                 <img
                   class="-ml-4 size-24 rounded-3xl border-2 border-secondary object-cover object-center"
-                  src={CDN_URL + '/' + query.data.avatar_url}
+                  src={CDN_URL + '/' + query.data.user.avatar_url}
                   alt="User Avatar"
                 />
               </div>
-              <Show when={query.data.badges && query.data.badges.length > 0}>
-                <BadgeList badges={query.data.badges!} position="center" />
-              </Show>
+              <p class="text-secondary">
+                {query.data.user.first_name} is looking for a{' '}
+                {query.data.badges.map((b: Badge) => b.text).join(', ')}
+              </p>
             </div>
             <TextArea
               value={message()}
               setValue={(value: string) => setMessage(value)}
-              placeholder="Write a message to start collaboration"
+              placeholder={`Hi, ${query.data.user.first_name}! My name is ${store.user.first_name}. I'm interested in collaborating with you on your ${query.data.opportunity.text}. If you're too, please reach out to me.`}
             />
           </div>
         </Show>

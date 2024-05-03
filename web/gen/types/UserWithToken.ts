@@ -1,7 +1,8 @@
-import { User } from "./User";
+import { User } from './User';
 
- export type UserWithToken = {
+export type UserWithToken = {
     /**
+     * @description TODO: implement following
      * @type array | undefined
     */
     following?: number[];

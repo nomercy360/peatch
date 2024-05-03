@@ -167,37 +167,6 @@ const docTemplate = `{
                     }
                 }
             },
-            "put": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "collaborations"
-                ],
-                "summary": "Update collaboration",
-                "parameters": [
-                    {
-                        "description": "Collaboration data",
-                        "name": "collaboration",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/Collaboration"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/Collaboration"
-                        }
-                    }
-                }
-            },
             "post": {
                 "consumes": [
                     "application/json"
@@ -260,6 +229,37 @@ const docTemplate = `{
                     }
                 }
             },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "collaborations"
+                ],
+                "summary": "Update collaboration",
+                "parameters": [
+                    {
+                        "description": "Collaboration data",
+                        "name": "collaboration",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/Collaboration"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/Collaboration"
+                        }
+                    }
+                }
+            },
             "delete": {
                 "consumes": [
                     "application/json"
@@ -278,6 +278,15 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Collaboration data",
+                        "name": "collaboration",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CreateCollaborationRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -327,6 +336,65 @@ const docTemplate = `{
                     "collaborations"
                 ],
                 "summary": "Publish collaboration",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Collaboration ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/api/collaborations/{id}/requests": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "collaborations"
+                ],
+                "summary": "Find collaboration request",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Collaboration ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/CollaborationRequest"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/collaborations/{id}/show": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "collaborations"
+                ],
+                "summary": "Show collaboration",
                 "parameters": [
                     {
                         "type": "integer",
@@ -456,6 +524,31 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/users/preview": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "List user preview",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/UserPreview"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/users/{id}": {
             "get": {
                 "consumes": [
@@ -482,6 +575,37 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/User"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/users/{id}/collaborations/requests": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "collaborations"
+                ],
+                "summary": "Find user collaboration request",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/CollaborationRequest"
                         }
                     }
                 }
@@ -665,6 +789,12 @@ const docTemplate = `{
         "Collaboration": {
             "type": "object",
             "properties": {
+                "badges": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Badge"
+                    }
+                },
                 "city": {
                     "type": "string"
                 },
@@ -715,9 +845,36 @@ const docTemplate = `{
                 }
             }
         },
+        "CollaborationRequest": {
+            "type": "object",
+            "properties": {
+                "collaboration_id": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
         "CreateCollaboration": {
             "type": "object",
             "required": [
+                "badge_ids",
                 "country",
                 "country_code",
                 "description",
@@ -758,22 +915,27 @@ const docTemplate = `{
                 }
             }
         },
-        "CreateUserCollaboration": {
+        "CreateCollaborationRequest": {
             "type": "object",
             "required": [
-                "requester_id",
-                "user_id"
+                "message"
             ],
             "properties": {
                 "message": {
                     "type": "string",
                     "maxLength": 1000
-                },
-                "requester_id": {
-                    "type": "integer"
-                },
-                "user_id": {
-                    "type": "integer"
+                }
+            }
+        },
+        "CreateUserCollaboration": {
+            "type": "object",
+            "required": [
+                "message"
+            ],
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "maxLength": 1000
                 }
             }
         },
@@ -930,6 +1092,14 @@ const docTemplate = `{
                 }
             }
         },
+        "UserPreview": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string"
+                }
+            }
+        },
         "UserProfile": {
             "type": "object",
             "properties": {
@@ -993,6 +1163,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "following": {
+                    "description": "TODO: implement following",
                     "type": "array",
                     "items": {
                         "type": "integer"

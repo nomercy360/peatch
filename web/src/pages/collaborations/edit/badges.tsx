@@ -19,6 +19,7 @@ export default function SelectBadges() {
   const [searchParams, _] = useSearchParams();
 
   const navigateNext = () => {
+    console.log('NAVIGATE: ', `/collaborations/edit${idPath}/interests`);
     navigate(`/collaborations/edit${idPath}/interests`, {
       state: { back: true },
     });
@@ -55,7 +56,7 @@ export default function SelectBadges() {
   mainButton.onClick(navigateNext);
 
   createEffect(() => {
-    if (editCollaboration.badge_ids.length > 0) {
+    if (editCollaboration.badge_ids && editCollaboration.badge_ids.length > 0) {
       mainButton.enable('Next');
     } else {
       mainButton.disable('Next');

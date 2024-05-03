@@ -33,16 +33,17 @@ type service interface {
 	ListCollaborations(query db.CollaborationQuery) ([]db.Collaboration, error)
 	GetCollaborationByID(userID, id int64) (*db.Collaboration, error)
 	CreateCollaboration(userID int64, create svc.CreateCollaboration) (*db.Collaboration, error)
-	UpdateCollaboration(userID, collabID int64, update svc.CreateCollaboration) (*db.Collaboration, error)
+	UpdateCollaboration(userID, collabID int64, update svc.CreateCollaboration) error
 	PublishCollaboration(userID int64, collaborationID int64) error
 	HideCollaboration(userID int64, collaborationID int64) error
 	ShowCollaboration(userID int64, collaborationID int64) error
-	CreateCollaborationRequest(userID int64, request svc.CreateCollaborationRequest) (*db.CollaborationRequest, error)
+	CreateCollaborationRequest(userID, collaborationID int64, request svc.CreateCollaborationRequest) (*db.CollaborationRequest, error)
 	GetPresignedURL(userID int64, objectKey string) (*svc.PresignedURL, error)
-	CreateUserCollaboration(userID int64, request svc.CreateUserCollaboration) (*db.UserCollaborationRequest, error)
+	CreateUserCollaboration(userID int64, receiverID int64, request svc.CreateUserCollaboration) (*db.UserCollaborationRequest, error)
 	// GetUserPreview fetch 3 random user avatars for the home page
 	GetUserPreview() ([]svc.UserPreview, error)
 	FindUserCollaborationRequest(requesterID, userID int64) (*db.UserCollaborationRequest, error)
+	FindCollaborationRequest(userID, collabID int64) (*db.CollaborationRequest, error)
 }
 
 type CustomValidator struct {
@@ -96,6 +97,7 @@ func (h *handler) RegisterRoutes(e *echo.Echo) {
 	a.GET("/collaborations/:id", h.handleGetCollaboration)
 	a.POST("/collaborations", h.handleCreateCollaboration)
 	a.PUT("/collaborations/:id", h.handleUpdateCollaboration)
+	a.GET("/collaborations/:id/requests", h.handleFindCollaborationRequest)
 	a.POST("/collaborations/:id/publish", h.handlePublishCollaboration)
 	a.POST("/collaborations/:id/hide", h.handleHideCollaboration)
 	a.POST("/collaborations/:id/show", h.handleShowCollaboration)

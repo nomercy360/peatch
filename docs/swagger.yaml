@@ -15,6 +15,10 @@ definitions:
     type: object
   Collaboration:
     properties:
+      badges:
+        items:
+          $ref: '#/definitions/Badge'
+        type: array
       city:
         type: string
       country:
@@ -48,6 +52,23 @@ definitions:
       user_id:
         type: integer
     type: object
+  CollaborationRequest:
+    properties:
+      collaboration_id:
+        type: integer
+      created_at:
+        type: string
+      id:
+        type: integer
+      message:
+        type: string
+      status:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: integer
+    type: object
   CreateCollaboration:
     properties:
       badge_ids:
@@ -73,24 +94,28 @@ definitions:
         maxLength: 255
         type: string
     required:
+      - badge_ids
     - country
     - country_code
     - description
     - opportunity_id
     - title
     type: object
+  CreateCollaborationRequest:
+    properties:
+      message:
+        maxLength: 1000
+        type: string
+    required:
+      - message
+    type: object
   CreateUserCollaboration:
     properties:
       message:
         maxLength: 1000
         type: string
-      requester_id:
-        type: integer
-      user_id:
-        type: integer
     required:
-    - requester_id
-    - user_id
+      - message
     type: object
   Opportunity:
     properties:
@@ -197,6 +222,11 @@ definitions:
       username:
         type: string
     type: object
+  UserPreview:
+    properties:
+      avatar_url:
+        type: string
+    type: object
   UserProfile:
     properties:
       avatar_url:
@@ -239,6 +269,7 @@ definitions:
   UserWithToken:
     properties:
       following:
+        description: 'TODO: implement following'
         items:
           type: integer
         type: array
@@ -374,6 +405,49 @@ paths:
       summary: Create collaboration
       tags:
       - collaborations
+  /api/collaborations/{id}:
+    delete:
+      consumes:
+        - application/json
+      parameters:
+        - description: Collaboration ID
+          in: path
+          name: id
+          required: true
+          type: integer
+        - description: Collaboration data
+          in: body
+          name: collaboration
+          required: true
+          schema:
+            $ref: '#/definitions/CreateCollaborationRequest'
+      produces:
+        - application/json
+      responses:
+        "204":
+          description: No Content
+      summary: Delete collaboration
+      tags:
+        - collaborations
+    get:
+      consumes:
+        - application/json
+      parameters:
+        - description: Collaboration ID
+          in: path
+          name: id
+          required: true
+          type: integer
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Collaboration'
+      summary: Get collaboration
+      tags:
+        - collaborations
     put:
       consumes:
       - application/json
@@ -392,43 +466,6 @@ paths:
           schema:
             $ref: '#/definitions/Collaboration'
       summary: Update collaboration
-      tags:
-      - collaborations
-  /api/collaborations/{id}:
-    delete:
-      consumes:
-      - application/json
-      parameters:
-      - description: Collaboration ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: No Content
-      summary: Delete collaboration
-      tags:
-      - collaborations
-    get:
-      consumes:
-      - application/json
-      parameters:
-      - description: Collaboration ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/Collaboration'
-      summary: Get collaboration
       tags:
       - collaborations
   /api/collaborations/{id}/hide:
@@ -465,6 +502,44 @@ paths:
         "200":
           description: OK
       summary: Publish collaboration
+      tags:
+      - collaborations
+  /api/collaborations/{id}/requests:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Collaboration ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/CollaborationRequest'
+      summary: Find collaboration request
+      tags:
+      - collaborations
+  /api/collaborations/{id}/show:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Collaboration ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      summary: Show collaboration
       tags:
       - collaborations
   /api/opportunities:
@@ -560,6 +635,26 @@ paths:
       summary: Get user
       tags:
       - users
+  /api/users/{id}/collaborations/requests:
+    get:
+      consumes:
+        - application/json
+      parameters:
+        - description: User ID
+          in: path
+          name: id
+          required: true
+          type: integer
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/CollaborationRequest'
+      summary: Find user collaboration request
+      tags:
+        - collaborations
   /api/users/{user_id}/collaborations:
     post:
       consumes:
@@ -620,6 +715,22 @@ paths:
         "204":
           description: No Content
       summary: Show user
+      tags:
+        - users
+  /api/users/preview:
+    get:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/UserPreview'
+            type: array
+      summary: List user preview
       tags:
       - users
   /users/{id}/follow:

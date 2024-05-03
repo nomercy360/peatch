@@ -27,6 +27,9 @@ const User = lazy(() => import('~/pages/users/[id]'));
 const EditUser = lazy(() => import('~/pages/users/edit/index'));
 const EditCollaboration = lazy(() => import('~/pages/collaborations/edit'));
 const UserCollaborate = lazy(() => import('~/pages/users/collaborate'));
+const CollaborationCollaborate = lazy(
+  () => import('~/pages/collaborations/collaborate'),
+);
 
 const root = document.getElementById('root');
 
@@ -61,6 +64,10 @@ render(
         <Route path="/interests" component={CollaborationOpportunity} />
       </Route>
       <Route path="/users/:id/collaborate" component={UserCollaborate} />
+      <Route
+        path="collaborations/:id/collaborate"
+        component={CollaborationCollaborate}
+      />
       <Route path="*" component={() => <Navigate href={'/'} />} />
     </Router>
   ),

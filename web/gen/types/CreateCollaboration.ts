@@ -1,6 +1,6 @@
 export type CreateCollaboration = {
   /**
-   * @type array | undefined
+   * @type array
    */
   badge_ids: number[];
   /**

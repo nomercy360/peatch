@@ -441,7 +441,7 @@ type UserCollaborationRequest struct {
 	Status      string    `json:"status" db:"status"`
 } // @Name UserCollaborationRequest
 
-func (s *storage) CreateUserCollaboration(request UserCollaborationRequest) (*UserCollaborationRequest, error) {
+func (s *storage) CreateUserCollaboration(userID, receiverID int64, message string) (*UserCollaborationRequest, error) {
 	var res UserCollaborationRequest
 
 	query := `
@@ -450,7 +450,7 @@ func (s *storage) CreateUserCollaboration(request UserCollaborationRequest) (*Us
 		RETURNING id, user_id, requester_id, message, created_at, updated_at, status;
 	`
 
-	err := s.pg.QueryRowx(query, request.UserID, request.RequesterID, request.Message).StructScan(&res)
+	err := s.pg.QueryRowx(query, receiverID, userID, message).StructScan(&res)
 
 	if err != nil {
 		return nil, err

@@ -25,16 +25,17 @@ type storage interface {
 	ListCollaborations(query db.CollaborationQuery) ([]db.Collaboration, error)
 	GetCollaborationByID(userID, id int64) (*db.Collaboration, error)
 	CreateCollaboration(userID int64, collaboration db.Collaboration, badges []int64) (*db.Collaboration, error)
-	UpdateCollaboration(userID, collabID int64, collaboration db.Collaboration, badges []int64) (*db.Collaboration, error)
+	UpdateCollaboration(userID, collabID int64, collaboration db.Collaboration, badges []int64) error
 	PublishCollaboration(userID int64, collaborationID int64) error
 	HideCollaboration(userID int64, collaborationID int64) error
-	CreateCollaborationRequest(userID int64, request db.CollaborationRequest) (*db.CollaborationRequest, error)
+	CreateCollaborationRequest(userID int64, collaborationID int64, message string) (*db.CollaborationRequest, error)
 	GetUserFollowing(userID int64) ([]int64, error)
-	CreateUserCollaboration(collaboration db.UserCollaborationRequest) (*db.UserCollaborationRequest, error)
+	CreateUserCollaboration(userID, receiverID int64, message string) (*db.UserCollaborationRequest, error)
 	ShowUser(userID int64) error
 	GetUserPreview() ([]db.User, error)
 	FindUserCollaborationRequest(requesterID, userID int64) (*db.UserCollaborationRequest, error)
 	ShowCollaboration(userID int64, collaborationID int64) error
+	FindCollaborationRequest(userID, collabID int64) (*db.CollaborationRequest, error)
 }
 
 type s3Client interface {

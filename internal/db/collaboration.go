@@ -191,16 +191,16 @@ func (s *storage) CreateCollaboration(userID int64, collaboration Collaboration,
 	return &res, nil
 }
 
-func (s *storage) UpdateCollaboration(userID, collabID int64, collaboration Collaboration, badges []int64) (*Collaboration, error) {
+func (s *storage) UpdateCollaboration(userID, collabID int64, collaboration Collaboration, badges []int64) error {
 	tx, err := s.pg.Beginx()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	query := `
 		UPDATE collaborations
-		SET title = $1, description = $2, is_payable = $3, country = $4, city = $5, country_code = $6, updated_at = NOW()
-		WHERE id = $7 AND user_id = $8
+		SET title = $1, description = $2, is_payable = $3, country = $4, city = $5, country_code = $6, updated_at = NOW(), opportunity_id = $7
+		WHERE id = $8 AND user_id = $9
 		RETURNING updated_at
 	`
 
@@ -212,22 +212,23 @@ func (s *storage) UpdateCollaboration(userID, collabID int64, collaboration Coll
 		collaboration.Country,
 		collaboration.City,
 		collaboration.CountryCode,
+		collaboration.OpportunityID,
 		collabID,
 		userID,
 	).StructScan(&collaboration)
 
 	if err != nil && IsNoRowsError(err) {
-		return nil, err
+		return ErrNotFound
 	} else if err != nil {
 		tx.Rollback()
-		return nil, err
+		return err
 	}
 
 	if len(badges) > 0 {
 		_, err = tx.Exec("DELETE FROM collaboration_badges WHERE collaboration_id = $1", collabID)
 		if err != nil {
 			tx.Rollback()
-			return nil, err
+			return err
 		}
 
 		var valueStrings []string
@@ -242,15 +243,15 @@ func (s *storage) UpdateCollaboration(userID, collabID int64, collaboration Coll
 
 		if _, err := tx.Exec(stmt, valueArgs...); err != nil {
 			tx.Rollback()
-			return nil, err
+			return err
 		}
 	}
 
 	if err := tx.Commit(); err != nil {
-		return nil, err
+		return err
 	}
 
-	return &collaboration, nil
+	return nil
 }
 
 type CollaborationRequest struct {
@@ -261,16 +262,18 @@ type CollaborationRequest struct {
 	CreatedAt       time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt       time.Time `json:"updated_at" db:"updated_at"`
 	Status          string    `json:"status" db:"status"`
-}
+} // @Name CollaborationRequest
 
-func (s *storage) CreateCollaborationRequest(userID int64, request CollaborationRequest) (*CollaborationRequest, error) {
+func (s *storage) CreateCollaborationRequest(userID, collaborationID int64, message string) (*CollaborationRequest, error) {
+	var request CollaborationRequest
+
 	query := `
 		INSERT INTO collaboration_requests (collaboration_id, user_id, message)
 		VALUES ($1, $2, $3)
-		RETURNING id, created_at
+		RETURNING id, collaboration_id, user_id, message, created_at, updated_at, status
 	`
 
-	err := s.pg.QueryRowx(query, request.CollaborationID, userID, request.Message).StructScan(&request)
+	err := s.pg.QueryRowx(query, collaborationID, userID, message).StructScan(&request)
 	if err != nil {
 		return nil, err
 	}
@@ -351,4 +354,21 @@ func (s *storage) ListCollaborationRequests(from time.Time) ([]CollaborationRequ
 	}
 
 	return requests, nil
+}
+
+func (s *storage) FindCollaborationRequest(userID, collabID int64) (*CollaborationRequest, error) {
+	var request CollaborationRequest
+
+	query := `
+		SELECT id, collaboration_id, user_id, message, created_at, updated_at, status
+		FROM collaboration_requests
+		WHERE collaboration_id = $1 AND user_id = $2
+	`
+
+	err := s.pg.Get(&request, query, collabID, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &request, nil
 }

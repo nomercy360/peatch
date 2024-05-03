@@ -1,4 +1,4 @@
-import { RouteSectionProps, useParams } from '@solidjs/router';
+import { RouteSectionProps, useNavigate, useParams } from '@solidjs/router';
 import { fetchCollaboration } from '~/api';
 import { setEditCollaboration, setEditCollaborationId } from '~/store';
 import { createEffect, createResource, Show } from 'solid-js';
@@ -17,6 +17,9 @@ export default function EditCollaboration(props: RouteSectionProps) {
       opportunity_id: 0,
       title: '',
     });
+
+    const navigate = useNavigate();
+    navigate('/collaborations/edit');
     return <div>{props.children}</div>;
   } else {
     const [collaboration, _] = createResource(async () => {

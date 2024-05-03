@@ -200,6 +200,7 @@ func (h *handler) handleShowUser(c echo.Context) error {
 // @Router /api/users/{user_id}/collaborations [post]
 func (h *handler) handleCreateUserCollaboration(c echo.Context) error {
 	userID := getUserID(c)
+	receiverID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 
 	var create svc.CreateUserCollaboration
 	if err := c.Bind(&create); err != nil {
@@ -210,7 +211,7 @@ func (h *handler) handleCreateUserCollaboration(c echo.Context) error {
 		return err
 	}
 
-	collaboration, err := h.svc.CreateUserCollaboration(userID, create)
+	collaboration, err := h.svc.CreateUserCollaboration(userID, receiverID, create)
 	if err != nil {
 		return err
 	}
@@ -234,6 +235,14 @@ func (h *handler) handleGetUserPreview(c echo.Context) error {
 	return c.JSON(http.StatusOK, users)
 }
 
+// handleFindUserCollaborationRequest godoc
+// @Summary Find user collaboration request
+// @Tags collaborations
+// @Accept  json
+// @Produce  json
+// @Param id path int true "User ID"
+// @Success 200 {object} CollaborationRequest
+// @Router /api/users/{id}/collaborations/requests [get]
 func (h *handler) handleFindUserCollaborationRequest(c echo.Context) error {
 	requesterID := getUserID(c)
 	userID, _ := strconv.ParseInt(c.Param("id"), 10, 64)

@@ -28,7 +28,10 @@ export default function SelectOpportunities() {
   mainButton.onClick(navigateNext);
 
   createEffect(() => {
-    if (editCollaboration.opportunity_id) {
+    if (
+      editCollaboration.opportunity_id &&
+      editCollaboration.opportunity_id > 0
+    ) {
       mainButton.enable('Next');
     } else {
       mainButton.disable('Next');

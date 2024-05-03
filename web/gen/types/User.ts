@@ -1,7 +1,7 @@
-import { Badge } from "./Badge";
-import type { Opportunity } from "./Opportunity";
+import type { Badge } from './Badge';
+import type { Opportunity } from './Opportunity';
 
- export type User = {
+export type User = {
     /**
      * @type string | undefined
     */

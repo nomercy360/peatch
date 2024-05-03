@@ -19,7 +19,7 @@ export default function GeneralInfo() {
     if (editUser.first_name && editUser.last_name && editUser.title) {
       mainButton.enable('Next');
     } else {
-      mainButton.disable();
+      mainButton.disable('Next');
     }
   });
 

@@ -12,7 +12,6 @@ export function useMainButton() {
       window.Telegram.WebApp.MainButton.isVisible = false;
     },
     enable: (text?: string) => {
-      console.log(window.Telegram);
       return window.Telegram.WebApp.MainButton.setParams({
         is_active: true,
         is_visible: true,
@@ -24,8 +23,10 @@ export function useMainButton() {
     disable: (text?: string) => {
       return window.Telegram.WebApp.MainButton.setParams({
         is_active: false,
-        color: window.Telegram.WebApp.colorScheme === 'dark' ? '#3C3C3E' : '#F7F7F7',
-        text_color: window.Telegram.WebApp.colorScheme === 'dark' ? '#FFFFFF' : '#3C3C3E',
+        color:
+          window.Telegram.WebApp.colorScheme === 'dark' ? '#3C3C3E' : '#F7F7F7',
+        text_color:
+          window.Telegram.WebApp.colorScheme === 'dark' ? '#FFFFFF' : '#3C3C3E',
         is_visible: true,
         text,
       });

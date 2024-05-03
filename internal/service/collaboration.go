@@ -63,16 +63,16 @@ func (s *service) CreateCollaboration(userID int64, create CreateCollaboration) 
 	return s.storage.CreateCollaboration(userID, create.toCollaboration(), create.BadgeIDs)
 }
 
-func (s *service) UpdateCollaboration(userID, collabID int64, update CreateCollaboration) (*db.Collaboration, error) {
-	res, err := s.storage.UpdateCollaboration(userID, collabID, update.toCollaboration(), update.BadgeIDs)
+func (s *service) UpdateCollaboration(userID, collabID int64, update CreateCollaboration) error {
+	err := s.storage.UpdateCollaboration(userID, collabID, update.toCollaboration(), update.BadgeIDs)
 
 	if err != nil && errors.Is(err, db.ErrNotFound) {
-		return nil, terrors.NotFound(err)
+		return terrors.NotFound(err)
 	} else if err != nil {
-		return nil, err
+		return err
 	}
 
-	return res, nil
+	return nil
 }
 
 func (s *service) PublishCollaboration(userID int64, collaborationID int64) error {
@@ -100,19 +100,17 @@ func (s *service) HideCollaboration(userID int64, collaborationID int64) error {
 }
 
 type CreateCollaborationRequest struct {
-	CollaborationID int64  `json:"collaboration_id" validate:"required"`
-	Message         string `json:"message" validate:"max=1000"`
-}
+	Message string `json:"message" validate:"max=1000,required"`
+} //@Name CreateCollaborationRequest
 
 func (cr CreateCollaborationRequest) toCollaborationRequest() db.CollaborationRequest {
 	return db.CollaborationRequest{
-		CollaborationID: cr.CollaborationID,
-		Message:         cr.Message,
+		Message: cr.Message,
 	}
 }
 
-func (s *service) CreateCollaborationRequest(userID int64, request CreateCollaborationRequest) (*db.CollaborationRequest, error) {
-	res, err := s.storage.CreateCollaborationRequest(userID, request.toCollaborationRequest())
+func (s *service) CreateCollaborationRequest(userID, collaborationID int64, request CreateCollaborationRequest) (*db.CollaborationRequest, error) {
+	res, err := s.storage.CreateCollaborationRequest(userID, collaborationID, request.Message)
 
 	if err != nil && errors.Is(err, db.ErrNotFound) {
 		return nil, terrors.NotFound(err)
@@ -133,4 +131,18 @@ func (s *service) ShowCollaboration(userID int64, collaborationID int64) error {
 	}
 
 	return nil
+}
+
+func (s *service) FindCollaborationRequest(userID, collabID int64) (*db.CollaborationRequest, error) {
+	res, err := s.storage.FindCollaborationRequest(userID, collabID)
+
+	if err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			return nil, terrors.NotFound(err)
+		}
+
+		return nil, err
+	}
+
+	return res, nil
 }

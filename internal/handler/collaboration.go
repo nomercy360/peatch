@@ -112,12 +112,11 @@ func (h *handler) handleUpdateCollaboration(c echo.Context) error {
 
 	uid := getUserID(c)
 
-	res, err := h.svc.UpdateCollaboration(uid, cid, collaboration)
-	if err != nil {
+	if err := h.svc.UpdateCollaboration(uid, cid, collaboration); err != nil {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, res)
+	return c.NoContent(http.StatusNoContent)
 }
 
 // handlePublishCollaboration godoc
@@ -168,6 +167,7 @@ func (h *handler) handleHideCollaboration(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param id path int true "Collaboration ID"
+// @Param collaboration body CreateCollaborationRequest true "Collaboration data"
 // @Success 204
 // @Router /api/collaborations/{id} [delete]
 func (h *handler) handleCreateCollaborationRequest(c echo.Context) error {
@@ -181,8 +181,9 @@ func (h *handler) handleCreateCollaborationRequest(c echo.Context) error {
 	}
 
 	uid := getUserID(c)
+	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 
-	createdRequest, err := h.svc.CreateCollaborationRequest(uid, request)
+	createdRequest, err := h.svc.CreateCollaborationRequest(uid, id, request)
 	if err != nil {
 		return err
 	}
@@ -209,4 +210,24 @@ func (h *handler) handleShowCollaboration(c echo.Context) error {
 	}
 
 	return c.NoContent(http.StatusNoContent)
+}
+
+// handleFindCollaborationRequest godoc
+// @Summary Find collaboration request
+// @Tags collaborations
+// @Accept  json
+// @Produce  json
+// @Param id path int true "Collaboration ID"
+// @Success 200 {object} CollaborationRequest
+// @Router /api/collaborations/{id}/requests [get]
+func (h *handler) handleFindCollaborationRequest(c echo.Context) error {
+	userID := getUserID(c)
+	collabID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+
+	requests, err := h.svc.FindCollaborationRequest(userID, collabID)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, requests)
 }

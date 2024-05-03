@@ -1,5 +1,5 @@
 import { store } from '~/store';
-import { CreateCollaboration, CreateUserCollaboration } from '../../gen';
+import { CreateCollaboration } from '../../gen';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
 export const CDN_URL = 'https://assets.peatch.io';
@@ -52,7 +52,7 @@ export const fetchUsers = async (search: any) => {
 };
 
 export const fetchBadges = async () => {
-  return await apiFetch({ endpoint: '/badges' });
+  return await apiFetch({ endpoint: '/badges', showProgress: false });
 };
 
 export const postBadge = async (text: string, color: string, icon: string) => {
@@ -64,7 +64,7 @@ export const postBadge = async (text: string, color: string, icon: string) => {
 };
 
 export const fetchOpportunities = async () => {
-  return await apiFetch({ endpoint: '/opportunities' });
+  return await apiFetch({ endpoint: '/opportunities', showProgress: false });
 };
 
 export const updateUser = async (user: any) => {
@@ -172,12 +172,13 @@ export const fetchCollaborations = async (search: any) => {
 };
 
 export const createUserCollaboration = async (
-  collaboration: CreateUserCollaboration,
+  receiverID: number,
+  message: string,
 ) => {
   return await apiFetch({
-    endpoint: '/users/' + collaboration.user_id + '/collaborations/requests',
+    endpoint: `/users/${receiverID}/collaborations/requests`,
     method: 'POST',
-    body: collaboration,
+    body: { message },
   });
 };
 
@@ -213,5 +214,22 @@ export const fetchCollaboration = async (collaborationID: number) => {
 export const findUserCollaborationRequest = async (userID: number) => {
   return await apiFetch({
     endpoint: `/users/${userID}/collaborations/requests`,
+  });
+};
+
+export const findCollaborationRequest = async (collaborationID: number) => {
+  return await apiFetch({
+    endpoint: `/collaborations/${collaborationID}/requests`,
+  });
+};
+
+export const createCollaborationRequest = async (
+  collaborationID: number,
+  message: string,
+) => {
+  return await apiFetch({
+    endpoint: `/collaborations/${collaborationID}/requests`,
+    method: 'POST',
+    body: { message },
   });
 };
