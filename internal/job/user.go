@@ -58,7 +58,7 @@ func (j *notifyJob) NotifyNewUserProfile() error {
 	}
 
 	for _, user := range newUsers {
-		userDetails, err := j.storage.GetUserByID(user.ID, true)
+		userDetails, err := j.storage.GetUserByID(user.ID, false)
 
 		if err != nil {
 			return err
@@ -160,7 +160,7 @@ func (j *notifyJob) NotifyNewCollaboration() error {
 			continue
 		}
 
-		creator, err := j.storage.GetUserByID(collaboration.UserID, true)
+		creator, err := j.storage.GetUserByID(collaboration.UserID, false)
 
 		if err != nil {
 			return err
@@ -242,13 +242,13 @@ func (j *notifyJob) NotifyUserReceivedCollaborationRequest() error {
 		)
 
 		if err != nil && errors.Is(err, db.ErrNotFound) {
-			requester, err := j.storage.GetUserByID(collaboration.RequesterID, true)
+			requester, err := j.storage.GetUserByID(collaboration.RequesterID, false)
 
 			if err != nil {
 				return err
 			}
 
-			receiver, err := j.storage.GetUserByID(collaboration.UserID, true)
+			receiver, err := j.storage.GetUserByID(collaboration.UserID, false)
 
 			if err != nil {
 				return err
@@ -324,7 +324,7 @@ func (j *notifyJob) NotifyCollaborationRequest() error {
 			request.ID,
 		); err != nil && errors.Is(err, db.ErrNotFound) {
 			// get the one who created the request
-			requester, err := j.storage.GetUserByID(request.UserID, true)
+			requester, err := j.storage.GetUserByID(request.UserID, false)
 
 			if err != nil {
 				return err

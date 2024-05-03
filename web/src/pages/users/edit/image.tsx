@@ -3,13 +3,7 @@ import { useMainButton } from '~/hooks/useMainButton';
 import { useNavigate } from '@solidjs/router';
 import { createEffect, createSignal, Match, onCleanup, Switch } from 'solid-js';
 import { editUser, setEditUser, store } from '~/store';
-import {
-  API_BASE_URL,
-  CDN_URL,
-  fetchPresignedUrl,
-  updateUser,
-  uploadToS3,
-} from '~/api';
+import { API_BASE_URL, CDN_URL, fetchPresignedUrl, updateUser, uploadToS3 } from '~/api';
 import { usePopup } from '~/hooks/usePopup';
 
 export default function SelectBadges() {
@@ -130,18 +124,12 @@ export default function SelectBadges() {
   );
 }
 
-function ImageBox({
-                    imgURL,
-                    onFileChange,
-                  }: {
-  imgURL: string;
-  onFileChange: any;
-}) {
+function ImageBox(props: { imgURL: string; onFileChange: any }) {
   return (
     <div class="mt-5 flex h-full items-center justify-center">
       <div class="relative flex size-56 flex-col items-center justify-center gap-2">
         <img
-          src={imgURL}
+          src={props.imgURL}
           alt="Uploaded image preview"
           class="size-56 rounded-xl object-cover"
         />
@@ -149,14 +137,14 @@ function ImageBox({
           class="absolute size-full cursor-pointer rounded-xl opacity-0"
           type="file"
           accept="image/*"
-          onChange={onFileChange}
+          onChange={props.onFileChange}
         />
       </div>
     </div>
   );
 }
 
-function UploadBox({ onFileChange }: { onFileChange: any }) {
+function UploadBox(props: { onFileChange: any }) {
   return (
     <>
       <div class="relative flex size-56 flex-col items-center justify-center rounded-xl bg-main">
@@ -164,9 +152,9 @@ function UploadBox({ onFileChange }: { onFileChange: any }) {
           class="absolute size-full opacity-0"
           type="file"
           accept="image/*"
-          onChange={onFileChange}
+          onChange={props.onFileChange}
         />
-        <span class="material-symbols-rounded text-secondary pointer-events-none z-10 text-[45px]">
+        <span class="material-symbols-rounded pointer-events-none z-10 text-[45px] text-secondary">
           camera_alt
         </span>
       </div>
