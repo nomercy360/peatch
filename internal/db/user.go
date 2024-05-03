@@ -678,12 +678,12 @@ func (s *storage) DeleteUserByID(userID int64) error {
 		return err
 	}
 
-	if _, err := tx.Exec("DELETE FROM users WHERE id = $1", userID); err != nil {
+	if _, err := tx.Exec("DELETE FROM notifications WHERE user_id = $1", userID); err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	if _, err := tx.Exec("DELETE FROM notifications WHERE user_id = $1", userID); err != nil {
+	if _, err := tx.Exec("DELETE FROM users WHERE id = $1", userID); err != nil {
 		tx.Rollback()
 		return err
 	}

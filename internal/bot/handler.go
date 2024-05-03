@@ -90,17 +90,23 @@ func (b *bot) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 }
 
 func (b *bot) handleMessage(update tgModels.Update, w http.ResponseWriter) {
+	// only respond to messages from users. Ignore messages from bots and groups. ALso ignore messages from channels
+	if update.Message.Chat.Type != "private" {
+		w.WriteHeader(http.StatusOK)
+		return
+	} else if update.Message.From.IsBot {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
 	user, err := b.storage.GetUserByChatID(update.Message.Chat.ID)
 
 	// if its /reset command
 	if update.Message.Text == "/reset" && user != nil {
-		err := b.storage.DeleteUserByID(user.ID)
-
-		if err != nil {
+		if err := b.storage.DeleteUserByID(user.ID); err != nil {
 			log.Printf("Failed to delete user: %v", err)
 			http.Error(w, "Failed to delete user", http.StatusInternalServerError)
 			return
-
 		}
 
 		msg := telegram.SendMessageParams{
