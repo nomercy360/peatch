@@ -119,6 +119,8 @@ func (b *bot) handleMessage(update tgModels.Update, w http.ResponseWriter) {
 			http.Error(w, "Failed to send message", http.StatusInternalServerError)
 			return
 		}
+
+		w.WriteHeader(http.StatusOK)
 	}
 
 	lang := "en"
