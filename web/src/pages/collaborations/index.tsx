@@ -76,7 +76,7 @@ const CollaborationCard = (props: { collab: Collaboration }) => {
       </p>
       <div class="mt-4 flex w-full flex-row items-center justify-start gap-2">
         <img
-          class="size-10 rounded-2xl object-cover"
+          class="size-11 rounded-xl object-cover"
           src={CDN_URL + '/' + props.collab.user?.avatar_url}
           alt="User Avatar"
         />

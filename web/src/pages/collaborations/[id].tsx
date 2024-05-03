@@ -127,7 +127,7 @@ export default function Collaboration() {
 
   return (
     <div>
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<Loader />}>
         <Switch>
           <Match when={published() && isCurrentUserCollab()}>
             <ActionDonePopup
@@ -173,7 +173,7 @@ export default function Collaboration() {
                 <p class="text-3xl text-white">{query.data.title}:</p>
                 <div class="mt-4 flex w-full flex-row items-center justify-start gap-2">
                   <img
-                    class="size-10 rounded-2xl object-cover"
+                    class="size-11 rounded-xl object-cover"
                     src={CDN_URL + '/' + query.data.user?.avatar_url}
                     alt="User Avatar"
                   />
@@ -229,4 +229,22 @@ const ActionButton = (props: { text: string; onClick: () => void }) => {
       {props.text}
     </button>
   );
+};
+
+const Loader = () => {
+  return (<div class="bg-secondary flex flex-col items-start justify-start h-screen">
+    <div class="bg-main h-[260px] w-full" />
+    <div class='flex flex-col items-start justify-start p-4'>
+      <div class="w-full h-36 bg-main rounded" />
+      <div class="w-full flex flex-row items-center justify-start flex-wrap gap-2 mt-4">
+        <div class="w-40 h-10 rounded-2xl bg-main" />
+        <div class="w-32 h-10 rounded-2xl bg-main" />
+        <div class="w-36 h-10 rounded-2xl bg-main" />
+        <div class="w-24 h-10 rounded-2xl bg-main" />
+        <div class="w-40 h-10 rounded-2xl bg-main" />
+        <div class="w-28 h-10 rounded-2xl bg-main" />
+        <div class="w-32 h-10 rounded-2xl bg-main" />
+      </div>
+    </div>
+  </div>);
 };
