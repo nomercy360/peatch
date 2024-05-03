@@ -33,6 +33,9 @@ spec:
               name: http
               protocol: TCP
           resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
             limits:
               memory: "512Mi"
           envFrom:
@@ -71,6 +74,9 @@ spec:
             - secretRef:
                 name: peatch-secrets
           resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
             limits:
               memory: "512Mi"
       restartPolicy: Always
@@ -106,6 +112,9 @@ spec:
             - secretRef:
                 name: peatch-secrets
           resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
             limits:
               memory: "512Mi"
       restartPolicy: Always
