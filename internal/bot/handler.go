@@ -121,6 +121,7 @@ func (b *bot) handleMessage(update tgModels.Update, w http.ResponseWriter) {
 		}
 
 		w.WriteHeader(http.StatusOK)
+		return
 	}
 
 	lang := "en"
