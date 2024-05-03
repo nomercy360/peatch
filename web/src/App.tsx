@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/solid-query';
 import { setToken, setUser } from './store';
 import { API_BASE_URL } from './api';
 import { NavigationProvider } from './hooks/useNavigation';
+import { useNavigate } from '@solidjs/router';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -10,9 +11,24 @@ const queryClient = new QueryClient({
   },
 });
 
+function transformStartParam(startParam?: string): string | null {
+  if (!startParam) return null;
+
+  // Check if the parameter starts with "redirect-to-"
+  if (startParam.startsWith('redirect-to-')) {
+    const path = startParam.slice('redirect-to-'.length);
+
+    return '/' + path.replace(/-/g, '/');
+  } else {
+    return null;
+  }
+}
+
 export default function App(props: any) {
   const [isAuthenticated, setIsAuthenticated] = createSignal(false);
   const [isLoading, setIsLoading] = createSignal(true);
+
+  const navigate = useNavigate();
 
   createEffect(async () => {
     const initData = window.Telegram.WebApp.initData;
@@ -37,6 +53,15 @@ export default function App(props: any) {
 
       // if there is a redirect url, redirect to it
       // ?startapp=redirect-to=/users/
+
+      const startapp = window.Telegram.WebApp.initDataUnsafe.start_param;
+
+      const redirectUrl = transformStartParam(startapp);
+
+      if (redirectUrl) {
+        navigate(redirectUrl);
+        return;
+      }
     } catch (e) {
       console.error('Failed to authenticate user:', e);
       setIsAuthenticated(false);
@@ -52,7 +77,7 @@ export default function App(props: any) {
             <div>{props.children}</div>
           </Match>
           <Match when={!isAuthenticated() && isLoading()}>
-            <div class="h-screen w-full flex-col items-start justify-center bg-main"></div>
+            <div class="h-screen w-full flex-col items-start justify-center bg-main" />
           </Match>
           <Match when={!isAuthenticated() && !isLoading()}>
             <div class="h-screen min-h-screen w-full flex-col items-start justify-center bg-main text-3xl text-main">

@@ -103,7 +103,7 @@ func (j *notifyJob) NotifyNewUserProfile() error {
 				return err
 			}
 
-			linkToProfile := fmt.Sprintf("%s?startapp=redirect-to=/users/%d", j.botWebApp, user.ID)
+			linkToProfile := fmt.Sprintf("%s?startapp=redirect-to-users-%d", j.botWebApp, user.ID)
 
 			if err = j.notifier.SendNotification(created.ChatID, text, linkToProfile, img); err != nil {
 				log.Printf("Failed to send notification to user %d", user.ID)
@@ -181,7 +181,7 @@ func (j *notifyJob) NotifyNewCollaboration() error {
 				return err
 			}
 
-			linkToCollaboration := fmt.Sprintf("%s/collaborations/%d", j.botWebApp, collaboration.ID)
+			linkToCollaboration := fmt.Sprintf("%s?startapp=redirect-to-users-%d", j.botWebApp, collaboration.ID)
 
 			if err = j.notifier.SendNotification(created.ChatID, text, linkToCollaboration, img); err != nil {
 				log.Printf("Failed to send notification to user %d", collaboration.UserID)

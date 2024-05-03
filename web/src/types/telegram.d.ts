@@ -122,6 +122,7 @@ interface InitDataUnsafe {
   user: User;
   auth_date: string;
   hash: string;
+  start_param?: string;
 }
 
 interface User {
