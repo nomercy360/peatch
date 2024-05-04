@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/go-telegram/bot"
 	"github.com/peatch-io/peatch/internal/db"
+	"github.com/peatch-io/peatch/internal/notification"
 	"io"
 	"log"
 	"net/http"
@@ -34,7 +35,7 @@ type notifyJob struct {
 }
 
 type notifier interface {
-	SendNotification(chatID int64, message string, link string, img []byte) error
+	SendNotification(params notification.SendNotificationParams) error
 }
 
 type config struct {
@@ -107,7 +108,7 @@ func (j *notifyJob) NotifyNewUserProfile() error {
 				return err
 			}
 
-			notification := &db.Notification{
+			ntf := &db.Notification{
 				NotificationType: db.NotificationTypeUserPublished,
 				EntityType:       "users",
 				EntityID:         user.ID,
@@ -116,7 +117,7 @@ func (j *notifyJob) NotifyNewUserProfile() error {
 
 			text := fmt.Sprintf("Someone has just published a new profile")
 
-			created, err := j.storage.CreateNotification(*notification)
+			created, err := j.storage.CreateNotification(*ntf)
 
 			if err != nil {
 				return err
@@ -124,7 +125,14 @@ func (j *notifyJob) NotifyNewUserProfile() error {
 
 			linkToProfile := fmt.Sprintf("%s?startapp=redirect-to-users-%d", j.config.botWebApp, user.ID)
 
-			if err = j.notifier.SendNotification(created.ChatID, text, linkToProfile, img); err != nil {
+			params := notification.SendNotificationParams{
+				ChatID:    created.ChatID,
+				Message:   text,
+				BotWebApp: linkToProfile,
+				Image:     img,
+			}
+
+			if err = j.notifier.SendNotification(params); err != nil {
 				log.Printf("Failed to send notification to user %d", user.ID)
 				return err
 			}
@@ -187,22 +195,29 @@ func (j *notifyJob) NotifyNewCollaboration() error {
 				bot.EscapeMarkdown(collaboration.GetLocation()),
 			)
 
-			notification := &db.Notification{
+			ntf := &db.Notification{
 				NotificationType: db.NotificationTypeCollaborationPublished,
 				EntityType:       "collaborations",
 				EntityID:         collaboration.ID,
 				ChatID:           j.config.groupChatID,
 			}
 
-			created, err := j.storage.CreateNotification(*notification)
+			created, err := j.storage.CreateNotification(*ntf)
 
 			if err != nil {
 				return err
 			}
 
-			linkToCollaboration := fmt.Sprintf("%s?startapp=redirect-to-users-%d", j.config.botWebApp, collaboration.ID)
+			linkToCollaboration := fmt.Sprintf("%s?startapp=redirect-to-collaborations-%d", j.config.botWebApp, collaboration.ID)
 
-			if err = j.notifier.SendNotification(created.ChatID, text, linkToCollaboration, img); err != nil {
+			params := notification.SendNotificationParams{
+				ChatID:    created.ChatID,
+				Message:   text,
+				BotWebApp: linkToCollaboration,
+				Image:     img,
+			}
+
+			if err = j.notifier.SendNotification(params); err != nil {
 				log.Printf("Failed to send notification to user %d", collaboration.UserID)
 				return err
 			}
@@ -268,7 +283,7 @@ func (j *notifyJob) NotifyMatchedCollaboration() error {
 
 			_, err := j.storage.SearchNotification(q)
 			if err != nil && errors.Is(err, db.ErrNotFound) {
-				notification := &db.Notification{
+				ntf := &db.Notification{
 					UserID:           receiver.ID,
 					NotificationType: db.NotificationTypeCollaborationPublished,
 					EntityType:       "collaborations",
@@ -284,7 +299,7 @@ func (j *notifyJob) NotifyMatchedCollaboration() error {
 					bot.EscapeMarkdown(collaboration.GetLocation()),
 				)
 
-				created, err := j.storage.CreateNotification(*notification)
+				created, err := j.storage.CreateNotification(*ntf)
 
 				if err != nil {
 					return err
@@ -292,7 +307,14 @@ func (j *notifyJob) NotifyMatchedCollaboration() error {
 
 				linkToCollaboration := fmt.Sprintf("%s/collaborations/%d", j.config.webappURL, collaboration.ID)
 
-				if err = j.notifier.SendNotification(created.ChatID, text, linkToCollaboration, img); err != nil {
+				params := notification.SendNotificationParams{
+					ChatID:    created.ChatID,
+					Message:   text,
+					WebAppURL: linkToCollaboration,
+					Image:     img,
+				}
+
+				if err = j.notifier.SendNotification(params); err != nil {
 					log.Printf("Failed to send notification to user %d", collaboration.UserID)
 					return err
 				}
@@ -348,7 +370,7 @@ func (j *notifyJob) NotifyUserReceivedCollaborationRequest() error {
 				return err
 			}
 
-			notification := &db.Notification{
+			ntf := &db.Notification{
 				UserID:           collaboration.UserID,
 				NotificationType: db.NotificationTypeUserCollaboration,
 				EntityType:       "user_collaboration_requests",
@@ -362,7 +384,7 @@ func (j *notifyJob) NotifyUserReceivedCollaborationRequest() error {
 				bot.EscapeMarkdown(collaboration.Message),
 			)
 
-			created, err := j.storage.CreateNotification(*notification)
+			created, err := j.storage.CreateNotification(*ntf)
 
 			if err != nil {
 				return err
@@ -370,7 +392,14 @@ func (j *notifyJob) NotifyUserReceivedCollaborationRequest() error {
 
 			linkToProfile := fmt.Sprintf("%s/users/%d", j.config.webappURL, collaboration.RequesterID)
 
-			if err = j.notifier.SendNotification(created.ChatID, text, linkToProfile, img); err != nil {
+			params := notification.SendNotificationParams{
+				ChatID:    created.ChatID,
+				Message:   text,
+				WebAppURL: linkToProfile,
+				Image:     img,
+			}
+
+			if err = j.notifier.SendNotification(params); err != nil {
 				log.Printf("Failed to send notification to user %d", collaboration.UserID)
 				return err
 			}
@@ -426,7 +455,7 @@ func (j *notifyJob) NotifyCollaborationRequest() error {
 				return err
 			}
 
-			notification := &db.Notification{
+			ntf := &db.Notification{
 				UserID:           creator.ID,
 				NotificationType: db.NotificationTypeCollaborationRequest,
 				EntityType:       "collaboration_requests",
@@ -439,7 +468,7 @@ func (j *notifyJob) NotifyCollaborationRequest() error {
 				bot.EscapeMarkdown(*requester.FirstName),
 				bot.EscapeMarkdown(request.Message))
 
-			created, err := j.storage.CreateNotification(*notification)
+			created, err := j.storage.CreateNotification(*ntf)
 
 			if err != nil {
 				return err
@@ -447,7 +476,14 @@ func (j *notifyJob) NotifyCollaborationRequest() error {
 
 			linkToProfile := fmt.Sprintf("%s/users/%d", j.config.webappURL, requester.ID)
 
-			if err = j.notifier.SendNotification(created.ChatID, text, linkToProfile, img); err != nil {
+			params := notification.SendNotificationParams{
+				ChatID:    creator.ChatID,
+				Message:   text,
+				WebAppURL: linkToProfile,
+				Image:     img,
+			}
+
+			if err = j.notifier.SendNotification(params); err != nil {
 				log.Printf("Failed to send notification to user %d", creator.ID)
 			}
 

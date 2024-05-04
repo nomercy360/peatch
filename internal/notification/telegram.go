@@ -3,6 +3,7 @@ package notification
 import (
 	"bytes"
 	"context"
+	"errors"
 	telegram "github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 	"log"
@@ -18,21 +19,37 @@ func NewTelegramNotifier(bot *telegram.Bot) *TelegramNotifier {
 	}
 }
 
-func (t *TelegramNotifier) SendNotification(chatID int64, message, link string, img []byte) error {
-	log.Printf("Sending notification to chatID: %d", chatID)
+type SendNotificationParams struct {
+	ChatID    int64
+	Message   string
+	BotWebApp string
+	WebAppURL string
+	Image     []byte
+}
+
+func (t *TelegramNotifier) SendNotification(params SendNotificationParams) error {
+	log.Printf("Sending notification to chatID: %d", params.ChatID)
+
+	button := models.InlineKeyboardButton{Text: "View"}
+
+	if params.BotWebApp != "" {
+		button.URL = params.BotWebApp
+	} else if params.WebAppURL != "" {
+		button.WebApp = &models.WebAppInfo{URL: params.WebAppURL}
+	} else {
+		return errors.New("no URL provided")
+	}
 
 	photoParams := &telegram.SendPhotoParams{
 		//ChatID:              927635965,
-		ChatID:              chatID,
-		Caption:             message,
+		ChatID:              params.ChatID,
+		Caption:             params.Message,
 		ParseMode:           models.ParseModeMarkdown,
-		Photo:               &models.InputFileUpload{Filename: "img.jpg", Data: bytes.NewReader(img)},
+		Photo:               &models.InputFileUpload{Filename: "img.jpg", Data: bytes.NewReader(params.Image)},
 		DisableNotification: true,
 		ReplyMarkup: &models.InlineKeyboardMarkup{
 			InlineKeyboard: [][]models.InlineKeyboardButton{
-				{
-					{Text: "View", URL: link},
-				},
+				{button},
 			},
 		},
 	}
