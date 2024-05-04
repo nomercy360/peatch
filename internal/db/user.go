@@ -158,7 +158,7 @@ func (s *storage) ListUsers(params UserQuery) ([]User, error) {
 	}
 
 	query = fmt.Sprintf("%s WHERE %s", query, strings.Join(whereClauses, " AND "))
-	query += fmt.Sprintf(" GROUP BY u.id ORDER BY u.created_at, u.followers_count DESC")
+	query += fmt.Sprintf(" GROUP BY u.id ORDER BY u.created_at DESC")
 	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", paramIndex, paramIndex+1)
 
 	offset := (params.Page - 1) * params.Limit
