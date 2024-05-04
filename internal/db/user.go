@@ -503,7 +503,7 @@ func (s *storage) ListUserCollaborations(from time.Time) ([]UserCollaborationReq
 	return requests, nil
 }
 
-func (s *storage) FindMatchingUsers(opportunities []int64, badges []int64) ([]User, error) {
+func (s *storage) FindMatchingUsers(exclude int64, opportunities []int64, badges []int64) ([]User, error) {
 	query := `
 		SELECT DISTINCT u.id, u.first_name, u.last_name, u.chat_id, u.username, u.created_at, u.updated_at,
 			u.published_at, u.avatar_url, u.title, u.description, u.language_code, u.country, u.city, u.country_code,
@@ -511,19 +511,22 @@ func (s *storage) FindMatchingUsers(opportunities []int64, badges []int64) ([]Us
 		FROM users u
 		JOIN user_opportunities uo ON u.id = uo.user_id
 		JOIN user_badges ub ON u.id = ub.user_id
-		WHERE 1=1
+		WHERE u.id != $1
 	`
 
-	var args []interface{}
+	args := []interface{}{exclude}
+	paramIndex := 2
 
 	if len(opportunities) > 0 {
-		query += " AND uo.opportunity_id = ANY($1)"
+		query += fmt.Sprintf(" AND uo.opportunity_id = ANY($%d)", paramIndex)
 		args = append(args, pq.Array(opportunities))
+		paramIndex++
 	}
 
 	if len(badges) > 0 {
-		query += " AND ub.badge_id = ANY($2)"
+		query += fmt.Sprintf(" AND ub.badge_id = ANY($%d)", paramIndex)
 		args = append(args, pq.Array(badges))
+		paramIndex++
 	}
 
 	var users []User

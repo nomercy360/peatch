@@ -22,7 +22,7 @@ type storage interface {
 	ListUserCollaborations(from time.Time) ([]db.UserCollaborationRequest, error)
 	UpdateNotificationSentAt(notificationID int64) error
 	ListCollaborations(params db.CollaborationQuery) ([]db.Collaboration, error)
-	FindMatchingUsers(opportunityIDs []int64, badgeIDs []int64) ([]db.User, error)
+	FindMatchingUsers(exclude int64, opportunityIDs []int64, badgeIDs []int64) ([]db.User, error)
 	ListNewUserProfiles(from time.Time) ([]db.User, error)
 	ListCollaborationRequests(from time.Time) ([]db.CollaborationRequest, error)
 	GetCollaborationOwner(collaborationID int64) (*db.User, error)
@@ -250,7 +250,7 @@ func (j *notifyJob) NotifyMatchedCollaboration() error {
 	}
 
 	for _, collaboration := range newCollaborations {
-		receivers, err := j.storage.FindMatchingUsers([]int64{collaboration.OpportunityID}, []int64{})
+		receivers, err := j.storage.FindMatchingUsers(collaboration.UserID, []int64{collaboration.OpportunityID}, []int64{})
 
 		if err != nil {
 			return err
