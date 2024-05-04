@@ -150,7 +150,9 @@ export default function Index() {
       <button
         class="flex flex-col items-start justify-start py-4"
         onClick={() =>
-          window.Telegram.WebApp.openTelegramLink('https://t.me/telegram')
+          window.Telegram.WebApp.openTelegramLink(
+            'https://t.me/peatch_community',
+          )
         }
       >
         <div class="flex flex-row items-start justify-between text-start">

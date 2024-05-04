@@ -162,7 +162,10 @@ export default function Collaboration() {
                 <ActionButton text="Hide" onClick={hide} />
               </Match>
             </Switch>
-            <div class="flex w-full flex-col items-start justify-start bg-pink px-4 pb-5 pt-4">
+            <div
+              class="flex w-full flex-col items-start justify-start px-4 pb-5 pt-4"
+              style={{ 'background-color': `#${query.data.opportunity.color}` }}
+            >
               <span class="material-symbols-rounded text-[48px] text-white">
                 {String.fromCodePoint(
                   parseInt(query.data.opportunity.icon!, 16),
