@@ -25,6 +25,7 @@ type SendNotificationParams struct {
 	BotWebApp string
 	WebAppURL string
 	Image     []byte
+	Username  *string
 }
 
 func (t *TelegramNotifier) SendNotification(params SendNotificationParams) error {
@@ -40,6 +41,15 @@ func (t *TelegramNotifier) SendNotification(params SendNotificationParams) error
 		return errors.New("no URL provided")
 	}
 
+	buttons := [][]models.InlineKeyboardButton{
+		{button},
+	}
+
+	if params.Username != nil {
+		contact := models.InlineKeyboardButton{Text: "Contact in Telegram", URL: "https://t.me/" + *params.Username}
+		buttons = append(buttons, []models.InlineKeyboardButton{contact})
+	}
+
 	photoParams := &telegram.SendPhotoParams{
 		//ChatID:              927635965,
 		ChatID:              params.ChatID,
@@ -48,9 +58,7 @@ func (t *TelegramNotifier) SendNotification(params SendNotificationParams) error
 		Photo:               &models.InputFileUpload{Filename: "img.jpg", Data: bytes.NewReader(params.Image)},
 		DisableNotification: true,
 		ReplyMarkup: &models.InlineKeyboardMarkup{
-			InlineKeyboard: [][]models.InlineKeyboardButton{
-				{button},
-			},
+			InlineKeyboard: buttons,
 		},
 	}
 

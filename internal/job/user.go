@@ -397,6 +397,7 @@ func (j *notifyJob) NotifyUserReceivedCollaborationRequest() error {
 				Message:   text,
 				WebAppURL: linkToProfile,
 				Image:     img,
+				Username:  &requester.Username,
 			}
 
 			if err = j.notifier.SendNotification(params); err != nil {
@@ -481,6 +482,7 @@ func (j *notifyJob) NotifyCollaborationRequest() error {
 				Message:   text,
 				WebAppURL: linkToProfile,
 				Image:     img,
+				Username:  &requester.Username,
 			}
 
 			if err = j.notifier.SendNotification(params); err != nil {
