@@ -28,25 +28,44 @@ type storage interface {
 }
 
 type notifyJob struct {
-	storage       storage
-	notifier      notifier
-	imgServiceURL string
-	botWebApp     string
-	groupChatID   int64
+	storage  storage
+	notifier notifier
+	config   config
 }
 
 type notifier interface {
 	SendNotification(chatID int64, message string, link string, img []byte) error
 }
 
-func NewNotifyJob(storage storage, notifier notifier, imgServiceURL, BotWebApp string, groupChatID int64) *notifyJob {
-	return &notifyJob{
-		storage:       storage,
-		notifier:      notifier,
-		imgServiceURL: imgServiceURL,
-		botWebApp:     BotWebApp,
-		groupChatID:   groupChatID,
+type config struct {
+	imgServiceURL string
+	botWebApp     string
+	webappURL     string
+	groupChatID   int64
+}
+
+func WithConfig(imgServiceURL, botWebApp, webappURL string, groupChatID int64) func(*notifyJob) {
+	return func(j *notifyJob) {
+		j.config = config{
+			imgServiceURL: imgServiceURL,
+			botWebApp:     botWebApp,
+			webappURL:     webappURL,
+			groupChatID:   groupChatID,
+		}
 	}
+}
+
+func NewNotifyJob(storage storage, notifier notifier, opts ...func(*notifyJob)) *notifyJob {
+	j := &notifyJob{
+		storage:  storage,
+		notifier: notifier,
+	}
+
+	for _, opt := range opts {
+		opt(j)
+	}
+
+	return j
 }
 
 func (j *notifyJob) NotifyNewUserProfile() error {
@@ -61,7 +80,7 @@ func (j *notifyJob) NotifyNewUserProfile() error {
 
 	for _, user := range newUsers {
 		q := db.NotificationQuery{
-			ChatID:           &j.groupChatID,
+			ChatID:           &j.config.groupChatID,
 			NotificationType: db.NotificationTypeUserPublished,
 			EntityType:       "users",
 			EntityID:         user.ID,
@@ -82,7 +101,7 @@ func (j *notifyJob) NotifyNewUserProfile() error {
 				opportunityIDs[i] = opportunity.ID
 			}
 
-			img, err := fetchPreviewImage(j.imgServiceURL, userDetails)
+			img, err := fetchPreviewImage(j.config.imgServiceURL, userDetails)
 
 			if err != nil {
 				return err
@@ -92,7 +111,7 @@ func (j *notifyJob) NotifyNewUserProfile() error {
 				NotificationType: db.NotificationTypeUserPublished,
 				EntityType:       "users",
 				EntityID:         user.ID,
-				ChatID:           j.groupChatID,
+				ChatID:           j.config.groupChatID,
 			}
 
 			text := fmt.Sprintf("Someone has just published a new profile")
@@ -103,7 +122,7 @@ func (j *notifyJob) NotifyNewUserProfile() error {
 				return err
 			}
 
-			linkToProfile := fmt.Sprintf("%s?startapp=redirect-to-users-%d", j.botWebApp, user.ID)
+			linkToProfile := fmt.Sprintf("%s?startapp=redirect-to-users-%d", j.config.botWebApp, user.ID)
 
 			if err = j.notifier.SendNotification(created.ChatID, text, linkToProfile, img); err != nil {
 				log.Printf("Failed to send notification to user %d", user.ID)
@@ -139,7 +158,7 @@ func (j *notifyJob) NotifyNewCollaboration() error {
 
 	for _, collaboration := range newCollaborations {
 		q := db.NotificationQuery{
-			ChatID:           &j.groupChatID,
+			ChatID:           &j.config.groupChatID,
 			NotificationType: db.NotificationTypeCollaborationPublished,
 			EntityType:       "collaborations",
 			EntityID:         collaboration.ID,
@@ -154,7 +173,7 @@ func (j *notifyJob) NotifyNewCollaboration() error {
 				return err
 			}
 
-			img, err := fetchPreviewImage(j.imgServiceURL, creator)
+			img, err := fetchPreviewImage(j.config.imgServiceURL, creator)
 
 			if err != nil {
 				return err
@@ -172,7 +191,7 @@ func (j *notifyJob) NotifyNewCollaboration() error {
 				NotificationType: db.NotificationTypeCollaborationPublished,
 				EntityType:       "collaborations",
 				EntityID:         collaboration.ID,
-				ChatID:           j.groupChatID,
+				ChatID:           j.config.groupChatID,
 			}
 
 			created, err := j.storage.CreateNotification(*notification)
@@ -181,7 +200,7 @@ func (j *notifyJob) NotifyNewCollaboration() error {
 				return err
 			}
 
-			linkToCollaboration := fmt.Sprintf("%s?startapp=redirect-to-users-%d", j.botWebApp, collaboration.ID)
+			linkToCollaboration := fmt.Sprintf("%s?startapp=redirect-to-users-%d", j.config.botWebApp, collaboration.ID)
 
 			if err = j.notifier.SendNotification(created.ChatID, text, linkToCollaboration, img); err != nil {
 				log.Printf("Failed to send notification to user %d", collaboration.UserID)
@@ -193,6 +212,97 @@ func (j *notifyJob) NotifyNewCollaboration() error {
 			}
 		} else if err != nil {
 			return err
+		}
+	}
+
+	return nil
+}
+
+func (j *notifyJob) NotifyMatchedCollaboration() error {
+	log.Println("Checking for new collaborations, sending to matching users")
+
+	dayAgo := time.Now().Add(-24 * time.Hour)
+
+	newCollaborations, err := j.storage.ListCollaborations(db.CollaborationQuery{
+		Limit:   10,
+		Page:    1,
+		From:    &dayAgo,
+		Visible: true,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	for _, collaboration := range newCollaborations {
+		receivers, err := j.storage.FindMatchingUsers([]int64{collaboration.OpportunityID}, []int64{})
+
+		if err != nil {
+			return err
+		}
+
+		if len(receivers) == 0 {
+			log.Printf("No users found for collaboration %d", collaboration.ID)
+			continue
+		}
+
+		creator, err := j.storage.GetUserByID(collaboration.UserID, false)
+
+		if err != nil {
+			return err
+		}
+
+		img, err := fetchPreviewImage(j.config.imgServiceURL, creator)
+
+		if err != nil {
+			return err
+		}
+
+		for _, receiver := range receivers {
+			q := db.NotificationQuery{
+				UserID:           &receiver.ID,
+				NotificationType: db.NotificationTypeCollaborationPublished,
+				EntityType:       "collaborations",
+				EntityID:         collaboration.ID,
+			}
+
+			_, err := j.storage.SearchNotification(q)
+			if err != nil && errors.Is(err, db.ErrNotFound) {
+				notification := &db.Notification{
+					UserID:           receiver.ID,
+					NotificationType: db.NotificationTypeCollaborationPublished,
+					EntityType:       "collaborations",
+					EntityID:         collaboration.ID,
+					ChatID:           receiver.ChatID,
+				}
+
+				text := fmt.Sprintf(
+					"*%s has just posted a new opportunity* %s\n%s\n%s",
+					bot.EscapeMarkdown(*creator.FirstName),
+					bot.EscapeMarkdown(collaboration.Title),
+					bot.EscapeMarkdown(collaboration.Description),
+					bot.EscapeMarkdown(collaboration.GetLocation()),
+				)
+
+				created, err := j.storage.CreateNotification(*notification)
+
+				if err != nil {
+					return err
+				}
+
+				linkToCollaboration := fmt.Sprintf("%s/collaborations/%d", j.config.webappURL, collaboration.ID)
+
+				if err = j.notifier.SendNotification(created.ChatID, text, linkToCollaboration, img); err != nil {
+					log.Printf("Failed to send notification to user %d", collaboration.UserID)
+					return err
+				}
+
+				if err = j.storage.UpdateNotificationSentAt(created.ID); err != nil {
+					return err
+				}
+			} else if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -232,7 +342,7 @@ func (j *notifyJob) NotifyUserReceivedCollaborationRequest() error {
 				return err
 			}
 
-			img, err := fetchPreviewImage(j.imgServiceURL, requester)
+			img, err := fetchPreviewImage(j.config.imgServiceURL, requester)
 
 			if err != nil {
 				return err
@@ -258,7 +368,7 @@ func (j *notifyJob) NotifyUserReceivedCollaborationRequest() error {
 				return err
 			}
 
-			linkToProfile := fmt.Sprintf("%s/users/%d", j.botWebApp, collaboration.RequesterID)
+			linkToProfile := fmt.Sprintf("%s/users/%d", j.config.webappURL, collaboration.RequesterID)
 
 			if err = j.notifier.SendNotification(created.ChatID, text, linkToProfile, img); err != nil {
 				log.Printf("Failed to send notification to user %d", collaboration.UserID)
@@ -310,7 +420,7 @@ func (j *notifyJob) NotifyCollaborationRequest() error {
 				return err
 			}
 
-			img, err := fetchPreviewImage(j.imgServiceURL, requester)
+			img, err := fetchPreviewImage(j.config.imgServiceURL, requester)
 
 			if err != nil {
 				return err
@@ -335,7 +445,7 @@ func (j *notifyJob) NotifyCollaborationRequest() error {
 				return err
 			}
 
-			linkToProfile := fmt.Sprintf("%s/users/%d", j.botWebApp, requester.ID)
+			linkToProfile := fmt.Sprintf("%s/users/%d", j.config.webappURL, requester.ID)
 
 			if err = j.notifier.SendNotification(created.ChatID, text, linkToProfile, img); err != nil {
 				log.Printf("Failed to send notification to user %d", creator.ID)
