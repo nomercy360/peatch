@@ -10,12 +10,12 @@ require (
 	github.com/caarlos0/env/v11 v11.0.0
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/go-telegram/bot v1.2.2
-	github.com/golang-jwt/jwt/v5 v5.0.0
+	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/labstack/echo-jwt/v4 v4.2.0
 	github.com/labstack/echo/v4 v4.12.0
 	github.com/lib/pq v1.10.9
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	github.com/swaggo/swag v1.16.3
 	github.com/telegram-mini-apps/init-data-golang v1.1.5
 	golang.org/x/text v0.14.0

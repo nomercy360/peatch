@@ -59,7 +59,13 @@ const UserCard = (props: { user: User }) => {
         {shortenDescription(props.user.description!)}
       </p>
       <Show when={props.user.badges && props.user.badges.length > 0}>
-        <BadgeList badges={props.user.badges!} position="start" />
+        <BadgeList
+          badges={props.user.badges!}
+          position="start"
+          city={props.user.city!}
+          country={props.user.country!}
+          countryCode={props.user.country_code!}
+        />
       </Show>
       <div class="mt-5 h-px w-full bg-main" />
     </Link>

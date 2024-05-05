@@ -1,8 +1,21 @@
 import { createQuery } from '@tanstack/solid-query';
-import { CDN_URL, createUserCollaboration, fetchProfile, findUserCollaborationRequest } from '~/api';
+import {
+  CDN_URL,
+  createUserCollaboration,
+  fetchProfile,
+  findUserCollaborationRequest,
+} from '~/api';
 import { useNavigate, useParams } from '@solidjs/router';
 import { store } from '~/store';
-import { createEffect, createResource, createSignal, Match, onCleanup, Show, Switch } from 'solid-js';
+import {
+  createEffect,
+  createResource,
+  createSignal,
+  Match,
+  onCleanup,
+  Show,
+  Switch,
+} from 'solid-js';
 import TextArea from '~/components/TextArea';
 import { usePopup } from '~/hooks/usePopup';
 import { useMainButton } from '~/hooks/useMainButton';
@@ -115,7 +128,13 @@ export default function Collaborate() {
                 />
               </div>
               <Show when={query.data.badges && query.data.badges.length > 0}>
-                <BadgeList badges={query.data.badges!} position="center" />
+                <BadgeList
+                  badges={query.data.badges!}
+                  position="center"
+                  city={query.data.city}
+                  country={query.data.country}
+                  countryCode={query.data.country_code}
+                />
               </Show>
             </div>
             <TextArea

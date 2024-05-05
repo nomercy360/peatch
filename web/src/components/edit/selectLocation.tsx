@@ -2,17 +2,15 @@ import { createSignal, For, Show, Suspense } from 'solid-js';
 import countryFlags from '../../assets/countries.json';
 import { createQuery } from '@tanstack/solid-query';
 import useDebounce from '../../hooks/useDebounce';
+import { searchLocations } from '~/api';
 
 type Location = {
-  address: {
-    country: string;
-    city: string;
-    town: string;
-    country_code: string;
-  };
+  country: string;
+  country_code: string;
+  city: string;
 };
 
-type CountryFlag = {
+export type CountryFlag = {
   flag: string;
   code: string;
   viewBox: string;
@@ -30,28 +28,15 @@ export default function SelectLocation(props: {
 
   const query = createQuery(() => ({
     queryKey: ['locations', search()],
-    queryFn: async () => {
-      const resp = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${search()}&format=jsonv2&addressdetails=1`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        },
-      );
-
-      return resp.json();
-    },
-    enabled: !!search(),
+    queryFn: () => searchLocations(search()),
   }));
 
-  const updateSearch = useDebounce(setSearch, 300);
+  const updateSearch = useDebounce(setSearch, 400);
 
   const onLocationClick = (location: Location) => {
-    props.setCountry(location.address.country);
-    props.setCity(location.address.city || location.address.town);
-    props.setCountryCode(location.address.country_code);
+    props.setCountry(location.country);
+    props.setCity(location.city);
+    props.setCountryCode(location.country_code);
   };
 
   const clearLocation = () => {
@@ -83,36 +68,34 @@ export default function SelectLocation(props: {
         <Show when={!search() && props.country && props.countryCode}>
           <LocationButton
             onClick={() => clearLocation()}
-            locationName={
-              props.city ? `${props.city}, ${props.country}` : props.country
-            }
             isActive={true}
             location={{
-              address: {
-                country: props.country,
-                city: props.city || '',
-                town: '',
-                country_code: props.countryCode,
-              },
+              country: props.country,
+              city: props.city || '',
+              country_code: props.countryCode,
             }}
           />
         </Show>
-        <Suspense fallback={<div class="text-sm text-hint">Loading...</div>}>
-          <For each={query.data!}>
-            {location => (
-              <LocationButton
-                locationName={location.display_name}
-                isActive={
-                  location.address.country === props.country &&
-                  location.address.city === props.city &&
-                  location.address.country_code === props.countryCode
-                }
-                onClick={() => onLocationClick(location)}
-                location={location}
-              />
-            )}
-          </For>
-        </Suspense>
+        <Show when={search() || (!props.country && !props.city)}>
+          <Suspense fallback={<div class="text-sm text-hint">Loading...</div>}>
+            <For each={query.data!}>
+              {location => (
+                <div class="w-full">
+                  <LocationButton
+                    isActive={
+                      location.country === props.country &&
+                      location.city === props.city &&
+                      location.country_code === props.countryCode
+                    }
+                    onClick={() => onLocationClick(location)}
+                    location={location}
+                  />
+                  <div class="mt-2 h-px w-full bg-main" />
+                </div>
+              )}
+            </For>
+          </Suspense>
+        </Show>
       </div>
     </>
   );
@@ -122,51 +105,34 @@ function LocationButton(props: {
   location: Location;
   onClick: () => void;
   isActive: boolean;
-  locationName: string;
 }) {
-  const findFlag = (code: string) => {
-    const flag = countryFlags.find(
-      (flag: CountryFlag) => flag.code?.toLowerCase() === code?.toLowerCase(),
-    );
-    return flag?.flag;
-  };
-
-  const shortenLocation = (location: string) => {
-    if (location.length > 40) {
-      return location.slice(0, 40) + '...';
-    }
-    return location;
-  };
+  const findFlag = countryFlags.find(
+    (flag: CountryFlag) => flag.code === props.location.country_code,
+  );
 
   return (
     <button
       onClick={() => props.onClick()}
-      class="flex h-16 w-full flex-row items-center justify-between rounded-2xl border border-main px-2.5 text-sm text-main"
+      class="flex h-16 w-full flex-row items-center justify-between rounded-2xl px-2.5 text-sm text-main"
       classList={{
         'bg-secondary': !props.isActive,
         'bg-main': props.isActive,
       }}
     >
       <p class="">
-        <Show
-          when={props.location.address.country && props.location.address.city}
-        >
-          {props.location.address.city}, {props.location.address.country}
+        <Show when={props.location.country && props.location.city}>
+          {props.location.city}, {props.location.country}
         </Show>
-        <Show when={!props.location.address.city}>
-          {shortenLocation(props.locationName)}
-        </Show>
+        <Show when={!props.location.city}>{props.location.country}</Show>
       </p>
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox={
-          findFlag(props.location.address.country_code)
-            ? '0 0 512 512'
-            : '0 0 24 24'
-        }
-        class="mr-2 size-5"
-        innerHTML={findFlag(props.location.address.country_code)}
-      ></svg>
+      <Show when={findFlag}>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox={findFlag!.viewBox}
+          class="z-10 mr-2 size-5"
+          innerHTML={findFlag!.flag}
+        />
+      </Show>
     </button>
   );
 }

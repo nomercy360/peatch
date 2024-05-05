@@ -132,8 +132,8 @@ type UserPreview struct {
 	AvatarURL string `json:"avatar_url"`
 } // @Name UserPreview
 
-func (s *service) GetUserPreview() ([]UserPreview, error) {
-	res, err := s.storage.GetUserPreview()
+func (s *service) GetUserPreview(userID int64) ([]UserPreview, error) {
+	res, err := s.storage.GetUserPreview(userID)
 
 	if err != nil {
 		return nil, err

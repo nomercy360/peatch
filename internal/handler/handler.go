@@ -41,9 +41,10 @@ type service interface {
 	GetPresignedURL(userID int64, objectKey string) (*svc.PresignedURL, error)
 	CreateUserCollaboration(userID int64, receiverID int64, request svc.CreateUserCollaboration) (*db.UserCollaborationRequest, error)
 	// GetUserPreview fetch 3 random user avatars for the home page
-	GetUserPreview() ([]svc.UserPreview, error)
+	GetUserPreview(uid int64) ([]svc.UserPreview, error)
 	FindUserCollaborationRequest(requesterID, userID int64) (*db.UserCollaborationRequest, error)
 	FindCollaborationRequest(userID, collabID int64) (*db.CollaborationRequest, error)
+	SearchLocations(query string) ([]db.Location, error)
 }
 
 type CustomValidator struct {
@@ -68,7 +69,6 @@ func (h *handler) RegisterRoutes(e *echo.Echo) {
 	e.POST("/auth/telegram", h.handleTelegramAuth)
 
 	e.GET("/avatar", h.getRandomAvatar)
-
 	a := e.Group("/api")
 
 	config := echojwt.Config{
@@ -104,6 +104,7 @@ func (h *handler) RegisterRoutes(e *echo.Echo) {
 	a.POST("/collaborations/:id/requests", h.handleCreateCollaborationRequest)
 	a.GET("/presigned-url", h.handleGetPresignedURL)
 	a.GET("/user-preview", h.handleGetUserPreview)
+	a.GET("/locations", h.handleSearchLocations)
 }
 
 func (h *handler) handleIndex(c echo.Context) error {

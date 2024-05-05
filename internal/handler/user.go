@@ -227,7 +227,8 @@ func (h *handler) handleCreateUserCollaboration(c echo.Context) error {
 // @Success 200 {array} UserPreview
 // @Router /api/users/preview [get]
 func (h *handler) handleGetUserPreview(c echo.Context) error {
-	users, err := h.svc.GetUserPreview()
+	uid := getUserID(c)
+	users, err := h.svc.GetUserPreview(uid)
 	if err != nil {
 		return err
 	}

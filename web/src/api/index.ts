@@ -233,3 +233,7 @@ export const createCollaborationRequest = async (
     body: { message },
   });
 };
+
+export const searchLocations = async (search: string) => {
+  return await apiFetch({ endpoint: `/locations?search=${search}` });
+};

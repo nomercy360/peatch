@@ -576,18 +576,18 @@ func (s *storage) ListNewUserProfiles(from time.Time) ([]User, error) {
 	return users, nil
 }
 
-func (s *storage) GetUserPreview() ([]User, error) {
+func (s *storage) GetUserPreview(userID int64) ([]User, error) {
 	query := `
 		SELECT u.avatar_url
 		FROM users u
-		WHERE u.hidden_at IS NULL AND u.published_at IS NOT NULL AND u.avatar_url IS NOT NULL
+		WHERE u.hidden_at IS NULL AND u.published_at IS NOT NULL AND u.avatar_url IS NOT NULL AND u.id != $1
 		ORDER BY random()
 		LIMIT 3
 	`
 
 	users := make([]User, 0)
 
-	err := s.pg.Select(&users, query)
+	err := s.pg.Select(&users, query, userID)
 
 	if err != nil {
 		return nil, err
