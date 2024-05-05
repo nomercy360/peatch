@@ -172,7 +172,7 @@ CREATE table collaboration_badges
 CREATE table notifications
 (
     id                SERIAL PRIMARY KEY,
-    user_id BIGINT,
+    user_id           BIGINT,
     message_id        VARCHAR(255),
     chat_id           BIGINT,
     sent_at           timestamptz,
@@ -506,3 +506,12 @@ values ('ea66', 'FF8C42', 'Acting in a play', 'Being an actor in a stage product
        ('e745', '3478F6', 'Writing blog posts', 'Create new content for a topic you''re interest in'),
        ('f85a', '17BEBB', 'Youtube collaborations', 'Partnering to create YouTube content');
 
+create table locations
+(
+    id           serial
+        primary key,
+    country_code char(2)      not null,
+    country      varchar(100) not null,
+    city         varchar(100) not null,
+    population   bigint       not null default 0
+);

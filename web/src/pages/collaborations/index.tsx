@@ -1,4 +1,11 @@
-import { createEffect, createSignal, For, onCleanup, Suspense } from 'solid-js';
+import {
+  createEffect,
+  createSignal,
+  For,
+  onCleanup,
+  Show,
+  Suspense,
+} from 'solid-js';
 import { Collaboration } from '../../../gen';
 import { CDN_URL, fetchCollaborations } from '~/api';
 import { createQuery } from '@tanstack/solid-query';
@@ -7,6 +14,7 @@ import { Link } from '~/components/Link';
 import { useMainButton } from '~/hooks/useMainButton';
 import { useNavigate } from '@solidjs/router';
 import { store } from '~/store';
+import { usePopup } from '~/hooks/usePopup';
 
 export default function Index() {
   const [search, setSearch] = createSignal('');
@@ -21,17 +29,23 @@ export default function Index() {
   const navigate = useNavigate();
 
   const mainButton = useMainButton();
+  const { showConfirm } = usePopup();
 
   const pushToCreate = () => {
+    if (!store.user.published_at || store.user.hidden_at) {
+      showConfirm(
+        'You have to open publish first',
+        (ok: boolean) =>
+          ok && navigate('/users/edit', { state: { back: true } }),
+      );
+      return;
+    }
+
     navigate('/collaborations/edit');
   };
 
-  createEffect(() => {
-    if (store.user.published_at !== null) {
-      mainButton.enable('Post a collaboration');
-      mainButton.onClick(pushToCreate);
-    }
-  });
+  mainButton.enable('Post a collaboration');
+  mainButton.onClick(pushToCreate);
 
   onCleanup(() => {
     mainButton.offClick(pushToCreate);
@@ -69,7 +83,14 @@ const CollaborationCard = (props: { collab: Collaboration }) => {
       href={`/collaborations/${props.collab.id}`}
       state={{ from: '/collaborations' }}
     >
-      <p class="mt-3 text-3xl text-blue">{props.collab.opportunity?.text}:</p>
+      <div class="flex w-full flex-row items-start justify-between">
+        <p class="mt-3 text-3xl text-blue">{props.collab.opportunity?.text}:</p>
+        <Show when={!props.collab.published_at || props.collab.hidden_at}>
+          <span class="material-symbols-rounded text-[20px] text-hint">
+            visibility_off
+          </span>
+        </Show>
+      </div>
       <p class="text-3xl text-main">{props.collab.title}</p>
       <p class="mt-2 text-sm text-hint">
         {shortenDescription(props.collab.description!)}
@@ -87,7 +108,7 @@ const CollaborationCard = (props: { collab: Collaboration }) => {
           <p class="text-sm text-main">{props.collab.user?.title}</p>
         </div>
       </div>
-      <div class="mt-5 h-px w-full bg-main"></div>
+      <div class="mt-5 h-px w-full bg-main" />
     </Link>
   );
 };
@@ -95,10 +116,10 @@ const CollaborationCard = (props: { collab: Collaboration }) => {
 const CollabListPlaceholder = () => {
   return (
     <div class="flex flex-col items-start justify-start gap-4 px-4 py-2.5">
-      <div class="h-48 w-full rounded-2xl bg-main"></div>
-      <div class="h-48 w-full rounded-2xl bg-main"></div>
-      <div class="h-48 w-full rounded-2xl bg-main"></div>
-      <div class="h-48 w-full rounded-2xl bg-main"></div>
+      <div class="h-48 w-full rounded-2xl bg-main" />
+      <div class="h-48 w-full rounded-2xl bg-main" />
+      <div class="h-48 w-full rounded-2xl bg-main" />
+      <div class="h-48 w-full rounded-2xl bg-main" />
     </div>
   );
 };
