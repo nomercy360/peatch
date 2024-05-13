@@ -225,7 +225,15 @@ func (b *bot) handleUserAvatar(userID, tgUserID, chatID int64) {
 	}
 
 	if photos.TotalCount > 0 {
-		photo := photos.Photos[0][0]
+		// get the most quality photo
+		latest := photos.Photos[0]
+		var photo *tgModels.PhotoSize
+
+		for _, p := range latest {
+			if photo == nil || p.Width > photo.Width {
+				photo = &p
+			}
+		}
 
 		file, err := b.tg.GetFile(context.Background(), &telegram.GetFileParams{FileID: photo.FileID})
 		if err != nil {

@@ -15,16 +15,6 @@ type UserWithToken struct {
 	Following []int64 `json:"following"` // TODO: implement following
 } // @Name UserWithToken
 
-type TelegramUser struct {
-	ID        int64   `json:"id"`
-	FirstName *string `json:"first_name"`
-	LastName  *string `json:"last_name"`
-	Username  string  `json:"username"`
-	Language  *string `json:"language_code"`
-	IsPremium bool    `json:"is_premium"`
-	AllowsPM  bool    `json:"allows_write_to_pm"`
-}
-
 func (s *service) TelegramAuth(query string) (*UserWithToken, error) {
 	expIn := 24 * time.Hour
 	botToken := s.config.BotToken

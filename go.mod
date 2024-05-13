@@ -18,7 +18,7 @@ require (
 	github.com/stretchr/testify v1.9.0
 	github.com/swaggo/swag v1.16.3
 	github.com/telegram-mini-apps/init-data-golang v1.1.5
-	golang.org/x/text v0.14.0
+	golang.org/x/text v0.15.0
 )
 
 require (
