@@ -176,19 +176,21 @@ function UserCardSmall(props: {
 			class="flex w-full flex-row items-center justify-between"
 			state={{ back: true }}
 		>
-			<div class="flex flex-row items-center justify-start space-x-4">
+			<div class="flex flex-row items-center justify-start space-x-3.5">
 				<img
 					src={CDN_URL + '/' + props.user.avatar_url}
 					alt={props.user.username}
 					class="size-11 shrink-0 rounded-xl object-cover"
 				/>
 				<div class="grid">
-					<p class="font-semibold text-main">
+					<p class="text-sm font-semibold text-main">
 						{props.user.last_name
 							? props.user.first_name + ' ' + props.user.last_name
-							: props.user.username}
+							: props.user.first_name}
 					</p>
-					<p class="text-sm text-secondary">{props.user.title}</p>
+					<p class="mt-px text-sm font-normal text-secondary">
+						{props.user.title}
+					</p>
 				</div>
 			</div>
 			<Switch>
@@ -196,7 +198,7 @@ function UserCardSmall(props: {
 					when={props.user.is_following && props.user.id !== store.user.id}
 				>
 					<button
-						class="rounded-full bg-main px-4 py-2 text-main"
+						class="h-9 w-[90px] rounded-xl bg-main px-4 py-2 text-sm font-semibold text-button"
 						onClick={(e: Event) => props.onUnfollow(e, props.user.id!)}
 					>
 						Followed
@@ -206,7 +208,7 @@ function UserCardSmall(props: {
 					when={!props.user.is_following && props.user.id !== store.user.id}
 				>
 					<button
-						class="rounded-full bg-accent px-4 py-2 text-main"
+						class="h-9 w-[90px] rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-main"
 						onClick={(e: Event) => props.onFollow(e, props.user.id!)}
 					>
 						Follow
