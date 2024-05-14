@@ -153,7 +153,7 @@ export default function UserProfile() {
 	async function copyToClipboard() {
 		try {
 			await navigator.clipboard.writeText(
-				't.me/peatch_bot/app?t-' + profile()?.username,
+				't.me/peatch_bot/app?startapp=t-users-' + profile()?.username,
 			)
 			setContentCopied(true)
 			window.Telegram.WebApp.HapticFeedback.impactOccurred('light')
