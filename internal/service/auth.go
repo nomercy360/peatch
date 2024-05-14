@@ -2,10 +2,13 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/peatch-io/peatch/internal/db"
 	"github.com/peatch-io/peatch/internal/terrors"
 	"github.com/telegram-mini-apps/init-data-golang"
+	"regexp"
+	"strings"
 	"time"
 )
 
@@ -43,6 +46,13 @@ func (s *service) TelegramAuth(query string) (*UserWithToken, error) {
 
 		if data.User.LanguageCode != "" {
 			langCode = &data.User.LanguageCode
+		}
+
+		username := data.User.Username
+		if username == "" && firstName != nil {
+			username = urlify(*firstName)
+		} else if username == "" {
+			username = "user" + fmt.Sprintf("%d", data.User.ID)
 		}
 
 		create := db.User{
@@ -104,4 +114,17 @@ func generateJWT(id, chatID int64) (string, error) {
 	}
 
 	return t, nil
+}
+
+func urlify(s string) string {
+	s = strings.ToLower(s)
+
+	s = strings.ReplaceAll(s, " ", "_")
+
+	reg := regexp.MustCompile(`[^a-z0-9_]+`)
+	s = reg.ReplaceAllString(s, "_")
+
+	s = strings.Trim(s, "_")
+
+	return s
 }

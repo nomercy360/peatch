@@ -1,11 +1,6 @@
 import ActionDonePopup from '~/components/ActionDonePopup';
-import { useNavigation } from '~/hooks/useNavigation';
-import { useLocation } from '@solidjs/router';
 
 export default function CollaborationPublished() {
-  const { navigateBack } = useNavigation();
-  const location = useLocation().state;
-
   return (
     <ActionDonePopup
       action="Collaboration published!"

@@ -37,13 +37,21 @@ interface Telegram {
 }
 
 interface Utils {
-  notificationOccurred(warning: string): void;
+}
+
+interface HapticFeedback {
+  notificationOccurred(type: 'error' | 'success' | 'warning'): void;
+
+  impactOccurred(style: 'light' | 'medium' | 'heavy' | 'soft' | 'rigid'): void;
+
+  selectionOccurred(): void;
 }
 
 interface WebApp {
   initData: string;
   initDataUnsafe: InitDataUnsafe;
   version: string;
+  platform: string;
   colorScheme: string;
   themeParams: ThemeParams;
   isExpanded: boolean;
@@ -54,7 +62,7 @@ interface WebApp {
   backgroundColor: string;
   BackButton: BackButton;
   MainButton: MainButton;
-  HapticFeedback: Utils;
+  HapticFeedback: HapticFeedback;
   CloudStorage: CloudStorage;
 
   openTelegramLink(url: string): void;
@@ -67,9 +75,17 @@ interface WebApp {
 
   ready(): void;
 
+  close(): void;
+
   onEvent(event: string, callback: () => void): void;
 
   offEvent(event: string, callback: () => void): void;
+
+  openLink(url: string): void;
+
+  requestWriteAccess([callback]?: any): void;
+
+  sendData(data: any): void;
 }
 
 interface BackButton {
@@ -87,10 +103,10 @@ interface BackButton {
 }
 
 export interface MainButton {
-  onClick: any;
+  onClick: (callback: () => void) => MainButton;
   text: string;
   color: string;
-  offClick: any;
+  offClick: (callback: () => void) => MainButton;
   textColor: string;
   isVisible: boolean;
   isProgressVisible: boolean;
@@ -131,6 +147,10 @@ interface User {
   last_name: string;
   username: string;
   language_code: string;
+  is_bot: boolean;
+  is_premium: boolean;
+  added_to_attachment_menu: boolean;
+  allows_write_to_pm: boolean;
 }
 
 interface ThemeParams {

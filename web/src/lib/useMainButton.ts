@@ -32,11 +32,11 @@ export function useMainButton() {
       });
     },
     setParams: (params: {
-      text?: string;
-      isVisible?: boolean;
-      color?: string;
-      textColor?: string;
-      isEnabled?: boolean;
+      text?: string
+      isVisible?: boolean
+      color?: string
+      textColor?: string
+      isEnabled?: boolean
     }) => {
       return window.Telegram.WebApp.MainButton.setParams({
         is_visible: params.isVisible,

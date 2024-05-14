@@ -1,48 +1,33 @@
-import {
-  createEffect,
-  createSignal,
-  For,
-  onCleanup,
-  Show,
-  Suspense,
-} from 'solid-js';
-import { Collaboration } from '../../../gen';
-import { CDN_URL, fetchCollaborations } from '~/api';
-import { createQuery } from '@tanstack/solid-query';
-import useDebounce from '~/hooks/useDebounce';
+import { createResource, createSignal, For, onCleanup, Show, Suspense } from 'solid-js';
+import { Collaboration } from '~/gen/types';
+import { CDN_URL, fetchCollaborations } from '~/lib/api';
+import useDebounce from '~/lib/useDebounce';
 import { Link } from '~/components/Link';
-import { useMainButton } from '~/hooks/useMainButton';
+import { useMainButton } from '~/lib/useMainButton';
 import { useNavigate } from '@solidjs/router';
 import { store } from '~/store';
-import { usePopup } from '~/hooks/usePopup';
+import { usePopup } from '~/lib/usePopup';
 
 export default function Index() {
   const [search, setSearch] = createSignal('');
 
-  const updateSearch = useDebounce(setSearch, 300);
+  const updateSearch = useDebounce(setSearch, 350);
 
-  const query = createQuery(() => ({
-    queryKey: ['collaborations', search()],
-    queryFn: () => fetchCollaborations(search()),
-  }));
+  const [collaborations] = createResource(() => search(), fetchCollaborations);
 
   const navigate = useNavigate();
 
   const mainButton = useMainButton();
-  const { showConfirm } = usePopup();
+  const { showAlert } = usePopup();
 
   const pushToCreate = () => {
     if (!store.user.published_at || store.user.hidden_at) {
-      showConfirm(
-        'You have to open publish first',
-        (ok: boolean) =>
-          ok && navigate('/users/edit', { state: { back: true } }),
-      );
+      showAlert('You have to open publish first');
       return;
     }
 
     navigate('/collaborations/edit');
-  };
+  }
 
   mainButton.enable('Post a collaboration');
   mainButton.onClick(pushToCreate);
@@ -63,7 +48,7 @@ export default function Index() {
         />
       </div>
       <Suspense fallback={<CollabListPlaceholder />}>
-        <For each={query.data}>
+        <For each={collaborations()!}>
           {collab => <CollaborationCard collab={collab} />}
         </For>
       </Suspense>
@@ -86,9 +71,9 @@ const CollaborationCard = (props: { collab: Collaboration }) => {
       <div class="flex w-full flex-row items-start justify-between">
         <p class="mt-3 text-3xl text-blue">{props.collab.opportunity?.text}:</p>
         <Show when={!props.collab.published_at || props.collab.hidden_at}>
-          <span class="material-symbols-rounded text-[20px] text-hint">
-            visibility_off
-          </span>
+					<span class="material-symbols-rounded text-[20px] text-hint">
+						visibility_off
+					</span>
         </Show>
       </div>
       <p class="text-3xl text-main">{props.collab.title}</p>
@@ -111,7 +96,7 @@ const CollaborationCard = (props: { collab: Collaboration }) => {
       <div class="mt-5 h-px w-full bg-main" />
     </Link>
   );
-};
+}
 
 const CollabListPlaceholder = () => {
   return (
@@ -122,4 +107,4 @@ const CollabListPlaceholder = () => {
       <div class="h-48 w-full rounded-2xl bg-main" />
     </div>
   );
-};
+}

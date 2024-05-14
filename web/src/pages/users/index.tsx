@@ -1,20 +1,16 @@
-import { createSignal, For, Show, Suspense } from 'solid-js';
-import { User } from '../../../gen';
-import { fetchUsers } from '~/api';
-import { createQuery } from '@tanstack/solid-query';
-import useDebounce from '~/hooks/useDebounce';
+import { createResource, createSignal, For, Show, Suspense } from 'solid-js';
+import { User } from '~/gen/types';
+import { fetchUsers } from '~/lib/api';
 import { Link } from '~/components/Link';
 import BadgeList from '~/components/BadgeList';
+import useDebounce from '~/lib/useDebounce';
 
 export default function Index() {
   const [search, setSearch] = createSignal('');
 
-  const updateSearch = useDebounce(setSearch, 300);
+  const updateSearch = useDebounce(setSearch, 350);
 
-  const query = createQuery(() => ({
-    queryKey: ['profiles', search()],
-    queryFn: () => fetchUsers(search()),
-  }));
+  const [profiles] = createResource(() => search(), fetchUsers);
 
   return (
     <div class="min-h-screen bg-secondary pb-52">
@@ -28,7 +24,7 @@ export default function Index() {
         />
       </div>
       <Suspense fallback={<UserListPlaceholder />}>
-        <For each={query.data}>{profile => <UserCard user={profile} />}</For>
+        <For each={profiles()}>{profile => <UserCard user={profile} />}</For>
       </Suspense>
     </div>
   );
@@ -45,7 +41,7 @@ const UserCard = (props: { user: User }) => {
   return (
     <Link
       class="flex flex-col items-start bg-secondary px-4 pb-5 pt-4 text-start"
-      href={`/users/${props.user.id}`}
+      href={`/users/${props.user.username}`}
       state={{ from: '/users' }}
     >
       <img
@@ -70,7 +66,7 @@ const UserCard = (props: { user: User }) => {
       <div class="mt-5 h-px w-full bg-main" />
     </Link>
   );
-};
+}
 
 const UserListPlaceholder = () => {
   return (
@@ -81,4 +77,4 @@ const UserListPlaceholder = () => {
       <div class="h-56 w-full rounded-2xl bg-main" />
     </div>
   );
-};
+}

@@ -41,11 +41,15 @@ export type UserProfile = {
   /**
    * @type integer | undefined
    */
+  following_count?: number;
+  /**
+   * @type integer | undefined
+   */
   id?: number;
   /**
-   * @type string | undefined
+   * @type boolean | undefined
    */
-  language_code?: string;
+  is_following?: boolean;
   /**
    * @type string | undefined
    */
@@ -55,15 +59,7 @@ export type UserProfile = {
    */
   opportunities?: Opportunity[];
   /**
-   * @type integer | undefined
-   */
-  requests_count?: number;
-  /**
    * @type string | undefined
    */
   title?: string;
-  /**
-   * @type string | undefined
-   */
-  updated_at?: string;
 };

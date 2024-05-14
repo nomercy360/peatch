@@ -1,30 +1,18 @@
-import {
-  createEffect,
-  createResource,
-  createSignal,
-  For,
-  Match,
-  Show,
-  Suspense,
-  Switch,
-} from 'solid-js';
+import { createEffect, createResource, createSignal, For, Match, Show, Suspense, Switch } from 'solid-js';
 import { store } from '~/store';
-import { CDN_URL, fetchPreview } from '~/api';
+import { CDN_URL, fetchPreview } from '~/lib/api';
 import FillProfilePopup from '~/components/FillProfilePopup';
 import { Link } from '~/components/Link';
-import { useMainButton } from '~/hooks/useMainButton';
+import { useMainButton } from '~/lib/useMainButton';
 
 export default function Index() {
   const [profilePopup, setProfilePopup] = createSignal(false);
 
-  const [previewImages, _] = createResource(async () => {
-    const res = await fetchPreview();
-    return res.map((image: any) => CDN_URL + '/' + image.avatar_url);
-  });
+  const [previewImages] = createResource(() => fetchPreview());
 
   const getUserLink = () => {
     if (store.user.first_name && store.user.last_name) {
-      return '/users/' + store.user?.id;
+      return '/users/' + store.user?.username;
     } else {
       return '/users/edit';
     }
@@ -39,7 +27,7 @@ export default function Index() {
     window.Telegram.WebApp.CloudStorage.setItem('profilePopup', 'closed');
   };
 
-  const updateProfilePopup = (err: any, value: any) => {
+  const updateProfilePopup = (err: unknown, value: unknown) => {
     setProfilePopup(value !== 'closed');
   };
 
@@ -73,9 +61,9 @@ export default function Index() {
           </Match>
           <Match when={!store.user.avatar_url}>
             <div class="flex size-11 items-center justify-center rounded-xl border-2 border-main bg-main">
-              <span class="material-symbols-rounded text-peatch-main">
-                account_circle
-              </span>
+							<span class="material-symbols-rounded text-peatch-main">
+								account_circle
+							</span>
             </div>
           </Match>
         </Switch>
@@ -106,8 +94,8 @@ export default function Index() {
             collaborate
           </p>
           <span class="material-symbols-rounded text-[48px] text-pink">
-            maps_ugc
-          </span>
+						maps_ugc
+					</span>
         </div>
         <p class="mt-1.5 text-sm text-hint">
           Figma Wizards, Consultants, Founders, and more
@@ -120,17 +108,18 @@ export default function Index() {
       >
         <div class="flex w-full flex-row items-center justify-start">
           <div class="z-20 flex size-11 flex-col items-center justify-center rounded-xl border border-main bg-orange">
-            <span class="material-symbols-rounded text-white">
-              self_improvement
-            </span>
+						<span class="material-symbols-rounded text-white">
+							self_improvement
+						</span>
           </div>
-          <div class="z-10 -ml-1 flex size-11 flex-col items-center justify-center rounded-xl border border-main bg-red">
+          <div
+            class="z-10 -ml-1 flex size-11 flex-col items-center justify-center rounded-xl border border-main bg-red">
             <span class="material-symbols-rounded text-white">wine_bar</span>
           </div>
           <div class="-ml-1 flex size-11 flex-col items-center justify-center rounded-xl border border-main bg-blue">
-            <span class="material-symbols-rounded text-white">
-              directions_run
-            </span>
+						<span class="material-symbols-rounded text-white">
+							directions_run
+						</span>
           </div>
         </div>
         <div class="flex flex-row items-start justify-between">
@@ -139,8 +128,8 @@ export default function Index() {
             interested to join
           </p>
           <span class="material-symbols-rounded text-[48px] text-red">
-            arrow_circle_right
-          </span>
+						arrow_circle_right
+					</span>
         </div>
         <p class="mt-1.5 text-sm text-hint">
           Yoga practice, Running, Grabbing a coffee, and more
@@ -161,8 +150,8 @@ export default function Index() {
             and users. Discuss and solve problems together
           </p>
           <span class="material-symbols-rounded text-[48px] text-green">
-            forum
-          </span>
+						forum
+					</span>
         </div>
       </button>
     </div>
@@ -186,4 +175,4 @@ const ImagesLoader = () => {
       </For>
     </div>
   );
-};
+}

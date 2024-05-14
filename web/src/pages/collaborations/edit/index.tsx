@@ -1,5 +1,5 @@
 import { RouteSectionProps, useNavigate, useParams } from '@solidjs/router';
-import { fetchCollaboration } from '~/api';
+import { fetchCollaboration } from '~/lib/api';
 import { setEditCollaboration, setEditCollaborationId } from '~/store';
 import { createEffect, createResource, Show } from 'solid-js';
 
@@ -30,7 +30,7 @@ export default function EditCollaboration(props: RouteSectionProps) {
       if (!collaboration.loading) {
         setEditCollaboration({
           badge_ids: collaboration().badges.map(
-            (badge: { id: any }) => badge.id,
+            (badge: { id: number }) => badge.id,
           ),
           city: collaboration().city,
           country: collaboration().country,
@@ -43,7 +43,7 @@ export default function EditCollaboration(props: RouteSectionProps) {
 
         setEditCollaborationId(collaboration().id);
       }
-    });
+    })
 
     return (
       <Show when={!collaboration.loading}>

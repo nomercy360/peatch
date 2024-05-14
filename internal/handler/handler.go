@@ -20,7 +20,7 @@ type service interface {
 	TelegramAuth(query string) (*svc.UserWithToken, error)
 	GetUserByChatID(chatID int64) (*db.User, error)
 	CreateUser(user db.User) (*db.User, error)
-	GetUserByID(userID, id int64) (*db.User, error)
+	GetUserProfile(userID int64, username string) (*db.UserProfile, error)
 	UpdateUser(userID int64, updateRequest svc.UpdateUserRequest) error
 	ListOpportunities() ([]db.LOpportunity, error)
 	ListBadges(search string) ([]db.Badge, error)
@@ -42,7 +42,7 @@ type service interface {
 	CreateUserCollaboration(userID int64, receiverID int64, request svc.CreateUserCollaboration) (*db.UserCollaborationRequest, error)
 	// GetUserPreview fetch 3 random user avatars for the home page
 	GetUserPreview(uid int64) ([]svc.UserPreview, error)
-	FindUserCollaborationRequest(requesterID, userID int64) (*db.UserCollaborationRequest, error)
+	FindUserCollaborationRequest(requesterID int64, username string) (*db.UserCollaborationRequest, error)
 	FindCollaborationRequest(userID, collabID int64) (*db.CollaborationRequest, error)
 	SearchLocations(query string) ([]db.Location, error)
 }
@@ -81,7 +81,7 @@ func (h *handler) RegisterRoutes(e *echo.Echo) {
 	a.Use(echojwt.WithConfig(config))
 
 	a.GET("/users", h.handleListUsers)
-	a.GET("/users/:id", h.handleGetUser)
+	a.GET("/users/:handle", h.handleGetUser)
 	a.PUT("/users", h.handleUpdateUser)
 	a.GET("/opportunities", h.handleListOpportunities)
 	a.GET("/badges", h.handleListBadges)
@@ -89,7 +89,7 @@ func (h *handler) RegisterRoutes(e *echo.Echo) {
 	a.POST("/users/:id/follow", h.handleFollowUser)
 	a.DELETE("/users/:id/follow", h.handleUnfollowUser)
 	a.POST("/users/:id/collaborations/requests", h.handleCreateUserCollaboration)
-	a.GET("/users/:id/collaborations/requests", h.handleFindUserCollaborationRequest)
+	a.GET("/users/:handle/collaborations/requests", h.handleFindUserCollaborationRequest)
 	a.POST("/users/show", h.handleShowUser)
 	a.POST("/users/publish", h.handlePublishUser)
 	a.POST("/users/hide", h.handleHideUser)

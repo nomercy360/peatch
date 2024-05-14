@@ -1054,11 +1054,17 @@ const docTemplate = `{
                 "followers_count": {
                     "type": "integer"
                 },
+                "following_count": {
+                    "type": "integer"
+                },
                 "hidden_at": {
                     "type": "string"
                 },
                 "id": {
                     "type": "integer"
+                },
+                "is_following": {
+                    "type": "boolean"
                 },
                 "language_code": {
                     "type": "string"
@@ -1133,11 +1139,14 @@ const docTemplate = `{
                 "followers_count": {
                     "type": "integer"
                 },
+                "following_count": {
+                    "type": "integer"
+                },
                 "id": {
                     "type": "integer"
                 },
-                "language_code": {
-                    "type": "string"
+                "is_following": {
+                    "type": "boolean"
                 },
                 "last_name": {
                     "type": "string"
@@ -1148,13 +1157,7 @@ const docTemplate = `{
                         "$ref": "#/definitions/Opportunity"
                     }
                 },
-                "requests_count": {
-                    "type": "integer"
-                },
                 "title": {
-                    "type": "string"
-                },
-                "updated_at": {
                     "type": "string"
                 }
             }

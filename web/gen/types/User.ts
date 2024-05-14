@@ -43,6 +43,10 @@ export type User = {
     */
     followers_count?: number;
     /**
+     * @type integer | undefined
+     */
+    following_count?: number;
+  /**
      * @type string | undefined
     */
     hidden_at?: string;
@@ -51,6 +55,10 @@ export type User = {
     */
     id?: number;
     /**
+     * @type boolean | undefined
+     */
+    is_following?: boolean;
+  /**
      * @type string | undefined
     */
     language_code?: string;

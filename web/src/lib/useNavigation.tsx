@@ -1,4 +1,4 @@
-import { createContext, useContext, createEffect, onCleanup } from 'solid-js';
+import { createContext, createEffect, JSX, onCleanup, useContext } from 'solid-js';
 import { useBackButton } from './useBackButton';
 import { useLocation, useNavigate } from '@solidjs/router';
 
@@ -8,22 +8,20 @@ interface NavigationContext {
 
 const Navigation = createContext<NavigationContext>({} as NavigationContext);
 
-export function NavigationProvider(props: { children: any }) {
+export function NavigationProvider(props: { children: JSX.Element }) {
   const backButton = useBackButton();
 
   const navigate = useNavigate();
   const location = useLocation();
 
   const navigateBack = () => {
-    console.log('Navigating back:', location.state);
-
     const state = location.state;
 
     !state && navigate('/');
 
-    const deserialize = (state: any) => {
+    const deserialize = (state: Readonly<Partial<unknown>> | null) => {
       try {
-        return JSON.parse(state);
+        return JSON.parse(state as string);
       } catch (e) {
         return state;
       }
@@ -31,7 +29,7 @@ export function NavigationProvider(props: { children: any }) {
 
     const stateData = deserialize(state);
 
-    const isObject = (value: any) => {
+    const isObject = (value: unknown) => {
       return value && typeof value === 'object' && value.constructor === Object;
     };
 
@@ -45,13 +43,14 @@ export function NavigationProvider(props: { children: any }) {
       console.log('navigating back to root');
       navigate('/');
     }
-  };
+  }
 
   createEffect(() => {
-    backButton.hide();
     if (location.pathname !== '/') {
       backButton.setVisible();
       backButton.onClick(navigateBack);
+    } else {
+      backButton.hide();
     }
   });
 

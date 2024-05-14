@@ -1,10 +1,9 @@
 import { FormLayout } from '~/components/edit/layout';
-import { useMainButton } from '~/hooks/useMainButton';
+import { useMainButton } from '~/lib/useMainButton';
 import { useNavigate } from '@solidjs/router';
-import { createEffect, onCleanup } from 'solid-js';
+import { createEffect, createResource, onCleanup } from 'solid-js';
 import { editUser, setEditUser } from '~/store';
-import { fetchOpportunities } from '~/api';
-import { createQuery } from '@tanstack/solid-query';
+import { fetchOpportunities } from '~/lib/api';
 import { SelectOpportunity } from '~/components/edit/selectOpp';
 
 export default function SelectOpportunities() {
@@ -16,13 +15,9 @@ export default function SelectOpportunities() {
     navigate('/users/edit/location', { state: { back: true } });
   };
 
-  const fetchOpportunityQuery = createQuery(() => ({
-    queryKey: ['opportunities'],
-    queryFn: () => fetchOpportunities(),
-  }));
+  const [opportunities] = createResource(() => fetchOpportunities());
 
-  mainButton
-    .onClick(navigateNext);
+  mainButton.onClick(navigateNext);
 
   createEffect(() => {
     if (editUser.opportunity_ids.length) {
@@ -46,7 +41,7 @@ export default function SelectOpportunities() {
       <SelectOpportunity
         selected={editUser.opportunity_ids}
         setSelected={b => setEditUser('opportunity_ids', b as any)}
-        opportunities={fetchOpportunityQuery.data}
+        opportunities={opportunities()!}
       />
     </FormLayout>
   );

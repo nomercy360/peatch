@@ -1,27 +1,10 @@
-import {
-  createEffect,
-  createSignal,
-  For,
-  Match,
-  onCleanup,
-  Suspense,
-  Switch,
-} from 'solid-js';
+import { createEffect, createResource, createSignal, For, Match, onCleanup, Suspense, Switch } from 'solid-js';
 import { useNavigate, useParams, useSearchParams } from '@solidjs/router';
-import {
-  CDN_URL,
-  fetchProfile,
-  followUser,
-  hideProfile,
-  publishProfile,
-  showProfile,
-  unfollowUser,
-} from '~/api';
-import { createQuery } from '@tanstack/solid-query';
-import { setFollowing, setUser, store } from '~/store';
-import ActionDonePopup from '../../components/ActionDonePopup';
-import { useMainButton } from '~/hooks/useMainButton';
-import { usePopup } from '~/hooks/usePopup';
+import { CDN_URL, fetchProfile, followUser, hideProfile, publishProfile, showProfile, unfollowUser } from '~/lib/api';
+import { setUser, store } from '~/store';
+import ActionDonePopup from '~/components/ActionDonePopup';
+import { useMainButton } from '~/lib/useMainButton';
+import { usePopup } from '~/lib/usePopup';
 
 export default function UserProfile() {
   const mainButton = useMainButton();
@@ -30,41 +13,40 @@ export default function UserProfile() {
   const navigate = useNavigate();
 
   const params = useParams();
-  const [searchParams, _] = useSearchParams();
+  const [searchParams] = useSearchParams();
 
-  const { showConfirm } = usePopup();
+  const username = params.handle;
 
-  const userId = params.id;
+  const [profile, { mutate, refetch }] = createResource(() =>
+    fetchProfile(username),
+  );
 
-  const isCurrentUserProfile = store.user.id === Number(userId);
+  const { showAlert } = usePopup();
 
-  const query = createQuery(() => ({
-    queryKey: ['profiles', userId],
-    queryFn: () => fetchProfile(Number(userId)),
-  }));
-
-  createEffect(async () => {
-    if (searchParams.refetch) {
-      await query.refetch();
-      if (query.data.id === store.user.id) {
-        setUser(query.data);
-      }
-    }
-  });
+  const isCurrentUserProfile = store.user.username === username;
 
   const navigateToEdit = () => {
     navigate('/users/edit', { state: { back: true } });
   };
 
+  createEffect(async () => {
+    if (searchParams.refetch) {
+      await refetch();
+      if (profile()?.id === store.user.id) setUser(profile()!);
+    }
+  });
+
   const navigateToCollaborate = async () => {
-    if (store.user.published_at && !store.user.hidden_at) {
-      navigate(`/users/${userId}/collaborate`);
-    } else {
-      showConfirm(
-        'You must publish your profile first',
-        (ok: boolean) =>
-          ok && navigate('/users/edit', { state: { back: true } }),
+    if (!store.user.published_at) {
+      showAlert(
+        `Publish your profile first, so ${profile()?.first_name} will see it`,
       );
+    } else if (store.user.hidden_at) {
+      showAlert(
+        `Unhide your profile first, so ${profile()?.first_name} will see it`,
+      );
+    } else {
+      navigate(`/users/${username}/collaborate`, { state: { back: true } });
     }
   };
 
@@ -98,13 +80,24 @@ export default function UserProfile() {
   };
 
   const follow = async () => {
-    setFollowing([...store.following, Number(userId)]);
-    await followUser(Number(userId));
+    if (!profile()) return;
+    mutate({
+      ...profile(),
+      is_following: true,
+      followers_count: profile()?.followers_count + 1,
+    });
+    window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+    await followUser(Number(profile()?.id));
   };
 
   const unfollow = async () => {
-    setFollowing(store.following.filter(id => id !== Number(userId)));
-    await unfollowUser(Number(userId));
+    mutate({
+      ...profile(),
+      is_following: false,
+      followers_count: profile()?.followers_count - 1,
+    });
+    window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+    await unfollowUser(Number(profile()?.id));
   };
 
   createEffect(() => {
@@ -138,6 +131,20 @@ export default function UserProfile() {
     mainButton.hide();
   });
 
+  const [contentCopied, setContentCopied] = createSignal(false);
+
+  async function copyToClipboard() {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setContentCopied(true);
+      window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+      setTimeout(() => setContentCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy: ', err);
+      window.Telegram.WebApp.sendData(window.location.href);
+    }
+  }
+
   return (
     <div>
       <Suspense fallback={<Loader />}>
@@ -149,7 +156,7 @@ export default function UserProfile() {
               callToAction="There are 12 people you might be interested to collaborate with"
             />
           </Match>
-          <Match when={query.data}>
+          <Match when={profile()}>
             <div class="h-fit min-h-screen bg-secondary">
               <Switch>
                 <Match when={isCurrentUserProfile && !store.user.published_at}>
@@ -173,41 +180,56 @@ export default function UserProfile() {
                 >
                   <ActionButton text="Hide" onClick={hide} />
                 </Match>
-                <Match
-                  when={
-                    !isCurrentUserProfile &&
-                    !store.following.includes(Number(userId))
-                  }
-                >
+                <Match when={!isCurrentUserProfile && !profile()?.is_following}>
                   <ActionButton text="Follow" onClick={follow} />
                 </Match>
-                <Match
-                  when={
-                    !isCurrentUserProfile &&
-                    store.following.includes(Number(userId))
-                  }
-                >
+                <Match when={!isCurrentUserProfile && profile()?.is_following}>
                   <ActionButton text="Unfollow" onClick={unfollow} />
                 </Match>
               </Switch>
               <div class="p-2">
                 <img
-                  src={CDN_URL + '/' + query.data.avatar_url}
+                  src={CDN_URL + '/' + profile()?.avatar_url}
                   alt="avatar"
                   class="aspect-square size-full rounded-xl object-cover"
                 />
               </div>
               <div class="px-4 py-2.5">
+                <div class="flex flex-row items-center justify-between pb-4">
+                  <div class="flex h-8 flex-row items-center space-x-2 text-sm font-semibold">
+										<span class="flex flex-row items-center text-main">
+											{profile().followers_count}
+										</span>
+                    <span class="text-secondary">following</span>
+                    <span class="text-secondary">·</span>
+                    <span class="flex flex-row items-center text-main">
+											{profile().following_count}
+										</span>
+                    <span class="text-secondary">followers</span>
+                  </div>
+                  <button
+                    class="flex h-8 flex-row items-center space-x-2 bg-transparent px-2.5"
+                    classList={{
+                      'text-main': !contentCopied(),
+                      'text-green': contentCopied(),
+                    }}
+                    onClick={copyToClipboard}
+                  >
+                    <span class="text-sm font-semibold">share app profile</span>
+                    <span class="material-symbols-rounded text-[14px]">
+											{contentCopied() ? 'check_circle' : 'content_copy'}
+										</span>
+                  </button>
+                </div>
                 <p class="text-3xl text-pink">
-                  {query.data.first_name} {query.data.last_name}:
+                  {profile()?.first_name} {profile()?.last_name}:
                 </p>
-                <p class="text-3xl text-main">{query.data.title}</p>
+                <p class="text-3xl text-main">{profile()?.title}</p>
                 <p class="mt-1 text-lg font-normal text-secondary">
-                  {' '}
-                  {query.data.description}
+                  {profile()?.description}
                 </p>
                 <div class="mt-5 flex flex-row flex-wrap items-center justify-start gap-1">
-                  <For each={query.data.badges}>
+                  <For each={profile()?.badges}>
                     {badge => (
                       <div
                         class="flex h-10 flex-row items-center justify-center gap-[5px] rounded-2xl border border-main px-2.5"
@@ -216,9 +238,9 @@ export default function UserProfile() {
                           'border-color': `#${badge.color}`,
                         }}
                       >
-                        <span class="material-symbols-rounded text-white">
-                          {String.fromCodePoint(parseInt(badge.icon!, 16))}
-                        </span>
+												<span class="material-symbols-rounded text-white">
+													{String.fromCodePoint(parseInt(badge.icon!, 16))}
+												</span>
                         <p class="text-sm font-semibold text-white">
                           {badge.text}
                         </p>
@@ -227,7 +249,7 @@ export default function UserProfile() {
                   </For>
                 </div>
                 <div class="mt-5 flex w-full flex-col items-center justify-start gap-1">
-                  <For each={query.data.opportunities}>
+                  <For each={profile()?.opportunities}>
                     {op => (
                       <div
                         class="flex h-[60px] w-full flex-row items-center justify-start gap-2.5 rounded-2xl border border-main px-2.5"
@@ -236,9 +258,9 @@ export default function UserProfile() {
                         }}
                       >
                         <div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary">
-                          <span class="material-symbols-rounded shrink-0 text-main">
-                            {String.fromCodePoint(parseInt(op.icon!, 16))}
-                          </span>
+													<span class="material-symbols-rounded shrink-0 text-main">
+														{String.fromCodePoint(parseInt(op.icon!, 16))}
+													</span>
                         </div>
                         <div class="text-start text-white">
                           <p class="text-sm font-semibold">{op.text}</p>
@@ -263,7 +285,7 @@ export default function UserProfile() {
 const ActionButton = (props: { text: string; onClick: () => void }) => {
   return (
     <button
-      class="absolute right-4 top-4 z-10 h-9 w-[90px] rounded-xl bg-black/80 px-2.5 text-button"
+      class="absolute right-4 top-4 z-10 h-9 w-[90px] rounded-xl bg-black/80 px-2.5 text-sm font-semibold text-button"
       onClick={props.onClick}
     >
       {props.text}

@@ -7,7 +7,7 @@ export type Collaboration = {
      * @type array | undefined
      */
     badges?: Badge[];
-   /**
+  /**
      * @type string | undefined
     */
     city?: string;

@@ -1,21 +1,13 @@
-import {
-  createEffect,
-  createSignal,
-  For,
-  Match,
-  Show,
-  Suspense,
-  Switch,
-} from 'solid-js';
+import { createEffect, createSignal, For, Match, Show, Suspense, Switch } from 'solid-js';
 import { Badge } from '../../../gen';
 
 export function SelectBadge(props: {
-  selected: number[];
-  setSelected: (selected: number[]) => void;
-  search: string;
-  setSearch: (search: string) => void;
-  badges: Badge[];
-  onCreateBadgeButtonClick: () => void;
+  selected: number[]
+  setSelected: (selected: number[]) => void
+  search: string
+  setSearch: (search: string) => void
+  badges: Badge[]
+  onCreateBadgeButtonClick: () => void
 }) {
   const [filteredBadges, setFilteredBadges] = createSignal(props.badges);
 
@@ -97,14 +89,14 @@ export function SelectBadge(props: {
                   'border-color': `${props.selected.includes(badge.id!) ? `#${badge.color}` : 'var(--tg-theme-secondary-bg-color)'}`,
                 }}
               >
-                <span
+								<span
                   class="material-symbols-rounded"
                   style={{
                     color: `${props.selected.includes(badge.id!) ? 'white' : `#${badge.color}`}`,
                   }}
                 >
-                  {String.fromCodePoint(parseInt(badge.icon!, 16))}
-                </span>
+									{String.fromCodePoint(parseInt(badge.icon!, 16))}
+								</span>
                 <p
                   class="text-sm font-semibold"
                   classList={{

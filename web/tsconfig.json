@@ -12,15 +12,16 @@
     "types": [
       "vite/client"
     ],
+    "noEmit": true,
+    "isolatedModules": true,
+    "baseUrl": ".",
     "paths": {
       "~/*": [
         "./src/*"
+      ],
+      "~/gen/*": [
+        "./gen/*"
       ]
-    },
-    "include": [
-      "src"
-    ],
-    "noEmit": true,
-    "isolatedModules": true
+    }
   }
 }

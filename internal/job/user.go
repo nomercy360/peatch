@@ -16,7 +16,7 @@ import (
 )
 
 type storage interface {
-	GetUserByID(id int64, showHidden bool) (*db.User, error)
+	GetUserProfile(params db.GetUsersParams) (*db.User, error)
 	CreateNotification(notification db.Notification) (*db.Notification, error)
 	SearchNotification(params db.NotificationQuery) (*db.Notification, error)
 	ListUserCollaborations(from time.Time) ([]db.UserCollaborationRequest, error)
@@ -90,7 +90,9 @@ func (j *notifyJob) NotifyNewUserProfile() error {
 		_, err := j.storage.SearchNotification(q)
 
 		if err != nil && errors.Is(err, db.ErrNotFound) {
-			userDetails, err := j.storage.GetUserByID(user.ID, false)
+			params := db.GetUsersParams{UserID: user.ID}
+
+			userDetails, err := j.storage.GetUserProfile(params)
 
 			if err != nil {
 				return err
@@ -123,16 +125,16 @@ func (j *notifyJob) NotifyNewUserProfile() error {
 				return err
 			}
 
-			linkToProfile := fmt.Sprintf("%s?startapp=redirect-to-users-%d", j.config.botWebApp, user.ID)
+			linkToProfile := fmt.Sprintf("%s?startapp=t-users-%d", j.config.botWebApp, user.ID)
 
-			params := notification.SendNotificationParams{
+			n := notification.SendNotificationParams{
 				ChatID:    created.ChatID,
 				Message:   text,
 				BotWebApp: linkToProfile,
 				Image:     img,
 			}
 
-			if err = j.notifier.SendNotification(params); err != nil {
+			if err = j.notifier.SendNotification(n); err != nil {
 				log.Printf("Failed to send notification to user %d", user.ID)
 				return err
 			}
@@ -175,7 +177,11 @@ func (j *notifyJob) NotifyNewCollaboration() error {
 		_, err := j.storage.SearchNotification(q)
 
 		if err != nil && errors.Is(err, db.ErrNotFound) {
-			creator, err := j.storage.GetUserByID(collaboration.UserID, false)
+			params := db.GetUsersParams{
+				UserID: collaboration.UserID,
+			}
+
+			creator, err := j.storage.GetUserProfile(params)
 
 			if err != nil {
 				return err
@@ -208,16 +214,16 @@ func (j *notifyJob) NotifyNewCollaboration() error {
 				return err
 			}
 
-			linkToCollaboration := fmt.Sprintf("%s?startapp=redirect-to-collaborations-%d", j.config.botWebApp, collaboration.ID)
+			linkToCollaboration := fmt.Sprintf("%s?startapp=t-collaborations-%d", j.config.botWebApp, collaboration.ID)
 
-			params := notification.SendNotificationParams{
+			n := notification.SendNotificationParams{
 				ChatID:    created.ChatID,
 				Message:   text,
 				BotWebApp: linkToCollaboration,
 				Image:     img,
 			}
 
-			if err = j.notifier.SendNotification(params); err != nil {
+			if err = j.notifier.SendNotification(n); err != nil {
 				log.Printf("Failed to send notification to user %d", collaboration.UserID)
 				return err
 			}
@@ -261,7 +267,11 @@ func (j *notifyJob) NotifyMatchedCollaboration() error {
 			continue
 		}
 
-		creator, err := j.storage.GetUserByID(collaboration.UserID, false)
+		params := db.GetUsersParams{
+			UserID: collaboration.UserID,
+		}
+
+		creator, err := j.storage.GetUserProfile(params)
 
 		if err != nil {
 			return err
@@ -352,13 +362,14 @@ func (j *notifyJob) NotifyUserReceivedCollaborationRequest() error {
 		_, err := j.storage.SearchNotification(q)
 
 		if err != nil && errors.Is(err, db.ErrNotFound) {
-			requester, err := j.storage.GetUserByID(collaboration.RequesterID, false)
+
+			requester, err := j.storage.GetUserProfile(db.GetUsersParams{UserID: collaboration.RequesterID})
 
 			if err != nil {
 				return err
 			}
 
-			receiver, err := j.storage.GetUserByID(collaboration.UserID, false)
+			receiver, err := j.storage.GetUserProfile(db.GetUsersParams{UserID: collaboration.UserID})
 
 			if err != nil {
 				return err
@@ -444,7 +455,7 @@ func (j *notifyJob) NotifyCollaborationRequest() error {
 
 		if _, err := j.storage.SearchNotification(q); err != nil && errors.Is(err, db.ErrNotFound) {
 			// get the one who created the request
-			requester, err := j.storage.GetUserByID(request.UserID, false)
+			requester, err := j.storage.GetUserProfile(db.GetUsersParams{UserID: request.UserID})
 
 			if err != nil {
 				return err

@@ -49,11 +49,10 @@ func (h *handler) handleListUsers(c echo.Context) error {
 // @Success 200 {object} User
 // @Router /api/users/{id} [get]
 func (h *handler) handleGetUser(c echo.Context) error {
-	chatID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-
+	username := c.Param("handle")
 	uid := getUserID(c)
 
-	user, err := h.svc.GetUserByID(uid, chatID)
+	user, err := h.svc.GetUserProfile(uid, username)
 	if err != nil {
 		return err
 	}
@@ -246,9 +245,9 @@ func (h *handler) handleGetUserPreview(c echo.Context) error {
 // @Router /api/users/{id}/collaborations/requests [get]
 func (h *handler) handleFindUserCollaborationRequest(c echo.Context) error {
 	requesterID := getUserID(c)
-	userID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	handle := c.Param("handle")
 
-	requests, err := h.svc.FindUserCollaborationRequest(requesterID, userID)
+	requests, err := h.svc.FindUserCollaborationRequest(requesterID, handle)
 	if err != nil {
 		return err
 	}

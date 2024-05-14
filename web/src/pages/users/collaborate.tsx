@@ -1,30 +1,16 @@
-import { createQuery } from '@tanstack/solid-query';
-import {
-  CDN_URL,
-  createUserCollaboration,
-  fetchProfile,
-  findUserCollaborationRequest,
-} from '~/api';
+import { CDN_URL, createUserCollaboration, fetchProfile, findUserCollaborationRequest } from '~/lib/api';
 import { useNavigate, useParams } from '@solidjs/router';
 import { store } from '~/store';
-import {
-  createEffect,
-  createResource,
-  createSignal,
-  Match,
-  onCleanup,
-  Show,
-  Switch,
-} from 'solid-js';
+import { createEffect, createResource, createSignal, Match, onCleanup, Show, Switch } from 'solid-js';
 import TextArea from '~/components/TextArea';
-import { usePopup } from '~/hooks/usePopup';
-import { useMainButton } from '~/hooks/useMainButton';
+import { usePopup } from '~/lib/usePopup';
+import { useMainButton } from '~/lib/useMainButton';
 import BadgeList from '~/components/BadgeList';
 import ActionDonePopup from '~/components/ActionDonePopup';
 
 export default function Collaborate() {
   const params = useParams();
-  const userId = params.id;
+  const username = params.handle;
 
   const [created, setCreated] = createSignal(false);
   const mainButton = useMainButton();
@@ -32,21 +18,18 @@ export default function Collaborate() {
   const navigate = useNavigate();
 
   const backToProfile = () => {
-    navigate(`/users/${userId}`, { state: { from: '/users' } });
+    navigate(`/users/${username}`, { state: { from: '/users' } });
   };
 
   const [message, setMessage] = createSignal('');
 
-  const query = createQuery(() => ({
-    queryKey: ['profiles', userId],
-    queryFn: () => fetchProfile(Number(userId)),
-  }));
+  const [profile] = createResource(() => fetchProfile(username));
 
-  const [existedRequest, _] = createResource(async () => {
+  const [existedRequest] = createResource(async () => {
     try {
-      return await findUserCollaborationRequest(Number(userId));
-    } catch (e: any) {
-      if (e.status === 404) {
+      return await findUserCollaborationRequest(username);
+    } catch (e: unknown) {
+      if ((e as { status: number }).status === 404) {
         return null;
       }
     }
@@ -62,7 +45,7 @@ export default function Collaborate() {
       return;
     }
     try {
-      await createUserCollaboration(query.data.id, message());
+      await createUserCollaboration(profile()?.id, message());
       setCreated(true);
     } catch (e) {
       console.error(e);
@@ -73,7 +56,7 @@ export default function Collaborate() {
     if (created() || existedRequest()) {
       mainButton.offClick(postCollaboration);
       mainButton.onClick(backToProfile);
-      mainButton.enable(`Back to ${query.data.first_name}'s profile`);
+      mainButton.enable(`Back to ${profile()?.first_name}'s profile`);
     } else if (!existedRequest.loading && !existedRequest()) {
       mainButton.onClick(postCollaboration);
       if (message()) {
@@ -87,33 +70,33 @@ export default function Collaborate() {
       mainButton.offClick(postCollaboration);
       mainButton.offClick(backToProfile);
     });
-  });
+  })
 
   return (
     <Switch>
       <Match when={created()}>
         <ActionDonePopup
           action="Message sent"
-          description={`Once ${query.data.first_name} accepts your invitation, we'll share your contacts`}
-          callToAction={`There are 12 people with a similar profiles like ${query.data.first_name}`}
+          description={`Once ${profile()?.first_name} accepts your invitation, we'll share your contacts`}
+          callToAction={`There are 12 people with a similar profiles like ${profile()?.first_name}`}
         />
       </Match>
-      <Match when={existedRequest.loading && !query.data}>
+      <Match when={existedRequest.loading && !profile()}>
         <div />
       </Match>
-      <Match when={!existedRequest.loading && query.data}>
+      <Match when={!existedRequest.loading && profile()}>
         <Show when={existedRequest()}>
           <ActionDonePopup
             action="Message sent"
-            description={`Once ${query.data.first_name} accepts your invitation, we'll share your contacts`}
-            callToAction={`There are 12 people with a similar profiles like ${query.data.first_name}`}
+            description={`Once ${profile()?.first_name} accepts your invitation, we'll share your contacts`}
+            callToAction={`There are 12 people with a similar profiles like ${profile()?.first_name}`}
           />
         </Show>
         <Show when={!existedRequest()}>
           <div class="flex flex-col items-center justify-center bg-secondary p-4">
             <div class="mb-4 mt-1 flex flex-col items-center justify-center text-center">
               <p class="max-w-[220px] text-3xl text-main">
-                Collaborate with {query.data.first_name}
+                Collaborate with {profile()?.first_name}
               </p>
               <div class="my-5 flex w-full flex-row items-center justify-center">
                 <img
@@ -123,17 +106,17 @@ export default function Collaborate() {
                 />
                 <img
                   class="-ml-4 size-24 rounded-3xl border-2 border-secondary object-cover object-center"
-                  src={CDN_URL + '/' + query.data.avatar_url}
+                  src={CDN_URL + '/' + profile()?.avatar_url}
                   alt="User Avatar"
                 />
               </div>
-              <Show when={query.data.badges && query.data.badges.length > 0}>
+              <Show when={profile()?.badges && profile().badges.length > 0}>
                 <BadgeList
-                  badges={query.data.badges!}
+                  badges={profile()?.badges}
                   position="center"
-                  city={query.data.city}
-                  country={query.data.country}
-                  countryCode={query.data.country_code}
+                  city={profile()?.city}
+                  country={profile()?.country}
+                  countryCode={profile()?.country_code}
                 />
               </Show>
             </div>

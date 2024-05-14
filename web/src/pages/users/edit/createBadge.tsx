@@ -1,9 +1,9 @@
 import { FormLayout } from '~/components/edit/layout';
-import { useMainButton } from '~/hooks/useMainButton';
+import { useMainButton } from '~/lib/useMainButton';
 import { useNavigate, useSearchParams } from '@solidjs/router';
 import { createEffect, onCleanup } from 'solid-js';
 import { editUser, setEditUser } from '~/store';
-import { postBadge } from '~/api';
+import { postBadge } from '~/lib/api';
 import { createStore } from 'solid-js/store';
 import CreateBadge from '~/components/edit/createBadge';
 
@@ -28,7 +28,7 @@ export default function SelectBadges() {
 
       setEditUser('badge_ids', [...editUser.badge_ids, id]);
     }
-  };
+  }
 
   const navigate = useNavigate();
 

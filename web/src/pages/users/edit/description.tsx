@@ -1,6 +1,6 @@
-import { useMainButton } from '~/hooks/useMainButton';
+import { useMainButton } from '~/lib/useMainButton';
 import { useNavigate } from '@solidjs/router';
-import { createEffect, createSignal, onCleanup } from 'solid-js';
+import { createEffect, onCleanup } from 'solid-js';
 import { editUser, setEditUser } from '~/store';
 import TextArea from '~/components/TextArea';
 import { FormLayout } from '~/components/edit/layout';

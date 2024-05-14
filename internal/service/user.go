@@ -70,14 +70,13 @@ func (s *service) CreateUser(user db.User) (*db.User, error) {
 	return s.storage.CreateUser(user)
 }
 
-func (s *service) GetUserByID(uid, id int64) (*db.User, error) {
-	showHidden := false
-
-	if uid == id {
-		showHidden = true
+func (s *service) GetUserProfile(uid int64, username string) (*db.UserProfile, error) {
+	params := db.GetUsersParams{
+		ViewerID: uid,
+		Username: username,
 	}
 
-	user, err := s.storage.GetUserByID(id, showHidden)
+	user, err := s.storage.GetUserProfile(params)
 
 	if err != nil {
 		if errors.Is(err, db.ErrNotFound) {
@@ -87,7 +86,9 @@ func (s *service) GetUserByID(uid, id int64) (*db.User, error) {
 		return nil, err
 	}
 
-	return user, nil
+	up := user.ToUserProfile()
+
+	return &up, nil
 }
 
 func (s *service) UpdateUser(userID int64, updateRequest UpdateUserRequest) error {
@@ -148,8 +149,8 @@ func (s *service) GetUserPreview(userID int64) ([]UserPreview, error) {
 	return previews, nil
 }
 
-func (s *service) FindUserCollaborationRequest(requesterID, userID int64) (*db.UserCollaborationRequest, error) {
-	res, err := s.storage.FindUserCollaborationRequest(requesterID, userID)
+func (s *service) FindUserCollaborationRequest(requesterID int64, username string) (*db.UserCollaborationRequest, error) {
+	res, err := s.storage.FindUserCollaborationRequest(requesterID, username)
 
 	if err != nil {
 		if errors.Is(err, db.ErrNotFound) {

@@ -1,6 +1,6 @@
 import { FormLayout } from '~/components/edit/layout';
 import { editCollaboration, setEditCollaboration } from '~/store';
-import { useMainButton } from '~/hooks/useMainButton';
+import { useMainButton } from '~/lib/useMainButton';
 import { createEffect, onCleanup } from 'solid-js';
 import { useLocation, useNavigate } from '@solidjs/router';
 import TextArea from '~/components/TextArea';
@@ -12,7 +12,7 @@ export default function GeneralInfo() {
   const path = useLocation().pathname;
 
   const navigateNext = () => {
-    navigate(path + '/badges', { state: { back: true } });
+    navigate(path + '/badges');
   };
 
   mainButton.onClick(navigateNext);

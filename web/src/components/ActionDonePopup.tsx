@@ -1,16 +1,13 @@
 import { createResource, For } from 'solid-js';
 import { A } from '@solidjs/router';
-import { CDN_URL, fetchPreview } from '~/api';
+import { fetchPreview } from '~/lib/api';
 
 export default function ActionDonePopup(props: {
-  action: string;
-  description: string;
-  callToAction: string;
+  action: string
+  description: string
+  callToAction: string
 }) {
-  const [previewImages, _] = createResource(async () => {
-    const res = await fetchPreview();
-    return res.map((image: any) => CDN_URL + '/' + image.avatar_url);
-  });
+  const [previewImages] = createResource(() => fetchPreview());
 
   return (
     <div class="flex h-screen w-full flex-col items-center justify-between bg-secondary p-5 text-center">
@@ -20,9 +17,9 @@ export default function ActionDonePopup(props: {
         class="absolute inset-x-0 top-0 mx-auto w-full"
       />
       <div class="flex flex-col items-center justify-start">
-        <span class="material-symbols-rounded text-peatch-green text-[60px] text-green">
-          check_circle
-        </span>
+				<span class="material-symbols-rounded text-peatch-green text-[60px] text-green">
+					check_circle
+				</span>
         <p class="text-3xl text-main">{props.action}</p>
         <p class="mt-2 text-2xl text-secondary">{props.description}</p>
       </div>

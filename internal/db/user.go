@@ -64,6 +64,8 @@ type User struct {
 	City                   *string          `json:"city" db:"city"`
 	CountryCode            *string          `json:"country_code" db:"country_code"`
 	FollowersCount         int              `json:"followers_count" db:"followers_count"`
+	FollowingCount         int              `json:"following_count" db:"following_count"`
+	IsFollowing            bool             `json:"is_following" db:"is_following"`
 	RequestsCount          int              `json:"requests_count" db:"requests_count"`
 	Badges                 BadgeSlice       `json:"badges" db:"badges"`
 	Opportunities          OpportunitySlice `json:"opportunities" db:"opportunities"`
@@ -71,19 +73,19 @@ type User struct {
 
 type UserProfile struct {
 	ID             int64         `json:"id" db:"id"`
-	FirstName      string        `json:"first_name" db:"first_name"`
-	LastName       string        `json:"last_name" db:"last_name"`
-	CreatedAt      time.Time     `json:"created_at" db:"created_at"`
-	UpdatedAt      time.Time     `json:"updated_at" db:"updated_at"`
-	AvatarURL      string        `json:"avatar_url" db:"avatar_url"`
-	Title          string        `json:"title" db:"title"`
-	Description    string        `json:"description" db:"description"`
-	LanguageCode   string        `json:"language_code" db:"language_code"`
-	Country        string        `json:"country" db:"country"`
+	FirstName      *string       `json:"first_name" db:"first_name"`
+	LastName       *string       `json:"last_name" db:"last_name"`
+	CreatedAt      string        `json:"created_at" db:"created_at"`
+	Username       string        `json:"username" db:"username"`
+	AvatarURL      *string       `json:"avatar_url" db:"avatar_url"`
+	Title          *string       `json:"title" db:"title"`
+	Description    *string       `json:"description" db:"description"`
+	Country        *string       `json:"country" db:"country"`
 	City           *string       `json:"city" db:"city"`
-	CountryCode    string        `json:"country_code" db:"country_code"`
+	CountryCode    *string       `json:"country_code" db:"country_code"`
 	FollowersCount int           `json:"followers_count" db:"followers_count"`
-	RequestsCount  int           `json:"requests_count" db:"requests_count"`
+	FollowingCount int           `json:"following_count" db:"following_count"`
+	IsFollowing    bool          `json:"is_following" db:"is_following"`
 	Badges         []Badge       `json:"badges" db:"badges"`
 	Opportunities  []Opportunity `json:"opportunities" db:"opportunities"`
 } // @Name UserProfile
@@ -108,19 +110,19 @@ func (u *UserProfile) Scan(src interface{}) error {
 func (u *User) ToUserProfile() UserProfile {
 	return UserProfile{
 		ID:             u.ID,
-		FirstName:      *u.FirstName,
-		LastName:       *u.LastName,
-		CreatedAt:      u.CreatedAt,
-		UpdatedAt:      u.UpdatedAt,
-		AvatarURL:      *u.AvatarURL,
-		Title:          *u.Title,
-		Description:    *u.Description,
-		LanguageCode:   *u.LanguageCode,
-		Country:        *u.Country,
+		FirstName:      u.FirstName,
+		Username:       u.Username,
+		LastName:       u.LastName,
+		CreatedAt:      u.CreatedAt.Format(time.RFC3339),
+		AvatarURL:      u.AvatarURL,
+		Title:          u.Title,
+		Description:    u.Description,
+		Country:        u.Country,
 		City:           u.City,
-		CountryCode:    *u.CountryCode,
+		CountryCode:    u.CountryCode,
 		FollowersCount: u.FollowersCount,
-		RequestsCount:  u.RequestsCount,
+		FollowingCount: u.FollowingCount,
+		IsFollowing:    u.IsFollowing,
 		Badges:         u.Badges,
 		Opportunities:  u.Opportunities,
 	}
@@ -172,23 +174,22 @@ func (s *storage) ListUsers(params UserQuery) ([]User, error) {
 	return users, nil
 }
 
-func getUserQuery() string {
-	return `
-		SELECT u.*,
-		       json_agg(distinct to_jsonb(b)) filter (where b.id is not null) as badges,
-		       json_agg(distinct to_jsonb(o)) filter (where o.id is not null) as opportunities
-		FROM users u
-		LEFT JOIN user_badges ub ON u.id = ub.user_id
-		LEFT JOIN badges b ON ub.badge_id = b.id
-		LEFT JOIN user_opportunities uo ON u.id = uo.user_id
-		LEFT JOIN opportunities o ON uo.opportunity_id = o.id
-	`
-}
-
 func (s *storage) GetUserByChatID(chatID int64) (*User, error) {
 	user := new(User)
 
-	err := s.pg.Get(user, getUserQuery()+"WHERE u.chat_id = $1 GROUP BY u.id", chatID)
+	query := `
+		SELECT u.*,
+		   json_agg(distinct to_jsonb(b)) filter (where b.id is not null) as badges,
+		   json_agg(distinct to_jsonb(o)) filter (where o.id is not null) as opportunities
+		FROM users u
+			LEFT JOIN user_badges ub ON u.id = ub.user_id
+			LEFT JOIN badges b ON ub.badge_id = b.id
+			LEFT JOIN user_opportunities uo ON u.id = uo.user_id
+			LEFT JOIN opportunities o ON uo.opportunity_id = o.id
+		WHERE u.chat_id = $1 GROUP BY u.id;
+	`
+
+	err := s.pg.Get(user, query, chatID)
 
 	if err != nil && IsNoRowsError(err) {
 		return nil, ErrNotFound
@@ -313,19 +314,41 @@ func (s *storage) UpdateUser(userID int64, user User, badges, opportunities []in
 	return nil
 }
 
-func (s *storage) GetUserByID(id int64, showHidden bool) (*User, error) {
+type GetUsersParams struct {
+	ViewerID int64
+	Username string
+	UserID   int64
+}
+
+func (s *storage) GetUserProfile(params GetUsersParams) (*User, error) {
 	user := new(User)
 
-	query := getUserQuery() + "WHERE u.id = $1"
+	args := []interface{}{params.ViewerID}
 
-	if !showHidden {
-		// should not return any hidden users or unpublished users
-		query += " AND u.hidden_at IS NULL AND u.published_at IS NOT NULL"
+	query := `
+		SELECT u.*,
+			json_agg(distinct to_jsonb(b)) filter (where b.id is not null) as badges,
+			json_agg(distinct to_jsonb(o)) filter (where o.id is not null) as opportunities,
+			exists (select 1 from user_followers uf where uf.user_id = u.id and uf.follower_id = $1) as is_following
+		FROM users u
+			LEFT JOIN user_badges ub ON u.id = ub.user_id
+			LEFT JOIN badges b ON ub.badge_id = b.id
+			LEFT JOIN user_opportunities uo ON u.id = uo.user_id
+			LEFT JOIN opportunities o ON uo.opportunity_id = o.id
+		WHERE ((u.hidden_at IS NULL AND u.published_at IS NOT NULL) OR u.id = $1)
+    `
+
+	if params.Username != "" {
+		query += " AND u.username = $2"
+		args = append(args, params.Username)
+	} else {
+		query += " AND u.id = $2"
+		args = append(args, params.UserID)
 	}
 
-	query += " GROUP BY u.id"
+	query += fmt.Sprintf(" GROUP BY u.id")
 
-	err := s.pg.Get(user, query, id)
+	err := s.pg.Get(user, query, args...)
 
 	if err != nil && IsNoRowsError(err) {
 		return nil, ErrNotFound
@@ -617,16 +640,16 @@ func (s *storage) GetCollaborationOwner(collaborationID int64) (*User, error) {
 	return user, nil
 }
 
-func (s *storage) FindUserCollaborationRequest(requesterID, userID int64) (*UserCollaborationRequest, error) {
+func (s *storage) FindUserCollaborationRequest(requesterID int64, username string) (*UserCollaborationRequest, error) {
 	var request UserCollaborationRequest
 
 	query := `
 		SELECT id, user_id, requester_id, message, created_at, updated_at, status
 		FROM user_collaboration_requests
-		WHERE user_id = $1 AND requester_id = $2
+		WHERE user_id = (SELECT id FROM users WHERE username = $1) AND requester_id = $2
 	`
 
-	err := s.pg.Get(&request, query, userID, requesterID)
+	err := s.pg.Get(&request, query, username, requesterID)
 
 	if err != nil {
 		if IsNoRowsError(err) {

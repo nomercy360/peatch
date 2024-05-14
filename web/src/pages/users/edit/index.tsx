@@ -13,8 +13,8 @@ export default function EditUser(props: RouteSectionProps) {
     city: store.user.city || '',
     country: store.user.country || '',
     country_code: store.user.country_code || '',
-    badge_ids: store.user.badges?.map(b => b.id) || ([] as any),
-    opportunity_ids: store.user.opportunities?.map(o => o.id) || ([] as any),
+    badge_ids: store.user.badges?.map(b => b.id) || [],
+    opportunity_ids: store.user.opportunities?.map(o => o.id) || [],
   });
 
   // if first name or last name or title is not set, redirect to the first step

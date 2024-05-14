@@ -1,22 +1,19 @@
 import { createEffect, createSignal, Match, Switch } from 'solid-js';
-import { QueryClient, QueryClientProvider } from '@tanstack/solid-query';
 import { setToken, setUser } from './store';
-import { API_BASE_URL } from './api';
-import { NavigationProvider } from './hooks/useNavigation';
+import { API_BASE_URL } from '~/lib/api';
+import { NavigationProvider } from './lib/useNavigation';
 import { useNavigate } from '@solidjs/router';
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: { staleTime: 1000 * 60 * 5, gcTime: 1000 * 60 * 10 },
-  },
-});
 
 function transformStartParam(startParam?: string): string | null {
   if (!startParam) return null;
 
   // Check if the parameter starts with "redirect-to-"
-  if (startParam.startsWith('redirect-to-')) {
-    const path = startParam.slice('redirect-to-'.length);
+  if (startParam.startsWith('t-')) {
+    const path = startParam.slice('t-'.length);
+
+    return '/' + path.replace(/-/g, '/');
+  } else if (startParam.startsWith('redirect-to=')) {
+    const path = startParam.slice('redirect-to='.length);
 
     return '/' + path.replace(/-/g, '/');
   } else {
@@ -24,7 +21,7 @@ function transformStartParam(startParam?: string): string | null {
   }
 }
 
-export default function App(props: any) {
+export default function App(props: { children: any }) {
   const [isAuthenticated, setIsAuthenticated] = createSignal(false);
   const [isLoading, setIsLoading] = createSignal(true);
 
@@ -67,25 +64,23 @@ export default function App(props: any) {
       setIsAuthenticated(false);
       setIsLoading(false);
     }
-  });
+  })
 
   return (
     <NavigationProvider>
-      <QueryClientProvider client={queryClient}>
-        <Switch>
-          <Match when={isAuthenticated()}>
-            <div>{props.children}</div>
-          </Match>
-          <Match when={!isAuthenticated() && isLoading()}>
-            <div class="h-screen w-full flex-col items-start justify-center bg-main" />
-          </Match>
-          <Match when={!isAuthenticated() && !isLoading()}>
-            <div class="h-screen min-h-screen w-full flex-col items-start justify-center bg-main text-3xl text-main">
-              Something went wrong. Please try again later.
-            </div>
-          </Match>
-        </Switch>
-      </QueryClientProvider>
+      <Switch>
+        <Match when={isAuthenticated()}>
+          <div>{props.children}</div>
+        </Match>
+        <Match when={!isAuthenticated() && isLoading()}>
+          <div class="h-screen w-full flex-col items-start justify-center bg-main" />
+        </Match>
+        <Match when={!isAuthenticated() && !isLoading()}>
+          <div class="h-screen min-h-screen w-full flex-col items-start justify-center bg-main text-3xl text-main">
+            Something went wrong. Please try again later.
+          </div>
+        </Match>
+      </Switch>
     </NavigationProvider>
   );
 }

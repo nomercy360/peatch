@@ -5,7 +5,7 @@ export function usePopup() {
     return {
       showAlert,
     };
-  };
+  }
 
   const showConfirm = (text: string, callback: (ok: boolean) => any) => {
     window.Telegram.WebApp.showConfirm(text, callback);
@@ -13,7 +13,7 @@ export function usePopup() {
     return {
       showConfirm,
     };
-  };
+  }
 
   return {
     showAlert,

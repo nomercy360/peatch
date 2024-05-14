@@ -13,7 +13,7 @@ type storage interface {
 	GetUserByChatID(chatID int64) (*db.User, error)
 	CreateUser(user db.User) (*db.User, error)
 	Ping() error
-	GetUserByID(id int64, showHidden bool) (*db.User, error)
+	GetUserProfile(params db.GetUsersParams) (*db.User, error)
 	UpdateUser(userID int64, user db.User, badges, opportunities []int64) error
 	ListOpportunities() ([]db.LOpportunity, error)
 	ListBadges(search string) ([]db.Badge, error)
@@ -33,7 +33,7 @@ type storage interface {
 	CreateUserCollaboration(userID, receiverID int64, message string) (*db.UserCollaborationRequest, error)
 	ShowUser(userID int64) error
 	GetUserPreview(userID int64) ([]db.User, error)
-	FindUserCollaborationRequest(requesterID, userID int64) (*db.UserCollaborationRequest, error)
+	FindUserCollaborationRequest(requesterID int64, username string) (*db.UserCollaborationRequest, error)
 	ShowCollaboration(userID int64, collaborationID int64) error
 	FindCollaborationRequest(userID, collabID int64) (*db.CollaborationRequest, error)
 	SearchLocations(query string) ([]db.Location, error)

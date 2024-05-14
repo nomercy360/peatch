@@ -1,10 +1,10 @@
 import { FormLayout } from '~/components/edit/layout';
-import { useMainButton } from '~/hooks/useMainButton';
+import { useMainButton } from '~/lib/useMainButton';
 import { useNavigate } from '@solidjs/router';
 import { createEffect, onCleanup } from 'solid-js';
 import { editCollaboration, editCollaborationId, setEditCollaboration } from '~/store';
 import SelectLocation from '~/components/edit/selectLocation';
-import { createCollaboration, updateCollaboration } from '~/api';
+import { createCollaboration, updateCollaboration } from '~/lib/api';
 
 export default function SelectBadges() {
   const mainButton = useMainButton();

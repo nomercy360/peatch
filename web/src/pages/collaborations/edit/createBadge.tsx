@@ -1,16 +1,16 @@
 import { FormLayout } from '~/components/edit/layout';
-import { useMainButton } from '~/hooks/useMainButton';
+import { useMainButton } from '~/lib/useMainButton';
 import { useNavigate, useParams, useSearchParams } from '@solidjs/router';
 import { createEffect, onCleanup } from 'solid-js';
 import { editCollaboration, setEditCollaboration } from '~/store';
-import { postBadge } from '~/api';
+import { postBadge } from '~/lib/api';
 import { createStore } from 'solid-js/store';
 import CreateBadge from '~/components/edit/createBadge';
 
 export default function SelectBadges() {
   const mainButton = useMainButton();
 
-  const [searchParams, _] = useSearchParams();
+  const [searchParams] = useSearchParams();
 
   const [createBadge, setCreateBadge] = createStore({
     text: searchParams.badge_name,
@@ -30,7 +30,7 @@ export default function SelectBadges() {
 
       setEditCollaboration('badge_ids', [...editCollaboration.badge_ids, id]);
     }
-  };
+  }
 
   const navigate = useNavigate();
 

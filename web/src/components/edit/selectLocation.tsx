@@ -1,35 +1,31 @@
-import { createSignal, For, Show, Suspense } from 'solid-js';
+import { createResource, createSignal, For, Show, Suspense } from 'solid-js';
 import countryFlags from '../../assets/countries.json';
-import { createQuery } from '@tanstack/solid-query';
-import useDebounce from '../../hooks/useDebounce';
-import { searchLocations } from '~/api';
+import useDebounce from '../../lib/useDebounce';
+import { searchLocations } from '~/lib/api';
 
 type Location = {
-  country: string;
-  country_code: string;
-  city: string;
-};
+  country: string
+  country_code: string
+  city: string
+}
 
 export type CountryFlag = {
-  flag: string;
-  code: string;
-  viewBox: string;
-};
+  flag: string
+  code: string
+  viewBox: string
+}
 
 export default function SelectLocation(props: {
-  country: string;
-  setCountry: (country: string) => void;
-  city?: string;
-  setCity: (city: string) => void;
-  countryCode: string;
-  setCountryCode: (countryCode: string) => void;
+  country: string
+  setCountry: (country: string) => void
+  city?: string
+  setCity: (city: string) => void
+  countryCode: string
+  setCountryCode: (countryCode: string) => void
 }) {
   const [search, setSearch] = createSignal('');
 
-  const query = createQuery(() => ({
-    queryKey: ['locations', search()],
-    queryFn: () => searchLocations(search()),
-  }));
+  const [locations] = createResource(() => searchLocations(search()));
 
   const updateSearch = useDebounce(setSearch, 400);
 
@@ -78,7 +74,7 @@ export default function SelectLocation(props: {
         </Show>
         <Show when={search() || (!props.country && !props.city)}>
           <Suspense fallback={<div class="text-sm text-hint">Loading...</div>}>
-            <For each={query.data!}>
+            <For each={locations()!}>
               {location => (
                 <div class="w-full">
                   <LocationButton
@@ -102,9 +98,9 @@ export default function SelectLocation(props: {
 }
 
 function LocationButton(props: {
-  location: Location;
-  onClick: () => void;
-  isActive: boolean;
+  location: Location
+  onClick: () => void
+  isActive: boolean
 }) {
   const findFlag = countryFlags.find(
     (flag: CountryFlag) => flag.code === props.location.country_code,

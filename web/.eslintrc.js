@@ -1,34 +1,35 @@
 module.exports = {
-  root: true,
   env: {
-    node: true,
-    es2022: true,
     browser: true,
+    es2021: true,
   },
-  plugins: ['solid'],
   extends: [
     'eslint:recommended',
+    'plugin:@typescript-eslint/recommended',
     'plugin:tailwindcss/recommended',
     'plugin:solid/typescript',
   ],
+  overrides: [
+    {
+      env: {
+        node: true,
+      },
+      files: ['.eslintrc.{js,cjs}'],
+      parserOptions: {
+        sourceType: 'script',
+      },
+    },
+  ],
+  parser: '@typescript-eslint/parser',
   parserOptions: {
     ecmaVersion: 'latest',
     sourceType: 'module',
   },
-  rules: {},
-  overrides: [
-    {
-      files: ['*.ts', '*.tsx'],
-      parser: '@typescript-eslint/parser',
-      extends: ['plugin:@typescript-eslint/recommended'],
-      rules: {
-        '@typescript-eslint/no-unused-vars': [
-          'error',
-          { argsIgnorePattern: '^_', destructuredArrayIgnorePattern: '^_' },
-        ],
-        '@typescript-eslint/no-non-null-assertion': 'off',
-        '@typescript-eslint/no-explicit-any': 'off',
-      },
-    },
-  ],
+  plugins: ['@typescript-eslint', 'solid'],
+  rules: {
+    indent: ['error', 'tab'],
+    'linebreak-style': ['error', 'unix'],
+    quotes: ['error', 'single'],
+    semi: ['error', 'never'],
+  },
 };

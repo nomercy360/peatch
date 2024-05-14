@@ -18,10 +18,12 @@ CREATE TABLE users
     city                     VARCHAR(255),
     country_code             VARCHAR(2),
     followers_count          INTEGER       NOT NULL DEFAULT 0,
+    following_count INTEGER NOT NULL DEFAULT 0,
     requests_count           INTEGER       NOT NULL DEFAULT 0
 );
 
 CREATE INDEX users_chat_id_index ON users (chat_id);
+CREATE UNIQUE INDEX users_username_index ON users (username);
 
 CREATE TABLE badges
 (
@@ -91,9 +93,11 @@ $$
 BEGIN
     IF TG_OP = 'INSERT' THEN
         UPDATE users SET followers_count = followers_count + 1 WHERE id = NEW.user_id;
+        UPDATE users SET following_count = following_count + 1 WHERE id = NEW.follower_id;
         RETURN NEW;
     ELSIF TG_OP = 'DELETE' THEN
         UPDATE users SET followers_count = followers_count - 1 WHERE id = OLD.user_id;
+        UPDATE users SET following_count = following_count - 1 WHERE id = OLD.follower_id;
         RETURN OLD;
     END IF;
 END;

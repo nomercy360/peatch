@@ -1,10 +1,10 @@
 import { FormLayout } from '~/components/edit/layout';
-import { useMainButton } from '~/hooks/useMainButton';
+import { useMainButton } from '~/lib/useMainButton';
 import { useNavigate } from '@solidjs/router';
 import { createEffect, createSignal, Match, onCleanup, Switch } from 'solid-js';
 import { editUser, setEditUser, store } from '~/store';
-import { API_BASE_URL, CDN_URL, fetchPresignedUrl, updateUser, uploadToS3 } from '~/api';
-import { usePopup } from '~/hooks/usePopup';
+import { API_BASE_URL, CDN_URL, fetchPresignedUrl, updateUser, uploadToS3 } from '~/lib/api';
+import { usePopup } from '~/lib/usePopup';
 
 export default function SelectBadges() {
   const mainButton = useMainButton();
@@ -39,7 +39,7 @@ export default function SelectBadges() {
       };
       reader.readAsDataURL(file);
     }
-  };
+  }
 
   const generateRandomAvatar = () => {
     const url = `${API_BASE_URL}/avatar`;
@@ -56,7 +56,7 @@ export default function SelectBadges() {
         setPreviewUrl(URL.createObjectURL(file));
       });
     });
-  };
+  }
 
   const saveUser = async () => {
     if (imgFile() && imgFile() !== null) {
@@ -81,8 +81,8 @@ export default function SelectBadges() {
     await updateUser(editUser);
 
     mainButton.hideProgress();
-    navigate('/users/' + store.user.id + '?refetch=true');
-  };
+    navigate('/users/' + store.user.username + '?refetch=true');
+  }
 
   mainButton.onClick(saveUser);
 
@@ -155,8 +155,8 @@ function UploadBox(props: { onFileChange: any }) {
           onChange={props.onFileChange}
         />
         <span class="material-symbols-rounded pointer-events-none z-10 text-[45px] text-secondary">
-          camera_alt
-        </span>
+					camera_alt
+				</span>
       </div>
     </>
   );

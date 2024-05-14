@@ -37,12 +37,9 @@
     "vite-plugin-solid": "^2.8.2"
   },
   "dependencies": {
-    "@solid-primitives/scheduled": "^1.4.3",
     "@solidjs/router": "^0.13.2",
-    "@tanstack/solid-query": "^5.32.0",
     "eruda": "^3.0.1",
     "solid-js": "^1.8.11",
-    "solid-utils": "^0.8.1",
-    "vite-tsconfig-paths": "^4.3.2"
+    "solid-utils": "^0.8.1"
   }
 }

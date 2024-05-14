@@ -11,6 +11,8 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"regexp"
+	"strings"
 )
 
 type bot struct {
@@ -198,9 +200,18 @@ func (b *bot) createUser(update tgModels.Update) *db.User {
 		langCode = &update.Message.From.LanguageCode
 	}
 
+	// if username is empty, use first name
+	username := update.Message.Chat.Username
+
+	if username == "" && firstName != nil {
+		username = urlify(*firstName)
+	} else if username == "" {
+		username = "user" + fmt.Sprintf("%d", update.Message.Chat.ID)
+	}
+
 	user := db.User{
 		ChatID:       update.Message.Chat.ID,
-		Username:     update.Message.Chat.Username,
+		Username:     username,
 		FirstName:    firstName,
 		LastName:     lastName,
 		LanguageCode: langCode,
@@ -304,4 +315,17 @@ func (b *bot) setMenuButton(chatID int64, lang string) {
 	}
 
 	log.Printf("User %d menu button set", chatID)
+}
+
+func urlify(s string) string {
+	s = strings.ToLower(s)
+
+	s = strings.ReplaceAll(s, " ", "_")
+
+	reg := regexp.MustCompile(`[^a-z0-9_]+`)
+	s = reg.ReplaceAllString(s, "_")
+
+	s = strings.Trim(s, "_")
+
+	return s
 }

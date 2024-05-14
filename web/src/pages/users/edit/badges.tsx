@@ -1,12 +1,11 @@
 import { SelectBadge } from '~/components/edit/selectBadge';
 import { FormLayout } from '~/components/edit/layout';
-import { useMainButton } from '~/hooks/useMainButton';
+import { useMainButton } from '~/lib/useMainButton';
 import { useNavigate, useSearchParams } from '@solidjs/router';
-import { createEffect, createSignal, onCleanup } from 'solid-js';
+import { createEffect, createResource, createSignal, onCleanup } from 'solid-js';
 import { editUser, setEditUser } from '~/store';
-import { fetchBadges } from '~/api';
-import { createQuery } from '@tanstack/solid-query';
-import { Badge } from '../../../../gen';
+import { fetchBadges } from '~/lib/api';
+import { Badge } from '~/gen/types';
 
 export default function SelectBadges() {
   const mainButton = useMainButton();
@@ -14,10 +13,10 @@ export default function SelectBadges() {
   const [badgeSearch, setBadgeSearch] = createSignal('');
 
   const navigate = useNavigate();
-  const [searchParams, _] = useSearchParams();
+  const [searchParams] = useSearchParams();
 
   const navigateNext = () => {
-    navigate('/users/edit/interests', { state: { back: true } });
+    navigate('/users/edit/interests');
   };
 
   const navigateCreateBadge = () => {
@@ -26,23 +25,18 @@ export default function SelectBadges() {
     });
   };
 
-  const fetchBadgeQuery = createQuery(() => ({
-    queryKey: ['badges'],
-    // then push selected to the top
-    queryFn: () =>
-      fetchBadges().then(badges => {
-        const selected = editUser.badge_ids;
-        return [
-          ...selected.map(id => badges.find((b: Badge) => b.id === id)),
-          ...badges.filter((b: Badge) => !selected.includes(b.id!)),
-        ];
-      }),
-  }));
+  const [badges, { refetch }] = createResource(() =>
+    fetchBadges().then(badges => {
+      const selected = editUser.badge_ids;
+      return [
+        ...selected.map(id => badges.find((b: Badge) => b.id === id)),
+        ...badges.filter((b: Badge) => !selected.includes(b.id!)),
+      ];
+    }),
+  );
 
   createEffect(async () => {
-    if (searchParams.refetch) {
-      await fetchBadgeQuery.refetch();
-    }
+    if (searchParams.refetch) await refetch();
   });
 
   mainButton.onClick(navigateNext);
@@ -72,7 +66,7 @@ export default function SelectBadges() {
         onCreateBadgeButtonClick={navigateCreateBadge}
         search={badgeSearch()}
         setSearch={setBadgeSearch}
-        badges={fetchBadgeQuery.data!}
+        badges={badges()!}
       />
     </FormLayout>
   );
