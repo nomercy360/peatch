@@ -125,7 +125,7 @@ func (j *notifyJob) NotifyNewUserProfile() error {
 				return err
 			}
 
-			linkToProfile := fmt.Sprintf("%s?startapp=t-users-%d", j.config.botWebApp, user.ID)
+			linkToProfile := fmt.Sprintf("%s?startapp=t-users-%s", j.config.botWebApp, user.Username)
 
 			n := notification.SendNotificationParams{
 				ChatID:    created.ChatID,

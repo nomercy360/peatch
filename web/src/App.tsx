@@ -1,86 +1,86 @@
-import { createEffect, createSignal, Match, Switch } from 'solid-js';
-import { setToken, setUser } from './store';
-import { API_BASE_URL } from '~/lib/api';
-import { NavigationProvider } from './lib/useNavigation';
-import { useNavigate } from '@solidjs/router';
+import { createEffect, createSignal, Match, Switch } from 'solid-js'
+import { setToken, setUser } from './store'
+import { API_BASE_URL } from '~/lib/api'
+import { NavigationProvider } from './lib/useNavigation'
+import { useNavigate } from '@solidjs/router'
 
 function transformStartParam(startParam?: string): string | null {
-  if (!startParam) return null;
+	if (!startParam) return null
 
-  // Check if the parameter starts with "redirect-to-"
-  if (startParam.startsWith('t-')) {
-    const path = startParam.slice('t-'.length);
+	// Check if the parameter starts with "redirect-to-"
+	if (startParam.startsWith('t-')) {
+		const path = startParam.slice('t-'.length)
 
-    return '/' + path.replace(/-/g, '/');
-  } else if (startParam.startsWith('redirect-to=')) {
-    const path = startParam.slice('redirect-to='.length);
+		return '/' + path.replace(/-/g, '/')
+	} else if (startParam.startsWith('redirect-to=')) {
+		const path = startParam.slice('redirect-to='.length)
 
-    return '/' + path.replace(/-/g, '/');
-  } else {
-    return null;
-  }
+		return '/' + path.replace(/-/g, '/')
+	} else {
+		return null
+	}
 }
 
 export default function App(props: { children: any }) {
-  const [isAuthenticated, setIsAuthenticated] = createSignal(false);
-  const [isLoading, setIsLoading] = createSignal(true);
+	const [isAuthenticated, setIsAuthenticated] = createSignal(false)
+	const [isLoading, setIsLoading] = createSignal(true)
 
-  const navigate = useNavigate();
+	const navigate = useNavigate()
 
-  createEffect(async () => {
-    const initData = window.Telegram.WebApp.initData;
+	createEffect(async () => {
+		const initData = window.Telegram.WebApp.initData
 
-    console.log('WEBAPP:', window.Telegram);
+		console.log('WEBAPP:', window.Telegram)
 
-    try {
-      const resp = await fetch(`${API_BASE_URL}/auth/telegram?` + initData, {
-        method: 'POST',
-      });
+		try {
+			const resp = await fetch(`${API_BASE_URL}/auth/telegram?` + initData, {
+				method: 'POST',
+			})
 
-      const { user, token } = await resp.json();
+			const { user, token } = await resp.json()
 
-      setUser(user);
-      setToken(token);
+			setUser(user)
+			setToken(token)
 
-      window.Telegram.WebApp.ready();
-      window.Telegram.WebApp.expand();
+			window.Telegram.WebApp.ready()
+			window.Telegram.WebApp.expand()
 
-      setIsAuthenticated(true);
-      setIsLoading(false);
+			setIsAuthenticated(true)
+			setIsLoading(false)
 
-      // if there is a redirect url, redirect to it
-      // ?startapp=redirect-to=/users/
+			// if there is a redirect url, redirect to it
+			// ?startapp=redirect-to=/users/
 
-      const startapp = window.Telegram.WebApp.initDataUnsafe.start_param;
+			const startapp = window.Telegram.WebApp.initDataUnsafe.start_param
 
-      const redirectUrl = transformStartParam(startapp);
+			const redirectUrl = transformStartParam(startapp)
 
-      if (redirectUrl) {
-        navigate(redirectUrl);
-        return;
-      }
-    } catch (e) {
-      console.error('Failed to authenticate user:', e);
-      setIsAuthenticated(false);
-      setIsLoading(false);
-    }
-  })
+			if (redirectUrl) {
+				navigate(redirectUrl)
+				return
+			}
+		} catch (e) {
+			console.error('Failed to authenticate user:', e)
+			setIsAuthenticated(false)
+			setIsLoading(false)
+		}
+	})
 
-  return (
-    <NavigationProvider>
-      <Switch>
-        <Match when={isAuthenticated()}>
-          <div>{props.children}</div>
-        </Match>
-        <Match when={!isAuthenticated() && isLoading()}>
-          <div class="h-screen w-full flex-col items-start justify-center bg-main" />
-        </Match>
-        <Match when={!isAuthenticated() && !isLoading()}>
-          <div class="h-screen min-h-screen w-full flex-col items-start justify-center bg-main text-3xl text-main">
-            Something went wrong. Please try again later.
-          </div>
-        </Match>
-      </Switch>
-    </NavigationProvider>
-  );
+	return (
+		<NavigationProvider>
+			<Switch>
+				<Match when={isAuthenticated()}>
+					<div>{props.children}</div>
+				</Match>
+				<Match when={!isAuthenticated() && isLoading()}>
+					<div class="h-screen w-full flex-col items-start justify-center bg-main" />
+				</Match>
+				<Match when={!isAuthenticated() && !isLoading()}>
+					<div class="h-screen min-h-screen w-full flex-col items-start justify-center bg-main text-3xl text-main">
+						Something went wrong. Please try again later.
+					</div>
+				</Match>
+			</Switch>
+		</NavigationProvider>
+	)
 }
