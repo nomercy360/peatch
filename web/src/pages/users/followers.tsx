@@ -174,6 +174,7 @@ function UserCardSmall(props: {
 		<Link
 			href={'/users/' + props.user.username}
 			class="flex w-full flex-row items-center justify-between"
+			state={{ back: true }}
 		>
 			<div class="flex flex-row items-center justify-start space-x-4">
 				<img
