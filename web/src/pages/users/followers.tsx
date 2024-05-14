@@ -198,7 +198,7 @@ function UserCardSmall(props: {
 					when={props.user.is_following && props.user.id !== store.user.id}
 				>
 					<button
-						class="h-9 w-[90px] rounded-xl bg-main px-4 py-2 text-sm font-semibold text-button"
+						class="h-9 w-[90px] rounded-xl bg-main px-4 py-2 text-sm font-semibold text-main"
 						onClick={(e: Event) => props.onUnfollow(e, props.user.id!)}
 					>
 						Followed
@@ -208,7 +208,7 @@ function UserCardSmall(props: {
 					when={!props.user.is_following && props.user.id !== store.user.id}
 				>
 					<button
-						class="h-9 w-[90px] rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-main"
+						class="h-9 w-[90px] rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-button"
 						onClick={(e: Event) => props.onFollow(e, props.user.id!)}
 					>
 						Follow

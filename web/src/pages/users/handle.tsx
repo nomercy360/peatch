@@ -43,8 +43,8 @@ export default function UserProfilePage() {
 	}))
 
 	const followMutate = createMutation(() => ({
-		mutationFn: () => followUser(query.data.id),
-		onMutate: async () => {
+		mutationFn: (id: number) => followUser(id),
+		onMutate: async (id: number) => {
 			await queryClient.cancelQueries({ queryKey: ['profiles', username] })
 			queryClient.setQueryData(['profiles', username], (old: UserProfile) => {
 				if (old) {
@@ -56,12 +56,13 @@ export default function UserProfilePage() {
 				}
 				return old
 			})
+			queryClient.invalidateQueries({ queryKey: ['followers', id.toString()] })
 		},
 	}))
 
 	const unfollowMutate = createMutation(() => ({
-		mutationFn: () => unfollowUser(query.data.id),
-		onMutate: async () => {
+		mutationFn: (id: number) => unfollowUser(id),
+		onMutate: async (id: number) => {
 			await queryClient.cancelQueries({ queryKey: ['profiles', username] })
 			queryClient.setQueryData(['profiles', username], (old: UserProfile) => {
 				if (old) {
@@ -73,6 +74,7 @@ export default function UserProfilePage() {
 				}
 				return old
 			})
+			queryClient.invalidateQueries({ queryKey: ['followers', id.toString()] })
 		},
 	}))
 
@@ -138,13 +140,13 @@ export default function UserProfilePage() {
 
 	const follow = async () => {
 		if (!query.data) return
-		followMutate.mutate(query.data)
+		followMutate.mutate(query.data.id)
 		window.Telegram.WebApp.HapticFeedback.impactOccurred('light')
 	}
 
 	const unfollow = async () => {
 		if (!query.data) return
-		unfollowMutate.mutate(query.data)
+		unfollowMutate.mutate(query.data.id)
 		window.Telegram.WebApp.HapticFeedback.impactOccurred('light')
 	}
 
