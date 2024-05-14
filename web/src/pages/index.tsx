@@ -1,19 +1,10 @@
-import {
-	createEffect,
-	createResource,
-	createSignal,
-	For,
-	Match,
-	Show,
-	Suspense,
-	Switch,
-} from 'solid-js'
-import { store } from '~/store'
-import { CDN_URL, fetchPreview } from '~/lib/api'
-import FillProfilePopup from '~/components/FillProfilePopup'
-import { Link } from '~/components/Link'
-import { useMainButton } from '~/lib/useMainButton'
-import { createQuery } from '@tanstack/solid-query'
+import { createEffect, createSignal, For, Match, Show, Suspense, Switch } from 'solid-js';
+import { store } from '~/store';
+import { CDN_URL, fetchPreview } from '~/lib/api';
+import FillProfilePopup from '~/components/FillProfilePopup';
+import { Link } from '~/components/Link';
+import { useMainButton } from '~/lib/useMainButton';
+import { createQuery } from '@tanstack/solid-query';
 
 export default function Index() {
 	const [profilePopup, setProfilePopup] = createSignal(false)
@@ -173,7 +164,7 @@ export default function Index() {
 const ImagesLoader = () => {
 	return (
 		<div class="flex w-full flex-row items-center justify-start">
-			<For each={[1, 2, 3] as any}>
+      <For each={[1, 2, 3] as number[]}>
 				{(image, idx) => (
 					<div
 						class="-ml-1 size-11 rounded-xl border bg-hint"

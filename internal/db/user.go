@@ -482,32 +482,6 @@ func (s *storage) CreateUserCollaboration(userID, receiverID int64, message stri
 	return &res, nil
 }
 
-func (s *storage) GetUserFollowing(userID int64) ([]int64, error) {
-	users := make([]int64, 0)
-
-	query := `
-		SELECT user_id from user_followers
-		WHERE follower_id = $1
-	`
-
-	rows, err := s.pg.Query(query, userID)
-
-	if err != nil {
-		return nil, err
-	}
-
-	for rows.Next() {
-		var user int64
-		err := rows.Scan(&user)
-		if err != nil {
-			return nil, err
-		}
-		users = append(users, user)
-	}
-
-	return users, nil
-}
-
 func (s *storage) ListUserCollaborations(from time.Time) ([]UserCollaborationRequest, error) {
 	requests := make([]UserCollaborationRequest, 0)
 
@@ -724,4 +698,44 @@ func (s *storage) DeleteUserByID(userID int64) error {
 	}
 
 	return nil
+}
+
+func (s *storage) GetUserFollowing(uid, targetID int64) ([]User, error) {
+	users := make([]User, 0)
+
+	query := `
+		SELECT u.id, u.username, u.first_name, u.avatar_url, u.title, u.description, u.country, u.city, u.country_code,
+		       EXISTS (SELECT 1 FROM user_followers uf WHERE uf.user_id = u.id AND uf.follower_id = $1) as is_following
+		FROM users u
+		JOIN user_followers uf ON u.id = uf.user_id
+		WHERE uf.follower_id = $2 AND u.hidden_at IS NULL AND u.published_at IS NOT NULL
+	`
+
+	err := s.pg.Select(&users, query, uid, targetID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+func (s *storage) GetUserFollowers(uid, targetID int64) ([]User, error) {
+	users := make([]User, 0)
+
+	query := `
+		SELECT u.id, u.username, u.first_name, u.avatar_url, u.title, u.description, u.country, u.city, u.country_code,
+		       EXISTS (SELECT 1 FROM user_followers uf WHERE uf.user_id = u.id AND uf.follower_id = $1) as is_following
+		FROM users u
+		JOIN user_followers uf ON u.id = uf.follower_id
+		WHERE uf.user_id = $2 AND u.hidden_at IS NULL AND u.published_at IS NOT NULL
+	`
+
+	err := s.pg.Select(&users, query, uid, targetID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
 }

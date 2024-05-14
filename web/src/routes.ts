@@ -1,12 +1,7 @@
-import { lazy } from 'solid-js'
-import type { RouteDefinition, RouteLoadFuncArgs } from '@solidjs/router'
+import { lazy } from 'solid-js';
+import type { RouteDefinition } from '@solidjs/router';
 
-import HomePage from '~/pages/index'
-import { fetchProfile, fetchUsers } from '~/lib/api'
-
-function loadProfiles() {
-	return fetchUsers('')
-}
+import HomePage from '~/pages/index';
 
 export const routes: RouteDefinition[] = [
 	{
@@ -19,7 +14,11 @@ export const routes: RouteDefinition[] = [
 	},
 	{
 		path: '/users/:handle',
-		component: lazy(() => import('~/pages/users/[handle]')),
+    component: lazy(() => import('~/pages/users/handle')),
+  },
+  {
+    path: '/users/:id/followers',
+    component: lazy(() => import('~/pages/users/followers')),
 	},
 	{
 		path: '/users/edit',
@@ -61,7 +60,7 @@ export const routes: RouteDefinition[] = [
 	},
 	{
 		path: '/collaborations/:id',
-		component: lazy(() => import('~/pages/collaborations/[id]')),
+    component: lazy(() => import('~/pages/collaborations/id')),
 	},
 	{
 		path: '/collaborations/edit/:id?',

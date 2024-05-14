@@ -29,7 +29,6 @@ type storage interface {
 	PublishCollaboration(userID int64, collaborationID int64) error
 	HideCollaboration(userID int64, collaborationID int64) error
 	CreateCollaborationRequest(userID int64, collaborationID int64, message string) (*db.CollaborationRequest, error)
-	GetUserFollowing(userID int64) ([]int64, error)
 	CreateUserCollaboration(userID, receiverID int64, message string) (*db.UserCollaborationRequest, error)
 	ShowUser(userID int64) error
 	GetUserPreview(userID int64) ([]db.User, error)
@@ -37,6 +36,8 @@ type storage interface {
 	ShowCollaboration(userID int64, collaborationID int64) error
 	FindCollaborationRequest(userID, collabID int64) (*db.CollaborationRequest, error)
 	SearchLocations(query string) ([]db.Location, error)
+	GetUserFollowers(uid int64, target int64) ([]db.User, error)
+	GetUserFollowing(uid int64, target int64) ([]db.User, error)
 }
 
 type s3Client interface {

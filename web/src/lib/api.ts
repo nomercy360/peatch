@@ -1,6 +1,5 @@
-import { store } from '~/store'
-import { CreateCollaboration } from '../../gen'
-import { cache } from '@solidjs/router'
+import { store } from '~/store';
+import { CreateCollaboration } from '../../gen';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string
 export const CDN_URL = 'https://assets.peatch.io'
@@ -54,12 +53,12 @@ export const fetchUsers = async (search: string) => {
 	})
 }
 
-export const fetchBadges = cache(async () => {
+export const fetchBadges = async () => {
 	return await apiFetch({
 		endpoint: '/badges',
 		showProgress: false,
 	})
-}, 'badges')
+}
 
 export const postBadge = async (text: string, color: string, icon: string) => {
 	return await apiFetch({
@@ -115,9 +114,9 @@ export const fetchPresignedUrl = async (file: string) => {
 	return { path, url }
 }
 
-export const fetchProfile = cache(async (username: string) => {
+export const fetchProfile = async (username: string) => {
 	return await apiFetch({ endpoint: `/users/${username}` })
-}, 'profile')
+}
 
 export const followUser = async (userID: number) => {
 	return await apiFetch({
@@ -177,9 +176,9 @@ export const updateCollaboration = async (
 	})
 }
 
-export const fetchCollaborations = cache(async (search: any) => {
+export const fetchCollaborations = async (search: any) => {
 	return await apiFetch({ endpoint: '/collaborations?search=' + search })
-}, 'collaborations')
+}
 
 export const createUserCollaboration = async (
 	receiverID?: number,
@@ -192,13 +191,13 @@ export const createUserCollaboration = async (
 	})
 }
 
-export const fetchPreview = cache(async () => {
+export const fetchPreview = async () => {
 	return await apiFetch({ endpoint: '/user-preview' }).then((res: any) =>
 		res.map(
 			(image: { avatar_url: string }) => CDN_URL + '/' + image.avatar_url,
 		),
 	)
-}, 'preview')
+}
 
 export const publishCollaboration = async (collaborationID: number) => {
 	return await apiFetch({
@@ -248,6 +247,14 @@ export const createCollaborationRequest = async (
 	})
 }
 
-export const searchLocations = cache(async (search: string) => {
+export const searchLocations = async (search: string) => {
 	return await apiFetch({ endpoint: `/locations?search=${search}` })
-}, 'locations')
+}
+
+export const fetchFollowing = async (id: number) => {
+  return await apiFetch({ endpoint: `/users/${id}/following` });
+};
+
+export const fetchFollowers = async (id: number) => {
+  return await apiFetch({ endpoint: `/users/${id}/followers` });
+};

@@ -162,3 +162,61 @@ func (s *service) FindUserCollaborationRequest(requesterID int64, username strin
 
 	return res, nil
 }
+
+type UserProfileShort struct {
+	ID          int64   `json:"id"`
+	Username    string  `json:"username"`
+	AvatarURL   *string `json:"avatar_url"`
+	FirstName   *string `json:"first_name"`
+	LastName    *string `json:"last_name"`
+	Title       *string `json:"title"`
+	IsFollowing bool    `json:"is_following"`
+} // @Name UserProfileShort
+
+func (s *service) GetUserFollowers(uid, targetID int64) ([]UserProfileShort, error) {
+	res, err := s.storage.GetUserFollowers(uid, targetID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	followers := make([]UserProfileShort, 0, len(res))
+
+	for _, user := range res {
+		followers = append(followers, UserProfileShort{
+			ID:          user.ID,
+			Username:    user.Username,
+			AvatarURL:   user.AvatarURL,
+			FirstName:   user.FirstName,
+			LastName:    user.LastName,
+			Title:       user.Title,
+			IsFollowing: user.IsFollowing,
+		})
+	}
+
+	return followers, nil
+}
+
+func (s *service) GetUserFollowing(uid, targetID int64) ([]UserProfileShort, error) {
+	res, err := s.storage.GetUserFollowing(uid, targetID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	following := make([]UserProfileShort, 0, len(res))
+
+	for _, user := range res {
+		following = append(following, UserProfileShort{
+			ID:          user.ID,
+			Username:    user.Username,
+			AvatarURL:   user.AvatarURL,
+			FirstName:   user.FirstName,
+			LastName:    user.LastName,
+			Title:       user.Title,
+			IsFollowing: user.IsFollowing,
+		})
+	}
+
+	return following, nil
+}

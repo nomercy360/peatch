@@ -254,3 +254,43 @@ func (h *handler) handleFindUserCollaborationRequest(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, requests)
 }
+
+// handleGetUserFollowing godoc
+// @Summary Get user following
+// @Tags users
+// @Accept  json
+// @Produce  json
+// @Param id path int true "User ID"
+// @Success 200 {array} UserProfileShort
+// @Router /api/users/{id}/following [get]
+func (h *handler) handleGetUserFollowing(c echo.Context) error {
+	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	uid := getUserID(c)
+
+	users, err := h.svc.GetUserFollowing(uid, id)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, users)
+}
+
+// handleGetUserFollowers godoc
+// @Summary Get user followers
+// @Tags users
+// @Accept  json
+// @Produce  json
+// @Param id path int true "User ID"
+// @Success 200 {array} UserProfileShort
+// @Router /api/users/{id}/followers [get]
+func (h *handler) handleGetUserFollowers(c echo.Context) error {
+	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	uid := getUserID(c)
+
+	users, err := h.svc.GetUserFollowers(uid, id)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, users)
+}

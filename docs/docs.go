@@ -611,6 +611,74 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/users/{id}/followers": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Get user followers",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/UserProfileShort"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/users/{id}/following": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Get user following",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/UserProfileShort"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/users/{user_id}/collaborations": {
             "post": {
                 "consumes": [
@@ -1159,19 +1227,41 @@ const docTemplate = `{
                 },
                 "title": {
                     "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "UserProfileShort": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
+                "first_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_following": {
+                    "type": "boolean"
+                },
+                "last_name": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
                 }
             }
         },
         "UserWithToken": {
             "type": "object",
             "properties": {
-                "following": {
-                    "description": "TODO: implement following",
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
                 "token": {
                     "type": "string"
                 },

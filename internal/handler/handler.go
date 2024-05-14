@@ -45,6 +45,8 @@ type service interface {
 	FindUserCollaborationRequest(requesterID int64, username string) (*db.UserCollaborationRequest, error)
 	FindCollaborationRequest(userID, collabID int64) (*db.CollaborationRequest, error)
 	SearchLocations(query string) ([]db.Location, error)
+	GetUserFollowers(uid, targetID int64) ([]svc.UserProfileShort, error)
+	GetUserFollowing(uid, targetID int64) ([]svc.UserProfileShort, error)
 }
 
 type CustomValidator struct {
@@ -105,6 +107,8 @@ func (h *handler) RegisterRoutes(e *echo.Echo) {
 	a.GET("/presigned-url", h.handleGetPresignedURL)
 	a.GET("/user-preview", h.handleGetUserPreview)
 	a.GET("/locations", h.handleSearchLocations)
+	a.GET("/users/:id/followers", h.handleGetUserFollowers)
+	a.GET("/users/:id/following", h.handleGetUserFollowing)
 }
 
 func (h *handler) handleIndex(c echo.Context) error {

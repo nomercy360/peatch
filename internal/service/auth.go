@@ -13,9 +13,8 @@ import (
 )
 
 type UserWithToken struct {
-	User      db.User `json:"user"`
-	Token     string  `json:"token"`
-	Following []int64 `json:"following"` // TODO: implement following
+	User  db.User `json:"user"`
+	Token string  `json:"token"`
 } // @Name UserWithToken
 
 func (s *service) TelegramAuth(query string) (*UserWithToken, error) {
@@ -71,13 +70,6 @@ func (s *service) TelegramAuth(query string) (*UserWithToken, error) {
 		return nil, err
 	}
 
-	// fetch following
-	following, err := s.storage.GetUserFollowing(user.ID)
-
-	if err != nil {
-		return nil, err
-	}
-
 	token, err := generateJWT(user.ID, user.ChatID)
 
 	if err != nil {
@@ -85,9 +77,8 @@ func (s *service) TelegramAuth(query string) (*UserWithToken, error) {
 	}
 
 	return &UserWithToken{
-		User:      *user,
-		Token:     token,
-		Following: following,
+		User:  *user,
+		Token: token,
 	}, nil
 }
 

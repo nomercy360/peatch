@@ -62,4 +62,8 @@ export type UserProfile = {
    * @type string | undefined
    */
   title?: string;
+  /**
+   * @type string | undefined
+   */
+  username?: string;
 };

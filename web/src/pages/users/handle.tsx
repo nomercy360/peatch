@@ -1,31 +1,16 @@
-import {
-	createEffect,
-	createResource,
-	createSignal,
-	For,
-	Match,
-	onCleanup,
-	Suspense,
-	Switch,
-} from 'solid-js'
-import { useNavigate, useParams, useSearchParams } from '@solidjs/router'
-import {
-	CDN_URL,
-	fetchProfile,
-	followUser,
-	hideProfile,
-	publishProfile,
-	showProfile,
-	unfollowUser,
-} from '~/lib/api'
-import { setUser, store } from '~/store'
-import ActionDonePopup from '~/components/ActionDonePopup'
-import { useMainButton } from '~/lib/useMainButton'
-import { usePopup } from '~/lib/usePopup'
-import { createMutation, createQuery } from '@tanstack/solid-query'
-import { queryClient } from '~/App'
+import { createEffect, createSignal, For, Match, onCleanup, Suspense, Switch } from 'solid-js';
+import { useNavigate, useParams, useSearchParams } from '@solidjs/router';
+import { CDN_URL, fetchProfile, followUser, hideProfile, publishProfile, showProfile, unfollowUser } from '~/lib/api';
+import { setUser, store } from '~/store';
+import ActionDonePopup from '~/components/ActionDonePopup';
+import { useMainButton } from '~/lib/useMainButton';
+import { usePopup } from '~/lib/usePopup';
+import { createMutation, createQuery } from '@tanstack/solid-query';
+import { queryClient } from '~/App';
+import { Link } from '~/components/Link';
+import { UserProfile } from '~/gen/types';
 
-export default function UserProfile() {
+export default function UserProfilePage() {
 	const mainButton = useMainButton()
 	const [published, setPublished] = createSignal(false)
 
@@ -45,9 +30,13 @@ export default function UserProfile() {
 		mutationFn: () => followUser(query.data.id),
 		onMutate: async () => {
 			await queryClient.cancelQueries({ queryKey: ['profiles', username] })
-			queryClient.setQueryData(['profiles', username], old => {
+      queryClient.setQueryData(['profiles', username], (old: UserProfile) => {
 				if (old) {
-					return { ...old, is_following: true }
+          return {
+            ...old,
+            is_following: true,
+            followers_count: old.followers_count! + 1,
+          };
 				}
 				return old
 			})
@@ -58,9 +47,13 @@ export default function UserProfile() {
 		mutationFn: () => unfollowUser(query.data.id),
 		onMutate: async () => {
 			await queryClient.cancelQueries({ queryKey: ['profiles', username] })
-			queryClient.setQueryData(['profiles', username], old => {
+      queryClient.setQueryData(['profiles', username], (old: UserProfile) => {
 				if (old) {
-					return { ...old, is_following: false }
+          return {
+            ...old,
+            is_following: false,
+            followers_count: old.followers_count! - 1,
+          };
 				}
 				return old
 			})
@@ -251,17 +244,20 @@ export default function UserProfile() {
 							</div>
 							<div class="px-4 py-2.5">
 								<div class="flex flex-row items-center justify-between pb-4">
-									<div class="flex h-8 flex-row items-center space-x-2 text-sm font-semibold">
+                  <Link
+                    class="flex h-8 flex-row items-center space-x-2 text-sm font-semibold"
+                    href={`/users/${query.data.id}/followers`}
+                  >
 										<span class="flex flex-row items-center text-main">
-											{query.data.followers_count}
+											{query.data.following_count}
 										</span>
 										<span class="text-secondary">following</span>
 										<span class="text-secondary">·</span>
 										<span class="flex flex-row items-center text-main">
-											{query.data.following_count}
+											{query.data.followers_count}
 										</span>
 										<span class="text-secondary">followers</span>
-									</div>
+                  </Link>
 									<button
 										class="flex h-8 flex-row items-center space-x-2 bg-transparent px-2.5"
 										classList={{
@@ -346,7 +342,7 @@ const ActionButton = (props: {
 		<button
 			disabled={props.disabled}
 			class="absolute right-4 top-4 z-10 h-9 w-[90px] rounded-xl bg-black/80 px-2.5 text-sm font-semibold text-button"
-			onClick={props.onClick}
+      onClick={() => props.onClick()}
 		>
 			{props.text}
 		</button>
