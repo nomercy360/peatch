@@ -3,6 +3,20 @@ import { setToken, setUser } from './store'
 import { API_BASE_URL } from '~/lib/api'
 import { NavigationProvider } from './lib/useNavigation'
 import { useNavigate } from '@solidjs/router'
+import { QueryClient, QueryClientProvider } from '@tanstack/solid-query'
+
+export const queryClient = new QueryClient({
+	defaultOptions: {
+		queries: {
+			retry: 2,
+			staleTime: 1000 * 60 * 5, // 5 minutes
+			gcTime: 1000 * 60 * 5, // 5 minutes
+		},
+		mutations: {
+			retry: 2,
+		},
+	},
+})
 
 function transformStartParam(startParam?: string): string | null {
 	if (!startParam) return null
@@ -68,19 +82,21 @@ export default function App(props: { children: any }) {
 
 	return (
 		<NavigationProvider>
-			<Switch>
-				<Match when={isAuthenticated()}>
-					<div>{props.children}</div>
-				</Match>
-				<Match when={!isAuthenticated() && isLoading()}>
-					<div class="h-screen w-full flex-col items-start justify-center bg-main" />
-				</Match>
-				<Match when={!isAuthenticated() && !isLoading()}>
-					<div class="h-screen min-h-screen w-full flex-col items-start justify-center bg-main text-3xl text-main">
-						Something went wrong. Please try again later.
-					</div>
-				</Match>
-			</Switch>
+			<QueryClientProvider client={queryClient}>
+				<Switch>
+					<Match when={isAuthenticated()}>
+						<div>{props.children}</div>
+					</Match>
+					<Match when={!isAuthenticated() && isLoading()}>
+						<div class="h-screen w-full flex-col items-start justify-center bg-main" />
+					</Match>
+					<Match when={!isAuthenticated() && !isLoading()}>
+						<div class="h-screen min-h-screen w-full flex-col items-start justify-center bg-main text-3xl text-main">
+							Something went wrong. Please try again later.
+						</div>
+					</Match>
+				</Switch>
+			</QueryClientProvider>
 		</NavigationProvider>
 	)
 }

@@ -6,6 +6,7 @@ import { createEffect, createResource, createSignal, onCleanup } from 'solid-js'
 import { editUser, setEditUser } from '~/store'
 import { fetchBadges } from '~/lib/api'
 import { Badge } from '~/gen/types'
+import { createQuery } from '@tanstack/solid-query'
 
 export default function SelectBadges() {
 	const mainButton = useMainButton()
@@ -25,18 +26,23 @@ export default function SelectBadges() {
 		})
 	}
 
-	const [badges, { refetch }] = createResource(() =>
-		fetchBadges().then(badges => {
-			const selected = editUser.badge_ids
-			return [
-				...selected.map(id => badges.find((b: Badge) => b.id === id)),
-				...badges.filter((b: Badge) => !selected.includes(b.id!)),
-			]
-		}),
-	)
+	const fetchBadgeQuery = createQuery(() => ({
+		queryKey: ['badges'],
+		// then push selected to the top
+		queryFn: () =>
+			fetchBadges().then(badges => {
+				const selected = editUser.badge_ids
+				return [
+					...selected.map(id => badges.find((b: Badge) => b.id === id)),
+					...badges.filter((b: Badge) => !selected.includes(b.id!)),
+				]
+			}),
+	}))
 
 	createEffect(async () => {
-		if (searchParams.refetch) await refetch()
+		if (searchParams.refetch) {
+			await fetchBadgeQuery.refetch()
+		}
 	})
 
 	mainButton.onClick(navigateNext)
@@ -66,7 +72,7 @@ export default function SelectBadges() {
 				onCreateBadgeButtonClick={navigateCreateBadge}
 				search={badgeSearch()}
 				setSearch={setBadgeSearch}
-				badges={badges()!}
+				badges={fetchBadgeQuery.data!}
 			/>
 		</FormLayout>
 	)

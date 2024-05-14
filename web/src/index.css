@@ -17,5 +17,15 @@
         --telegram-section-header-text-color: var(--tg-theme-section-header-text-color, #23241f);
         --telegram-subtitle-text-color: var(--tg-theme-subtitle-text-color, #23241f);
         --telegram-destructive-text-color: var(--tg-theme-destructive-text-color, #d93f51);
+
+        --border: var(--border-color, #aaaaaa);
+
+    }
+}
+
+
+@layer base {
+    * {
+        @apply border-border;
     }
 }

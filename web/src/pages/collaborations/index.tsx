@@ -14,13 +14,17 @@ import { useMainButton } from '~/lib/useMainButton'
 import { useNavigate } from '@solidjs/router'
 import { store } from '~/store'
 import { usePopup } from '~/lib/usePopup'
+import { createQuery } from '@tanstack/solid-query'
 
 export default function Index() {
 	const [search, setSearch] = createSignal('')
 
 	const updateSearch = useDebounce(setSearch, 350)
 
-	const [collaborations] = createResource(() => search(), fetchCollaborations)
+	const query = createQuery(() => ({
+		queryKey: ['collaborations', search()],
+		queryFn: () => fetchCollaborations(search()),
+	}))
 
 	const navigate = useNavigate()
 
@@ -55,7 +59,7 @@ export default function Index() {
 				/>
 			</div>
 			<Suspense fallback={<CollabListPlaceholder />}>
-				<For each={collaborations()!}>
+				<For each={query.data!}>
 					{collab => <CollaborationCard collab={collab} />}
 				</For>
 			</Suspense>

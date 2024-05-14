@@ -1,16 +1,20 @@
-import { createResource, createSignal, For, Show, Suspense } from 'solid-js'
+import { createSignal, For, Show, Suspense } from 'solid-js'
 import { User } from '~/gen/types'
 import { fetchUsers } from '~/lib/api'
 import { Link } from '~/components/Link'
 import BadgeList from '~/components/BadgeList'
 import useDebounce from '~/lib/useDebounce'
+import { createQuery } from '@tanstack/solid-query'
 
 export default function Index() {
 	const [search, setSearch] = createSignal('')
 
 	const updateSearch = useDebounce(setSearch, 350)
 
-	const [profiles] = createResource(() => search(), fetchUsers)
+	const query = createQuery(() => ({
+		queryKey: ['profiles', search()],
+		queryFn: () => fetchUsers(search()),
+	}))
 
 	return (
 		<div class="min-h-screen bg-secondary pb-52">
@@ -24,7 +28,7 @@ export default function Index() {
 				/>
 			</div>
 			<Suspense fallback={<UserListPlaceholder />}>
-				<For each={profiles()}>{profile => <UserCard user={profile} />}</For>
+				<For each={query.data}>{profile => <UserCard user={profile} />}</For>
 			</Suspense>
 		</div>
 	)

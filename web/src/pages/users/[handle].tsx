@@ -22,6 +22,8 @@ import { setUser, store } from '~/store'
 import ActionDonePopup from '~/components/ActionDonePopup'
 import { useMainButton } from '~/lib/useMainButton'
 import { usePopup } from '~/lib/usePopup'
+import { createMutation, createQuery } from '@tanstack/solid-query'
+import { queryClient } from '~/App'
 
 export default function UserProfile() {
 	const mainButton = useMainButton()
@@ -34,9 +36,36 @@ export default function UserProfile() {
 
 	const username = params.handle
 
-	const [profile, { mutate, refetch }] = createResource(() =>
-		fetchProfile(username),
-	)
+	const query = createQuery(() => ({
+		queryKey: ['profiles', username],
+		queryFn: () => fetchProfile(username),
+	}))
+
+	const followMutate = createMutation(() => ({
+		mutationFn: () => followUser(query.data.id),
+		onMutate: async () => {
+			await queryClient.cancelQueries({ queryKey: ['profiles', username] })
+			queryClient.setQueryData(['profiles', username], old => {
+				if (old) {
+					return { ...old, is_following: true }
+				}
+				return old
+			})
+		},
+	}))
+
+	const unfollowMutate = createMutation(() => ({
+		mutationFn: () => unfollowUser(query.data.id),
+		onMutate: async () => {
+			await queryClient.cancelQueries({ queryKey: ['profiles', username] })
+			queryClient.setQueryData(['profiles', username], old => {
+				if (old) {
+					return { ...old, is_following: false }
+				}
+				return old
+			})
+		},
+	}))
 
 	const { showAlert } = usePopup()
 
@@ -48,19 +77,21 @@ export default function UserProfile() {
 
 	createEffect(async () => {
 		if (searchParams.refetch) {
-			await refetch()
-			if (profile()?.id === store.user.id) setUser(profile()!)
+			await query.refetch()
+			if (query.data.id === store.user.id) {
+				setUser(query.data)
+			}
 		}
 	})
 
 	const navigateToCollaborate = async () => {
 		if (!store.user.published_at) {
 			showAlert(
-				`Publish your profile first, so ${profile()?.first_name} will see it`,
+				`Publish your profile first, so ${query.data.first_name} will see it`,
 			)
 		} else if (store.user.hidden_at) {
 			showAlert(
-				`Unhide your profile first, so ${profile()?.first_name} will see it`,
+				`Unhide your profile first, so ${query.data.first_name} will see it`,
 			)
 		} else {
 			navigate(`/users/${username}/collaborate`, { state: { back: true } })
@@ -97,24 +128,15 @@ export default function UserProfile() {
 	}
 
 	const follow = async () => {
-		if (!profile()) return
-		mutate({
-			...profile(),
-			is_following: true,
-			followers_count: profile()?.followers_count + 1,
-		})
+		if (!query.data) return
+		followMutate.mutate(query.data)
 		window.Telegram.WebApp.HapticFeedback.impactOccurred('light')
-		await followUser(Number(profile()?.id))
 	}
 
 	const unfollow = async () => {
-		mutate({
-			...profile(),
-			is_following: false,
-			followers_count: profile()?.followers_count - 1,
-		})
+		if (!query.data) return
+		unfollowMutate.mutate(query.data)
 		window.Telegram.WebApp.HapticFeedback.impactOccurred('light')
-		await unfollowUser(Number(profile()?.id))
 	}
 
 	createEffect(() => {
@@ -153,7 +175,7 @@ export default function UserProfile() {
 	async function copyToClipboard() {
 		try {
 			await navigator.clipboard.writeText(
-				't.me/peatch_bot/app?startapp=t-users-' + profile()?.username,
+				't.me/peatch_bot/app?startapp=t-users-' + query.data.username,
 			)
 			setContentCopied(true)
 			window.Telegram.WebApp.HapticFeedback.impactOccurred('light')
@@ -175,11 +197,15 @@ export default function UserProfile() {
 							callToAction="There are 12 people you might be interested to collaborate with"
 						/>
 					</Match>
-					<Match when={profile()}>
+					<Match when={!query.isLoading}>
 						<div class="h-fit min-h-screen bg-secondary">
 							<Switch>
 								<Match when={isCurrentUserProfile && !store.user.published_at}>
-									<ActionButton text="Edit" onClick={navigateToEdit} />
+									<ActionButton
+										disabled={false}
+										text="Edit"
+										onClick={navigateToEdit}
+									/>
 								</Match>
 								<Match
 									when={
@@ -188,7 +214,7 @@ export default function UserProfile() {
 										store.user.published_at
 									}
 								>
-									<ActionButton text="Show" onClick={show} />
+									<ActionButton disabled={false} text="Show" onClick={show} />
 								</Match>
 								<Match
 									when={
@@ -197,18 +223,28 @@ export default function UserProfile() {
 										store.user.published_at
 									}
 								>
-									<ActionButton text="Hide" onClick={hide} />
+									<ActionButton disabled={false} text="Hide" onClick={hide} />
 								</Match>
-								<Match when={!isCurrentUserProfile && !profile()?.is_following}>
-									<ActionButton text="Follow" onClick={follow} />
+								<Match
+									when={!isCurrentUserProfile && !query.data?.is_following}
+								>
+									<ActionButton
+										disabled={unfollowMutate.isPending}
+										text="Follow"
+										onClick={follow}
+									/>
 								</Match>
-								<Match when={!isCurrentUserProfile && profile()?.is_following}>
-									<ActionButton text="Unfollow" onClick={unfollow} />
+								<Match when={!isCurrentUserProfile && query.data?.is_following}>
+									<ActionButton
+										disabled={followMutate.isPending}
+										text="Unfollow"
+										onClick={unfollow}
+									/>
 								</Match>
 							</Switch>
 							<div class="p-2">
 								<img
-									src={CDN_URL + '/' + profile()?.avatar_url}
+									src={CDN_URL + '/' + query.data.avatar_url}
 									alt="avatar"
 									class="aspect-square size-full rounded-xl object-cover"
 								/>
@@ -217,12 +253,12 @@ export default function UserProfile() {
 								<div class="flex flex-row items-center justify-between pb-4">
 									<div class="flex h-8 flex-row items-center space-x-2 text-sm font-semibold">
 										<span class="flex flex-row items-center text-main">
-											{profile().followers_count}
+											{query.data.followers_count}
 										</span>
 										<span class="text-secondary">following</span>
 										<span class="text-secondary">·</span>
 										<span class="flex flex-row items-center text-main">
-											{profile().following_count}
+											{query.data.following_count}
 										</span>
 										<span class="text-secondary">followers</span>
 									</div>
@@ -241,17 +277,17 @@ export default function UserProfile() {
 									</button>
 								</div>
 								<p class="text-3xl text-pink">
-									{profile()?.first_name} {profile()?.last_name}:
+									{query.data.first_name} {query.data.last_name}:
 								</p>
-								<p class="text-3xl text-main">{profile()?.title}</p>
+								<p class="text-3xl text-main">{query.data.title}</p>
 								<p class="mt-1 text-lg font-normal text-secondary">
-									{profile()?.description}
+									{query.data.description}
 								</p>
 								<div class="mt-5 flex flex-row flex-wrap items-center justify-start gap-1">
-									<For each={profile()?.badges}>
+									<For each={query.data.badges}>
 										{badge => (
 											<div
-												class="flex h-10 flex-row items-center justify-center gap-[5px] rounded-2xl border border-main px-2.5"
+												class="flex h-10 flex-row items-center justify-center gap-[5px] rounded-2xl border px-2.5"
 												style={{
 													'background-color': `#${badge.color}`,
 													'border-color': `#${badge.color}`,
@@ -268,10 +304,10 @@ export default function UserProfile() {
 									</For>
 								</div>
 								<div class="mt-5 flex w-full flex-col items-center justify-start gap-1">
-									<For each={profile()?.opportunities}>
+									<For each={query.data.opportunities}>
 										{op => (
 											<div
-												class="flex h-[60px] w-full flex-row items-center justify-start gap-2.5 rounded-2xl border border-main px-2.5"
+												class="flex h-[60px] w-full flex-row items-center justify-start gap-2.5 rounded-2xl border px-2.5"
 												style={{
 													'background-color': `#${op.color}`,
 												}}
@@ -301,9 +337,14 @@ export default function UserProfile() {
 }
 // background: ;
 
-const ActionButton = (props: { text: string; onClick: () => void }) => {
+const ActionButton = (props: {
+	disabled: boolean
+	text: string
+	onClick: () => void
+}) => {
 	return (
 		<button
+			disabled={props.disabled}
 			class="absolute right-4 top-4 z-10 h-9 w-[90px] rounded-xl bg-black/80 px-2.5 text-sm font-semibold text-button"
 			onClick={props.onClick}
 		>

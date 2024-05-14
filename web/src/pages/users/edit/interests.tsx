@@ -1,48 +1,53 @@
-import { FormLayout } from '~/components/edit/layout';
-import { useMainButton } from '~/lib/useMainButton';
-import { useNavigate } from '@solidjs/router';
-import { createEffect, createResource, onCleanup } from 'solid-js';
-import { editUser, setEditUser } from '~/store';
-import { fetchOpportunities } from '~/lib/api';
-import { SelectOpportunity } from '~/components/edit/selectOpp';
+import { FormLayout } from '~/components/edit/layout'
+import { useMainButton } from '~/lib/useMainButton'
+import { useNavigate } from '@solidjs/router'
+import { createEffect, createResource, onCleanup } from 'solid-js'
+import { editUser, setEditUser } from '~/store'
+import { fetchOpportunities } from '~/lib/api'
+import { SelectOpportunity } from '~/components/edit/selectOpp'
+import { createQuery } from '@tanstack/solid-query'
 
 export default function SelectOpportunities() {
-  const mainButton = useMainButton();
+	const mainButton = useMainButton()
 
-  const navigate = useNavigate();
+	const navigate = useNavigate()
 
-  const navigateNext = () => {
-    navigate('/users/edit/location', { state: { back: true } });
-  };
+	const navigateNext = () => {
+		navigate('/users/edit/location', { state: { back: true } })
+	}
 
-  const [opportunities] = createResource(() => fetchOpportunities());
+	const fetchOpportunityQuery = createQuery(() => ({
+		queryKey: ['opportunities'],
+		queryFn: () => fetchOpportunities(),
+	}))
 
-  mainButton.onClick(navigateNext);
+	mainButton.onClick(navigateNext)
 
-  createEffect(() => {
-    if (editUser.opportunity_ids.length) {
-      mainButton.enable('Next');
-    } else {
-      mainButton.disable('Next');
-    }
-  });
+	createEffect(() => {
+		if (editUser.opportunity_ids.length) {
+			mainButton.enable('Next')
+		} else {
+			mainButton.disable('Next')
+		}
+	})
 
-  onCleanup(() => {
-    mainButton.offClick(navigateNext);
-  });
+	onCleanup(() => {
+		mainButton.offClick(navigateNext)
+	})
 
-  return (
-    <FormLayout
-      title="What are you open for?"
-      description="This will help us to recommend you to other people"
-      screen={3}
-      totalScreens={6}
-    >
-      <SelectOpportunity
-        selected={editUser.opportunity_ids}
-        setSelected={b => setEditUser('opportunity_ids', b as any)}
-        opportunities={opportunities()!}
-      />
-    </FormLayout>
-  );
+	return (
+		<FormLayout
+			title="What are you open for?"
+			description="This will help us to recommend you to other people"
+			screen={3}
+			totalScreens={6}
+		>
+			<SelectOpportunity
+				selected={editUser.opportunity_ids}
+				setSelected={b => setEditUser('opportunity_ids', b as any)}
+				opportunities={fetchOpportunityQuery.data}
+				loading={fetchOpportunityQuery.isLoading}
+			/>
+		</FormLayout>
+	)
 }
