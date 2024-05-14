@@ -51,8 +51,8 @@ func (t *TelegramNotifier) SendNotification(params SendNotificationParams) error
 	}
 
 	photoParams := &telegram.SendPhotoParams{
-		ChatID: 927635965,
-		// ChatID:              params.ChatID,
+		// ChatID: 927635965,
+		ChatID:              params.ChatID,
 		Caption:             params.Message,
 		ParseMode:           models.ParseModeMarkdown,
 		Photo:               &models.InputFileUpload{Filename: "img.jpg", Data: bytes.NewReader(params.Image)},
