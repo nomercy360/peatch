@@ -401,7 +401,7 @@ func (j *notifyJob) NotifyUserReceivedCollaborationRequest() error {
 				return err
 			}
 
-			linkToProfile := fmt.Sprintf("%s/users/%d", j.config.webappURL, collaboration.RequesterID)
+			linkToProfile := fmt.Sprintf("%s/users/%d", j.config.webappURL, requester.Username)
 
 			params := notification.SendNotificationParams{
 				ChatID:    created.ChatID,
@@ -486,7 +486,7 @@ func (j *notifyJob) NotifyCollaborationRequest() error {
 				return err
 			}
 
-			linkToProfile := fmt.Sprintf("%s/users/%d", j.config.webappURL, requester.ID)
+			linkToProfile := fmt.Sprintf("%s/users/%d", j.config.webappURL, requester.Username)
 
 			params := notification.SendNotificationParams{
 				ChatID:    creator.ChatID,
