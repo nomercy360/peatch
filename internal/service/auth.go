@@ -33,7 +33,7 @@ func (s *service) TelegramAuth(query string) (*UserWithToken, error) {
 
 	user, err := s.storage.GetUserByChatID(data.User.ID)
 	if err != nil && errors.Is(err, db.ErrNotFound) {
-		var firstName, lastName, langCode *string
+		var firstName, lastName *string
 
 		if data.User.FirstName != "" {
 			firstName = &data.User.FirstName
@@ -41,10 +41,6 @@ func (s *service) TelegramAuth(query string) (*UserWithToken, error) {
 
 		if data.User.LastName != "" {
 			lastName = &data.User.LastName
-		}
-
-		if data.User.LanguageCode != "" {
-			langCode = &data.User.LanguageCode
 		}
 
 		username := data.User.Username
@@ -55,12 +51,19 @@ func (s *service) TelegramAuth(query string) (*UserWithToken, error) {
 		}
 
 		create := db.User{
-			FirstName:    firstName,
-			LastName:     lastName,
-			Username:     data.User.Username,
-			LanguageCode: langCode,
-			ChatID:       data.User.ID,
+			FirstName: firstName,
+			LastName:  lastName,
+			Username:  data.User.Username,
+			ChatID:    data.User.ID,
 		}
+
+		lang := "ru"
+
+		if data.User.LanguageCode != "ru" {
+			lang = "en"
+		}
+
+		user.LanguageCode = &lang
 
 		user, err = s.storage.CreateUser(create)
 		if err != nil {

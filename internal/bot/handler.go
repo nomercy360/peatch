@@ -187,17 +187,13 @@ func (b *bot) handleMessage(update tgModels.Update, w http.ResponseWriter) {
 
 func (b *bot) createUser(update tgModels.Update) *db.User {
 	// Extract user details from update
-	var firstName, lastName, langCode *string
+	var firstName, lastName *string
 	if update.Message.Chat.FirstName != "" {
 		firstName = &update.Message.Chat.FirstName
 	}
 
 	if update.Message.Chat.LastName != "" {
 		lastName = &update.Message.Chat.LastName
-	}
-
-	if update.Message.From.LanguageCode != "" {
-		langCode = &update.Message.From.LanguageCode
 	}
 
 	// if username is empty, use first name
@@ -210,12 +206,19 @@ func (b *bot) createUser(update tgModels.Update) *db.User {
 	}
 
 	user := db.User{
-		ChatID:       update.Message.Chat.ID,
-		Username:     username,
-		FirstName:    firstName,
-		LastName:     lastName,
-		LanguageCode: langCode,
+		ChatID:    update.Message.Chat.ID,
+		Username:  username,
+		FirstName: firstName,
+		LastName:  lastName,
 	}
+
+	lang := "ru"
+
+	if update.Message.From.LanguageCode != "ru" {
+		lang = "en"
+	}
+
+	user.LanguageCode = &lang
 
 	newUser, err := b.storage.CreateUser(user)
 	if err != nil {
