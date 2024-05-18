@@ -753,7 +753,7 @@ func (s *storage) SaveUserInteraction(userID, targetID int64, interaction string
 	return nil
 }
 
-func (s *storage) ListMatchingProfiles(userID int64, page int) ([]User, error) {
+func (s *storage) ListMatchingProfiles(userID int64, skip int) ([]User, error) {
 	// should select users where empty interaction, and there is match at list one badge or opportunity
 	query := `
 		SELECT u.id,
@@ -779,14 +779,12 @@ func (s *storage) ListMatchingProfiles(userID int64, page int) ([]User, error) {
 		  AND u.published_at IS NOT NULL
 		  AND NOT EXISTS (SELECT 1 FROM user_interactions ui WHERE ui.user_id = $1 AND ui.target_user_id = u.id)
 		  AND (o.id IN (SELECT opportunity_id FROM user_opportunities WHERE user_id = $1) OR b.id IN (SELECT badge_id FROM user_badges WHERE user_id = $1))
-		GROUP BY u.id ORDER BY random() LIMIT 5 OFFSET $2
+		GROUP BY u.id LIMIT 5 OFFSET $2
 	`
-
-	offset := (page - 1) * 5
 
 	users := make([]User, 0)
 
-	err := s.pg.Select(&users, query, userID, offset)
+	err := s.pg.Select(&users, query, userID, skip)
 
 	if err != nil {
 		return nil, err

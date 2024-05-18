@@ -259,6 +259,16 @@ export const fetchFollowers = async (id: number) => {
   return await apiFetch({ endpoint: `/users/${id}/followers` });
 }
 
-export const fetchMatchingProfiles = async (page: number) => {
-  return await apiFetch({ endpoint: '/users/matching?page=' + page });
+export const fetchMatchingProfiles = async (skip?: number) => {
+  return await apiFetch({
+    endpoint: '/users/matching' + (skip ? `?skip=${skip}` : ''),
+  });
+}
+
+export const saveUserInteractions = async (userID: number, type: string) => {
+  return await apiFetch({
+    endpoint: '/users/' + userID + '/interactions',
+    method: 'POST',
+    body: { interaction_type: type },
+  });
 };

@@ -1,58 +1,69 @@
-import { createInfiniteQuery, keepPreviousData } from '@tanstack/solid-query';
-import { CDN_URL, fetchMatchingProfiles } from '~/lib/api';
-import { createEffect, createSignal, For, Show } from 'solid-js';
+import { CDN_URL, fetchMatchingProfiles, saveUserInteractions } from '~/lib/api';
+import { createEffect, createResource, createSignal, For, Show } from 'solid-js';
 import Badge from '~/components/Badge';
 import { useMainButton } from '~/lib/useMainButton';
 
 export default function ShufflePage() {
   const mainButton = useMainButton();
 
-  const profileQ = createInfiniteQuery(() => ({
-    queryKey: ['matchingProfiles'],
-    queryFn: ({ pageParam }) => fetchMatchingProfiles(pageParam),
-    getNextPageParam: (lastPage, allPages) => {
-      if (lastPage.length === 0) return null;
-      return allPages.length + 1;
-    },
-    initialPageParam: 1,
-    placeholderData: keepPreviousData,
-    refetchOnMount: true,
-  }));
+  const [profiles, profilesActions] = createResource(() =>
+    fetchMatchingProfiles(),
+  );
 
   const [currentProfile, setCurrentProfile] = createSignal(0);
+  const [currentUsername, setCurrentUsername] = createSignal('');
 
-  // const handleScrollToNext = () => {
-  // 	window.scrollTo({
-  // 		top: window.innerHeight - 80,
-  // 		behavior: 'smooth',
-  // 	})
-  // }
+  const handleScrollToFirst = () => {
+    window.scrollTo({
+      top: window.innerHeight - 80,
+      behavior: 'smooth',
+    });
+
+    setCurrentProfile(1);
+  }
 
   const [profileRefs, setProfileRefs] = createSignal<HTMLElement[]>([]);
+  const [lastPage, setLastPage] = createSignal<HTMLDivElement | null>(null);
 
-  const handleNextProfile = async () => {
+  const handleNextProfile = async (
+    username: string,
+    profileID: number,
+    isLastItem: boolean,
+  ) => {
     // Scroll to the next profile
     const nextProfileElement = profileRefs()[currentProfile()];
     if (nextProfileElement) {
       nextProfileElement.scrollIntoView({ behavior: 'smooth' });
     }
 
-    const nextProfile = currentProfile() + 1;
+    const nextProfile = currentProfile();
+    k + 1;
     setCurrentProfile(nextProfile);
 
-    if (nextProfile % 5 === 4) {
-      await profileQ.fetchNextPage();
+    await saveUserInteractions(profileID, 'skip');
+
+    if (nextProfile % 5 === 0) {
+      k;
+      const nextPage = await fetchMatchingProfiles(1);
+      profilesActions.mutate([...profiles(), ...nextPage]);
     }
-  };
+
+    if (isLastItem) {
+      lastPage()?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }
 
   // one page = 5 profiles. If we on a 4th profile of the page, we need to load next page.
   // we need to implment scroll to next also. Also now we override profiles on each page change. need to store them all
+  // const contactInTelegram = () => {
+  // 	window.Telegram.WebApp.openTelegramLink('https://t.me/' + currentUsername())
+  // }
 
   createEffect(() => {
-    if (currentProfile() > 0) {
-      mainButton.enable('Message in Telegram').onClick(() => {
-        console.log('Message in Telegram');
-      });
+    if (currentProfile() >= 0) {
+      mainButton
+        .enable('Message in Telegram')
+        .onClick(() => console.log('TELEGRAM'));
     }
   });
 
@@ -68,90 +79,98 @@ export default function ShufflePage() {
           you, we will add it here.
         </p>
         <button
-          class="mt-36 h-10 text-link"
-          onClick={() => handleNextProfile()}
+          class="mt-36 flex h-10 flex-row items-center justify-center gap-2 text-link"
+          onClick={() => handleScrollToFirst()}
         >
-          Start scrolling 􀆈
+          Start scrolling
+          <span class="material-symbols-rounded">arrow_downward</span>
         </button>
       </div>
       <div class="px-2">
-        <For each={profileQ.data?.pages}>
-          {group => (
-            <For each={group}>
-              {profile => (
-                <div
-                  ref={el => {
-                    setProfileRefs([...profileRefs(), el]);
-                  }}
-                  class="mb-4 flex min-h-screen flex-col items-center justify-start rounded-xl bg-main pb-4 text-center"
-                >
-                  <div class="relative w-full">
-                    <img
-                      src={CDN_URL + '/' + profile.avatar_url}
-                      alt={profile.username}
-                      class="aspect-square w-full shrink-0 rounded-xl object-cover"
-                    />
-                    <div class="absolute bottom-0 left-0 h-40 w-full bg-gradient-to-t from-main to-transparent" />
-                  </div>
-                  <p class="text-3xl font-black text-pink">
-                    {profile.last_name
-                      ? profile.first_name + ' ' + profile.last_name + ':'
-                      : profile.first_name + ':'}
+        <For each={profiles()}>
+          {profile => (
+            <div
+              ref={el => {
+                setProfileRefs([...profileRefs(), el]);
+              }}
+              class="mb-4 flex flex-col items-center justify-between rounded-xl bg-main p-6 text-start"
+              style={{ height: 'var(--tg-viewport-height)' }}
+            >
+              <div class="flex w-full flex-col items-start justify-start">
+                <img
+                  src={CDN_URL + '/' + profile.avatar_url}
+                  alt={profile.username}
+                  class="size-36 rounded-xl object-cover"
+                />
+                <p class="mt-4 text-3xl font-black text-pink">
+                  {profile.last_name
+                    ? profile.first_name + ' ' + profile.last_name + ':'
+                    : profile.first_name + ':'}
+                </p>
+                <p class="text-3xl font-black text-main">{profile.title}</p>
+                <p class="mt-2 text-hint">{profile.description}</p>
+                <Show when={profile.badges && profile?.badges.length > 0}>
+                  <p class="mt-6 text-sm font-semibold text-secondary">
+                    Interests in common
                   </p>
-                  <p class="text-3xl font-black text-main">{profile.title}</p>
-                  <div class="w-full px-4 text-center">
-                    <p class="text-hint">{profile.description}</p>
+                  <div class="mt-2 flex flex-row flex-wrap items-center justify-start gap-2">
+                    <For each={profile.badges}>
+                      {badge => (
+                        <Badge
+                          icon={badge.icon!}
+                          name={badge.text!}
+                          color={badge.color!}
+                        />
+                      )}
+                    </For>
                   </div>
-                  <div class="mt-4 flex w-full flex-col items-start justify-start px-4">
-                    <Show when={profile.badges && profile?.badges.length > 0}>
-                      <p class="text-sm font-semibold text-secondary">
-                        Interests in common
-                      </p>
-                      <div class="mt-2 flex flex-row flex-wrap items-center justify-center gap-2">
-                        <For each={profile.badges}>
-                          {badge => (
-                            <Badge
-                              icon={badge.icon!}
-                              name={badge.text!}
-                              color={badge.color!}
-                            />
-                          )}
-                        </For>
-                      </div>
-                    </Show>
-                    <Show
-                      when={
-                        profile.opportunities &&
-                        profile?.opportunities.length > 0
-                      }
-                    >
-                      <p class="mt-4 text-sm font-semibold text-secondary">
-                        You're both open to
-                      </p>
-                      <div class="mt-2 flex flex-row flex-wrap items-center justify-center gap-2">
-                        <For each={profile.opportunities}>
-                          {opportunity => (
-                            <Badge
-                              icon={opportunity.icon!}
-                              name={opportunity.text!}
-                              color={opportunity.color!}
-                            />
-                          )}
-                        </For>
-                      </div>
-                    </Show>
+                </Show>
+                <Show
+                  when={
+                    profile.opportunities && profile?.opportunities.length > 0
+                  }
+                >
+                  <p class="mt-4 text-sm font-semibold text-secondary">
+                    You're both open to
+                  </p>
+                  <div class="mt-2 flex flex-row flex-wrap items-center justify-center gap-2">
+                    <For each={profile.opportunities}>
+                      {opportunity => (
+                        <Badge
+                          icon={opportunity.icon!}
+                          name={opportunity.text!}
+                          color={opportunity.color!}
+                        />
+                      )}
+                    </For>
                   </div>
-                  <button
-                    class="mt-4 h-10 text-link"
-                    onClick={handleNextProfile}
-                  >
-                    Next profile
-                  </button>
-                </div>
-              )}
-            </For>
+                </Show>
+              </div>
+              <button
+                class="mt-4 h-10 w-full text-link"
+                onClick={() =>
+                  handleNextProfile(
+                    profile.username,
+                    profile.id,
+                    profile === profiles()[profiles().length - 1],
+                  )
+                }
+              >
+                Next profile
+              </button>
+            </div>
           )}
         </For>
+        <Show when={!true}>
+          <div
+            class="mt-4 flex h-screen flex-col items-center justify-center gap-2 text-center text-hint"
+            ref={el => {
+              setLastPage(el);
+            }}
+          >
+            <p>That's all for now</p>
+          </div>
+        </Show>
       </div>
     </div>
   );
@@ -172,4 +191,4 @@ const Sparkles = () => {
       />
     </svg>
   );
-};
+}
