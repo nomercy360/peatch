@@ -99,6 +99,10 @@ export const routes: RouteDefinition[] = [
 		component: lazy(() => import('~/pages/collaborations/collaborate')),
 	},
 	{
+    path: '/users/shuffle',
+    component: lazy(() => import('~/pages/users/shuffle')),
+  },
+  {
 		path: '**',
 		component: lazy(() => import('./pages/404')),
 	},

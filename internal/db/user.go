@@ -739,3 +739,58 @@ func (s *storage) GetUserFollowers(uid, targetID int64) ([]User, error) {
 
 	return users, nil
 }
+
+func (s *storage) SaveUserInteraction(userID, targetID int64, interaction string) error {
+	query := `
+		INSERT INTO user_interactions (user_id,target_user_id, interaction_type)
+		VALUES ($1, $2, $3)
+	`
+
+	if _, err := s.pg.Exec(query, userID, targetID, interaction); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *storage) ListMatchingProfiles(userID int64, page int) ([]User, error) {
+	// should select users where empty interaction, and there is match at list one badge or opportunity
+	query := `
+		SELECT u.id,
+			   u.username,
+			   u.first_name,
+			   u.last_name,
+			   u.avatar_url,
+			   u.title,
+			   u.description,
+			   u.created_at,
+			   u.country,
+			   u.city,
+			   u.country_code,
+			   json_agg(distinct to_jsonb(b)) filter (where b.id is not null) as badges,
+			   json_agg(distinct to_jsonb(o)) filter (where o.id is not null) as opportunities
+		FROM users u
+				 JOIN user_opportunities uo ON u.id = uo.user_id
+				 JOIN opportunities o ON uo.opportunity_id = o.id
+				 JOIN user_badges ub ON u.id = ub.user_id
+				 JOIN badges b ON ub.badge_id = b.id
+		WHERE u.id != $1
+		  AND u.hidden_at IS NULL
+		  AND u.published_at IS NOT NULL
+		  AND NOT EXISTS (SELECT 1 FROM user_interactions ui WHERE ui.user_id = $1 AND ui.target_user_id = u.id)
+		  AND (o.id IN (SELECT opportunity_id FROM user_opportunities WHERE user_id = $1) OR b.id IN (SELECT badge_id FROM user_badges WHERE user_id = $1))
+		GROUP BY u.id ORDER BY random() LIMIT 5 OFFSET $2
+	`
+
+	offset := (page - 1) * 5
+
+	users := make([]User, 0)
+
+	err := s.pg.Select(&users, query, userID, offset)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}

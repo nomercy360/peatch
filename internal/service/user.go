@@ -220,3 +220,59 @@ func (s *service) GetUserFollowing(uid, targetID int64) ([]UserProfileShort, err
 
 	return following, nil
 }
+
+type UserInteraction struct {
+	InteractionType string `json:"interaction_type" validate:"required,oneof=skip match"`
+}
+
+func (s *service) SaveUserInteraction(userID int64, targetID int64, interaction UserInteraction) error {
+	return s.storage.SaveUserInteraction(userID, targetID, interaction.InteractionType)
+}
+
+func (s *service) ListMatchingProfiles(userID int64, page int) ([]db.UserProfile, error) {
+	res, err := s.storage.ListMatchingProfiles(userID, page)
+	if err != nil {
+		return nil, err
+	}
+
+	profiles := make([]db.UserProfile, 0, len(res))
+
+	user, err := s.storage.GetUserProfile(db.GetUsersParams{UserID: userID})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, profile := range res {
+		matchingProfile := profile
+		matchingProfile.Badges = filterMatchingBadges(user.Badges, profile.Badges)
+		matchingProfile.Opportunities = filterMatchingOpportunities(user.Opportunities, profile.Opportunities)
+
+		profiles = append(profiles, matchingProfile.ToUserProfile())
+	}
+
+	return profiles, nil
+}
+
+func filterMatchingBadges(userBadges, profileBadges []db.Badge) []db.Badge {
+	matchedBadges := make([]db.Badge, 0)
+	for _, userBadge := range userBadges {
+		for _, profileBadge := range profileBadges {
+			if userBadge.ID == profileBadge.ID {
+				matchedBadges = append(matchedBadges, profileBadge)
+			}
+		}
+	}
+	return matchedBadges
+}
+
+func filterMatchingOpportunities(userOpportunities, profileOpportunities []db.Opportunity) []db.Opportunity {
+	matchedOpportunities := make([]db.Opportunity, 0)
+	for _, userOpportunity := range userOpportunities {
+		for _, profileOpportunity := range profileOpportunities {
+			if userOpportunity.ID == profileOpportunity.ID {
+				matchedOpportunities = append(matchedOpportunities, profileOpportunity)
+			}
+		}
+	}
+	return matchedOpportunities
+}

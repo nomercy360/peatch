@@ -25,6 +25,15 @@ CREATE TABLE users
 CREATE INDEX users_chat_id_index ON users (chat_id);
 CREATE UNIQUE INDEX users_username_index ON users (username);
 
+CREATE TABLE user_interactions
+(
+    id               SERIAL PRIMARY KEY,
+    user_id          INTEGER REFERENCES users (id),
+    target_user_id   INTEGER REFERENCES users (id),
+    interaction_type VARCHAR(10),
+    created_at       timestamptz DEFAULT NOW()
+);
+
 CREATE TABLE badges
 (
     id         SERIAL PRIMARY KEY,

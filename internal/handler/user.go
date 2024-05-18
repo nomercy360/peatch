@@ -294,3 +294,55 @@ func (h *handler) handleGetUserFollowers(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, users)
 }
+
+// handleSaveUserInteraction godoc
+// @Summary Save user interaction
+// @Tags users
+// @Accept  json
+// @Produce  json
+// @Param id path int true "User ID"
+// @Param interaction body UserInteraction true "Interaction data"
+// @Success 204
+// @Router /api/users/{id}/interactions [post]
+func (h *handler) handleSaveUserInteraction(c echo.Context) error {
+	uid := getUserID(c)
+	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+
+	var interaction svc.UserInteraction
+	if err := c.Bind(&interaction); err != nil {
+		return err
+	}
+
+	if err := c.Validate(interaction); err != nil {
+		return err
+	}
+
+	err := h.svc.SaveUserInteraction(uid, id, interaction)
+
+	if err != nil {
+		return err
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}
+
+// handleListMatchingProfiles godoc
+// @Summary List matching profiles
+// @Tags users
+// @Accept  json
+// @Produce  json
+// @Param id path int true "User ID"
+// @Success 200 {array} UserProfileShort
+// @Router /api/users/matching [get]
+func (h *handler) handleListMatchingProfiles(c echo.Context) error {
+	uid := getUserID(c)
+
+	page, _ := strconv.Atoi(c.QueryParam("page"))
+
+	users, err := h.svc.ListMatchingProfiles(uid, page)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, users)
+}

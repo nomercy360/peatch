@@ -1,5 +1,5 @@
-import { A } from '@solidjs/router';
 import type { AnchorProps } from '@solidjs/router';
+import { A } from '@solidjs/router';
 import type { Component } from 'solid-js';
 
 export const Link: Component<AnchorProps> = props => {
@@ -12,13 +12,13 @@ export const Link: Component<AnchorProps> = props => {
 
     if (isExternal) {
       e.preventDefault();
-      return window.Telegram.WebApp.openLink(targetUrl.toString());
+      return window.Telegram.WebApp.openLink('t.me/mini_hub_bot/app');
     }
-  };
+  }
 
   return (
     <A {...props} onClick={onClick} class={props.class}>
       {props.children}
     </A>
   );
-};
+}

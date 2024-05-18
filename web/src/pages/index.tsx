@@ -5,6 +5,7 @@ import FillProfilePopup from '~/components/FillProfilePopup';
 import { Link } from '~/components/Link';
 import { useMainButton } from '~/lib/useMainButton';
 import { createQuery } from '@tanstack/solid-query';
+import { A } from '@solidjs/router';
 
 export default function Index() {
 	const [profilePopup, setProfilePopup] = createSignal(false)
@@ -72,7 +73,7 @@ export default function Index() {
 					</Match>
 				</Switch>
 			</Link>
-			<div class="h-px w-full bg-main" />
+      <ShufflePopup />
 			<Link class="flex flex-col items-start justify-start py-4" href="/users">
 				<div class="flex w-full flex-row items-center justify-start">
 					<Suspense fallback={<ImagesLoader />}>
@@ -179,3 +180,45 @@ const ImagesLoader = () => {
 		</div>
 	)
 }
+
+const ShufflePopup = () => {
+  return (
+    <div class="mb-4 flex flex-col items-center justify-center overflow-hidden rounded-lg bg-main py-4 text-center">
+      <p class="mt-4 text-3xl text-main">Shuffle Raffle</p>
+      <p class="mb-6 text-sm font-semibold text-main">
+        Discover people with common interests
+      </p>
+      <div class="mt-3 flex flex-row items-center justify-center gap-2.5">
+        <ShuffleBadge icon="wine_bar" text="Wine Lovers" color="#FFDAB9" />
+        <ShuffleBadge icon="fitness_center" text="Gym Rat" color="#98FB98" />
+        <ShuffleBadge icon="music_note" text="Meloman" color="#87CEFA" />
+      </div>
+      <div class="mt-3 flex flex-row items-center justify-center gap-2.5">
+        <ShuffleBadge icon="palette" text="Design" color="#FFF0F5" />
+        <ShuffleBadge
+          icon="translate"
+          text="Language Exchange"
+          color="#FFE4E1"
+        />
+        <ShuffleBadge icon="sports_bar" text="Friends" color="#FFDAB9" />
+      </div>
+      <A
+        class="mb-2 mt-8 flex h-8 w-20 items-center justify-center rounded-lg bg-button text-sm font-semibold text-button"
+        href={'/users/shuffle'}
+      >
+        Explore
+      </A>
+    </div>
+  );
+};
+
+const ShuffleBadge = (props: { icon: string; text: string; color: string }) => {
+  return (
+    <div class="flex h-8 flex-row items-center justify-center gap-1.5 text-nowrap rounded-2xl bg-secondary px-3">
+			<span class="material-symbols-rounded" style={{ color: props.color }}>
+				{props.icon}
+			</span>
+      <p class="text-sm font-semibold text-button">{props.text}</p>
+    </div>
+  );
+};

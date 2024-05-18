@@ -253,8 +253,12 @@ export const searchLocations = async (search: string) => {
 
 export const fetchFollowing = async (id: number) => {
   return await apiFetch({ endpoint: `/users/${id}/following` });
-};
+}
 
 export const fetchFollowers = async (id: number) => {
   return await apiFetch({ endpoint: `/users/${id}/followers` });
+}
+
+export const fetchMatchingProfiles = async (page: number) => {
+  return await apiFetch({ endpoint: '/users/matching?page=' + page });
 };
