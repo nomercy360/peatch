@@ -19,25 +19,34 @@ export default function ShufflePage() {
 
 	const [currentProfile, setCurrentProfile] = createSignal(0)
 	const [currentUsername, setCurrentUsername] = createSignal('')
+	const [lastPage, setLastPage] = createSignal<HTMLDivElement | null>(null)
 
 	const handleScrollToFirst = () => {
-		window.scrollTo({
-			top: window.innerHeight - 80,
-			behavior: 'smooth',
-		})
+		if (profiles().length > 0) {
+			window.scrollTo({
+				top: window.innerHeight - 180,
+				behavior: 'smooth',
+			})
 
-		setCurrentProfile(1)
-		setCurrentUsername(profiles()[0].username)
+			setCurrentProfile(1)
+			setCurrentUsername(profiles()[0].username)
+		} else {
+			lastPage()?.scrollIntoView({ behavior: 'smooth' })
+		}
 	}
 
 	const [profileRefs, setProfileRefs] = createSignal<HTMLElement[]>([])
-	const [lastPage, setLastPage] = createSignal<HTMLDivElement | null>(null)
 
 	const handleNextProfile = async (profileID: number, isLastItem: boolean) => {
 		// Scroll to the next profile
 		const nextProfileElement = profileRefs()[currentProfile()]
 		if (nextProfileElement) {
 			nextProfileElement.scrollIntoView({ behavior: 'smooth' })
+		} else if (isLastItem) {
+			// If the next profile is not loaded yet, scroll to the bottom of the page
+			lastPage()?.scrollIntoView({ behavior: 'smooth' })
+			await saveUserInteractions(profileID, 'skip')
+			return
 		}
 
 		setCurrentUsername(profiles()[currentProfile()].username)
@@ -46,15 +55,9 @@ export default function ShufflePage() {
 
 		setCurrentProfile(nextProfile)
 
-		await saveUserInteractions(profileID, 'skip')
-
 		if (nextProfile % 5 === 0) {
 			const nextPage = await fetchMatchingProfiles(1)
 			profilesActions.mutate([...profiles(), ...nextPage])
-		}
-
-		if (isLastItem) {
-			lastPage()?.scrollIntoView({ behavior: 'smooth' })
 		}
 	}
 
@@ -98,7 +101,7 @@ export default function ShufflePage() {
 					<span class="material-symbols-rounded">arrow_downward</span>
 				</button>
 			</div>
-			<div class="grid space-y-4">
+			<div class="grid w-full space-y-4">
 				<For each={profiles()}>
 					{profile => (
 						<div
@@ -108,7 +111,7 @@ export default function ShufflePage() {
 							class="p-2 text-start"
 							style={{ height: 'var(--tg-viewport-height)' }}
 						>
-							<div class="flex h-full flex-col items-center justify-between rounded-xl bg-main p-6">
+							<div class="flex size-full flex-col items-center justify-between rounded-xl bg-main p-6">
 								<div class="flex w-full flex-col items-start justify-start">
 									<img
 										src={CDN_URL + '/' + profile.avatar_url}
@@ -174,7 +177,7 @@ export default function ShufflePage() {
 						</div>
 					)}
 				</For>
-				<Show when={!true}>
+				<Show when={profiles()?.length === currentProfile()}>
 					<div
 						class="mt-4 flex h-screen flex-col items-center justify-center gap-2 text-center text-hint"
 						ref={el => {
