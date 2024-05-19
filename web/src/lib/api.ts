@@ -1,5 +1,5 @@
-import { store } from '~/store';
-import { CreateCollaboration } from '../../gen';
+import { store } from '~/store'
+import { CreateCollaboration } from '../../gen'
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string
 export const CDN_URL = 'https://assets.peatch.io'
@@ -252,23 +252,25 @@ export const searchLocations = async (search: string) => {
 }
 
 export const fetchFollowing = async (id: number) => {
-  return await apiFetch({ endpoint: `/users/${id}/following` });
+	return await apiFetch({ endpoint: `/users/${id}/following` })
 }
 
 export const fetchFollowers = async (id: number) => {
-  return await apiFetch({ endpoint: `/users/${id}/followers` });
+	return await apiFetch({ endpoint: `/users/${id}/followers` })
 }
 
 export const fetchMatchingProfiles = async (skip?: number) => {
-  return await apiFetch({
-    endpoint: '/users/matching' + (skip ? `?skip=${skip}` : ''),
-  });
+	return await apiFetch({
+		showProgress: false,
+		endpoint: '/users/matching' + (skip ? `?skip=${skip}` : ''),
+	})
 }
 
 export const saveUserInteractions = async (userID: number, type: string) => {
-  return await apiFetch({
-    endpoint: '/users/' + userID + '/interactions',
-    method: 'POST',
-    body: { interaction_type: type },
-  });
-};
+	return await apiFetch({
+		endpoint: '/users/' + userID + '/interactions',
+		method: 'POST',
+		body: { interaction_type: type },
+		showProgress: false,
+	})
+}

@@ -47,7 +47,7 @@ type service interface {
 	SearchLocations(query string) ([]db.Location, error)
 	GetUserFollowers(uid, targetID int64) ([]svc.UserProfileShort, error)
 	GetUserFollowing(uid, targetID int64) ([]svc.UserProfileShort, error)
-	ListMatchingProfiles(userID int64, page int) ([]db.UserProfile, error)
+	ListMatchingProfiles(userID int64, skip int) ([]db.UserProfile, error)
 	SaveUserInteraction(userID int64, targetID int64, interaction svc.UserInteraction) error
 }
 

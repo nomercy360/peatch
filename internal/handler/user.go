@@ -337,9 +337,9 @@ func (h *handler) handleSaveUserInteraction(c echo.Context) error {
 func (h *handler) handleListMatchingProfiles(c echo.Context) error {
 	uid := getUserID(c)
 
-	page, _ := strconv.Atoi(c.QueryParam("page"))
+	skip, _ := strconv.Atoi(c.QueryParam("skip"))
 
-	users, err := h.svc.ListMatchingProfiles(uid, page)
+	users, err := h.svc.ListMatchingProfiles(uid, skip)
 	if err != nil {
 		return err
 	}

@@ -229,8 +229,8 @@ func (s *service) SaveUserInteraction(userID int64, targetID int64, interaction 
 	return s.storage.SaveUserInteraction(userID, targetID, interaction.InteractionType)
 }
 
-func (s *service) ListMatchingProfiles(userID int64, page int) ([]db.UserProfile, error) {
-	res, err := s.storage.ListMatchingProfiles(userID, page)
+func (s *service) ListMatchingProfiles(userID int64, skip int) ([]db.UserProfile, error) {
+	res, err := s.storage.ListMatchingProfiles(userID, skip)
 	if err != nil {
 		return nil, err
 	}

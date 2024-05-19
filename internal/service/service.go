@@ -39,7 +39,7 @@ type storage interface {
 	GetUserFollowers(uid int64, target int64) ([]db.User, error)
 	GetUserFollowing(uid int64, target int64) ([]db.User, error)
 	SaveUserInteraction(userID int64, targetID int64, interaction string) error
-	ListMatchingProfiles(userID int64, page int) ([]db.User, error)
+	ListMatchingProfiles(userID int64, skip int) ([]db.User, error)
 }
 
 type s3Client interface {
