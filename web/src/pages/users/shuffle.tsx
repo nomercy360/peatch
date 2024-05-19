@@ -1,5 +1,12 @@
 import { CDN_URL, fetchMatchingProfiles, saveUserInteractions } from '~/lib/api'
-import { createEffect, createResource, createSignal, For, Show } from 'solid-js'
+import {
+	createEffect,
+	createResource,
+	createSignal,
+	For,
+	onCleanup,
+	Show,
+} from 'solid-js'
 import Badge from '~/components/Badge'
 import { useMainButton } from '~/lib/useMainButton'
 
@@ -20,21 +27,20 @@ export default function ShufflePage() {
 		})
 
 		setCurrentProfile(1)
+		setCurrentUsername(profiles()[0].username)
 	}
 
 	const [profileRefs, setProfileRefs] = createSignal<HTMLElement[]>([])
 	const [lastPage, setLastPage] = createSignal<HTMLDivElement | null>(null)
 
-	const handleNextProfile = async (
-		username: string,
-		profileID: number,
-		isLastItem: boolean,
-	) => {
+	const handleNextProfile = async (profileID: number, isLastItem: boolean) => {
 		// Scroll to the next profile
 		const nextProfileElement = profileRefs()[currentProfile()]
 		if (nextProfileElement) {
 			nextProfileElement.scrollIntoView({ behavior: 'smooth' })
 		}
+
+		setCurrentUsername(profiles()[currentProfile()].username)
 
 		const nextProfile = currentProfile() + 1
 
@@ -54,16 +60,19 @@ export default function ShufflePage() {
 
 	// one page = 5 profiles. If we on a 4th profile of the page, we need to load next page.
 	// we need to implment scroll to next also. Also now we override profiles on each page change. need to store them all
-	// const contactInTelegram = () => {
-	// 	window.Telegram.WebApp.openTelegramLink('https://t.me/' + currentUsername())
-	// }
+	const contactInTelegram = () => {
+		// window.Telegram.WebApp.openTelegramLink('https://t.me/' + currentUsername())
+		console.log('TELEGRAM:', currentUsername())
+	}
 
 	createEffect(() => {
-		if (currentProfile() >= 0) {
-			mainButton
-				.enable('Message in Telegram')
-				.onClick(() => console.log('TELEGRAM'))
+		if (currentProfile() > 0) {
+			mainButton.enable('Message in Telegram').onClick(contactInTelegram)
 		}
+	})
+
+	onCleanup(() => {
+		mainButton.offClick(contactInTelegram)
 	})
 
 	return (
@@ -150,7 +159,6 @@ export default function ShufflePage() {
 									class="mt-4 h-10 w-full text-link"
 									onClick={() =>
 										handleNextProfile(
-											profile.username,
 											profile.id,
 											profile === profiles()[profiles().length - 1],
 										)
