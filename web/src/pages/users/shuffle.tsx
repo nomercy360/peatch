@@ -61,8 +61,12 @@ export default function ShufflePage() {
 	// one page = 5 profiles. If we on a 4th profile of the page, we need to load next page.
 	// we need to implment scroll to next also. Also now we override profiles on each page change. need to store them all
 	const contactInTelegram = () => {
-		// window.Telegram.WebApp.openTelegramLink('https://t.me/' + currentUsername())
-		console.log('TELEGRAM:', currentUsername())
+		window.Telegram.WebApp.openTelegramLink(
+			'https://t.me/' +
+				currentUsername() +
+				'?text=Hi! I saw you on Peatch and would like to connect with you.',
+		)
+		//console.log('TELEGRAM:', currentUsername())
 	}
 
 	createEffect(() => {
