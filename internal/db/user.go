@@ -398,7 +398,7 @@ func (s *storage) PublishUser(userID int64) error {
 	query := `
 		UPDATE users
 		SET published_at = NOW()
-		WHERE id = $1;
+		WHERE id = $1 and description IS NOT NULL;
 	`
 
 	res, err := s.pg.Exec(query, userID)
