@@ -40,6 +40,26 @@ func (h *handler) handleListUsers(c echo.Context) error {
 	return c.JSON(http.StatusOK, users)
 }
 
+func (h *handler) handleGetFeed(c echo.Context) error {
+	uid := getUserID(c)
+	page, _ := strconv.Atoi(c.QueryParam("page"))
+	limit, _ := strconv.Atoi(c.QueryParam("limit"))
+	search := c.QueryParam("search")
+
+	query := svc.FeedQuery{
+		Page:   page,
+		Limit:  limit,
+		Search: search,
+	}
+
+	feed, err := h.svc.GetFeed(uid, query)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, feed)
+}
+
 // handleGetUser godoc
 // @Summary Get user
 // @Tags users

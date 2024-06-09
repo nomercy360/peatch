@@ -75,7 +75,7 @@ type UserProfile struct {
 	ID             int64         `json:"id" db:"id"`
 	FirstName      *string       `json:"first_name" db:"first_name"`
 	LastName       *string       `json:"last_name" db:"last_name"`
-	CreatedAt      string        `json:"created_at" db:"created_at"`
+	CreatedAt      time.Time     `json:"created_at" db:"created_at"`
 	Username       string        `json:"username" db:"username"`
 	AvatarURL      *string       `json:"avatar_url" db:"avatar_url"`
 	Title          *string       `json:"title" db:"title"`
@@ -89,6 +89,18 @@ type UserProfile struct {
 	Badges         []Badge       `json:"badges" db:"badges"`
 	Opportunities  []Opportunity `json:"opportunities" db:"opportunities"`
 } // @Name UserProfile
+
+type Base interface {
+	GetCreatedAt() time.Time
+}
+
+func (u UserProfile) GetCreatedAt() time.Time {
+	return u.CreatedAt
+}
+
+func (c Collaboration) GetCreatedAt() time.Time {
+	return c.CreatedAt
+}
 
 func (u *UserProfile) Scan(src interface{}) error {
 	var source []byte
@@ -113,7 +125,7 @@ func (u *User) ToUserProfile() UserProfile {
 		FirstName:      u.FirstName,
 		Username:       u.Username,
 		LastName:       u.LastName,
-		CreatedAt:      u.CreatedAt.Format(time.RFC3339),
+		CreatedAt:      u.CreatedAt,
 		AvatarURL:      u.AvatarURL,
 		Title:          u.Title,
 		Description:    u.Description,

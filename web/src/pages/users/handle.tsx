@@ -4,6 +4,7 @@ import {
 	For,
 	Match,
 	onCleanup,
+	Show,
 	Suspense,
 	Switch,
 } from 'solid-js'
@@ -197,6 +198,10 @@ export default function UserProfilePage() {
 		}
 	}
 
+	const [badgesExpanded, setBadgesExpanded] = createSignal(false)
+
+	const [opportunitiesExpanded, setOpportunitiesExpanded] = createSignal(false)
+
 	return (
 		<div>
 			<Suspense fallback={<Loader />}>
@@ -210,31 +215,16 @@ export default function UserProfilePage() {
 					</Match>
 					<Match when={!query.isLoading}>
 						<div class="h-fit min-h-screen bg-secondary">
+							<Show when={isCurrentUserProfile && store.user.hidden_at}>
+								<span class="material-symbols-rounded absolute left-6 top-5 text-white">
+									visibility_off
+								</span>
+							</Show>
 							<Switch>
-								<Match when={isCurrentUserProfile && !store.user.published_at}>
-									<ActionButton
-										disabled={false}
-										text="Edit"
-										onClick={navigateToEdit}
-									/>
-								</Match>
-								<Match
-									when={
-										isCurrentUserProfile &&
-										store.user.hidden_at &&
-										store.user.published_at
-									}
-								>
-									<ActionButton disabled={false} text="Show" onClick={show} />
-								</Match>
-								<Match
-									when={
-										isCurrentUserProfile &&
-										!store.user.hidden_at &&
-										store.user.published_at
-									}
-								>
-									<ActionButton disabled={false} text="Hide" onClick={hide} />
+								<Match when={isCurrentUserProfile}>
+									<div class="absolute right-4 top-4 z-10 flex h-8 items-center justify-center rounded-lg bg-white px-4 text-sm font-semibold text-[#FF8C42]">
+										42 Peatches
+									</div>
 								</Match>
 								<Match
 									when={!isCurrentUserProfile && !query.data?.is_following}
@@ -285,7 +275,7 @@ export default function UserProfilePage() {
 										}}
 										onClick={copyToClipboard}
 									>
-										<span class="text-sm font-semibold">share app profile</span>
+										<span class="text-sm font-semibold">Share profile</span>
 										<span class="material-symbols-rounded text-[14px]">
 											{contentCopied() ? 'check_circle' : 'content_copy'}
 										</span>
@@ -299,7 +289,13 @@ export default function UserProfilePage() {
 									{query.data.description}
 								</p>
 								<div class="mt-5 flex flex-row flex-wrap items-center justify-start gap-1">
-									<For each={query.data.badges}>
+									<For
+										each={
+											badgesExpanded()
+												? query.data.badges
+												: query.data.badges.slice(0, 3)
+										}
+									>
 										{badge => (
 											<div
 												class="flex h-10 flex-row items-center justify-center gap-[5px] rounded-2xl border px-2.5"
@@ -318,8 +314,23 @@ export default function UserProfilePage() {
 										)}
 									</For>
 								</div>
-								<div class="mt-5 flex w-full flex-col items-center justify-start gap-1">
-									<For each={query.data.opportunities}>
+								<Show when={query.data.badges.length > 3}>
+									<ExpandButton
+										expanded={badgesExpanded()}
+										setExpanded={setBadgesExpanded}
+									/>
+								</Show>
+								<p class="py-4 text-3xl font-extrabold text-main">
+									Available for
+								</p>
+								<div class="flex w-full flex-col items-center justify-start gap-1">
+									<For
+										each={
+											opportunitiesExpanded()
+												? query.data.opportunities
+												: query.data.opportunities.slice(0, 3)
+										}
+									>
 										{op => (
 											<div
 												class="flex h-[60px] w-full flex-row items-center justify-start gap-2.5 rounded-2xl border px-2.5"
@@ -341,6 +352,12 @@ export default function UserProfilePage() {
 											</div>
 										)}
 									</For>
+									<Show when={query.data.opportunities.length > 3}>
+										<ExpandButton
+											expanded={opportunitiesExpanded()}
+											setExpanded={setOpportunitiesExpanded}
+										/>
+									</Show>
 								</div>
 							</div>
 						</div>
@@ -364,6 +381,23 @@ const ActionButton = (props: {
 			onClick={() => props.onClick()}
 		>
 			{props.text}
+		</button>
+	)
+}
+
+const ExpandButton = (props: {
+	expanded: boolean
+	setExpanded: (val: boolean) => void
+}) => {
+	return (
+		<button
+			class="flex h-8 w-full items-center justify-start rounded-xl bg-transparent text-sm font-semibold text-secondary"
+			onClick={() => props.setExpanded(!props.expanded)}
+		>
+			<span class="material-symbols-rounded text-secondary">
+				{props.expanded ? 'expand_less' : 'expand_more'}
+			</span>
+			{props.expanded ? 'show less' : 'show more'}
 		</button>
 	)
 }

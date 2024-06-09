@@ -111,7 +111,7 @@ module.exports = {
 				button: 'var(--telegram-button-color)',
 				'header-bg': 'var(--telegram-header-bg-color)',
 				'section-bg': 'var(--telegram-section-bg-color)',
-				border: 'var(--border-color)',
+				border: 'var(--border)',
 			},
 		},
 	},

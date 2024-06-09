@@ -35,7 +35,7 @@ function transformStartParam(startParam?: string): string | null {
 	}
 }
 
-export default function App(props: { children: any }) {
+export default function App(props: any) {
 	const [isAuthenticated, setIsAuthenticated] = createSignal(false)
 	const [isLoading, setIsLoading] = createSignal(true)
 
