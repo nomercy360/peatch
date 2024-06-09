@@ -61,28 +61,25 @@ export default function Index() {
 				class="flex flex-row items-center justify-between py-4"
 				href={getUserLink()}
 			>
+				<p class="text-3xl text-main">
+					Bonsoir, {store.user?.first_name || store.user?.username}!
+				</p>
 				<Switch>
 					<Match when={store.user.avatar_url}>
 						<img
-							class="size-11 rounded-xl border object-cover object-center"
+							class="size-11 rounded-xl border border-main object-cover object-center"
 							src={CDN_URL + '/' + store.user.avatar_url}
 							alt="User Avatar"
 						/>
 					</Match>
 					<Match when={!store.user.avatar_url}>
-						<div class="flex size-11 items-center justify-center rounded-xl border-2 bg-main">
+						<div class="flex size-11 items-center justify-center rounded-xl border-2 border-main bg-main">
 							<span class="material-symbols-rounded text-peatch-main">
 								account_circle
 							</span>
 						</div>
 					</Match>
 				</Switch>
-				<button class="flex flex-row items-center justify-center gap-2">
-					<p class="text-sm text-main">New Post</p>
-					<span class="material-symbols-rounded text-[24px] text-main">
-						add_circle
-					</span>
-				</button>
 			</Link>
 			<Link class="flex flex-col items-start justify-start py-4" href="/users">
 				<div class="flex w-full flex-row items-center justify-start">
