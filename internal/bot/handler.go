@@ -79,12 +79,13 @@ func (b *bot) initTelegram() {
 func (b *bot) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 	var update tgModels.Update
 	if err := json.NewDecoder(r.Body).Decode(&update); err != nil {
-		http.Error(w, "Invalid update", http.StatusBadRequest)
+		log.Printf("Failed to decode update: %v", err)
+		w.WriteHeader(http.StatusOK)
 		return
 	}
 
 	if update.Message == nil {
-		http.Error(w, "No message", http.StatusBadRequest)
+		w.WriteHeader(http.StatusOK)
 		return
 	}
 
@@ -107,7 +108,7 @@ func (b *bot) handleMessage(update tgModels.Update, w http.ResponseWriter) {
 	if update.Message.Text == "/reset" && user != nil {
 		if err := b.storage.DeleteUserByID(user.ID); err != nil {
 			log.Printf("Failed to delete user: %v", err)
-			http.Error(w, "Failed to delete user", http.StatusInternalServerError)
+			w.WriteHeader(http.StatusOK)
 			return
 		}
 
@@ -145,7 +146,7 @@ func (b *bot) handleMessage(update tgModels.Update, w http.ResponseWriter) {
 
 		user = b.createUser(update)
 		if user == nil {
-			http.Error(w, "Failed to create user", http.StatusInternalServerError)
+			w.WriteHeader(http.StatusOK)
 			return
 		}
 
@@ -165,7 +166,7 @@ func (b *bot) handleMessage(update tgModels.Update, w http.ResponseWriter) {
 
 	} else if err != nil {
 		log.Printf("Failed to get user: %v", err)
-		http.Error(w, "Failed to get user", http.StatusInternalServerError)
+		w.WriteHeader(http.StatusOK)
 		return
 	} else {
 		log.Printf("User %d already exists, sending message", user.ChatID)
