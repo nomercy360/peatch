@@ -81,9 +81,6 @@ export default function Index() {
 					</Match>
 				</Switch>
 			</Link>
-			<Show when={store.user.published_at}>
-				<ShufflePopup />
-			</Show>
 			<Link class="flex flex-col items-start justify-start py-4" href="/users">
 				<div class="flex w-full flex-row items-center justify-start">
 					<Suspense fallback={<ImagesLoader />}>
