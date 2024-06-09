@@ -1,16 +1,16 @@
-import { onCleanup } from 'solid-js';
+import { onCleanup } from 'solid-js'
 
 export default function useDebounce(
-  signalSetter: (value: any) => void,
-  delay: number,
+	signalSetter: (value: any) => void,
+	delay: number,
 ) {
-  let timerHandle: number;
+	let timerHandle: number
 
-  function debouncedSignalSetter(value: any) {
-    clearTimeout(timerHandle);
-    timerHandle = setTimeout(() => signalSetter(value), delay);
-  }
+	function debouncedSignalSetter(value: any) {
+		clearTimeout(timerHandle)
+		timerHandle = setTimeout(() => signalSetter(value), delay)
+	}
 
-  onCleanup(() => clearInterval(timerHandle));
-  return debouncedSignalSetter;
+	onCleanup(() => clearInterval(timerHandle))
+	return debouncedSignalSetter
 }

@@ -1,7 +1,7 @@
-import { lazy } from 'solid-js';
-import type { RouteDefinition } from '@solidjs/router';
+import { lazy } from 'solid-js'
+import type { RouteDefinition } from '@solidjs/router'
 
-import HomePage from '~/pages/index';
+import HomePage from '~/pages/index'
 
 export const routes: RouteDefinition[] = [
 	{
@@ -14,11 +14,11 @@ export const routes: RouteDefinition[] = [
 	},
 	{
 		path: '/users/:handle',
-    component: lazy(() => import('~/pages/users/handle')),
-  },
-  {
-    path: '/users/:id/followers',
-    component: lazy(() => import('~/pages/users/followers')),
+		component: lazy(() => import('~/pages/users/handle')),
+	},
+	{
+		path: '/users/:id/followers',
+		component: lazy(() => import('~/pages/users/followers')),
 	},
 	{
 		path: '/users/edit',
@@ -60,7 +60,7 @@ export const routes: RouteDefinition[] = [
 	},
 	{
 		path: '/collaborations/:id',
-    component: lazy(() => import('~/pages/collaborations/id')),
+		component: lazy(() => import('~/pages/collaborations/id')),
 	},
 	{
 		path: '/collaborations/edit/:id?',
@@ -99,10 +99,6 @@ export const routes: RouteDefinition[] = [
 		component: lazy(() => import('~/pages/collaborations/collaborate')),
 	},
 	{
-    path: '/users/shuffle',
-    component: lazy(() => import('~/pages/users/shuffle')),
-  },
-  {
 		path: '**',
 		component: lazy(() => import('./pages/404')),
 	},

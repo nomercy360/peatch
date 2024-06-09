@@ -1,21 +1,21 @@
-import type { Collaboration } from "./Collaboration";
+import type { Collaboration } from './Collaboration'
 
- /**
+/**
  * @description OK
-*/
-export type PutApiCollaborations200 = Collaboration;
+ */
+export type PutApiCollaborations200 = Collaboration
 
- /**
+/**
  * @description Collaboration data
-*/
-export type PutApiCollaborationsMutationRequest = Collaboration;
+ */
+export type PutApiCollaborationsMutationRequest = Collaboration
 
- /**
+/**
  * @description OK
-*/
-export type PutApiCollaborationsMutationResponse = Collaboration;
+ */
+export type PutApiCollaborationsMutationResponse = Collaboration
 
- export type PutApiCollaborationsMutation = {
-    Response: PutApiCollaborationsMutationResponse;
-    Request: PutApiCollaborationsMutationRequest;
-};
+export type PutApiCollaborationsMutation = {
+	Response: PutApiCollaborationsMutationResponse
+	Request: PutApiCollaborationsMutationRequest
+}

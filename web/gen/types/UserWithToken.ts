@@ -1,6 +1,6 @@
-import { User } from './User';
+import { User } from "./User";
 
-export type UserWithToken = {
+ export type UserWithToken = {
     /**
      * @type string | undefined
     */

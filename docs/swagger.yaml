@@ -95,11 +95,11 @@ definitions:
         type: string
     required:
       - badge_ids
-    - country
-    - country_code
-    - description
-    - opportunity_id
-    - title
+      - country
+      - country_code
+      - description
+      - opportunity_id
+      - title
     type: object
   CreateCollaborationRequest:
     properties:

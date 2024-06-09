@@ -1,6 +1,6 @@
 export type CreateCollaborationRequest = {
-  /**
-   * @type string
-   */
-  message: string;
+    /**
+     * @type string
+    */
+    message: string;
 };

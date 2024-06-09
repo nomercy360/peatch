@@ -1,11 +1,4 @@
-import {
-	createResource,
-	createSignal,
-	For,
-	onCleanup,
-	Show,
-	Suspense,
-} from 'solid-js'
+import { createSignal, For, onCleanup, Show, Suspense } from 'solid-js'
 import { Collaboration } from '~/gen/types'
 import { CDN_URL, fetchCollaborations } from '~/lib/api'
 import useDebounce from '~/lib/useDebounce'

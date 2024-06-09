@@ -1,12 +1,26 @@
-import { createEffect, createSignal, For, Match, onCleanup, Suspense, Switch } from 'solid-js';
-import { useNavigate, useParams, useSearchParams } from '@solidjs/router';
-import { CDN_URL, fetchCollaboration, hideCollaboration, publishCollaboration, showCollaboration } from '~/lib/api';
-import { store } from '~/store';
-import ActionDonePopup from '~/components/ActionDonePopup';
-import { useMainButton } from '~/lib/useMainButton';
-import { usePopup } from '~/lib/usePopup';
-import { createMutation, createQuery } from '@tanstack/solid-query';
-import { queryClient } from '~/App';
+import {
+	createEffect,
+	createSignal,
+	For,
+	Match,
+	onCleanup,
+	Suspense,
+	Switch,
+} from 'solid-js'
+import { useNavigate, useParams, useSearchParams } from '@solidjs/router'
+import {
+	CDN_URL,
+	fetchCollaboration,
+	hideCollaboration,
+	publishCollaboration,
+	showCollaboration,
+} from '~/lib/api'
+import { store } from '~/store'
+import ActionDonePopup from '~/components/ActionDonePopup'
+import { useMainButton } from '~/lib/useMainButton'
+import { usePopup } from '~/lib/usePopup'
+import { createMutation, createQuery } from '@tanstack/solid-query'
+import { queryClient } from '~/App'
 
 export default function Collaboration() {
 	const mainButton = useMainButton()

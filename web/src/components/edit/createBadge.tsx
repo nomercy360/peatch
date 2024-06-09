@@ -1,6 +1,6 @@
-import { For, Show } from 'solid-js';
-import icons from '../../assets/icons.json';
-import { Badge } from '~/gen/types';
+import { For, Show } from 'solid-js'
+import icons from '../../assets/icons.json'
+import { Badge } from '~/gen/types'
 
 export default function CreateBadge(props: {
 	createBadge: Badge
@@ -14,7 +14,7 @@ export default function CreateBadge(props: {
 		'6D214F',
 		'F2C94C',
 		'F2994A',
-	];
+	]
 
 	return (
 		<>
@@ -65,5 +65,5 @@ export default function CreateBadge(props: {
 				</For>
 			</div>
 		</>
-	);
+	)
 }

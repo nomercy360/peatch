@@ -1,26 +1,28 @@
-import { setEditUser, store } from '~/store';
-import { RouteSectionProps, useNavigate } from '@solidjs/router';
+import { setEditUser, store } from '~/store'
+import { RouteSectionProps, useNavigate } from '@solidjs/router'
 
 export default function EditUser(props: RouteSectionProps) {
-  const navigate = useNavigate();
+	const navigate = useNavigate()
 
-  setEditUser({
-    first_name: store.user.first_name || '',
-    last_name: store.user.last_name || '',
-    title: store.user.title || '',
-    description: store.user.description || '',
-    avatar_url: store.user.avatar_url || '',
-    city: store.user.city || '',
-    country: store.user.country || '',
-    country_code: store.user.country_code || '',
-    badge_ids: store.user.badges?.map(b => b.id) || [],
-    opportunity_ids: store.user.opportunities?.map(o => o.id) || [],
-  });
+	setEditUser({
+		first_name: store.user.first_name || '',
+		last_name: store.user.last_name || '',
+		title: store.user.title || '',
+		description: store.user.description || '',
+		avatar_url: store.user.avatar_url || '',
+		city: store.user.city || '',
+		country: store.user.country || '',
+		country_code: store.user.country_code || '',
+		// @ts-ignore
+		badge_ids: store.user.badges?.map(b => b.id) || [],
+		// @ts-ignore
+		opportunity_ids: store.user.opportunities?.map(o => o.id) || [],
+	})
 
-  // if first name or last name or title is not set, redirect to the first step
-  if (!store.user.first_name || !store.user.last_name || !store.user.title) {
-    navigate('/users/edit');
-  }
+	// if first name or last name or title is not set, redirect to the first step
+	if (!store.user.first_name || !store.user.last_name || !store.user.title) {
+		navigate('/users/edit')
+	}
 
-  return <div>{props.children}</div>;
+	return <div>{props.children}</div>
 }

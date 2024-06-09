@@ -1,5 +1,13 @@
-import { createEffect, createSignal, For, Match, Show, Suspense, Switch } from 'solid-js';
-import { Badge } from '~/gen/types';
+import {
+	createEffect,
+	createSignal,
+	For,
+	Match,
+	Show,
+	Suspense,
+	Switch,
+} from 'solid-js'
+import { Badge } from '~/gen/types'
 
 export function SelectBadge(props: {
 	selected: number[]

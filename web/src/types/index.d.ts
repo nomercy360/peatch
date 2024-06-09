@@ -1,9 +1,9 @@
-import { Telegram } from './telegram';
+import { Telegram } from './telegram'
 
-export {};
+export {}
 
 declare global {
-  interface Window {
-    Telegram: Telegram;
-  }
+	interface Window {
+		Telegram: Telegram
+	}
 }

@@ -1,4 +1,4 @@
-import { createSignal, For, Show, Suspense } from 'solid-js'
+import { createEffect, createSignal, For, Show, Suspense } from 'solid-js'
 import { User } from '~/gen/types'
 import { fetchUsers } from '~/lib/api'
 import { Link } from '~/components/Link'
@@ -42,11 +42,19 @@ const UserCard = (props: { user: User }) => {
 
 	const imgUrl = `https://assets.peatch.io/${props.user.avatar_url}`
 
+	const [scroll, setScroll] = createSignal(0)
+
+	createEffect(() => {
+		const onScroll = () => setScroll(window.scrollY)
+		window.addEventListener('scroll', onScroll)
+		return () => window.removeEventListener('scroll', onScroll)
+	})
+
 	return (
 		<Link
 			class="flex flex-col items-start bg-secondary px-4 pb-5 pt-4 text-start"
 			href={`/users/${props.user.username}`}
-			state={{ from: '/users' }}
+			state={{ from: '/users', scroll: scroll() }}
 		>
 			<img
 				class="size-11 rounded-xl object-cover"

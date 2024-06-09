@@ -1,6 +1,6 @@
-import { CreateCollaborationRequest } from './CreateCollaborationRequest';
+import { CreateCollaborationRequest } from "./CreateCollaborationRequest";
 
-export type DeleteApiCollaborationsIdPathParams = {
+ export type DeleteApiCollaborationsIdPathParams = {
     /**
      * @description Collaboration ID
      * @type integer
@@ -13,15 +13,15 @@ export type DeleteApiCollaborationsIdPathParams = {
 */
 export type DeleteApiCollaborationsId204 = any;
 
-/**
+ /**
  * @description Collaboration data
- */
+*/
 export type DeleteApiCollaborationsIdMutationRequest = CreateCollaborationRequest;
 
  export type DeleteApiCollaborationsIdMutationResponse = any;
 
  export type DeleteApiCollaborationsIdMutation = {
     Response: DeleteApiCollaborationsIdMutationResponse;
-   Request: DeleteApiCollaborationsIdMutationRequest;
+    Request: DeleteApiCollaborationsIdMutationRequest;
     PathParams: DeleteApiCollaborationsIdPathParams;
 };
