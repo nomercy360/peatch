@@ -85,6 +85,10 @@ interface WebApp {
 	requestWriteAccess([callback]?: any): void
 
 	sendData(data: any): void
+
+	enableClosingConfirmation(): void
+
+	disableClosingConfirmation(): void
 }
 
 interface BackButton {

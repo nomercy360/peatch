@@ -1,6 +1,6 @@
 import { FormLayout } from '~/components/edit/layout'
 import { useMainButton } from '~/lib/useMainButton'
-import { createEffect, onCleanup } from 'solid-js'
+import { createEffect, onCleanup, onMount } from 'solid-js'
 import { editUser, setEditUser } from '~/store'
 import SelectLocation from '~/components/edit/selectLocation'
 import { useNavigate } from '@solidjs/router'
@@ -14,7 +14,10 @@ export default function SelectBadges() {
 		navigate('/users/edit/description', { state: { back: true } })
 	}
 
-	mainButton.onClick(navigateToDescription)
+	onMount(() => {
+		mainButton.onClick(navigateToDescription)
+		window.Telegram.WebApp.enableClosingConfirmation()
+	})
 
 	createEffect(() => {
 		if (editUser.country && editUser.country_code) {

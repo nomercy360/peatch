@@ -87,6 +87,7 @@ export default function SelectBadges() {
 		await updateUser(editUser)
 
 		mainButton.hideProgress()
+		window.Telegram.WebApp.disableClosingConfirmation()
 		navigate('/users/' + store.user.username + '?refetch=true')
 	}
 
