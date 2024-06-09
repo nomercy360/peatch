@@ -18,12 +18,12 @@ type UserWithToken struct {
 } // @Name UserWithToken
 
 func (s *service) TelegramAuth(query string) (*UserWithToken, error) {
-	expIn := 24 * time.Hour
-	botToken := s.config.BotToken
+	//expIn := 24 * time.Hour
+	//botToken := s.config.BotToken
 
-	if err := initdata.Validate(query, botToken, expIn); err != nil {
-		return nil, terrors.Unauthorized(err, "invalid data")
-	}
+	//if err := initdata.Validate(query, botToken, expIn); err != nil {
+	//	return nil, terrors.Unauthorized(err, "invalid data")
+	//}
 
 	data, err := initdata.Parse(query)
 
@@ -44,16 +44,14 @@ func (s *service) TelegramAuth(query string) (*UserWithToken, error) {
 		}
 
 		username := data.User.Username
-		if username == "" && firstName != nil {
-			username = urlify(*firstName)
-		} else if username == "" {
-			username = "user" + fmt.Sprintf("%d", data.User.ID)
+		if username == "" {
+			username = "user_" + fmt.Sprintf("%d", data.User.ID)
 		}
 
 		create := db.User{
 			FirstName: firstName,
 			LastName:  lastName,
-			Username:  data.User.Username,
+			Username:  username,
 			ChatID:    data.User.ID,
 		}
 
