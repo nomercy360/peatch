@@ -289,7 +289,7 @@ func (b *bot) handleUserAvatar(userID, tgUserID, chatID int64) {
 }
 
 func (b *bot) SetWebhook() error {
-	webhook := &telegram.SetWebhookParams{URL: b.config.ExternalURL + "/webhook"}
+	webhook := &telegram.SetWebhookParams{URL: b.config.ExternalURL + "/webhook", MaxConnections: 10}
 
 	if _, err := b.tg.SetWebhook(context.Background(), webhook); err != nil {
 		return err
