@@ -126,9 +126,9 @@ func (b *bot) handleMessage(update tgModels.Update, w http.ResponseWriter) {
 		return
 	}
 
-	lang := "en"
-	if update.Message.From.LanguageCode != "" {
-		lang = update.Message.From.LanguageCode
+	lang := "ru"
+	if update.Message.From.LanguageCode != "ru" {
+		lang = "en"
 	}
 
 	msgs := b.messages[lang]
@@ -177,7 +177,6 @@ func (b *bot) handleMessage(update tgModels.Update, w http.ResponseWriter) {
 
 		if _, err := b.tg.SendMessage(context.Background(), params); err != nil {
 			log.Printf("Failed to send message: %v", err)
-			http.Error(w, "Failed to send message", http.StatusInternalServerError)
 			return
 		}
 	}
@@ -199,10 +198,8 @@ func (b *bot) createUser(update tgModels.Update) *db.User {
 	// if username is empty, use first name
 	username := update.Message.Chat.Username
 
-	if username == "" && firstName != nil {
-		username = urlify(*firstName)
-	} else if username == "" {
-		username = "user" + fmt.Sprintf("%d", update.Message.Chat.ID)
+	if username == "" {
+		username = "user_" + fmt.Sprintf("%d", update.Message.Chat.ID)
 	}
 
 	user := db.User{
