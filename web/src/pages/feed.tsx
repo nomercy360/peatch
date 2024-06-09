@@ -62,6 +62,7 @@ export default function FeedPage() {
 			mainButton.enable('Post to Peatch').onClick(toCreateCollab)
 		}
 
+		window.Telegram.WebApp.disableClosingConfirmation()
 		// window.Telegram.WebApp.CloudStorage.removeItem('profilePopup')
 	})
 
