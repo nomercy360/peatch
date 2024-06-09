@@ -44,4 +44,4 @@ jobs:
         run: kubectl apply -f $GITHUB_WORKSPACE/deployment
 
       - name: Verify deployment
-        run: kubectl rollout status deployment/server
+        run: kubectl rollout status deployment/peatch
