@@ -118,11 +118,10 @@ func (b *bot) handleMessage(update tgModels.Update, w http.ResponseWriter) {
 
 		if _, err := b.tg.SendMessage(context.Background(), &msg); err != nil {
 			log.Printf("Failed to send message: %v", err)
-			http.Error(w, "Failed to send message", http.StatusInternalServerError)
+			w.WriteHeader(http.StatusOK)
 			return
 		}
 
-		w.WriteHeader(http.StatusOK)
 		return
 	}
 
@@ -158,7 +157,7 @@ func (b *bot) handleMessage(update tgModels.Update, w http.ResponseWriter) {
 
 		if _, err := b.tg.SendPhoto(context.Background(), params); err != nil {
 			log.Printf("Failed to send message: %v", err)
-			http.Error(w, "Failed to send message", http.StatusInternalServerError)
+			w.WriteHeader(http.StatusOK)
 			return
 		}
 
@@ -176,6 +175,7 @@ func (b *bot) handleMessage(update tgModels.Update, w http.ResponseWriter) {
 		params := &telegram.SendMessageParams{ChatID: update.Message.Chat.ID, Text: message, ReplyMarkup: &webApp, ParseMode: "Markdown"}
 
 		if _, err := b.tg.SendMessage(context.Background(), params); err != nil {
+			w.WriteHeader(http.StatusOK)
 			log.Printf("Failed to send message: %v", err)
 			return
 		}
