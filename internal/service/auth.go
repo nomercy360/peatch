@@ -63,7 +63,7 @@ func (s *service) TelegramAuth(query string) (*UserWithToken, error) {
 			lang = "en"
 		}
 
-		user.LanguageCode = &lang
+		create.LanguageCode = &lang
 
 		user, err = s.storage.CreateUser(create)
 		if err != nil {
