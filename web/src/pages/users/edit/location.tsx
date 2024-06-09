@@ -16,7 +16,6 @@ export default function SelectBadges() {
 
 	onMount(() => {
 		mainButton.onClick(navigateToDescription)
-		window.Telegram.WebApp.enableClosingConfirmation()
 	})
 
 	createEffect(() => {

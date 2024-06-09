@@ -1,7 +1,7 @@
 import { FormLayout } from '~/components/edit/layout'
 import { editUser, setEditUser } from '~/store'
 import { useMainButton } from '~/lib/useMainButton'
-import { createEffect, onCleanup } from 'solid-js'
+import { createEffect, onCleanup, onMount } from 'solid-js'
 import { useNavigate } from '@solidjs/router'
 
 export default function GeneralInfo() {
@@ -13,7 +13,10 @@ export default function GeneralInfo() {
 		navigate('/users/edit/badges', { state: { back: true } })
 	}
 
-	mainButton.onClick(navigateNext)
+	onMount(() => {
+		mainButton.onClick(navigateNext)
+		window.Telegram.WebApp.enableClosingConfirmation()
+	})
 
 	createEffect(() => {
 		if (editUser.first_name && editUser.last_name && editUser.title) {
