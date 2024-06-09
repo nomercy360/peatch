@@ -202,6 +202,12 @@ export default function UserProfilePage() {
 
 	const [opportunitiesExpanded, setOpportunitiesExpanded] = createSignal(false)
 
+	const showInfoPopup = () => {
+		window.Telegram.WebApp.showAlert(
+			'Your profile was hidden by our moderators. Try to fill it with more information.',
+		)
+	}
+
 	return (
 		<div>
 			<Suspense fallback={<Loader />}>
@@ -216,9 +222,14 @@ export default function UserProfilePage() {
 					<Match when={!query.isLoading}>
 						<div class="h-fit min-h-screen bg-secondary">
 							<Show when={isCurrentUserProfile && store.user.hidden_at}>
-								<span class="material-symbols-rounded absolute left-6 top-5 text-white">
-									visibility_off
-								</span>
+								<button
+									onClick={showInfoPopup}
+									class="absolute left-6 top-4 flex size-8 items-center justify-start"
+								>
+									<span class="material-symbols-rounded text-white">
+										visibility_off
+									</span>
+								</button>
 							</Show>
 							<Switch>
 								<Match when={isCurrentUserProfile}>
