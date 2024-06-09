@@ -104,11 +104,27 @@ func (s *service) UnfollowUser(userID, followerID int64) error {
 }
 
 func (s *service) PublishUser(userID int64) error {
-	return s.storage.PublishUser(userID)
+	err := s.storage.PublishUser(userID)
+
+	if errors.Is(err, db.ErrNotFound) {
+		return terrors.NotFound(err)
+	} else if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *service) HideUser(userID int64) error {
-	return s.storage.HideUser(userID)
+	err := s.storage.HideUser(userID)
+
+	if errors.Is(err, db.ErrNotFound) {
+		return terrors.NotFound(err)
+	} else if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 type CreateUserCollaboration struct {
@@ -126,7 +142,15 @@ func (s *service) CreateUserCollaboration(userID, requesterID int64, request Cre
 }
 
 func (s *service) ShowUser(userID int64) error {
-	return s.storage.ShowUser(userID)
+	err := s.storage.ShowUser(userID)
+
+	if errors.Is(err, db.ErrNotFound) {
+		return terrors.NotFound(err)
+	} else if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 type UserPreview struct {
