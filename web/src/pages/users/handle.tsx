@@ -46,6 +46,7 @@ export default function UserProfilePage() {
 	const query = createQuery(() => ({
 		queryKey: ['profiles', username],
 		queryFn: () => fetchProfile(username),
+		retry: 1,
 	}))
 
 	const followMutate = createMutation(() => ({
