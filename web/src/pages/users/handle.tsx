@@ -397,7 +397,7 @@ const ActionButton = (props: {
 	return (
 		<button
 			disabled={props.disabled}
-			class="absolute right-4 top-4 z-10 h-9 w-[90px] rounded-xl bg-black/80 px-2.5 text-sm font-semibold text-button"
+			class="absolute right-4 top-4 z-10 h-9 w-[90px] rounded-xl bg-black/80 px-2.5 text-sm font-semibold text-white"
 			onClick={() => props.onClick()}
 		>
 			{props.text}
