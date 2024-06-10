@@ -37,6 +37,7 @@ export default function FeedPage() {
 
 	const [profilePopup, setProfilePopup] = createSignal(false)
 	const [communityPopup, setCommunityPopup] = createSignal(false)
+	const [rewardsPopup, setRewardsPopup] = createSignal(true)
 
 	createEffect(() => {
 		const onScroll = () => setScroll(window.scrollY)
@@ -56,6 +57,10 @@ export default function FeedPage() {
 		window.Telegram.WebApp.CloudStorage.getItem(
 			'communityPopup',
 			updateCommunityPopup,
+		)
+		window.Telegram.WebApp.CloudStorage.getItem(
+			'rewardsPopup',
+			updateRewardsPopup,
 		)
 
 		if (store.user.published_at) {
@@ -82,6 +87,9 @@ export default function FeedPage() {
 			case 'communityPopup':
 				setCommunityPopup(false)
 				break
+			case 'rewardsPopup':
+				setRewardsPopup(false)
+				break
 		}
 		window.Telegram.WebApp.CloudStorage.setItem(name, 'closed')
 	}
@@ -92,6 +100,10 @@ export default function FeedPage() {
 
 	const updateCommunityPopup = (err: unknown, value: unknown) => {
 		setCommunityPopup(value !== 'closed')
+	}
+
+	const updateRewardsPopup = (err: unknown, value: unknown) => {
+		setRewardsPopup(value !== 'closed')
 	}
 
 	onCleanup(() => {
@@ -106,6 +118,9 @@ export default function FeedPage() {
 			</Show>
 			<Show when={communityPopup()}>
 				<OpenCommunityPopup onClose={() => closePopup('communityPopup')} />
+			</Show>
+			<Show when={!communityPopup() && rewardsPopup()}>
+				<RewardsPopup onClose={() => closePopup('rewardsPopup')} />
 			</Show>
 			<div class="fixed top-0 z-30 flex w-full flex-row items-center justify-between space-x-4 border-b bg-secondary p-4">
 				<div class="relative flex h-10 w-full flex-row items-center justify-center rounded-lg bg-main">
@@ -240,6 +255,36 @@ const OpenCommunityPopup = (props: { onClose: () => void }) => {
 				>
 					Open Peatch Community
 				</button>
+			</div>
+		</div>
+	)
+}
+
+const RewardsPopup = (props: { onClose: () => void }) => {
+	return (
+		<div class="w-full p-4">
+			<div class="relative rounded-2xl bg-main p-4 text-center">
+				<span class="material-symbols-rounded text-[48px] text-pink">
+					emoji_events
+				</span>
+				<button
+					class="absolute right-4 top-4 flex size-6 items-center justify-center rounded-full bg-neutral-200"
+					onClick={props.onClose}
+				>
+					<span class="material-symbols-rounded text-[24px] text-button">
+						close
+					</span>
+				</button>
+				<p class="text-3xl font-extrabold text-pink">Peatch Rewards</p>
+				<p class="mt-2 text-xl font-normal text-main">
+					Learn more about our internal currency and how to earn it
+				</p>
+				<Link
+					href={'/rewards'}
+					class="mt-4 flex h-12 w-full items-center justify-center rounded-xl bg-secondary text-main"
+				>
+					Show me
+				</Link>
 			</div>
 		</div>
 	)
