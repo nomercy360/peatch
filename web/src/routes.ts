@@ -1,7 +1,6 @@
 import { lazy } from 'solid-js'
 import type { RouteDefinition } from '@solidjs/router'
 
-import HomePage from '~/pages/index'
 import FeedPage from '~/pages/feed'
 
 export const routes: RouteDefinition[] = [
@@ -90,6 +89,14 @@ export const routes: RouteDefinition[] = [
 	{
 		path: 'collaborations/:id/collaborate',
 		component: lazy(() => import('~/pages/collaborations/collaborate')),
+	},
+	{
+		path: '/rewards',
+		component: lazy(() => import('~/pages/rewards')),
+	},
+	{
+		path: '/survey',
+		component: lazy(() => import('~/pages/survey')),
 	},
 	{
 		path: '**',

@@ -47,9 +47,9 @@ type service interface {
 	SearchLocations(query string) ([]db.Location, error)
 	GetUserFollowers(uid, targetID int64) ([]svc.UserProfileShort, error)
 	GetUserFollowing(uid, targetID int64) ([]svc.UserProfileShort, error)
-	ListMatchingProfiles(userID int64, skip int) ([]db.UserProfile, error)
-	SaveUserInteraction(userID int64, targetID int64, interaction svc.UserInteraction) error
 	GetFeed(uid int64, query svc.FeedQuery) ([]svc.FeedItem, error)
+	ClaimDailyReward(userID int64) error
+	AcceptFeedbackSurvey(userID int64, survey svc.FeedbackSurveyRequest) error
 }
 
 type CustomValidator struct {
@@ -112,9 +112,9 @@ func (h *handler) RegisterRoutes(e *echo.Echo) {
 	a.GET("/locations", h.handleSearchLocations)
 	a.GET("/users/:id/followers", h.handleGetUserFollowers)
 	a.GET("/users/:id/following", h.handleGetUserFollowing)
-	a.POST("/users/:id/interactions", h.handleSaveUserInteraction)
-	a.GET("/users/matching", h.handleListMatchingProfiles)
 	a.GET("/feed", h.handleGetFeed)
+	a.POST("/daily-reward", h.handleClaimDailyReward)
+	a.POST("/feedback-survey", h.handleCreateFeedbackSurvey)
 }
 
 func (h *handler) handleIndex(c echo.Context) error {

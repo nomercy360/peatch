@@ -524,6 +524,40 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/users/matching": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "List matching profiles",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/UserProfileShort"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/users/preview": {
             "get": {
                 "consumes": [
@@ -1148,6 +1182,9 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/Opportunity"
                     }
+                },
+                "peatch_points": {
+                    "type": "integer"
                 },
                 "published_at": {
                     "type": "string"

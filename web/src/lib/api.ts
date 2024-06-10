@@ -265,18 +265,14 @@ export const fetchFollowers = async (id: number) => {
 	return await apiFetch({ endpoint: `/users/${id}/followers` })
 }
 
-export const fetchMatchingProfiles = async (skip?: number) => {
-	return await apiFetch({
-		showProgress: false,
-		endpoint: '/users/matching' + (skip ? `?skip=${skip}` : ''),
-	})
+export const claimDailyReward = async () => {
+	return await apiFetch({ endpoint: '/daily-reward', method: 'POST' })
 }
 
-export const saveUserInteractions = async (userID: number, type: string) => {
+export const submitFeedbackSurvey = async (message: string) => {
 	return await apiFetch({
-		endpoint: '/users/' + userID + '/interactions',
+		endpoint: '/feedback-survey',
 		method: 'POST',
-		body: { interaction_type: type },
-		showProgress: false,
+		body: { message },
 	})
 }

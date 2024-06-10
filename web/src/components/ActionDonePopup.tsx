@@ -1,8 +1,7 @@
-import { createResource, For } from 'solid-js'
-import { A } from '@solidjs/router'
+import { For } from 'solid-js'
 import { fetchPreview } from '~/lib/api'
-import { queryClient } from '~/App'
 import { createQuery } from '@tanstack/solid-query'
+import { Link } from '~/components/Link'
 
 export default function ActionDonePopup(props: {
 	action: string
@@ -16,14 +15,9 @@ export default function ActionDonePopup(props: {
 
 	return (
 		<div class="flex h-screen w-full flex-col items-center justify-between bg-secondary p-5 text-center">
-			<img
-				src="/confetti.png"
-				alt="Confetti"
-				class="absolute inset-x-0 top-0 mx-auto w-full"
-			/>
 			<div class="flex flex-col items-center justify-start">
 				<span class="material-symbols-rounded text-peatch-green text-[60px] text-green">
-					check_circle
+					schedule
 				</span>
 				<p class="text-3xl text-main">{props.action}</p>
 				<p class="mt-2 text-2xl text-secondary">{props.description}</p>
@@ -46,12 +40,12 @@ export default function ActionDonePopup(props: {
 					</For>
 				</div>
 				<p class="mt-4 max-w-xs text-lg text-secondary">{props.callToAction}</p>
-				<A
+				<Link
 					class="mt-2 flex h-12 w-full items-center justify-center text-sm font-medium text-link"
-					href="/users"
+					href="/"
 				>
 					Show them
-				</A>
+				</Link>
 			</div>
 		</div>
 	)

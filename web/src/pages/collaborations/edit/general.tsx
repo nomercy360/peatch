@@ -40,25 +40,15 @@ export default function GeneralInfo() {
 				<input
 					maxLength={70}
 					class="h-10 w-full rounded-lg bg-main px-2.5 text-main placeholder:text-hint"
-					placeholder="Name it!"
+					placeholder="Looking for a product designer"
 					value={editCollaboration.title}
 					onInput={e => setEditCollaboration('title', e.currentTarget.value)}
 				/>
-				<button
-					class="flex h-10 w-full items-center justify-between"
-					onClick={() =>
-						setEditCollaboration('is_payable', !editCollaboration.is_payable)
-					}
-				>
-					<p class="text-sm text-main">Is it this opportunity payable?</p>
-					<span
-						class="size-6 rounded-lg border"
-						classList={{
-							'bg-button': !editCollaboration.is_payable,
-							'bg-secondary': editCollaboration.is_payable,
-						}}
-					/>
-				</button>
+				<CheckBoxInput
+					text="Is it this opportunity payable?"
+					checked={editCollaboration.is_payable || false}
+					setChecked={v => setEditCollaboration('is_payable', v)}
+				/>
 				<TextArea
 					value={editCollaboration.description}
 					setValue={d => setEditCollaboration('description', d)}
@@ -66,5 +56,37 @@ export default function GeneralInfo() {
 				/>
 			</div>
 		</FormLayout>
+	)
+}
+
+const CheckBoxInput = (props: {
+	text: string
+	checked: boolean
+	setChecked: (value: boolean) => void
+}) => {
+	return (
+		<label class="group flex h-10 w-full cursor-pointer items-center justify-between">
+			<p class="text-secondary">{props.text}</p>
+			<input
+				type="checkbox"
+				class="sr-only"
+				checked={props.checked}
+				onChange={() => props.setChecked(!props.checked)}
+			/>
+			<span class="flex size-7 items-center justify-center rounded-lg border">
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="3"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					class="size-5 scale-0 text-accent opacity-0 group-has-[:checked]:scale-100 group-has-[:checked]:opacity-100"
+				>
+					<path d="M5 12l5 5l10 -10" />
+				</svg>
+			</span>
+		</label>
 	)
 }

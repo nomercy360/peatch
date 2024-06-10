@@ -94,12 +94,12 @@ definitions:
         maxLength: 255
         type: string
     required:
-      - badge_ids
-      - country
-      - country_code
-      - description
-      - opportunity_id
-      - title
+    - badge_ids
+    - country
+    - country_code
+    - description
+    - opportunity_id
+    - title
     type: object
   CreateCollaborationRequest:
     properties:
@@ -107,7 +107,7 @@ definitions:
         maxLength: 1000
         type: string
     required:
-      - message
+    - message
     type: object
   CreateUserCollaboration:
     properties:
@@ -115,7 +115,7 @@ definitions:
         maxLength: 1000
         type: string
     required:
-      - message
+    - message
     type: object
   Opportunity:
     properties:
@@ -215,6 +215,8 @@ definitions:
         items:
           $ref: '#/definitions/Opportunity'
         type: array
+      peatch_points:
+        type: integer
       published_at:
         type: string
       requests_count:
@@ -424,38 +426,38 @@ paths:
   /api/collaborations/{id}:
     delete:
       consumes:
-        - application/json
+      - application/json
       parameters:
-        - description: Collaboration ID
-          in: path
-          name: id
-          required: true
-          type: integer
-        - description: Collaboration data
-          in: body
-          name: collaboration
-          required: true
-          schema:
-            $ref: '#/definitions/CreateCollaborationRequest'
+      - description: Collaboration ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Collaboration data
+        in: body
+        name: collaboration
+        required: true
+        schema:
+          $ref: '#/definitions/CreateCollaborationRequest'
       produces:
-        - application/json
+      - application/json
       responses:
         "204":
           description: No Content
       summary: Delete collaboration
       tags:
-        - collaborations
+      - collaborations
     get:
       consumes:
-        - application/json
+      - application/json
       parameters:
-        - description: Collaboration ID
-          in: path
-          name: id
-          required: true
-          type: integer
+      - description: Collaboration ID
+        in: path
+        name: id
+        required: true
+        type: integer
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
@@ -463,7 +465,7 @@ paths:
             $ref: '#/definitions/Collaboration'
       summary: Get collaboration
       tags:
-        - collaborations
+      - collaborations
     put:
       consumes:
       - application/json
@@ -654,15 +656,15 @@ paths:
   /api/users/{id}/collaborations/requests:
     get:
       consumes:
-        - application/json
+      - application/json
       parameters:
-        - description: User ID
-          in: path
-          name: id
-          required: true
-          type: integer
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
@@ -670,19 +672,19 @@ paths:
             $ref: '#/definitions/CollaborationRequest'
       summary: Find user collaboration request
       tags:
-        - collaborations
+      - collaborations
   /api/users/{id}/followers:
     get:
       consumes:
-        - application/json
+      - application/json
       parameters:
-        - description: User ID
-          in: path
-          name: id
-          required: true
-          type: integer
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
@@ -692,19 +694,19 @@ paths:
             type: array
       summary: Get user followers
       tags:
-        - users
+      - users
   /api/users/{id}/following:
     get:
       consumes:
-        - application/json
+      - application/json
       parameters:
-        - description: User ID
-          in: path
-          name: id
-          required: true
-          type: integer
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
@@ -714,7 +716,7 @@ paths:
             type: array
       summary: Get user following
       tags:
-        - users
+      - users
   /api/users/{user_id}/collaborations:
     post:
       consumes:
@@ -776,13 +778,35 @@ paths:
           description: No Content
       summary: Show user
       tags:
-        - users
+      - users
+  /api/users/matching:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/UserProfileShort'
+            type: array
+      summary: List matching profiles
+      tags:
+      - users
   /api/users/preview:
     get:
       consumes:
-        - application/json
+      - application/json
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK

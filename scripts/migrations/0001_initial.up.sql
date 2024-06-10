@@ -8,7 +8,7 @@ CREATE TABLE users
     created_at               timestamptz   NOT NULL DEFAULT NOW(),
     updated_at               timestamptz   NOT NULL DEFAULT NOW(),
     published_at             timestamptz,
-    hidden_at                timestamptz   DEFAULT NOW(),
+    hidden_at                timestamptz            DEFAULT NOW(),
     notifications_enabled_at timestamptz,
     avatar_url               VARCHAR(512),
     title                    VARCHAR(255),
@@ -18,10 +18,32 @@ CREATE TABLE users
     city                     VARCHAR(255),
     country_code             VARCHAR(2),
     followers_count          INTEGER       NOT NULL DEFAULT 0,
-    following_count INTEGER NOT NULL DEFAULT 0,
+    following_count          INTEGER       NOT NULL DEFAULT 0,
     requests_count           INTEGER       NOT NULL DEFAULT 0,
-    review_status            VARCHAR(255)  NOT NULL DEFAULT 'pending'
+    review_status            VARCHAR(255)  NOT NULL DEFAULT 'pending',
+    peatch_points            INTEGER       NOT NULL DEFAULT 0,
+    referrer_id              INTEGER REFERENCES users (id),
+    last_check_in            timestamptz
 );
+
+CREATE OR REPLACE FUNCTION update_referrer_points()
+    RETURNS TRIGGER AS
+$$
+BEGIN
+    IF NEW.referrer_id IS NOT NULL THEN
+        UPDATE users
+        SET peatch_points = peatch_points + 100
+        WHERE id = NEW.referrer_id;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_referrer_points_trigger
+    AFTER INSERT
+    ON users
+    FOR EACH ROW
+EXECUTE FUNCTION update_referrer_points();
 
 CREATE INDEX users_chat_id_index ON users (chat_id);
 CREATE UNIQUE INDEX users_username_index ON users (username);
@@ -530,3 +552,16 @@ create table locations
     city         varchar(100) not null,
     population   bigint       not null default 0
 );
+
+--  alter table public.users
+--     add referrer_id bigint;
+--
+-- alter table public.users
+--     add last_check_in timestamptz;
+--
+-- alter table public.users
+--     add peatch_points integer default 0 not null;
+--
+-- alter table public.users
+--     add constraint users_referrer_id_fk
+--         foreign key (referrer_id) references public.users;

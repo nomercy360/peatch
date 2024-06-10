@@ -5,7 +5,6 @@ import {
 	Match,
 	onCleanup,
 	Show,
-	Suspense,
 	Switch,
 } from 'solid-js'
 import {
@@ -18,9 +17,7 @@ import {
 	CDN_URL,
 	fetchProfile,
 	followUser,
-	hideProfile,
 	publishProfile,
-	showProfile,
 	unfollowUser,
 } from '~/lib/api'
 import { setUser, store } from '~/store'
@@ -31,6 +28,7 @@ import { createMutation, createQuery } from '@tanstack/solid-query'
 import { queryClient } from '~/App'
 import { Link } from '~/components/Link'
 import { UserProfile } from '~/gen/types'
+import { PeatchIcon } from '~/components/peatch-icon'
 
 export default function UserProfilePage() {
 	const mainButton = useMainButton()
@@ -129,22 +127,6 @@ export default function UserProfilePage() {
 		setPublished(true)
 	}
 
-	const hide = async () => {
-		setUser({
-			...store.user,
-			hidden_at: new Date().toISOString(),
-		})
-		await hideProfile()
-	}
-
-	const show = async () => {
-		setUser({
-			...store.user,
-			hidden_at: undefined,
-		})
-		await showProfile()
-	}
-
 	const follow = async () => {
 		if (!query.data) return
 		followMutate.mutate(query.data.id)
@@ -210,7 +192,7 @@ export default function UserProfilePage() {
 
 	const showInfoPopup = () => {
 		window.Telegram.WebApp.showAlert(
-			'Your profile was hidden by our moderators. Try to fill it with more information.',
+			'Your profile was hidden by our moderators. Try to make it more genuine.',
 		)
 	}
 
@@ -227,8 +209,8 @@ export default function UserProfilePage() {
 					<Switch>
 						<Match when={published() && isCurrentUserProfile}>
 							<ActionDonePopup
-								action="Profile published"
-								description="Now you can find people, create and join collaborations. Have fun!"
+								action="Profile is under review"
+								description="We will notify you once we finish moderation process"
 								callToAction="There are 12 people you might be interested to collaborate with"
 							/>
 						</Match>
@@ -246,9 +228,14 @@ export default function UserProfilePage() {
 								</Show>
 								<Switch>
 									<Match when={isCurrentUserProfile}>
-										<div class="absolute right-4 top-4 z-10 flex h-8 items-center justify-center rounded-lg bg-white px-4 text-sm font-semibold text-[#FF8C42]">
-											42 Peatches
-										</div>
+										<Link
+											class="absolute right-4 top-4 z-10 flex h-8 items-center justify-center gap-2 rounded-lg bg-white px-4 text-sm font-semibold text-[#FF8C42]"
+											href="/rewards"
+											state={{ back: true }}
+										>
+											<PeatchIcon width={16} height={16} />
+											{store.user.peatch_points}
+										</Link>
 									</Match>
 									<Match
 										when={!isCurrentUserProfile && !query.data?.is_following}

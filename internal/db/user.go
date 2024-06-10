@@ -1,6 +1,7 @@
 package db
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/lib/pq"
@@ -70,6 +71,9 @@ type User struct {
 	Badges                 BadgeSlice       `json:"badges" db:"badges"`
 	Opportunities          OpportunitySlice `json:"opportunities" db:"opportunities"`
 	ReviewStatus           string           `json:"-" db:"review_status"`
+	ReferrerID             *int64           `json:"-" db:"referrer_id"`
+	LastCheckIn            *time.Time       `json:"-" db:"last_check_in"`
+	PeatchPoints           int              `json:"peatch_points" db:"peatch_points"`
 } // @Name User
 
 type UserProfile struct {
@@ -215,9 +219,9 @@ func (s *storage) GetUserByChatID(chatID int64) (*User, error) {
 
 func (s *storage) CreateUser(user User) (*User, error) {
 	query := `
-		INSERT INTO users (first_name, last_name, chat_id, username, avatar_url, title, description, language_code, country, city, country_code, notifications_enabled_at)
-		VALUES (:first_name, :last_name, :chat_id, :username, :avatar_url, :title, :description, :language_code, :country, :city, :country_code, :notifications_enabled_at)
-		RETURNING id, first_name, last_name, chat_id, username, created_at, updated_at, avatar_url, title, description, language_code, country, city, country_code, followers_count, requests_count, notifications_enabled_at;
+		INSERT INTO users (first_name, last_name, chat_id, username, avatar_url, title, description, language_code, country, city, country_code, notifications_enabled_at, referrer_id)
+		VALUES (:first_name, :last_name, :chat_id, :username, :avatar_url, :title, :description, :language_code, :country, :city, :country_code, :notifications_enabled_at, :referrer_id)
+		RETURNING id, first_name, last_name, chat_id, username, created_at, updated_at, avatar_url, title, description, language_code, country, city, country_code, followers_count, requests_count, notifications_enabled_at, hidden_at, published_at, referrer_id;
 	`
 
 	rows, err := s.pg.NamedQuery(query, user)
@@ -753,59 +757,6 @@ func (s *storage) GetUserFollowers(uid, targetID int64) ([]User, error) {
 	return users, nil
 }
 
-func (s *storage) SaveUserInteraction(userID, targetID int64, interaction string) error {
-	query := `
-		INSERT INTO user_interactions (user_id,target_user_id, interaction_type)
-		VALUES ($1, $2, $3)
-	`
-
-	if _, err := s.pg.Exec(query, userID, targetID, interaction); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (s *storage) ListMatchingProfiles(userID int64, skip int) ([]User, error) {
-	// should select users where empty interaction, and there is match at list one badge or opportunity
-	query := `
-		SELECT u.id,
-			   u.username,
-			   u.first_name,
-			   u.last_name,
-			   u.avatar_url,
-			   u.title,
-			   u.description,
-			   u.created_at,
-			   u.country,
-			   u.city,
-			   u.country_code,
-			   json_agg(distinct to_jsonb(b)) filter (where b.id is not null) as badges,
-			   json_agg(distinct to_jsonb(o)) filter (where o.id is not null) as opportunities
-		FROM users u
-				 JOIN user_opportunities uo ON u.id = uo.user_id
-				 JOIN opportunities o ON uo.opportunity_id = o.id
-				 JOIN user_badges ub ON u.id = ub.user_id
-				 JOIN badges b ON ub.badge_id = b.id
-		WHERE u.id != $1
-		  AND u.hidden_at IS NULL
-		  AND u.published_at IS NOT NULL
-		  AND NOT EXISTS (SELECT 1 FROM user_interactions ui WHERE ui.user_id = $1 AND ui.target_user_id = u.id)
-		  AND (o.id IN (SELECT opportunity_id FROM user_opportunities WHERE user_id = $1) OR b.id IN (SELECT badge_id FROM user_badges WHERE user_id = $1))
-		GROUP BY u.id LIMIT 5 OFFSET $2
-	`
-
-	users := make([]User, 0)
-
-	err := s.pg.Select(&users, query, userID, skip)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return users, nil
-}
-
 func (s *storage) ListProfilesForModeration() ([]User, error) {
 	users := make([]User, 0)
 
@@ -871,4 +822,30 @@ func (s *storage) UpdateUserReviewStatus(userID int64, status string) error {
 	}
 
 	return nil
+}
+
+func (s *storage) UpdateLastCheckIn(userID int64) (bool, error) {
+	query := `
+    WITH check_reward AS (
+        SELECT id, last_check_in
+        FROM users
+        WHERE id = $1 AND (last_check_in < NOW() - INTERVAL '1 day' OR last_check_in IS NULL)
+        FOR UPDATE
+    )
+    UPDATE users
+    SET last_check_in = NOW(), peatch_points = peatch_points + 10
+    WHERE id = (SELECT id FROM check_reward)
+    RETURNING id, last_check_in;
+    `
+
+	var lastCheckIn sql.NullTime
+
+	err := s.pg.QueryRow(query, userID).Scan(&userID, &lastCheckIn)
+	if IsNoRowsError(err) {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }

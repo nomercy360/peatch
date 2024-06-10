@@ -2,8 +2,12 @@ package service
 
 import (
 	"errors"
+	"fmt"
+	telegram "github.com/go-telegram/bot"
 	"github.com/peatch-io/peatch/internal/db"
+	"github.com/peatch-io/peatch/internal/notification"
 	"github.com/peatch-io/peatch/internal/terrors"
+	"log"
 )
 
 type UpdateUserRequest struct {
@@ -245,58 +249,33 @@ func (s *service) GetUserFollowing(uid, targetID int64) ([]UserProfileShort, err
 	return following, nil
 }
 
-type UserInteraction struct {
-	InteractionType string `json:"interaction_type" validate:"required,oneof=skip match"`
-}
+func (s *service) ClaimDailyReward(userID int64) error {
+	ok, err := s.storage.UpdateLastCheckIn(userID)
 
-func (s *service) SaveUserInteraction(userID int64, targetID int64, interaction UserInteraction) error {
-	return s.storage.SaveUserInteraction(userID, targetID, interaction.InteractionType)
-}
-
-func (s *service) ListMatchingProfiles(userID int64, skip int) ([]db.UserProfile, error) {
-	res, err := s.storage.ListMatchingProfiles(userID, skip)
 	if err != nil {
-		return nil, err
+		return terrors.InternalServerError(err)
 	}
 
-	profiles := make([]db.UserProfile, 0, len(res))
-
-	user, err := s.storage.GetUserProfile(db.GetUsersParams{UserID: userID})
-	if err != nil {
-		return nil, err
+	if !ok {
+		return terrors.BadRequest(errors.New("already claimed"))
 	}
 
-	for _, profile := range res {
-		matchingProfile := profile
-		matchingProfile.Badges = filterMatchingBadges(user.Badges, profile.Badges)
-		matchingProfile.Opportunities = filterMatchingOpportunities(user.Opportunities, profile.Opportunities)
-
-		profiles = append(profiles, matchingProfile.ToUserProfile())
-	}
-
-	return profiles, nil
+	return nil
 }
 
-func filterMatchingBadges(userBadges, profileBadges []db.Badge) []db.Badge {
-	matchedBadges := make([]db.Badge, 0)
-	for _, userBadge := range userBadges {
-		for _, profileBadge := range profileBadges {
-			if userBadge.ID == profileBadge.ID {
-				matchedBadges = append(matchedBadges, profileBadge)
-			}
-		}
-	}
-	return matchedBadges
+type FeedbackSurveyRequest struct {
+	Message string `json:"message" validate:"max=1000,required"`
 }
 
-func filterMatchingOpportunities(userOpportunities, profileOpportunities []db.Opportunity) []db.Opportunity {
-	matchedOpportunities := make([]db.Opportunity, 0)
-	for _, userOpportunity := range userOpportunities {
-		for _, profileOpportunity := range profileOpportunities {
-			if userOpportunity.ID == profileOpportunity.ID {
-				matchedOpportunities = append(matchedOpportunities, profileOpportunity)
-			}
-		}
+func (s *service) AcceptFeedbackSurvey(userID int64, survey FeedbackSurveyRequest) error {
+	// send message to telegram
+	if err := s.notifier.SendTextNotification(notification.SendNotificationParams{
+		ChatID:  927635965,
+		Message: telegram.EscapeMarkdown(fmt.Sprintf("Feedback from user %d: %s", userID, survey.Message)),
+	}); err != nil {
+		log.Printf("Cannot send feedback to telegram: %v", err)
+		return nil
 	}
-	return matchedOpportunities
+
+	return nil
 }

@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"github.com/caarlos0/env/v11"
+	telegram "github.com/go-telegram/bot"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	_ "github.com/peatch-io/peatch/docs"
 	"github.com/peatch-io/peatch/internal/db"
 	"github.com/peatch-io/peatch/internal/handler"
+	"github.com/peatch-io/peatch/internal/notification"
 	storage "github.com/peatch-io/peatch/internal/s3"
 	"github.com/peatch-io/peatch/internal/service"
 	"github.com/peatch-io/peatch/internal/terrors"
@@ -135,7 +137,15 @@ func main() {
 		log.Fatalf("Failed to initialize AWS S3 client: %v\n", err)
 	}
 
-	svc := service.New(pg, s3Client, service.Config{BotToken: cfg.BotToken})
+	bot, err := telegram.New(cfg.BotToken)
+
+	if err != nil {
+		log.Fatalf("Failed to initialize bot: %v", err)
+	}
+
+	notifier := notification.NewTelegramNotifier(bot)
+
+	svc := service.New(pg, s3Client, service.Config{BotToken: cfg.BotToken}, notifier)
 
 	h := handler.New(svc)
 

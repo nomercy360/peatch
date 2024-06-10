@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/peatch-io/peatch/internal/db"
+	"github.com/peatch-io/peatch/internal/notification"
 	"github.com/peatch-io/peatch/internal/terrors"
 	"time"
 )
@@ -38,8 +39,7 @@ type storage interface {
 	SearchLocations(query string) ([]db.Location, error)
 	GetUserFollowers(uid int64, target int64) ([]db.User, error)
 	GetUserFollowing(uid int64, target int64) ([]db.User, error)
-	SaveUserInteraction(userID int64, targetID int64, interaction string) error
-	ListMatchingProfiles(userID int64, skip int) ([]db.User, error)
+	UpdateLastCheckIn(userID int64) (bool, error)
 }
 
 type s3Client interface {
@@ -50,14 +50,19 @@ type Config struct {
 	BotToken string
 }
 
-func New(s storage, s3Client s3Client, config Config) *service {
-	return &service{storage: s, s3Client: s3Client, config: config}
+type notifier interface {
+	SendTextNotification(params notification.SendNotificationParams) error
+}
+
+func New(s storage, s3Client s3Client, config Config, notifier notifier) *service {
+	return &service{storage: s, s3Client: s3Client, config: config, notifier: notifier}
 }
 
 type service struct {
 	storage  storage
 	config   Config
 	s3Client s3Client
+	notifier notifier
 }
 
 type PresignedURL struct {

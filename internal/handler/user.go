@@ -315,30 +315,17 @@ func (h *handler) handleGetUserFollowers(c echo.Context) error {
 	return c.JSON(http.StatusOK, users)
 }
 
-// handleSaveUserInteraction godoc
-// @Summary Save user interaction
+// handleClaimDailyReward godoc
+// @Summary Claim daily reward
 // @Tags users
 // @Accept  json
 // @Produce  json
-// @Param id path int true "User ID"
-// @Param interaction body UserInteraction true "Interaction data"
 // @Success 204
-// @Router /api/users/{id}/interactions [post]
-func (h *handler) handleSaveUserInteraction(c echo.Context) error {
+// @Router /api/daily-reward [post]
+func (h *handler) handleClaimDailyReward(c echo.Context) error {
 	uid := getUserID(c)
-	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 
-	var interaction svc.UserInteraction
-	if err := c.Bind(&interaction); err != nil {
-		return err
-	}
-
-	if err := c.Validate(interaction); err != nil {
-		return err
-	}
-
-	err := h.svc.SaveUserInteraction(uid, id, interaction)
-
+	err := h.svc.ClaimDailyReward(uid)
 	if err != nil {
 		return err
 	}
@@ -346,23 +333,30 @@ func (h *handler) handleSaveUserInteraction(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-// handleListMatchingProfiles godoc
-// @Summary List matching profiles
+// handleCreateFeedbackSurvey godoc
+// @Summary Create feedback survey
 // @Tags users
 // @Accept  json
 // @Produce  json
-// @Param id path int true "User ID"
-// @Success 200 {array} UserProfileShort
-// @Router /api/users/matching [get]
-func (h *handler) handleListMatchingProfiles(c echo.Context) error {
+// @Param survey body FeedbackSurveyRequest true "Survey data"
+// @Success 204
+// @Router /api/feedback-survey [post]
+func (h *handler) handleCreateFeedbackSurvey(c echo.Context) error {
 	uid := getUserID(c)
 
-	skip, _ := strconv.Atoi(c.QueryParam("skip"))
+	var survey svc.FeedbackSurveyRequest
+	if err := c.Bind(&survey); err != nil {
+		return err
+	}
 
-	users, err := h.svc.ListMatchingProfiles(uid, skip)
+	if err := c.Validate(survey); err != nil {
+		return err
+	}
+
+	err := h.svc.AcceptFeedbackSurvey(uid, survey)
 	if err != nil {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, users)
+	return c.NoContent(http.StatusNoContent)
 }

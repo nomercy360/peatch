@@ -12,6 +12,7 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -28,6 +29,7 @@ type storage interface {
 	CreateUser(user db.User) (*db.User, error)
 	UpdateUserAvatarURL(chatID int64, avatarURL string) error
 	DeleteUserByID(id int64) error
+	GetUserProfile(params db.GetUsersParams) (*db.User, error)
 }
 
 type s3Client interface {
@@ -185,6 +187,16 @@ func (b *bot) handleMessage(update tgModels.Update, w http.ResponseWriter) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func extractReferrerID(arg string) int64 {
+	idStr := strings.TrimPrefix(arg, "friend")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		log.Printf("Failed to parse referrer ID: %v", err)
+		return 0
+	}
+	return id
+}
+
 func (b *bot) createUser(update tgModels.Update) *db.User {
 	// Extract user details from update
 	var firstName, lastName *string
@@ -217,6 +229,21 @@ func (b *bot) createUser(update tgModels.Update) *db.User {
 	}
 
 	user.LanguageCode = &lang
+
+	if strings.HasPrefix(update.Message.Text, "/start") {
+		// /start friend123 or can be just /start
+		args := strings.Fields(update.Message.Text)
+		if len(args) > 1 && strings.HasPrefix(args[1], "friend") {
+			id := extractReferrerID(args[1])
+			if id > 0 {
+				if _, err := b.storage.GetUserProfile(db.GetUsersParams{UserID: id, ViewerID: id}); err != nil {
+					log.Printf("Failed to get referrer: %v", err)
+				} else {
+					user.ReferrerID = &id
+				}
+			}
+		}
+	}
 
 	newUser, err := b.storage.CreateUser(user)
 	if err != nil {

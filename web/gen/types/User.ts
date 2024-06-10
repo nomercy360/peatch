@@ -75,6 +75,10 @@ import type { Opportunity } from "./Opportunity";
     */
     opportunities?: Opportunity[];
     /**
+     * @type integer | undefined
+    */
+    peatch_points?: number;
+    /**
      * @type string | undefined
     */
     published_at?: string;

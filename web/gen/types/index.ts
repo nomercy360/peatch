@@ -19,6 +19,7 @@ export * from "./GetApiUsersId";
 export * from "./GetApiUsersIdCollaborationsRequests";
 export * from "./GetApiUsersIdFollowers";
 export * from "./GetApiUsersIdFollowing";
+export * from "./GetApiUsersMatching";
 export * from "./GetApiUsersPreview";
 export * from "./GetUsersIdFollow";
 export * from "./GetUsersIdUnfollow";

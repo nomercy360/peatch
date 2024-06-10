@@ -75,29 +75,30 @@ func (t *TelegramNotifier) SendPhotoNotification(params SendNotificationParams) 
 func (t *TelegramNotifier) SendTextNotification(params SendNotificationParams) error {
 	log.Printf("Sending notification to chatID: %d", params.ChatID)
 
-	button := models.InlineKeyboardButton{Text: params.ButtonText}
-
-	if params.BotWebApp != "" {
-		button.URL = params.BotWebApp
-	} else if params.WebAppURL != "" {
-		button.WebApp = &models.WebAppInfo{URL: params.WebAppURL}
-	} else {
-		return errors.New("no URL provided")
-	}
-
-	buttons := [][]models.InlineKeyboardButton{
-		{button},
-	}
-
 	textParams := &telegram.SendMessageParams{
 		// 		// ChatID: 927635965,
 		ChatID:              params.ChatID,
 		Text:                params.Message,
 		ParseMode:           models.ParseModeMarkdown,
 		DisableNotification: true,
-		ReplyMarkup: &models.InlineKeyboardMarkup{
+	}
+
+	if params.BotWebApp != "" || params.WebAppURL != "" {
+		button := models.InlineKeyboardButton{Text: params.ButtonText}
+
+		if params.BotWebApp != "" {
+			button.URL = params.BotWebApp
+		} else if params.WebAppURL != "" {
+			button.WebApp = &models.WebAppInfo{URL: params.WebAppURL}
+		}
+
+		buttons := [][]models.InlineKeyboardButton{
+			{button},
+		}
+
+		textParams.ReplyMarkup = &models.InlineKeyboardMarkup{
 			InlineKeyboard: buttons,
-		},
+		}
 	}
 
 	_, err := t.tg.SendMessage(context.Background(), textParams)
