@@ -69,6 +69,7 @@ type User struct {
 	RequestsCount          int              `json:"requests_count" db:"requests_count"`
 	Badges                 BadgeSlice       `json:"badges" db:"badges"`
 	Opportunities          OpportunitySlice `json:"opportunities" db:"opportunities"`
+	ReviewStatus           string           `json:"-" db:"review_status"`
 } // @Name User
 
 type UserProfile struct {
@@ -803,4 +804,71 @@ func (s *storage) ListMatchingProfiles(userID int64, skip int) ([]User, error) {
 	}
 
 	return users, nil
+}
+
+func (s *storage) ListProfilesForModeration() ([]User, error) {
+	users := make([]User, 0)
+
+	query := `
+		select u.id,
+		   u.title,
+		   u.first_name,
+		   u.last_name,
+		   u.description,
+		   u.published_at,
+		   u.hidden_at,
+		   u.avatar_url,
+		   u.created_at,
+		   u.updated_at,
+		   u.notifications_enabled_at,
+		   u.language_code,
+		   u.country,
+		   json_agg(distinct to_jsonb(b)) filter (where b.id is not null) as badges,
+		   json_agg(distinct to_jsonb(o)) filter (where o.id is not null) as opportunities
+		from users u
+				 JOIN public.user_badges ub on u.id = ub.user_id
+				 JOIN badges b on ub.badge_id = b.id
+				 JOIN public.user_opportunities uo on u.id = uo.user_id
+				 JOIN opportunities o on uo.opportunity_id = o.id
+		where u.published_at is not null
+		  and u.hidden_at is null
+		  and u.created_at > NOW() - interval '100 day'
+		  and review_status = 'pending'
+		group by u.id
+		order by u.created_at desc;
+	`
+
+	err := s.pg.Select(&users, query)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+func (s *storage) UpdateUserReviewStatus(userID int64, status string) error {
+	query := `
+		UPDATE users
+		SET review_status = $1
+		WHERE id = $2
+	`
+
+	res, err := s.pg.Exec(query, status, userID)
+
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected, _ := res.RowsAffected(); rowsAffected == 0 {
+		return ErrNotFound
+	}
+
+	if status == "not_spam" {
+		if err := s.ShowUser(userID); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

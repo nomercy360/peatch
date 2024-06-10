@@ -21,6 +21,7 @@ type config struct {
 	BotWebApp     string `env:"BOT_WEB_APP,required"`
 	GroupChatID   int64  `env:"GROUP_CHAT_ID,required"`
 	WebAppURL     string `env:"WEB_APP_URL,required"`
+	OpenAIKey     string `env:"OPENAI_KEY,required"`
 }
 
 func main() {
@@ -40,7 +41,7 @@ func main() {
 
 	notifier := notification.NewTelegramNotifier(bot)
 
-	notifyJob := job.NewNotifyJob(pg, notifier, job.WithConfig(cfg.ImgServiceURL, cfg.BotWebApp, cfg.WebAppURL, cfg.GroupChatID))
+	notifyJob := job.NewNotifyJob(pg, notifier, job.WithConfig(cfg.ImgServiceURL, cfg.BotWebApp, cfg.WebAppURL, cfg.GroupChatID, cfg.OpenAIKey))
 
 	jobs := []*job.Job{
 		job.NewJob("NotifyUserReceivedCollaborationRequest", 120*time.Second, notifyJob.NotifyUserReceivedCollaborationRequest),
@@ -48,6 +49,7 @@ func main() {
 		job.NewJob("NotifyNewUserProfile", 160*time.Second, notifyJob.NotifyNewUserProfile),
 		job.NewJob("NotifyCollaborationRequest", 180*time.Second, notifyJob.NotifyCollaborationRequest),
 		job.NewJob("NotifyMatchedCollaboration", 200*time.Second, notifyJob.NotifyMatchedCollaboration),
+		job.NewJob("ModerateUserProfile", 220*time.Second, notifyJob.ModerateUserProfile),
 	}
 
 	sc := job.NewScheduler(jobs)

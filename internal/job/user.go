@@ -26,6 +26,8 @@ type storage interface {
 	ListNewUserProfiles(from time.Time) ([]db.User, error)
 	ListCollaborationRequests(from time.Time) ([]db.CollaborationRequest, error)
 	GetCollaborationOwner(collaborationID int64) (*db.User, error)
+	ListProfilesForModeration() ([]db.User, error)
+	UpdateUserReviewStatus(userID int64, status string) error
 }
 
 type notifyJob struct {
@@ -35,7 +37,8 @@ type notifyJob struct {
 }
 
 type notifier interface {
-	SendNotification(params notification.SendNotificationParams) error
+	SendPhotoNotification(params notification.SendNotificationParams) error
+	SendTextNotification(params notification.SendNotificationParams) error
 }
 
 type config struct {
@@ -43,15 +46,17 @@ type config struct {
 	botWebApp     string
 	webappURL     string
 	groupChatID   int64
+	openAIToken   string
 }
 
-func WithConfig(imgServiceURL, botWebApp, webappURL string, groupChatID int64) func(*notifyJob) {
+func WithConfig(imgServiceURL, botWebApp, webappURL string, groupChatID int64, openAIToken string) func(*notifyJob) {
 	return func(j *notifyJob) {
 		j.config = config{
 			imgServiceURL: imgServiceURL,
 			botWebApp:     botWebApp,
 			webappURL:     webappURL,
 			groupChatID:   groupChatID,
+			openAIToken:   openAIToken,
 		}
 	}
 }
@@ -134,7 +139,7 @@ func (j *notifyJob) NotifyNewUserProfile() error {
 				Image:     img,
 			}
 
-			if err = j.notifier.SendNotification(n); err != nil {
+			if err = j.notifier.SendPhotoNotification(n); err != nil {
 				log.Printf("Failed to send notification to user %d", user.ID)
 				return err
 			}
@@ -223,7 +228,7 @@ func (j *notifyJob) NotifyNewCollaboration() error {
 				Image:     img,
 			}
 
-			if err = j.notifier.SendNotification(n); err != nil {
+			if err = j.notifier.SendPhotoNotification(n); err != nil {
 				log.Printf("Failed to send notification to user %d", collaboration.UserID)
 				return err
 			}
@@ -324,7 +329,7 @@ func (j *notifyJob) NotifyMatchedCollaboration() error {
 					Image:     img,
 				}
 
-				if err = j.notifier.SendNotification(params); err != nil {
+				if err = j.notifier.SendPhotoNotification(params); err != nil {
 					log.Printf("Failed to send notification to user %d", collaboration.UserID)
 					return err
 				}
@@ -411,7 +416,7 @@ func (j *notifyJob) NotifyUserReceivedCollaborationRequest() error {
 				Username:  &requester.Username,
 			}
 
-			if err = j.notifier.SendNotification(params); err != nil {
+			if err = j.notifier.SendPhotoNotification(params); err != nil {
 				log.Printf("Failed to send notification to user %d", collaboration.UserID)
 				return err
 			}
@@ -496,7 +501,7 @@ func (j *notifyJob) NotifyCollaborationRequest() error {
 				Username:  &requester.Username,
 			}
 
-			if err = j.notifier.SendNotification(params); err != nil {
+			if err = j.notifier.SendPhotoNotification(params); err != nil {
 				log.Printf("Failed to send notification to user %d", creator.ID)
 			}
 
