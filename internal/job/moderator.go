@@ -241,7 +241,7 @@ func (j *notifyJob) ModerateUserProfile() error {
 			url = fmt.Sprintf("%s/users/edit", j.config.webappURL)
 			btnText = "Edit Profile"
 		} else if status == "not_spam" {
-			msg = fmt.Sprintf("Your profile was approved by our moderation. You can create your first post now.")
+			msg = fmt.Sprintf("Your profile was approved by our moderation. Try out creating new collaboration post")
 			url = fmt.Sprintf("%s/collaborations/edit", j.config.webappURL)
 			btnText = "Create Post"
 		} else {

@@ -215,9 +215,9 @@ func (s *storage) GetUserByChatID(chatID int64) (*User, error) {
 
 func (s *storage) CreateUser(user User) (*User, error) {
 	query := `
-		INSERT INTO users (first_name, last_name, chat_id, username, published_at, hidden_at, avatar_url, title, description, language_code, country, city, country_code, notifications_enabled_at)
-		VALUES (:first_name, :last_name, :chat_id, :username, :published_at, :hidden_at, :avatar_url, :title, :description, :language_code, :country, :city, :country_code, :notifications_enabled_at)
-		RETURNING id, first_name, last_name, chat_id, username, created_at, updated_at, published_at, hidden_at, avatar_url, title, description, language_code, country, city, country_code, followers_count, requests_count, notifications_enabled_at;
+		INSERT INTO users (first_name, last_name, chat_id, username, avatar_url, title, description, language_code, country, city, country_code, notifications_enabled_at)
+		VALUES (:first_name, :last_name, :chat_id, :username, :avatar_url, :title, :description, :language_code, :country, :city, :country_code, :notifications_enabled_at)
+		RETURNING id, first_name, last_name, chat_id, username, created_at, updated_at, avatar_url, title, description, language_code, country, city, country_code, followers_count, requests_count, notifications_enabled_at;
 	`
 
 	rows, err := s.pg.NamedQuery(query, user)
