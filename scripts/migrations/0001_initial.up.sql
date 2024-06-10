@@ -8,7 +8,7 @@ CREATE TABLE users
     created_at               timestamptz   NOT NULL DEFAULT NOW(),
     updated_at               timestamptz   NOT NULL DEFAULT NOW(),
     published_at             timestamptz,
-    hidden_at                timestamptz,
+    hidden_at                timestamptz   DEFAULT NOW(),
     notifications_enabled_at timestamptz,
     avatar_url               VARCHAR(512),
     title                    VARCHAR(255),
@@ -19,11 +19,13 @@ CREATE TABLE users
     country_code             VARCHAR(2),
     followers_count          INTEGER       NOT NULL DEFAULT 0,
     following_count INTEGER NOT NULL DEFAULT 0,
-    requests_count           INTEGER       NOT NULL DEFAULT 0
+    requests_count           INTEGER       NOT NULL DEFAULT 0,
+    review_status            VARCHAR(255)  NOT NULL DEFAULT 'pending'
 );
 
 CREATE INDEX users_chat_id_index ON users (chat_id);
 CREATE UNIQUE INDEX users_username_index ON users (username);
+CREATE INDEX review_status_index ON users (review_status);
 
 CREATE TABLE user_interactions
 (

@@ -194,6 +194,8 @@ func userToString(user db.User) string {
 }
 
 func (j *notifyJob) ModerateUserProfile() error {
+	log.Println("Moderating user profiles")
+
 	users, err := j.storage.ListProfilesForModeration()
 
 	if err != nil {

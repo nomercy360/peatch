@@ -831,8 +831,7 @@ func (s *storage) ListProfilesForModeration() ([]User, error) {
 				 JOIN public.user_opportunities uo on u.id = uo.user_id
 				 JOIN opportunities o on uo.opportunity_id = o.id
 		where u.published_at is not null
-		  and u.hidden_at is null
-		  and u.created_at > NOW() - interval '1 day'
+		  and u.hidden_at is not null
 		  and review_status = 'pending'
 		group by u.id
 		order by u.created_at desc;
