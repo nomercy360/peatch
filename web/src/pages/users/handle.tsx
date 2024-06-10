@@ -227,7 +227,13 @@ export default function UserProfilePage() {
 									</button>
 								</Show>
 								<Switch>
-									<Match when={isCurrentUserProfile && store.user.published_at}>
+									<Match
+										when={
+											isCurrentUserProfile &&
+											!store.user.hidden_at &&
+											store.user.published_at
+										}
+									>
 										<Link
 											class="absolute right-4 top-4 z-10 flex h-8 items-center justify-center gap-2 rounded-lg bg-white px-4 text-sm font-semibold text-[#FF8C42]"
 											href="/rewards"
