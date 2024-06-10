@@ -10,6 +10,7 @@ import { createMutation } from '@tanstack/solid-query'
 import { setUser, store } from '~/store'
 import { addToast } from '~/components/toast'
 import { useNavigate } from '@solidjs/router'
+import { PeatchIcon } from '~/components/peatch-icon'
 
 export default function Rewards() {
 	const dailyRewardMutate = createMutation(() => ({
@@ -56,16 +57,16 @@ export default function Rewards() {
 	})
 
 	return (
-		<div class="min-h-screen bg-secondary p-3.5">
-			<h1 class="text-3xl text-accent">Peatch Rewards:</h1>
-			<p class="mt-2 text-secondary">
-				Peatch is our internal currency designed to reward active participation
-				on our platform. Earn Peatches by creating content, collaborating on
-				projects, and completing various tasks
+		<div class="flex min-h-screen w-full flex-col items-center justify-start bg-secondary p-3.5 text-center">
+			<PeatchIcon width={48} height={48} />
+			<h1 class="mt-2 max-w-[285px] text-3xl text-main">Peatch Rewards</h1>
+			<p class="mb-6 mt-2 max-w-[285px] text-xl font-normal text-main">
+				Earn Peatches by creating content, collaborating on projects, and
+				completing various tasks
 			</p>
 			<RewardCard
 				title="Complete Daily Check-in"
-				description="Sign in to the app every day to earn points."
+				description="Sign in to the app every day to earn Peatches"
 				reward="10 peatches"
 			>
 				<RewardButton
@@ -77,7 +78,7 @@ export default function Rewards() {
 			</RewardCard>
 			<RewardCard
 				title="Refer a Friend"
-				description="Invite your friends to join and earn points."
+				description="Invite your friends to join and earn Peatches"
 				reward="100 peatches"
 			>
 				<RewardButton disabled={contentCopied()} onClick={copyInviteLink}>
@@ -86,7 +87,7 @@ export default function Rewards() {
 			</RewardCard>
 			<RewardCard
 				title="Complete a Survey"
-				description="Share your feedback and earn points."
+				description="Share your feedback and earn Peatches"
 				reward="50 peatches"
 			>
 				<RewardButton
@@ -111,7 +112,7 @@ export default function Rewards() {
 			</RewardCard>
 			<RewardCard
 				title="Collaborate on a Project"
-				description="Join a collaboration project and earn points."
+				description="Join a collaboration project and earn Peatches"
 				reward="30 peatches"
 			>
 				<RewardButton disabled>Join</RewardButton>
@@ -127,12 +128,12 @@ const RewardCard: Component<{
 	children: any
 }> = props => {
 	return (
-		<div class="mt-4 flex flex-col items-center">
+		<div class="mt-4 flex w-full flex-col items-center text-start">
 			<div class="flex w-full flex-col items-start justify-start rounded-xl bg-main p-4">
-				<p class="text-2xl">{props.title}</p>
-				<p class="text-secondary">{props.description}</p>
+				<p class="text-base font-medium">{props.title}</p>
+				<p class="text-sm text-secondary">{props.description}</p>
 				<div class="mt-4 flex w-full flex-row items-center justify-between">
-					<p class="text-2xl font-semibold text-accent">{props.reward}</p>
+					<p class="font-bold text-accent">{props.reward}</p>
 					{props.children}
 				</div>
 			</div>
@@ -144,7 +145,7 @@ const RewardButton: Component<ComponentProps<'button'>> = props => {
 	const [, rest] = splitProps(props, ['children'])
 	return (
 		<button
-			class="flex h-8 items-center justify-center rounded-xl bg-button px-4 text-button disabled:bg-secondary disabled:text-main"
+			class="flex h-10 items-center justify-center rounded-xl bg-button px-2.5 text-sm font-medium text-button disabled:bg-secondary disabled:text-main"
 			{...rest}
 		>
 			{props.children}
