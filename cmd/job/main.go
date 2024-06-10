@@ -49,7 +49,7 @@ func main() {
 		job.NewJob("NotifyNewUserProfile", 160*time.Second, notifyJob.NotifyNewUserProfile),
 		job.NewJob("NotifyCollaborationRequest", 180*time.Second, notifyJob.NotifyCollaborationRequest),
 		job.NewJob("NotifyMatchedCollaboration", 200*time.Second, notifyJob.NotifyMatchedCollaboration),
-		job.NewJob("ModerateUserProfile", 220*time.Second, notifyJob.ModerateUserProfile),
+		job.NewJob("ModerateUserProfile", 60*time.Second, notifyJob.ModerateUserProfile),
 	}
 
 	sc := job.NewScheduler(jobs)

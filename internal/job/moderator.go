@@ -198,6 +198,8 @@ func (j *notifyJob) ModerateUserProfile() error {
 
 	users, err := j.storage.ListProfilesForModeration()
 
+	log.Printf("Found %d users for moderation", len(users))
+
 	if err != nil {
 		return fmt.Errorf("failed to list user profiles: %w", err)
 	}

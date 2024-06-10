@@ -811,6 +811,7 @@ func (s *storage) ListProfilesForModeration() ([]User, error) {
 
 	query := `
 		select u.id,
+		   u.chat_id,
 		   u.title,
 		   u.first_name,
 		   u.last_name,
