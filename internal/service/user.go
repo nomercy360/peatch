@@ -277,5 +277,9 @@ func (s *service) AcceptFeedbackSurvey(userID int64, survey FeedbackSurveyReques
 		return nil
 	}
 
+	if err := s.storage.UpdateUserPoints(userID, 50); err != nil {
+		return err
+	}
+
 	return nil
 }

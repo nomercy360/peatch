@@ -40,6 +40,7 @@ type storage interface {
 	GetUserFollowers(uid int64, target int64) ([]db.User, error)
 	GetUserFollowing(uid int64, target int64) ([]db.User, error)
 	UpdateLastCheckIn(userID int64) (bool, error)
+	UpdateUserPoints(userID int64, adjustment int) error
 }
 
 type s3Client interface {

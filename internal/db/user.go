@@ -849,3 +849,23 @@ func (s *storage) UpdateLastCheckIn(userID int64) (bool, error) {
 
 	return true, nil
 }
+
+func (s *storage) UpdateUserPoints(userID int64, points int) error {
+	query := `
+		UPDATE users
+		SET peatch_points = peatch_points + $1
+		WHERE id = $2
+	`
+
+	res, err := s.pg.Exec(query, points, userID)
+
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected, _ := res.RowsAffected(); rowsAffected == 0 {
+		return ErrNotFound
+	}
+
+	return nil
+}

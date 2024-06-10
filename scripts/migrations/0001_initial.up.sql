@@ -553,15 +553,3 @@ create table locations
     population   bigint       not null default 0
 );
 
---  alter table public.users
---     add referrer_id bigint;
---
--- alter table public.users
---     add last_check_in timestamptz;
---
--- alter table public.users
---     add peatch_points integer default 0 not null;
---
--- alter table public.users
---     add constraint users_referrer_id_fk
---         foreign key (referrer_id) references public.users;
