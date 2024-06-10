@@ -94,7 +94,7 @@ export default function Rewards() {
 					disabled={surveyCompleted()}
 					onClick={() => navigate('/survey')}
 				>
-					Complete
+					{surveyCompleted() ? 'Completed' : 'Complete'}
 				</RewardButton>
 			</RewardCard>
 			<RewardCard
@@ -130,7 +130,7 @@ const RewardCard: Component<{
 	return (
 		<div class="mt-2 flex w-full flex-col items-center text-start">
 			<div class="flex w-full flex-col items-start justify-start rounded-xl bg-main p-4">
-				<p class="text-base font-medium">{props.title}</p>
+				<p class="text-base font-medium text-main">{props.title}</p>
 				<p class="text-sm text-secondary">{props.description}</p>
 				<div class="mt-4 flex w-full flex-row items-center justify-between">
 					<p class="font-bold text-accent">{props.reward}</p>

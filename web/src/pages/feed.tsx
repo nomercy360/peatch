@@ -268,10 +268,10 @@ const RewardsPopup = (props: { onClose: () => void }) => {
 					emoji_events
 				</span>
 				<button
-					class="absolute right-4 top-4 flex size-6 items-center justify-center rounded-full bg-neutral-200"
+					class="absolute right-4 top-4 flex size-6 items-center justify-center rounded-full bg-secondary "
 					onClick={props.onClose}
 				>
-					<span class="material-symbols-rounded text-[24px] text-button">
+					<span class="material-symbols-rounded text-[24px] text-secondary">
 						close
 					</span>
 				</button>
