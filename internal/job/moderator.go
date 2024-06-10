@@ -247,7 +247,7 @@ func (j *notifyJob) ModerateUserProfile() error {
 		}
 
 		if err := j.notifier.SendTextNotification(notification.SendNotificationParams{
-			ChatID:     j.config.groupChatID,
+			ChatID:     user.ChatID,
 			Message:    telegram.EscapeMarkdown(msg),
 			WebAppURL:  url,
 			ButtonText: btnText,
