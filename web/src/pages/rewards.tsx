@@ -104,7 +104,7 @@ export default function Rewards() {
 			>
 				<RewardButton
 					onClick={() =>
-						navigate('/collaborations/edit', { state: { from: 'rewards' } })
+						navigate('/collaborations/edit', { state: { from: '/rewards' } })
 					}
 				>
 					Create

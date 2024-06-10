@@ -37,7 +37,7 @@ export default function FeedPage() {
 
 	const [profilePopup, setProfilePopup] = createSignal(false)
 	const [communityPopup, setCommunityPopup] = createSignal(false)
-	const [rewardsPopup, setRewardsPopup] = createSignal(true)
+	const [rewardsPopup, setRewardsPopup] = createSignal(false)
 
 	createEffect(() => {
 		const onScroll = () => setScroll(window.scrollY)
