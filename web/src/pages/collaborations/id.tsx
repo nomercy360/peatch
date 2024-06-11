@@ -94,7 +94,7 @@ export default function Collaboration() {
 	})
 
 	createEffect(() => {
-		if (query.data.id) {
+		if (query.data?.id) {
 			setIsCurrentUserCollab(store.user.id === query.data.user.id)
 		}
 	})
