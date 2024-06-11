@@ -267,21 +267,24 @@ export default function UserProfilePage() {
 								</div>
 								<div class="px-4 py-2.5">
 									<div class="flex flex-row items-center justify-between pb-4">
-										<Link
-											class="flex h-8 flex-row items-center space-x-2 text-sm font-semibold"
-											href={`/users/${query.data.id}/followers`}
-											state={{ back: true }}
-										>
-											<span class="flex flex-row items-center text-main">
-												{query.data.following_count}
-											</span>
-											<span class="text-secondary">following</span>
-											<span class="text-secondary">·</span>
-											<span class="flex flex-row items-center text-main">
-												{query.data.followers_count}
-											</span>
-											<span class="text-secondary">followers</span>
-										</Link>
+										<div class="flex h-8 flex-row items-center space-x-2 text-sm font-semibold">
+											<Link
+												href={`/users/${query.data.id}/followers?show=following`}
+												state={{ back: true }}
+												class="flex h-full flex-row items-center gap-1.5 text-main"
+											>
+												<span>{query.data.following_count}</span>
+												<span class="text-secondary">following</span>
+											</Link>
+											<Link
+												class="flex h-full flex-row items-center gap-1.5 text-main"
+												href={`/users/${query.data.id}/followers?show=followers`}
+												state={{ back: true }}
+											>
+												{query.data.followers_count}{' '}
+												<span class="text-secondary">followers</span>
+											</Link>
+										</div>
 										<button
 											class="flex h-8 flex-row items-center space-x-2 bg-transparent px-2.5"
 											classList={{

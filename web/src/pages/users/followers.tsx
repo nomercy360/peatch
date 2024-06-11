@@ -1,5 +1,5 @@
-import { createSignal, For, Match, Show, Switch } from 'solid-js'
-import { useParams } from '@solidjs/router'
+import { createEffect, createSignal, For, Match, Show, Switch } from 'solid-js'
+import { useParams, useSearchParams } from '@solidjs/router'
 import {
 	CDN_URL,
 	fetchFollowers,
@@ -17,6 +17,14 @@ export default function UserFollowersPage() {
 	const [showFollowing, setShowFollowing] = createSignal(true)
 
 	const params = useParams()
+
+	const [searchParams] = useSearchParams()
+
+	createEffect(() => {
+		if (searchParams.show === 'followers') {
+			setShowFollowing(false)
+		}
+	})
 
 	const following = createQuery(() => ({
 		queryKey: ['following', params.id],
@@ -87,22 +95,6 @@ export default function UserFollowersPage() {
 			>
 				<li class="me-2 flex items-center justify-center" role="presentation">
 					<button
-						onClick={() => setShowFollowing(false)}
-						class="flex h-12 w-3/5 items-center justify-center px-4 text-sm font-medium text-main transition-all duration-300 ease-in-out"
-						classList={{
-							'border-b-4 border-accent': !showFollowing(),
-							'border-b-4 border-transparent': showFollowing(),
-						}}
-						id="feed"
-						role="tab"
-						aria-controls="feed"
-						aria-selected="false"
-					>
-						Followers
-					</button>
-				</li>
-				<li class="me-2 flex items-center justify-center" role="presentation">
-					<button
 						onClick={() => setShowFollowing(true)}
 						class="flex h-12 w-3/5 items-center justify-center px-4 text-sm font-medium text-main transition-all duration-300 ease-in-out"
 						classList={{
@@ -115,6 +107,22 @@ export default function UserFollowersPage() {
 						aria-selected="false"
 					>
 						Following
+					</button>
+				</li>
+				<li class="me-2 flex items-center justify-center" role="presentation">
+					<button
+						onClick={() => setShowFollowing(false)}
+						class="flex h-12 w-3/5 items-center justify-center px-4 text-sm font-medium text-main transition-all duration-300 ease-in-out"
+						classList={{
+							'border-b-4 border-accent': !showFollowing(),
+							'border-b-4 border-transparent': showFollowing(),
+						}}
+						id="feed"
+						role="tab"
+						aria-controls="feed"
+						aria-selected="false"
+					>
+						Followers
 					</button>
 				</li>
 			</ul>

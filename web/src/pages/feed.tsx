@@ -69,6 +69,8 @@ export default function FeedPage() {
 
 		window.Telegram.WebApp.disableClosingConfirmation()
 		// window.Telegram.WebApp.CloudStorage.removeItem('profilePopup')
+		// window.Telegram.WebApp.CloudStorage.removeItem('communityPopup')
+		// window.Telegram.WebApp.CloudStorage.removeItem('rewardsPopup')
 	})
 
 	const getUserLink = () => {
@@ -234,7 +236,7 @@ const OpenCommunityPopup = (props: { onClose: () => void }) => {
 					maps_ugc
 				</span>
 				<button
-					class="absolute right-4 top-4 flex size-6 items-center justify-center rounded-full bg-neutral-200"
+					class="absolute right-4 top-4 flex size-6 items-center justify-center rounded-full bg-secondary"
 					onClick={props.onClose}
 				>
 					<span class="material-symbols-rounded text-[24px] text-button">
@@ -268,7 +270,7 @@ const RewardsPopup = (props: { onClose: () => void }) => {
 					emoji_events
 				</span>
 				<button
-					class="absolute right-4 top-4 flex size-6 items-center justify-center rounded-full bg-secondary "
+					class="absolute right-4 top-4 flex size-6 items-center justify-center rounded-full bg-secondary"
 					onClick={props.onClose}
 				>
 					<span class="material-symbols-rounded text-[24px] text-secondary">
