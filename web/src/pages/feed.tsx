@@ -119,7 +119,7 @@ export default function FeedPage() {
 			<Show when={communityPopup()}>
 				<OpenCommunityPopup onClose={() => closePopup('communityPopup')} />
 			</Show>
-			<Show when={!communityPopup() && rewardsPopup()}>
+			<Show when={!communityPopup() && rewardsPopup() && !store.user.hidden_at}>
 				<RewardsPopup onClose={() => closePopup('rewardsPopup')} />
 			</Show>
 			<div class="fixed top-0 z-30 flex w-full flex-row items-center justify-between space-x-4 border-b bg-secondary p-4">
@@ -149,13 +149,13 @@ export default function FeedPage() {
 					<Switch>
 						<Match when={store.user.avatar_url}>
 							<img
-								class="size-10 rounded-xl border border-main object-cover"
+								class="size-10 rounded-xl border object-cover"
 								src={CDN_URL + '/' + store.user.avatar_url}
 								alt="User Avatar"
 							/>
 						</Match>
 						<Match when={!store.user.avatar_url}>
-							<div class="flex size-10 items-center justify-center rounded-xl border-2 border-main bg-main">
+							<div class="flex size-10 items-center justify-center rounded-xl border-2 bg-main">
 								<span class="material-symbols-rounded text-peatch-main">
 									account_circle
 								</span>
