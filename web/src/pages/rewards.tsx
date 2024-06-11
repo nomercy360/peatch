@@ -17,6 +17,7 @@ export default function Rewards() {
 		mutationFn: () => claimDailyReward(),
 		retry: 0,
 		onSuccess: () => {
+			window.Telegram.WebApp.HapticFeedback.impactOccurred('light')
 			setUser({ ...store.user, peatch_points: store.user.peatch_points! + 10 })
 		},
 		onError: error => {

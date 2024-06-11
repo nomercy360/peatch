@@ -153,7 +153,7 @@ export default function UserProfilePage() {
 					mainButton.onClick(navigateToEdit)
 				}
 			}
-		} else {
+		} else if (store.user.published_at && !store.user.hidden_at) {
 			mainButton.enable('Collaborate')
 			mainButton.onClick(navigateToCollaborate)
 		}
@@ -226,42 +226,38 @@ export default function UserProfilePage() {
 										</span>
 									</button>
 								</Show>
-								<Switch>
-									<Match
-										when={
-											isCurrentUserProfile &&
-											!store.user.hidden_at &&
-											store.user.published_at
-										}
-									>
-										<Link
-											class="absolute right-4 top-4 z-10 flex h-8 items-center justify-center gap-2 rounded-lg bg-white px-4 text-sm font-semibold text-[#FF8C42]"
-											href="/rewards"
-											state={{ back: true }}
+								<Show when={store.user.published_at && !store.user.hidden_at}>
+									<Switch>
+										<Match when={isCurrentUserProfile}>
+											<Link
+												class="absolute right-4 top-4 z-10 flex h-8 items-center justify-center gap-2 rounded-lg bg-white px-4 text-sm font-semibold text-[#FF8C42]"
+												href="/rewards"
+												state={{ back: true }}
+											>
+												<PeatchIcon width={16} height={16} />
+												{store.user.peatch_points}
+											</Link>
+										</Match>
+										<Match
+											when={!isCurrentUserProfile && !query.data?.is_following}
 										>
-											<PeatchIcon width={16} height={16} />
-											{store.user.peatch_points}
-										</Link>
-									</Match>
-									<Match
-										when={!isCurrentUserProfile && !query.data?.is_following}
-									>
-										<ActionButton
-											disabled={unfollowMutate.isPending}
-											text="Follow"
-											onClick={follow}
-										/>
-									</Match>
-									<Match
-										when={!isCurrentUserProfile && query.data?.is_following}
-									>
-										<ActionButton
-											disabled={followMutate.isPending}
-											text="Unfollow"
-											onClick={unfollow}
-										/>
-									</Match>
-								</Switch>
+											<ActionButton
+												disabled={unfollowMutate.isPending}
+												text="Follow"
+												onClick={follow}
+											/>
+										</Match>
+										<Match
+											when={!isCurrentUserProfile && query.data?.is_following}
+										>
+											<ActionButton
+												disabled={followMutate.isPending}
+												text="Unfollow"
+												onClick={unfollow}
+											/>
+										</Match>
+									</Switch>
+								</Show>
 								<div class="p-2">
 									<img
 										src={CDN_URL + '/' + query.data.avatar_url}

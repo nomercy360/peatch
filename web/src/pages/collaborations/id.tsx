@@ -8,17 +8,10 @@ import {
 	Switch,
 } from 'solid-js'
 import { useNavigate, useParams, useSearchParams } from '@solidjs/router'
-import {
-	CDN_URL,
-	fetchCollaboration,
-	hideCollaboration,
-	publishCollaboration,
-	showCollaboration,
-} from '~/lib/api'
+import { CDN_URL, fetchCollaboration, publishCollaboration } from '~/lib/api'
 import { store } from '~/store'
 import ActionDonePopup from '~/components/ActionDonePopup'
 import { useMainButton } from '~/lib/useMainButton'
-import { usePopup } from '~/lib/usePopup'
 import { createMutation, createQuery } from '@tanstack/solid-query'
 import { queryClient } from '~/App'
 
@@ -29,9 +22,6 @@ export default function Collaboration() {
 	const [isCurrentUserCollab, setIsCurrentUserCollab] = createSignal(false)
 
 	const navigate = useNavigate()
-
-	const { showAlert } = usePopup()
-
 	const params = useParams()
 	const [searchParams] = useSearchParams()
 
@@ -40,36 +30,6 @@ export default function Collaboration() {
 	const query = createQuery(() => ({
 		queryKey: ['collaborations', collabId],
 		queryFn: () => fetchCollaboration(Number(collabId)),
-	}))
-
-	const showMutate = createMutation(() => ({
-		mutationFn: () => showCollaboration(query.data.id),
-		onMutate: async () => {
-			await queryClient.cancelQueries({
-				queryKey: ['collaborations', collabId],
-			})
-			queryClient.setQueryData(['collaborations', collabId], old => {
-				if (old) {
-					return { ...old, hidden_at: null }
-				}
-				return old
-			})
-		},
-	}))
-
-	const hideMutate = createMutation(() => ({
-		mutationFn: () => hideCollaboration(query.data.id),
-		onMutate: async () => {
-			await queryClient.cancelQueries({
-				queryKey: ['collaborations', collabId],
-			})
-			queryClient.setQueryData(['collaborations', collabId], old => {
-				if (old) {
-					return { ...old, hidden_at: new Date().toISOString() }
-				}
-				return old
-			})
-		},
 	}))
 
 	const publishMutate = createMutation(() => ({
@@ -109,27 +69,10 @@ export default function Collaboration() {
 		setWasPublished(true)
 	}
 
-	const hide = async () => {
-		hideMutate.mutate()
-		window.Telegram.WebApp.HapticFeedback.impactOccurred('light')
-	}
-
-	const show = async () => {
-		showMutate.mutate()
-		await showCollaboration(Number(collabId))
-		window.Telegram.WebApp.HapticFeedback.impactOccurred('light')
-	}
-
 	const navigateToCollaborate = async () => {
-		if (!store.user.published_at) {
-			showAlert('Publish your profile first, so collaborators will see you')
-		} else if (store.user.hidden_at) {
-			showAlert('Unhide your profile first, so collaborators will see you')
-		} else {
-			navigate(`/collaborations/${collabId}/collaborate`, {
-				state: { back: true },
-			})
-		}
+		navigate(`/collaborations/${collabId}/collaborate`, {
+			state: { back: true },
+		})
 	}
 
 	const navigateToEdit = () => {
@@ -152,7 +95,7 @@ export default function Collaboration() {
 					mainButton.onClick(navigateToEdit)
 				}
 			}
-		} else {
+		} else if (!store.user.hidden_at && store.user.published_at) {
 			mainButton.onClick(navigateToCollaborate)
 			mainButton.enable('Collaborate')
 		}
@@ -184,24 +127,6 @@ export default function Collaboration() {
 						<Switch>
 							<Match when={isCurrentUserCollab() && !query.data.published_at}>
 								<ActionButton text="Edit" onClick={navigateToEdit} />
-							</Match>
-							<Match
-								when={
-									isCurrentUserCollab() &&
-									query.data.hidden_at &&
-									query.data.published_at
-								}
-							>
-								<ActionButton text="Show" onClick={show} />
-							</Match>
-							<Match
-								when={
-									isCurrentUserCollab() &&
-									!query.data.hidden_at &&
-									query.data.published_at
-								}
-							>
-								<ActionButton text="Hide" onClick={hide} />
 							</Match>
 						</Switch>
 						<div
@@ -262,12 +187,11 @@ export default function Collaboration() {
 		</Suspense>
 	)
 }
-// background: ;
 
 const ActionButton = (props: { text: string; onClick: () => void }) => {
 	return (
 		<button
-			class="absolute right-4 top-4 z-10 h-9 w-[90px] rounded-xl bg-black/80 px-2.5 text-button"
+			class="absolute right-4 top-4 z-10 h-9 w-[90px] rounded-xl bg-black/80 px-2.5 text-white"
 			onClick={() => props.onClick()}
 		>
 			{props.text}

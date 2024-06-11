@@ -28,15 +28,11 @@ type service interface {
 	FollowUser(userID, followingID int64) error
 	UnfollowUser(userID, followingID int64) error
 	PublishUser(userID int64) error
-	HideUser(userID int64) error
-	ShowUser(userID int64) error
 	ListCollaborations(query db.CollaborationQuery) ([]db.Collaboration, error)
 	GetCollaborationByID(userID, id int64) (*db.Collaboration, error)
 	CreateCollaboration(userID int64, create svc.CreateCollaboration) (*db.Collaboration, error)
 	UpdateCollaboration(userID, collabID int64, update svc.CreateCollaboration) error
 	PublishCollaboration(userID int64, collaborationID int64) error
-	HideCollaboration(userID int64, collaborationID int64) error
-	ShowCollaboration(userID int64, collaborationID int64) error
 	CreateCollaborationRequest(userID, collaborationID int64, request svc.CreateCollaborationRequest) (*db.CollaborationRequest, error)
 	GetPresignedURL(userID int64, objectKey string) (*svc.PresignedURL, error)
 	CreateUserCollaboration(userID int64, receiverID int64, request svc.CreateUserCollaboration) (*db.UserCollaborationRequest, error)
@@ -50,6 +46,7 @@ type service interface {
 	GetFeed(uid int64, query svc.FeedQuery) ([]svc.FeedItem, error)
 	ClaimDailyReward(userID int64) error
 	AcceptFeedbackSurvey(userID int64, survey svc.FeedbackSurveyRequest) error
+	GetActivityHistory(userID int64) ([]svc.ActivityEvent, error)
 }
 
 type CustomValidator struct {
@@ -95,17 +92,13 @@ func (h *handler) RegisterRoutes(e *echo.Echo) {
 	a.DELETE("/users/:id/follow", h.handleUnfollowUser)
 	a.POST("/users/:id/collaborations/requests", h.handleCreateUserCollaboration)
 	a.GET("/users/:handle/collaborations/requests", h.handleFindUserCollaborationRequest)
-	a.POST("/users/show", h.handleShowUser)
 	a.POST("/users/publish", h.handlePublishUser)
-	a.POST("/users/hide", h.handleHideUser)
 	a.GET("/collaborations", h.handleListCollaborations)
 	a.GET("/collaborations/:id", h.handleGetCollaboration)
 	a.POST("/collaborations", h.handleCreateCollaboration)
 	a.PUT("/collaborations/:id", h.handleUpdateCollaboration)
 	a.GET("/collaborations/:id/requests", h.handleFindCollaborationRequest)
 	a.POST("/collaborations/:id/publish", h.handlePublishCollaboration)
-	a.POST("/collaborations/:id/hide", h.handleHideCollaboration)
-	a.POST("/collaborations/:id/show", h.handleShowCollaboration)
 	a.POST("/collaborations/:id/requests", h.handleCreateCollaborationRequest)
 	a.GET("/presigned-url", h.handleGetPresignedURL)
 	a.GET("/user-preview", h.handleGetUserPreview)
@@ -115,6 +108,7 @@ func (h *handler) RegisterRoutes(e *echo.Echo) {
 	a.GET("/feed", h.handleGetFeed)
 	a.POST("/daily-reward", h.handleClaimDailyReward)
 	a.POST("/feedback-survey", h.handleCreateFeedbackSurvey)
+	a.GET("/activity", h.handleGetActivityHistory)
 }
 
 func (h *handler) handleIndex(c echo.Context) error {

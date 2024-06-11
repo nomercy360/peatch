@@ -63,7 +63,7 @@ export default function FeedPage() {
 			updateRewardsPopup,
 		)
 
-		if (store.user.published_at) {
+		if (store.user.published_at && !store.user.hidden_at) {
 			mainButton.enable('Post to Peatch').onClick(toCreateCollab)
 		}
 

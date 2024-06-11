@@ -172,42 +172,6 @@ func (h *handler) handlePublishUser(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-// handleHideUser godoc
-// @Summary Hide user
-// @Tags users
-// @Accept  json
-// @Produce  json
-// @Success 204
-// @Router /api/users/{user_id}/hide [post]
-func (h *handler) handleHideUser(c echo.Context) error {
-	userID := getUserID(c)
-
-	err := h.svc.HideUser(userID)
-	if err != nil {
-		return err
-	}
-
-	return c.NoContent(http.StatusNoContent)
-}
-
-// handleShowUser godoc
-// @Summary Show user
-// @Tags users
-// @Accept  json
-// @Produce  json
-// @Success 204
-// @Router /api/users/{user_id}/show [post]
-func (h *handler) handleShowUser(c echo.Context) error {
-	userID := getUserID(c)
-
-	err := h.svc.ShowUser(userID)
-	if err != nil {
-		return err
-	}
-
-	return c.NoContent(http.StatusNoContent)
-}
-
 // handleCreateUserCollaboration godoc
 // @Summary Create user collaboration
 // @Tags collaborations
@@ -359,4 +323,22 @@ func (h *handler) handleCreateFeedbackSurvey(c echo.Context) error {
 	}
 
 	return c.NoContent(http.StatusNoContent)
+}
+
+// handleGetActivityHistory godoc
+// @Summary Get activity history
+// @Tags users
+// @Accept  json
+// @Produce  json
+// @Success 200 {array} ActivityEvent
+// @Router /api/activity-history [get]
+func (h *handler) handleGetActivityHistory(c echo.Context) error {
+	uid := getUserID(c)
+
+	events, err := h.svc.GetActivityHistory(uid)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, events)
 }

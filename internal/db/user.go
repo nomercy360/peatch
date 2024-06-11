@@ -378,14 +378,21 @@ func (s *storage) GetUserProfile(params GetUsersParams) (*User, error) {
 
 func (s *storage) FollowUser(userID, followingID int64) error {
 	query := `
-		INSERT INTO user_followers (user_id, follower_id)
-		VALUES ($1, $2)
-		ON CONFLICT DO NOTHING;
-	`
+        WITH active_user AS (
+            SELECT id FROM users
+            WHERE id = $1
+              AND hidden_at IS NULL
+              AND published_at IS NOT NULL
+        )
+        INSERT INTO user_followers (user_id, follower_id)
+        SELECT $2, id FROM active_user
+        ON CONFLICT DO NOTHING;
+    `
 
 	_, err := s.pg.Exec(query, followingID, userID)
-
-	if err != nil {
+	if err != nil && IsNoRowsError(err) {
+		return ErrNotFound
+	} else if err != nil {
 		return err
 	}
 
@@ -479,6 +486,7 @@ type UserCollaborationRequest struct {
 	CreatedAt   time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
 	Status      string    `json:"status" db:"status"`
+	Requester   *User     `json:"requester" db:"requester"`
 } // @Name UserCollaborationRequest
 
 func (s *storage) CreateUserCollaboration(userID, receiverID int64, message string) (*UserCollaborationRequest, error) {
@@ -868,4 +876,31 @@ func (s *storage) UpdateUserPoints(userID int64, points int) error {
 	}
 
 	return nil
+}
+
+func (s *storage) ListUserReceivedRequests(userID int64) ([]UserCollaborationRequest, error) {
+	requests := make([]UserCollaborationRequest, 0)
+
+	query := `
+		SELECT 
+		    uc.id, 
+		    uc.user_id,
+		    uc.requester_id, 
+		    uc.message,
+		    uc.created_at, 
+		    uc.updated_at,
+		    uc.status,
+		    to_jsonb(u) as requester
+		FROM user_collaboration_requests uc
+		JOIN users u ON uc.requester_id = u.id
+		WHERE user_id = $1
+	`
+
+	err := s.pg.Select(&requests, query, userID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return requests, nil
 }

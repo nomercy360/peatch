@@ -140,22 +140,6 @@ export const unfollowUser = async (userID: number) => {
 	})
 }
 
-export const hideProfile = async () => {
-	return await apiFetch({
-		endpoint: '/users/hide',
-		method: 'POST',
-		showProgress: false,
-	})
-}
-
-export const showProfile = async () => {
-	return await apiFetch({
-		endpoint: '/users/show',
-		method: 'POST',
-		showProgress: false,
-	})
-}
-
 export const publishProfile = async () => {
 	return await apiFetch({
 		endpoint: '/users/publish',
@@ -208,20 +192,6 @@ export const fetchPreview = async () => {
 export const publishCollaboration = async (collaborationID: number) => {
 	return await apiFetch({
 		endpoint: `/collaborations/${collaborationID}/publish`,
-		method: 'POST',
-	})
-}
-
-export const hideCollaboration = async (collaborationID: number) => {
-	return await apiFetch({
-		endpoint: `/collaborations/${collaborationID}/hide`,
-		method: 'POST',
-	})
-}
-
-export const showCollaboration = async (collaborationID: number) => {
-	return await apiFetch({
-		endpoint: `/collaborations/${collaborationID}/show`,
 		method: 'POST',
 	})
 }

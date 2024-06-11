@@ -41,6 +41,7 @@ type storage interface {
 	GetUserFollowing(uid int64, target int64) ([]db.User, error)
 	UpdateLastCheckIn(userID int64) (bool, error)
 	UpdateUserPoints(userID int64, adjustment int) error
+	ListUserReceivedRequests(userID int64) ([]db.UserCollaborationRequest, error)
 }
 
 type s3Client interface {

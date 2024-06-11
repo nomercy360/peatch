@@ -140,27 +140,6 @@ func (h *handler) handlePublishCollaboration(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-// handleHideCollaboration godoc
-// @Summary Hide collaboration
-// @Tags collaborations
-// @Accept  json
-// @Produce  json
-// @Param id path int true "Collaboration ID"
-// @Success 200
-// @Router /api/collaborations/{id}/hide [put]
-func (h *handler) handleHideCollaboration(c echo.Context) error {
-	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-
-	uid := getUserID(c)
-
-	err := h.svc.HideCollaboration(uid, id)
-	if err != nil {
-		return err
-	}
-
-	return c.NoContent(http.StatusNoContent)
-}
-
 // handleDeleteCollaboration godoc
 // @Summary Delete collaboration
 // @Tags collaborations
@@ -189,27 +168,6 @@ func (h *handler) handleCreateCollaborationRequest(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusCreated, createdRequest)
-}
-
-// handleShowCollaboration godoc
-// @Summary Show collaboration
-// @Tags collaborations
-// @Accept  json
-// @Produce  json
-// @Param id path int true "Collaboration ID"
-// @Success 200
-// @Router /api/collaborations/{id}/show [put]
-func (h *handler) handleShowCollaboration(c echo.Context) error {
-	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-
-	uid := getUserID(c)
-
-	err := h.svc.ShowCollaboration(uid, id)
-	if err != nil {
-		return err
-	}
-
-	return c.NoContent(http.StatusNoContent)
 }
 
 // handleFindCollaborationRequest godoc
