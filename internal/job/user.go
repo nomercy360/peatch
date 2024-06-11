@@ -491,7 +491,7 @@ func (j *notifyJob) NotifyCollaborationRequest() error {
 				return err
 			}
 
-			linkToProfile := fmt.Sprintf("%s/users/%d", j.config.webappURL, requester.Username)
+			linkToProfile := fmt.Sprintf("%s/users/%s", j.config.webappURL, requester.Username)
 
 			params := notification.SendNotificationParams{
 				ChatID:    creator.ChatID,
