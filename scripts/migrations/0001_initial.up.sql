@@ -136,6 +136,29 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION update_collaborations_hidden_at() RETURNS TRIGGER AS
+$$
+BEGIN
+    IF NEW.hidden_at IS NOT NULL THEN
+        UPDATE collaborations
+        SET hidden_at = NOW()
+        WHERE user_id = NEW.id
+          AND hidden_at IS NULL;
+    ELSE
+        UPDATE collaborations
+        SET hidden_at = NULL
+        WHERE user_id = NEW.id;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_update_collaborations_hidden_at
+    AFTER UPDATE OF hidden_at
+    ON users
+    FOR EACH ROW
+    WHEN (OLD.hidden_at IS DISTINCT FROM NEW.hidden_at)
+EXECUTE FUNCTION update_collaborations_hidden_at();
 
 CREATE TRIGGER update_follower_counts_trigger
     AFTER INSERT OR DELETE

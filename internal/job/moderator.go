@@ -190,6 +190,9 @@ func userToString(user db.User) string {
 		msg += fmt.Sprintf(" Opportunities: %s", opportunity.Text)
 	}
 
+	// replace all " with \"
+	msg = strings.ReplaceAll(msg, `"`, `\"`)
+
 	return msg
 }
 
