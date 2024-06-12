@@ -53,28 +53,28 @@ type User struct {
 	ChatID                 int64            `json:"chat_id" db:"chat_id"`
 	Username               string           `json:"username" db:"username"`
 	CreatedAt              time.Time        `json:"created_at" db:"created_at"`
-	UpdatedAt              time.Time        `json:"updated_at" db:"updated_at"`
+	UpdatedAt              time.Time        `json:"-" db:"updated_at"`
 	PublishedAt            *time.Time       `json:"published_at" db:"published_at"`
-	NotificationsEnabledAt *time.Time       `json:"notifications_enabled_at" db:"notifications_enabled_at"`
+	NotificationsEnabledAt *time.Time       `json:"-" db:"notifications_enabled_at"`
 	HiddenAt               *time.Time       `json:"hidden_at" db:"hidden_at"`
 	AvatarURL              *string          `json:"avatar_url" db:"avatar_url"`
 	Title                  *string          `json:"title" db:"title"`
 	Description            *string          `json:"description" db:"description"`
-	LanguageCode           *string          `json:"language_code" db:"language_code"`
+	LanguageCode           *string          `json:"-" db:"language_code"`
 	Country                *string          `json:"country" db:"country"`
 	City                   *string          `json:"city" db:"city"`
 	CountryCode            *string          `json:"country_code" db:"country_code"`
 	FollowersCount         int              `json:"followers_count" db:"followers_count"`
 	FollowingCount         int              `json:"following_count" db:"following_count"`
 	IsFollowing            bool             `json:"is_following" db:"is_following"`
-	RequestsCount          int              `json:"requests_count" db:"requests_count"`
+	RequestsCount          int              `json:"-" db:"requests_count"`
 	Badges                 BadgeSlice       `json:"badges" db:"badges"`
 	Opportunities          OpportunitySlice `json:"opportunities" db:"opportunities"`
 	ReviewStatus           string           `json:"-" db:"review_status"`
 	ReferrerID             *int64           `json:"-" db:"referrer_id"`
-	LastCheckIn            *time.Time       `json:"-" db:"last_check_in"`
+	LastCheckIn            *time.Time       `json:"last_check_in" db:"last_check_in"`
 	PeatchPoints           int              `json:"peatch_points" db:"peatch_points"`
-	ProfileScore           *int             `json:"profile_score" db:"profile_score"`
+	ProfileScore           *int             `json:"-" db:"profile_score"`
 } // @Name User
 
 type UserProfile struct {
@@ -838,7 +838,7 @@ func (s *storage) UpdateLastCheckIn(userID int64) (bool, error) {
     WITH check_reward AS (
         SELECT id, last_check_in
         FROM users
-        WHERE id = $1 AND (last_check_in < NOW() - INTERVAL '1 day' OR last_check_in IS NULL)
+        WHERE id = $1 AND (last_check_in IS NULL OR last_check_in < CURRENT_DATE)
         FOR UPDATE
     )
     UPDATE users
