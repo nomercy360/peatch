@@ -172,9 +172,9 @@ export default function UserProfilePage() {
 
 	function shareURL() {
 		const url =
-			'https://t.me/share?' +
+			'https://t.me/share/url?' +
 			new URLSearchParams({
-				url: 'https://google.com',
+				url: 'https://t.me/peatch_bot/app?startapp=t-users-' + username,
 				text: `Check out ${query.data.first_name} ${query.data.last_name}'s profile on Peatch`,
 			}).toString()
 
