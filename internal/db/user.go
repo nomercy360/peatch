@@ -168,7 +168,7 @@ func (s *storage) ListUsers(params UserQuery) ([]User, error) {
 	paramIndex := 1
 	args := make([]interface{}, 0)
 
-	whereClauses := []string{"published_at IS NOT NULL AND hidden_at IS NULL"}
+	whereClauses := []string{"u.published_at IS NOT NULL AND u.hidden_at IS NULL AND u.profile_score > 4"}
 
 	if params.Search != "" {
 		searchClause := " (u.first_name ILIKE $1 OR u.last_name ILIKE $1 OR u.title ILIKE $1 OR u.description ILIKE $1) "
@@ -178,7 +178,7 @@ func (s *storage) ListUsers(params UserQuery) ([]User, error) {
 	}
 
 	query = fmt.Sprintf("%s WHERE %s", query, strings.Join(whereClauses, " AND "))
-	query += fmt.Sprintf(" GROUP BY u.id ORDER BY u.profile_score DESC, u.created_at DESC")
+	query += fmt.Sprintf(" GROUP BY u.id ORDER BY u.created_at DESC")
 	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", paramIndex, paramIndex+1)
 
 	offset := (params.Page - 1) * params.Limit

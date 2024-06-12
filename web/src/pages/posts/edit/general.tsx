@@ -9,7 +9,7 @@ import {
 	onMount,
 	Switch,
 } from 'solid-js'
-import { useLocation, useNavigate, useParams } from '@solidjs/router'
+import { useNavigate, useParams } from '@solidjs/router'
 import { Link } from '~/components/Link'
 import {
 	createPost,
@@ -19,13 +19,13 @@ import {
 } from '~/lib/api'
 import { queryClient } from '~/App'
 
+export const [imgFile, setImgFile] = createSignal<File | null>(null)
+export const [previewUrl, setPreviewUrl] = createSignal('')
+
 export default function GeneralInfo() {
 	const mainButton = useMainButton()
 
 	const navigate = useNavigate()
-
-	const [imgFile, setImgFile] = createSignal<File | null>(null)
-	const [previewUrl, setPreviewUrl] = createSignal('')
 
 	const idPath = useParams().id ? '/' + useParams().id : ''
 
@@ -58,6 +58,8 @@ export default function GeneralInfo() {
 				console.error(e)
 			} finally {
 				mainButton.enable('Save').showProgress(false)
+				setImgFile(null)
+				setPreviewUrl('')
 			}
 		}
 

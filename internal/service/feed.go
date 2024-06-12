@@ -85,13 +85,7 @@ func (s *service) GetFeed(uid int64, query FeedQuery) ([]FeedItem, error) {
 		items = append(items, feedItem)
 	}
 
-	// sort by created_at
 	sort.Slice(items, func(i, j int) bool {
-		// users already sorted by algorithm. No need to sort them again. Need only to sort posts and collaborations.
-		if items[i].Type == "user" && items[j].Type == "user" {
-			return false
-		}
-
 		return items[i].Data.GetCreatedAt().After(items[j].Data.GetCreatedAt())
 	})
 
