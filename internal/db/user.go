@@ -168,7 +168,7 @@ func (s *storage) ListUsers(params UserQuery) ([]User, error) {
 	paramIndex := 1
 	args := make([]interface{}, 0)
 
-	whereClauses := []string{"u.published_at IS NOT NULL AND u.hidden_at IS NULL AND u.profile_score > 4"}
+	whereClauses := []string{"u.published_at IS NOT NULL AND u.hidden_at IS NULL AND u.profile_score > 5"}
 
 	if params.Search != "" {
 		searchClause := " (u.first_name ILIKE $1 OR u.last_name ILIKE $1 OR u.title ILIKE $1 OR u.description ILIKE $1) "
