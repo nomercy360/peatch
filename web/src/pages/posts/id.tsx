@@ -64,7 +64,7 @@ export default function Collaboration() {
 									alt="Collaboration Image"
 								/>
 							</Show>
-							<p class="mt-4 text-3xl text-white">{query.data.title}</p>
+							<p class="mt-4 text-3xl text-main">{query.data.title}</p>
 						</div>
 						<div class="px-4 py-2.5">
 							<p class="text-lg font-normal text-secondary">
@@ -92,10 +92,10 @@ export const UserCardSmall = (props: { user: UserProfile }) => {
 				alt="User Avatar"
 			/>
 			<div>
-				<p class="text-sm font-bold text-white">
+				<p class="text-sm font-bold text-main">
 					{props.user.first_name} {props.user.last_name}:
 				</p>
-				<p class="text-sm text-white">{props.user.title}</p>
+				<p class="text-sm text-main">{props.user.title}</p>
 			</div>
 		</Link>
 	)
