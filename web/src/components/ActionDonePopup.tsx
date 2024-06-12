@@ -29,7 +29,7 @@ export default function ActionDonePopup(props: {
 							<img
 								src={image}
 								alt="User Avatar"
-								class="-ml-1 size-11 rounded-lg border-2 object-cover object-center"
+								class="-ml-1 size-11 rounded-lg border object-cover object-center"
 								classList={{
 									'ml-0': idx() === 0,
 									'z-20': idx() === 0,

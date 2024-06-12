@@ -83,6 +83,24 @@ export const routes: RouteDefinition[] = [
 		],
 	},
 	{
+		path: '/posts/:id',
+		component: lazy(() => import('~/pages/posts/id')),
+	},
+	{
+		path: '/posts/edit/:id?',
+		component: lazy(() => import('~/pages/posts/edit')),
+		children: [
+			{
+				path: '/',
+				component: lazy(() => import('~/pages/posts/edit/general')),
+			},
+			{
+				path: '/location',
+				component: lazy(() => import('~/pages/posts/edit/location')),
+			},
+		],
+	},
+	{
 		path: '/users/:handle/collaborate',
 		component: lazy(() => import('~/pages/users/collaborate')),
 	},

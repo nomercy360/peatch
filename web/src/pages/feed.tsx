@@ -9,7 +9,7 @@ import {
 	Suspense,
 	Switch,
 } from 'solid-js'
-import { Collaboration, User } from '~/gen/types'
+import { Collaboration, Post, User, UserProfile } from '~/gen/types'
 import { CDN_URL, fetchFeed } from '~/lib/api'
 import { Link } from '~/components/Link'
 import BadgeList from '~/components/BadgeList'
@@ -19,6 +19,8 @@ import { store } from '~/store'
 import FillProfilePopup from '~/components/FillProfilePopup'
 import { useMainButton } from '~/lib/useMainButton'
 import { useNavigate } from '@solidjs/router'
+import { UserCardSmall } from '~/pages/posts/id'
+import { LocationBadge } from '~/components/location-badge'
 
 export default function FeedPage() {
 	const [search, setSearch] = createSignal('')
@@ -49,6 +51,17 @@ export default function FeedPage() {
 		navigate('/collaborations/edit')
 	}
 
+	const [dropDown, setDropDown] = createSignal(false)
+
+	const closeDropDown = () => {
+		setDropDown(false)
+	}
+
+	const openDropDown = () => {
+		document.body.style.overflow = 'hidden'
+		setDropDown(true)
+	}
+
 	onMount(() => {
 		window.Telegram.WebApp.CloudStorage.getItem(
 			'profilePopup',
@@ -64,7 +77,7 @@ export default function FeedPage() {
 		)
 
 		if (store.user.published_at && !store.user.hidden_at) {
-			mainButton.enable('Post to Peatch').onClick(toCreateCollab)
+			mainButton.enable('Post to Peatch').onClick(openDropDown)
 		}
 
 		window.Telegram.WebApp.disableClosingConfirmation()
@@ -111,10 +124,55 @@ export default function FeedPage() {
 	onCleanup(() => {
 		mainButton.hide()
 		mainButton.offClick(toCreateCollab)
+		document.removeEventListener('click', closeDropDownOnOutsideClick)
+		document.body.style.overflow = 'auto'
 	})
 
+	// if dropdown is open, every click outside of the dropdown will close
+	const closeDropDownOnOutsideClick = (e: MouseEvent) => {
+		if (
+			dropDown() &&
+			!e.composedPath().includes(document.getElementById('dropdown-menu')!)
+		) {
+			closeDropDown()
+			document.body.style.overflow = 'auto'
+		}
+	}
+
+	document.addEventListener('click', closeDropDownOnOutsideClick)
+
 	return (
-		<div class="min-h-screen bg-secondary pb-56 pt-16">
+		<div class="min-h-screen bg-secondary pb-56 pt-[76px]">
+			<Show when={dropDown()}>
+				<div
+					class="fixed inset-0 z-50 flex h-screen w-full flex-col items-center justify-end px-4 py-2.5"
+					style={{
+						'background-color':
+							window.Telegram.WebApp.colorScheme === 'dark'
+								? 'rgba(0, 0, 0, 0.8)'
+								: 'rgba(255, 255, 255, 0.8)',
+					}}
+				>
+					<div
+						id="dropdown-menu"
+						class="flex w-full flex-col items-center justify-center rounded-xl bg-main"
+					>
+						<button
+							class="flex h-12 w-full items-center justify-center bg-transparent text-main"
+							onClick={() => navigate('/collaborations/edit')}
+						>
+							New collaboration
+						</button>
+						<div class="h-px w-full bg-border" />
+						<button
+							class="flex h-12 w-full items-center justify-center bg-transparent text-main"
+							onClick={() => navigate('/posts/edit')}
+						>
+							New post
+						</button>
+					</div>
+				</div>
+			</Show>
 			<Show when={!store.user.published_at && profilePopup()}>
 				<FillProfilePopup onClose={() => closePopup('profilePopup')} />
 			</Show>
@@ -124,7 +182,7 @@ export default function FeedPage() {
 			<Show when={!communityPopup() && rewardsPopup() && !store.user.hidden_at}>
 				<RewardsPopup onClose={() => closePopup('rewardsPopup')} />
 			</Show>
-			<div class="fixed top-0 z-30 flex w-full flex-row items-center justify-between space-x-4 border-b bg-secondary p-4">
+			<div class="fixed top-0 z-20 flex w-full flex-row items-center justify-between space-x-4 border-b bg-secondary p-4">
 				<div class="relative flex h-10 w-full flex-row items-center justify-center rounded-lg bg-main">
 					<input
 						class="h-full w-full bg-transparent px-2.5 text-main placeholder:text-hint"
@@ -135,7 +193,7 @@ export default function FeedPage() {
 					/>
 					<Show when={search()}>
 						<button
-							class="absolute right-2.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-neutral-400"
+							class="absolute right-2.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-main"
 							onClick={() => setSearch('')}
 						>
 							<span class="material-symbols-rounded text-[20px] text-button">
@@ -180,8 +238,11 @@ export default function FeedPage() {
 										scroll={scroll()}
 									/>
 								</Match>
+								<Match when={data.type === 'post'}>
+									<PostCard post={data.data as Post} />
+								</Match>
 							</Switch>
-							<div class="mt-5 h-px w-full bg-border" />
+							<div class="h-px w-full bg-border" />
 						</>
 					)}
 				</For>
@@ -205,7 +266,7 @@ const UserCard = (props: { user: User; scroll: number }) => {
 			state={{ from: '/', scroll: props.scroll }}
 		>
 			<img
-				class="size-11 rounded-xl object-cover"
+				class="size-10 rounded-xl object-cover"
 				src={imgUrl}
 				loading="lazy"
 				alt="User Avatar"
@@ -216,13 +277,13 @@ const UserCard = (props: { user: User; scroll: number }) => {
 				{shortenDescription(props.user.description!)}
 			</p>
 			<Show when={props.user.badges && props.user.badges.length > 0}>
-				<BadgeList
-					badges={props.user.badges!}
-					position="start"
-					city={props.user.city!}
-					country={props.user.country!}
-					countryCode={props.user.country_code!}
-				/>
+				<BadgeList badges={props.user.badges!} position="start">
+					<LocationBadge
+						country={props.user.country!}
+						city={props.user.city!}
+						countryCode={props.user.country_code!}
+					/>
+				</BadgeList>
 			</Show>
 		</Link>
 	)
@@ -259,6 +320,36 @@ const OpenCommunityPopup = (props: { onClose: () => void }) => {
 				</button>
 			</div>
 		</div>
+	)
+}
+
+const PostCard = (props: { post: Post }) => {
+	return (
+		<Link
+			class="flex flex-col items-start px-4 pb-5 pt-4 text-start"
+			href={`/posts/${props.post.id}`}
+		>
+			<UserCardSmall user={props.post.user as UserProfile} />
+			<p class="mt-4 text-3xl text-main">{props.post.title}</p>
+			<p class="mt-1 text-sm text-hint">{props.post.description}</p>
+			<Show when={props.post.image_url}>
+				<img
+					class="mt-3 aspect-[4/3] w-full rounded-xl object-cover"
+					src={props.post.image_url}
+					alt="Post Image"
+					loading="lazy"
+				/>
+			</Show>
+			<div class="mt-3">
+				<Show when={props.post.country && props.post.city}>
+					<LocationBadge
+						country={props.post.country!}
+						city={props.post.city!}
+						countryCode={props.post.country_code!}
+					/>
+				</Show>
+			</div>
+		</Link>
 	)
 }
 
@@ -303,17 +394,31 @@ const CollaborationCard = (props: {
 
 	return (
 		<Link
-			class="flex flex-col items-start px-4 pt-4 text-start"
+			class="flex flex-col items-start px-4 pb-5 pt-4 text-start"
 			href={`/collaborations/${props.collab.id}`}
 			state={{ from: '/', scroll: props.scroll }}
 		>
-			<div
-				class="flex size-10 flex-row items-center justify-center rounded-full"
-				style={{ 'background-color': `#${props.collab.opportunity?.color}` }}
-			>
-				<span class="material-symbols-rounded text-[20px] text-white">
-					{String.fromCodePoint(parseInt(props.collab.opportunity?.icon!, 16))}
-				</span>
+			<div class="flex flex-row items-center justify-center gap-2">
+				<div
+					class="flex size-10 flex-row items-center justify-center rounded-full"
+					style={{ 'background-color': `#${props.collab.opportunity?.color}` }}
+				>
+					<span class="material-symbols-rounded text-[20px] text-white">
+						{String.fromCodePoint(
+							parseInt(props.collab.opportunity?.icon!, 16),
+						)}
+					</span>
+				</div>
+				<Link
+					href={`/users/${props.collab.user?.username}`}
+					state={{ back: true, scroll: props.scroll }}
+				>
+					<img
+						class="size-10 rounded-xl object-cover"
+						src={CDN_URL + '/' + props.collab.user?.avatar_url}
+						alt="User Avatar"
+					/>
+				</Link>
 			</div>
 			<p
 				class="mt-3 text-3xl"

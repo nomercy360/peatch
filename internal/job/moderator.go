@@ -3,19 +3,17 @@ package job
 import (
 	"encoding/json"
 	"fmt"
-	telegram "github.com/go-telegram/bot"
 	"github.com/peatch-io/peatch/internal/db"
-	"github.com/peatch-io/peatch/internal/notification"
 	"io"
 	"log"
 	"net/http"
+	"regexp"
+	"strconv"
 	"strings"
 )
 
 func getRequestBody(userProfile string) string {
 	// replace newlines with spaces
-	userProfile = strings.ReplaceAll(userProfile, "\n", " ")
-
 	return fmt.Sprintf(`{
     "model": "gpt-4o",
     "messages": [
@@ -24,7 +22,7 @@ func getRequestBody(userProfile string) string {
             "content": [
                 {
                     "type": "text",
-                    "text": "Review user profile and decide if its a spam or not. Its a social network for collaboration and finding talents. So people profiles are important The more important fields are the title, first_name, last_name, and description Less important is to compare the badges and opportunities with profile description and title, see if they correlate The RESULT is EXACTLY on of - spam, not_spam, not_sure"
+                    "text": "Review user profile description and give it a score. Its for a social network for collaboration and finding talents, so realistic and non-abstract profile is most important. Main fields are 'Title', 'First Name', 'Last Name', and 'Description' less important is to compare Badges and Opportunities with profile description and title, see if they correlate The RESULT is a number from 0 to 10, where 0 is a total spam and 10 is the most interesting profile ever seen"
                 }
             ]
         },
@@ -33,7 +31,7 @@ func getRequestBody(userProfile string) string {
             "content": [
                 {
                     "type": "text",
-                    "text": "Title: Project Manager First Name: German Last Name: Ermolenko Description: 21 y.o. Junior Project/Product manager with marketing skills, student Badges: Business Developer, Content Creator, Project Manager, Business Assistant, Pizza Lover, Manager Opportunities: Giving product reviews, Coaching founders, Co-founding a company, Career coaching, Beta testing new products, Advising on SEO, Advising early stage companies"
+                    "text": "Title: Project Manager First Name: Demid Last Name: Druz Description: Hello, I'm Demid Druz’! I am 29 years old, I have been doing Visual design, Art, Graffiti for more than 10 years! I work with top companies in my field and created an MOST app that I plan to 🚀 🧑🏽‍💻My portfolio - behance.net/demiddruz ☮️My app - https://apps.apple.com/app/id1566117045 Badges: Wine Lover Traveller Founder Product Designer Business Developer Visionary Photographer Graphic Designer UX Designer UI Designer Opportunities: Giving product reviews, Coaching founders, Co-founding a company, Career coaching, Beta testing new products, Advising on SEO, Advising early stage companies"
                 }
             ]
         },
@@ -42,7 +40,7 @@ func getRequestBody(userProfile string) string {
             "content": [
                 {
                     "type": "text",
-                    "text": "not_spam"
+                    "text": "7"
                 }
             ]
         },
@@ -60,7 +58,7 @@ func getRequestBody(userProfile string) string {
             "content": [
                 {
                     "type": "text",
-                    "text": "not_spam"
+                    "text": "6"
                 }
             ]
         },
@@ -78,7 +76,7 @@ func getRequestBody(userProfile string) string {
             "content": [
                 {
                     "type": "text",
-                    "text": "spam"
+                    "text": "3"
                 }
             ]
         },
@@ -96,7 +94,7 @@ func getRequestBody(userProfile string) string {
             "content": [
                 {
                     "type": "text",
-                    "text": "spam"
+                    "text": "2"
                 }
             ]
         },
@@ -182,16 +180,23 @@ func sendOpenAIRequest(reqBody string, token string) (*OpenAIResponse, error) {
 func userToString(user db.User) string {
 	msg := fmt.Sprintf("Title: %s First Name: %s Last Name: %s Description: %s", *user.Title, *user.FirstName, *user.LastName, *user.Description)
 
+	msg += fmt.Sprintf(" Badges: ")
+
 	for _, badge := range user.Badges {
-		msg += fmt.Sprintf(" Badges: %s", badge.Text)
+		msg += fmt.Sprintf("%s,", badge.Text)
 	}
 
+	msg += fmt.Sprintf(" Opportunities: ")
+
 	for _, opportunity := range user.Opportunities {
-		msg += fmt.Sprintf(" Opportunities: %s", opportunity.Text)
+		msg += fmt.Sprintf("%s,", opportunity.Text)
 	}
 
 	// replace all " with \"
 	msg = strings.ReplaceAll(msg, `"`, `\"`)
+
+	re := regexp.MustCompile(`\r?\n`)
+	msg = re.ReplaceAllString(msg, " ")
 
 	return msg
 }
@@ -226,39 +231,36 @@ func (j *notifyJob) ModerateUserProfile() error {
 			return fmt.Errorf("OpenAI response did not finish")
 		}
 
-		status := choice.Message.Content
-		if status != "not_spam" && status != "spam" && status != "unsure" {
-			log.Printf("Unknown status from OpenAI: %s", status)
-			status = "unsure"
+		score, err := strconv.Atoi(choice.Message.Content)
+		if err != nil || score < 0 || score > 10 {
+			return fmt.Errorf("failed to parse score: %w, reqBody: %s, resp: %v", err, reqBody, resp)
 		}
 
-		if err := j.storage.UpdateUserReviewStatus(user.ID, status); err != nil {
+		if err := j.storage.UpdateProfileScore(user.ID, score); err != nil {
 			return fmt.Errorf("failed to update user review status: %w", err)
 		}
 
-		log.Printf("User %d review status: %s", user.ID, status)
+		log.Printf("User %s %s scoring status: %d", *user.FirstName, *user.LastName, score)
+		//
+		//var msg, url, btnText string
+		//if score < 4 {
+		//	msg = fmt.Sprintf("Your profile was hidden by our moderation. Try to make it more informative and less spammy.")
+		//	url = fmt.Sprintf("%s/users/edit", j.config.webappURL)
+		//	btnText = "Edit Profile"
+		//} else {
+		//	msg = fmt.Sprintf("Your profile was approved by our moderation. Try out creating new collaboration post")
+		//	url = fmt.Sprintf("%s/collaborations/edit", j.config.webappURL)
+		//	btnText = "Create Post"
+		//}
 
-		var msg, url, btnText string
-		if status == "spam" {
-			msg = fmt.Sprintf("Your profile was hidden by our moderation. Try to make it more informative and less spammy.")
-			url = fmt.Sprintf("%s/users/edit", j.config.webappURL)
-			btnText = "Edit Profile"
-		} else if status == "not_spam" {
-			msg = fmt.Sprintf("Your profile was approved by our moderation. Try out creating new collaboration post")
-			url = fmt.Sprintf("%s/collaborations/edit", j.config.webappURL)
-			btnText = "Create Post"
-		} else {
-			continue
-		}
-
-		if err := j.notifier.SendTextNotification(notification.SendNotificationParams{
-			ChatID:     user.ChatID,
-			Message:    telegram.EscapeMarkdown(msg),
-			WebAppURL:  url,
-			ButtonText: btnText,
-		}); err != nil {
-			log.Printf("Failed to send telegram notification: %s", err)
-		}
+		//if err := j.notifier.SendTextNotification(notification.SendNotificationParams{
+		//	ChatID:     user.ChatID,
+		//	Message:    telegram.EscapeMarkdown(msg),
+		//	WebAppURL:  url,
+		//	ButtonText: btnText,
+		//}); err != nil {
+		//	log.Printf("Failed to send telegram notification: %s", err)
+		//}
 	}
 
 	return nil

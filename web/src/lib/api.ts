@@ -223,6 +223,22 @@ export const createCollaborationRequest = async (
 	})
 }
 
+export const fetchPost = async (postID: number) => {
+	return await apiFetch({ endpoint: `/posts/${postID}` })
+}
+
+export const createPost = async (post: any) => {
+	return await apiFetch({ endpoint: '/posts', method: 'POST', body: post })
+}
+
+export const updatePost = async (postID: number, post: any) => {
+	return await apiFetch({
+		endpoint: `/posts/${postID}`,
+		method: 'PUT',
+		body: post,
+	})
+}
+
 export const searchLocations = async (search: string) => {
 	return await apiFetch({ endpoint: `/locations?search=${search}` })
 }

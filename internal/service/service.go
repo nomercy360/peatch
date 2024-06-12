@@ -42,6 +42,10 @@ type storage interface {
 	UpdateLastCheckIn(userID int64) (bool, error)
 	UpdateUserPoints(userID int64, adjustment int) error
 	ListUserReceivedRequests(userID int64) ([]db.UserCollaborationRequest, error)
+	GetPostByID(uid, id int64) (*db.Post, error)
+	CreatePost(post db.Post) (*db.Post, error)
+	GetPosts(query db.PostQuery) ([]db.Post, error)
+	UpdatePost(uid int64, postID int64, post db.Post) (*db.Post, error)
 }
 
 type s3Client interface {
@@ -50,6 +54,7 @@ type s3Client interface {
 
 type Config struct {
 	BotToken string
+	CdnURL   string
 }
 
 type notifier interface {

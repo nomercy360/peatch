@@ -15,6 +15,31 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/activity-history": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Get activity history",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/ActivityEvent"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/auth/telegram": {
             "get": {
                 "consumes": [
@@ -296,34 +321,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/collaborations/{id}/hide": {
-            "put": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "collaborations"
-                ],
-                "summary": "Hide collaboration",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Collaboration ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    }
-                }
-            }
-        },
         "/api/collaborations/{id}/publish": {
             "put": {
                 "consumes": [
@@ -383,8 +380,8 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/collaborations/{id}/show": {
-            "put": {
+        "/api/daily-reward": {
+            "post": {
                 "consumes": [
                     "application/json"
                 ],
@@ -392,21 +389,42 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "collaborations"
+                    "users"
                 ],
-                "summary": "Show collaboration",
+                "summary": "Claim daily reward",
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/api/feedback-survey": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Create feedback survey",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Collaboration ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
+                        "description": "Survey data",
+                        "name": "survey",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/FeedbackSurveyRequest"
+                        }
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK"
+                    "204": {
+                        "description": "No Content"
                     }
                 }
             }
@@ -431,6 +449,37 @@ const docTemplate = `{
                             "items": {
                                 "$ref": "#/definitions/Opportunity"
                             }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/posts/{id}": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "posts"
+                ],
+                "summary": "Find post by id",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Post ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/Post"
                         }
                     }
                 }
@@ -519,40 +568,6 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/User"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/users/matching": {
-            "get": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "List matching profiles",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "User ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/UserProfileShort"
-                            }
                         }
                     }
                 }
@@ -753,25 +768,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/users/{user_id}/hide": {
-            "post": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "Hide user",
-                "responses": {
-                    "204": {
-                        "description": "No Content"
-                    }
-                }
-            }
-        },
         "/api/users/{user_id}/publish": {
             "post": {
                 "consumes": [
@@ -784,25 +780,6 @@ const docTemplate = `{
                     "users"
                 ],
                 "summary": "Publish user",
-                "responses": {
-                    "204": {
-                        "description": "No Content"
-                    }
-                }
-            }
-        },
-        "/api/users/{user_id}/show": {
-            "post": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "Show user",
                 "responses": {
                     "204": {
                         "description": "No Content"
@@ -868,6 +845,18 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "ActivityEvent": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "data": {},
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
         "Badge": {
             "type": "object",
             "properties": {
@@ -1041,6 +1030,18 @@ const docTemplate = `{
                 }
             }
         },
+        "FeedbackSurveyRequest": {
+            "type": "object",
+            "required": [
+                "message"
+            ],
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "maxLength": 1000
+                }
+            }
+        },
         "Opportunity": {
             "type": "object",
             "properties": {
@@ -1061,6 +1062,47 @@ const docTemplate = `{
                 },
                 "text": {
                     "type": "string"
+                }
+            }
+        },
+        "Post": {
+            "type": "object",
+            "properties": {
+                "city": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "country_code": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "hidden_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/UserProfile"
+                },
+                "user_id": {
+                    "type": "integer"
                 }
             }
         },

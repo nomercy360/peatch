@@ -25,8 +25,8 @@ type service interface {
 	ListOpportunities() ([]db.LOpportunity, error)
 	ListBadges(search string) ([]db.Badge, error)
 	CreateBadge(badge svc.CreateBadgeRequest) (*db.Badge, error)
-	FollowUser(userID, followingID int64) error
-	UnfollowUser(userID, followingID int64) error
+	FollowUser(userID, followerID int64) error
+	UnfollowUser(userID, followerID int64) error
 	PublishUser(userID int64) error
 	ListCollaborations(query db.CollaborationQuery) ([]db.Collaboration, error)
 	GetCollaborationByID(userID, id int64) (*db.Collaboration, error)
@@ -47,6 +47,9 @@ type service interface {
 	ClaimDailyReward(userID int64) error
 	AcceptFeedbackSurvey(userID int64, survey svc.FeedbackSurveyRequest) error
 	GetActivityHistory(userID int64) ([]svc.ActivityEvent, error)
+	GetPostByID(uid, id int64) (*db.Post, error)
+	CreatePost(userID int64, post svc.CreatePostRequest) (*db.Post, error)
+	UpdatePost(userID, postID int64, update svc.CreatePostRequest) (*db.Post, error)
 }
 
 type CustomValidator struct {
@@ -109,6 +112,9 @@ func (h *handler) RegisterRoutes(e *echo.Echo) {
 	a.POST("/daily-reward", h.handleClaimDailyReward)
 	a.POST("/feedback-survey", h.handleCreateFeedbackSurvey)
 	a.GET("/activity", h.handleGetActivityHistory)
+	a.GET("/posts/:id", h.handleGetPost)
+	a.POST("/posts", h.handleCreatePost)
+	a.PUT("/posts/:id", h.handleUpdatePost)
 }
 
 func (h *handler) handleIndex(c echo.Context) error {

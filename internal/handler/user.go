@@ -123,10 +123,10 @@ func (h *handler) handleUpdateUser(c echo.Context) error {
 // @Success 204
 // @Router /users/{id}/follow [get]
 func (h *handler) handleFollowUser(c echo.Context) error {
-	userID := getUserID(c)
-	followingID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	followerID := getUserID(c)
+	userID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 
-	err := h.svc.FollowUser(userID, followingID)
+	err := h.svc.FollowUser(userID, followerID)
 	if err != nil {
 		return err
 	}
@@ -143,10 +143,10 @@ func (h *handler) handleFollowUser(c echo.Context) error {
 // @Success 204
 // @Router /users/{id}/unfollow [get]
 func (h *handler) handleUnfollowUser(c echo.Context) error {
-	userID := getUserID(c)
-	followingID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	followerID := getUserID(c)
+	userID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 
-	err := h.svc.UnfollowUser(userID, followingID)
+	err := h.svc.UnfollowUser(userID, followerID)
 	if err != nil {
 		return err
 	}

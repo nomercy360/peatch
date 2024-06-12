@@ -266,7 +266,7 @@ func (s *service) ClaimDailyReward(userID int64) error {
 
 type FeedbackSurveyRequest struct {
 	Message string `json:"message" validate:"max=1000,required"`
-}
+} // @Name FeedbackSurveyRequest
 
 func (s *service) AcceptFeedbackSurvey(userID int64, survey FeedbackSurveyRequest) error {
 	// send message to telegram

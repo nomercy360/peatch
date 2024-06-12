@@ -21,6 +21,7 @@ import { useMainButton } from '~/lib/useMainButton'
 import BadgeList from '~/components/BadgeList'
 import ActionDonePopup from '~/components/ActionDonePopup'
 import { createQuery } from '@tanstack/solid-query'
+import { LocationBadge } from '~/components/location-badge'
 
 export default function Collaborate() {
 	const params = useParams()
@@ -128,13 +129,13 @@ export default function Collaborate() {
 								/>
 							</div>
 							<Show when={query.data.badges && query.data?.badges.length > 0}>
-								<BadgeList
-									badges={query.data.badges}
-									position="center"
-									city={query.data.city}
-									country={query.data.country}
-									countryCode={query.data.country_code}
-								/>
+								<BadgeList badges={query.data.user.badges!} position="center">
+									<LocationBadge
+										country={query.data.user.country!}
+										city={query.data.user.city!}
+										countryCode={query.data.user.country_code!}
+									/>
+								</BadgeList>
 							</Show>
 						</div>
 						<TextArea

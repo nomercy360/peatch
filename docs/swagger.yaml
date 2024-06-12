@@ -1,5 +1,13 @@
 basePath: /
 definitions:
+  ActivityEvent:
+    properties:
+      created_at:
+        type: string
+      data: {}
+      type:
+        type: string
+    type: object
   Badge:
     properties:
       color:
@@ -117,6 +125,14 @@ definitions:
     required:
     - message
     type: object
+  FeedbackSurveyRequest:
+    properties:
+      message:
+        maxLength: 1000
+        type: string
+    required:
+    - message
+    type: object
   Opportunity:
     properties:
       color:
@@ -131,6 +147,33 @@ definitions:
         type: integer
       text:
         type: string
+    type: object
+  Post:
+    properties:
+      city:
+        type: string
+      country:
+        type: string
+      country_code:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      hidden_at:
+        type: string
+      id:
+        type: integer
+      image_url:
+        type: string
+      title:
+        type: string
+      updated_at:
+        type: string
+      user:
+        $ref: '#/definitions/UserProfile'
+      user_id:
+        type: integer
     type: object
   UpdateUserRequest:
     properties:
@@ -303,6 +346,22 @@ info:
   title: Peatch API
   version: "1.0"
 paths:
+  /api/activity-history:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/ActivityEvent'
+            type: array
+      summary: Get activity history
+      tags:
+      - users
   /api/auth/telegram:
     get:
       consumes:
@@ -486,24 +545,6 @@ paths:
       summary: Update collaboration
       tags:
       - collaborations
-  /api/collaborations/{id}/hide:
-    put:
-      consumes:
-      - application/json
-      parameters:
-      - description: Collaboration ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-      summary: Hide collaboration
-      tags:
-      - collaborations
   /api/collaborations/{id}/publish:
     put:
       consumes:
@@ -542,24 +583,37 @@ paths:
       summary: Find collaboration request
       tags:
       - collaborations
-  /api/collaborations/{id}/show:
-    put:
+  /api/daily-reward:
+    post:
       consumes:
       - application/json
-      parameters:
-      - description: Collaboration ID
-        in: path
-        name: id
-        required: true
-        type: integer
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
-      summary: Show collaboration
+        "204":
+          description: No Content
+      summary: Claim daily reward
       tags:
-      - collaborations
+      - users
+  /api/feedback-survey:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Survey data
+        in: body
+        name: survey
+        required: true
+        schema:
+          $ref: '#/definitions/FeedbackSurveyRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      summary: Create feedback survey
+      tags:
+      - users
   /api/opportunities:
     get:
       consumes:
@@ -576,6 +630,26 @@ paths:
       summary: List opportunities
       tags:
       - opportunities
+  /api/posts/{id}:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Post ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Post'
+      summary: Find post by id
+      tags:
+      - posts
   /api/users:
     get:
       consumes:
@@ -743,18 +817,6 @@ paths:
       summary: Create user collaboration
       tags:
       - collaborations
-  /api/users/{user_id}/hide:
-    post:
-      consumes:
-      - application/json
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: No Content
-      summary: Hide user
-      tags:
-      - users
   /api/users/{user_id}/publish:
     post:
       consumes:
@@ -765,40 +827,6 @@ paths:
         "204":
           description: No Content
       summary: Publish user
-      tags:
-      - users
-  /api/users/{user_id}/show:
-    post:
-      consumes:
-      - application/json
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: No Content
-      summary: Show user
-      tags:
-      - users
-  /api/users/matching:
-    get:
-      consumes:
-      - application/json
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/UserProfileShort'
-            type: array
-      summary: List matching profiles
       tags:
       - users
   /api/users/preview:

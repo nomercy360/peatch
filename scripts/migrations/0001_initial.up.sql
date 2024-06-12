@@ -576,3 +576,18 @@ create table locations
     population   bigint       not null default 0
 );
 
+CREATE TABLE posts
+(
+    id           SERIAL PRIMARY KEY,
+    user_id      INTEGER REFERENCES users (id),
+    title        TEXT,
+    description  TEXT,
+    image_url    TEXT,
+    country      VARCHAR(255),
+    city         VARCHAR(255),
+    country_code VARCHAR(2),
+    hidden_at    timestamptz,
+    created_at   timestamptz NOT NULL DEFAULT NOW(),
+    updated_at   timestamptz NOT NULL DEFAULT NOW()
+);
+

@@ -27,7 +27,7 @@ type storage interface {
 	ListCollaborationRequests(from time.Time) ([]db.CollaborationRequest, error)
 	GetCollaborationOwner(collaborationID int64) (*db.User, error)
 	ListProfilesForModeration() ([]db.User, error)
-	UpdateUserReviewStatus(userID int64, status string) error
+	UpdateProfileScore(userID int64, status int) error
 }
 
 type notifyJob struct {

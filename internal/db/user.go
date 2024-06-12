@@ -74,6 +74,7 @@ type User struct {
 	ReferrerID             *int64           `json:"-" db:"referrer_id"`
 	LastCheckIn            *time.Time       `json:"-" db:"last_check_in"`
 	PeatchPoints           int              `json:"peatch_points" db:"peatch_points"`
+	ProfileScore           *int             `json:"profile_score" db:"profile_score"`
 } // @Name User
 
 type UserProfile struct {
@@ -177,7 +178,7 @@ func (s *storage) ListUsers(params UserQuery) ([]User, error) {
 	}
 
 	query = fmt.Sprintf("%s WHERE %s", query, strings.Join(whereClauses, " AND "))
-	query += fmt.Sprintf(" GROUP BY u.id ORDER BY u.created_at DESC")
+	query += fmt.Sprintf(" GROUP BY u.id ORDER BY u.profile_score DESC, u.created_at DESC")
 	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", paramIndex, paramIndex+1)
 
 	offset := (params.Page - 1) * params.Limit
@@ -376,20 +377,20 @@ func (s *storage) GetUserProfile(params GetUsersParams) (*User, error) {
 	return user, nil
 }
 
-func (s *storage) FollowUser(userID, followingID int64) error {
+func (s *storage) FollowUser(userID, followerID int64) error {
 	query := `
         WITH active_user AS (
             SELECT id FROM users
-            WHERE id = $1
+            WHERE id = $2
               AND hidden_at IS NULL
               AND published_at IS NOT NULL
         )
         INSERT INTO user_followers (user_id, follower_id)
-        SELECT $2, id FROM active_user
+        SELECT $1, id FROM active_user
         ON CONFLICT DO NOTHING;
     `
 
-	_, err := s.pg.Exec(query, followingID, userID)
+	_, err := s.pg.Exec(query, userID, followerID)
 	if err != nil && IsNoRowsError(err) {
 		return ErrNotFound
 	} else if err != nil {
@@ -399,13 +400,13 @@ func (s *storage) FollowUser(userID, followingID int64) error {
 	return nil
 }
 
-func (s *storage) UnfollowUser(userID, followingID int64) error {
+func (s *storage) UnfollowUser(userID, followerID int64) error {
 	query := `
 		DELETE FROM user_followers
 		WHERE user_id = $1 AND follower_id = $2;
 	`
 
-	res, err := s.pg.Exec(query, followingID, userID)
+	res, err := s.pg.Exec(query, userID, followerID)
 
 	if err != nil {
 		return err
@@ -791,10 +792,8 @@ func (s *storage) ListProfilesForModeration() ([]User, error) {
 				 JOIN public.user_opportunities uo on u.id = uo.user_id
 				 JOIN opportunities o on uo.opportunity_id = o.id
 		where u.published_at is not null
-		  and u.hidden_at is not null
-		  and review_status = 'pending'
-		group by u.id
-		order by u.created_at desc;
+		  and u.profile_score is null
+		group by u.id order by u.created_at desc;
 	`
 
 	err := s.pg.Select(&users, query)
@@ -806,14 +805,14 @@ func (s *storage) ListProfilesForModeration() ([]User, error) {
 	return users, nil
 }
 
-func (s *storage) UpdateUserReviewStatus(userID int64, status string) error {
+func (s *storage) UpdateProfileScore(userID int64, score int) error {
 	query := `
 		UPDATE users
-		SET review_status = $1
+		SET profile_score = $1
 		WHERE id = $2
 	`
 
-	res, err := s.pg.Exec(query, status, userID)
+	res, err := s.pg.Exec(query, score, userID)
 
 	if err != nil {
 		return err
@@ -823,10 +822,12 @@ func (s *storage) UpdateUserReviewStatus(userID int64, status string) error {
 		return ErrNotFound
 	}
 
-	if status == "not_spam" {
-		if err := s.ShowUser(userID); err != nil {
-			return err
-		}
+	if score < 4 {
+		return nil
+	}
+
+	if err := s.ShowUser(userID); err != nil {
+		return err
 	}
 
 	return nil

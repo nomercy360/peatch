@@ -26,6 +26,7 @@ type config struct {
 	DatabaseURL string `env:"DATABASE_URL,required"`
 	Server      ServerConfig
 	BotToken    string `env:"BOT_TOKEN,required"`
+	CdnURL      string `env:"CDN_URL,required"`
 	AWS         AWSConfig
 }
 
@@ -145,7 +146,7 @@ func main() {
 
 	notifier := notification.NewTelegramNotifier(bot)
 
-	svc := service.New(pg, s3Client, service.Config{BotToken: cfg.BotToken}, notifier)
+	svc := service.New(pg, s3Client, service.Config{BotToken: cfg.BotToken, CdnURL: cfg.CdnURL}, notifier)
 
 	h := handler.New(svc)
 
