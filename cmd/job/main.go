@@ -47,8 +47,8 @@ func main() {
 		job.NewJob("NotifyUserReceivedCollaborationRequest", 120*time.Second, notifyJob.NotifyUserReceivedCollaborationRequest),
 		job.NewJob("NotifyNewCollaboration", 140*time.Second, notifyJob.NotifyNewCollaboration),
 		job.NewJob("NotifyNewUserProfile", 160*time.Second, notifyJob.NotifyNewUserProfile),
-		job.NewJob("NotifyCollaborationRequest", 10*time.Second, notifyJob.NotifyCollaborationRequest),
-		job.NewJob("NotifyMatchedCollaboration", 10*time.Second, notifyJob.NotifyMatchedCollaboration),
+		job.NewJob("NotifyCollaborationRequest", 180*time.Second, notifyJob.NotifyCollaborationRequest),
+		job.NewJob("NotifyMatchedCollaboration", 220*time.Second, notifyJob.NotifyMatchedCollaboration),
 		job.NewJob("ModerateUserProfile", 120*time.Second, notifyJob.ModerateUserProfile),
 	}
 
