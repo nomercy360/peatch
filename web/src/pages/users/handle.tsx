@@ -171,13 +171,18 @@ export default function UserProfilePage() {
 	})
 
 	function shareURL() {
-		window.Telegram.WebApp.openTelegramLink(
+		const url =
 			'https://t.me/share?' +
-				new URLSearchParams({
-					url: `https://t.me/peatch_bot/app?startapp=t-users-${query.data.username}`,
-					text: `Check out ${query.data.first_name} ${query.data.last_name}'s profile on Peatch`,
-				}).toString(),
-		)
+			new URLSearchParams({
+				url:
+					'url=https://t.me/peatch_bot/app?startapp=t-users-' +
+					username +
+					'&text=Check out this profile on Peatch',
+			}).toString()
+
+		console.log('URL', url)
+
+		window.Telegram.WebApp.openTelegramLink(url)
 	}
 
 	const [badgesExpanded, setBadgesExpanded] = createSignal(false)
