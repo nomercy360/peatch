@@ -172,18 +172,14 @@ export default function UserProfilePage() {
 
 	const [contentCopied, setContentCopied] = createSignal(false)
 
-	async function copyToClipboard() {
-		try {
-			await navigator.clipboard.writeText(
-				't.me/peatch_bot/app?startapp=t-users-' + query.data.username,
-			)
-			setContentCopied(true)
-			window.Telegram.WebApp.HapticFeedback.impactOccurred('light')
-			setTimeout(() => setContentCopied(false), 2000)
-		} catch (err) {
-			console.error('Failed to copy: ', err)
-			window.Telegram.WebApp.sendData(window.location.href)
-		}
+	function shareURL() {
+		window.Telegram.WebApp.openTelegramLink(
+			'https://t.me/share?' +
+				new URLSearchParams({
+					url: `t.me/peatch_bot/app?startapp=t-users-${query.data.username}`,
+					text: `Check out ${query.data.first_name} ${query.data.last_name}'s profile on Peatch`,
+				}).toString(),
+		)
 	}
 
 	const [badgesExpanded, setBadgesExpanded] = createSignal(false)
@@ -287,16 +283,9 @@ export default function UserProfilePage() {
 										</div>
 										<button
 											class="flex h-8 flex-row items-center space-x-2 bg-transparent px-2.5"
-											classList={{
-												'text-main': !contentCopied(),
-												'text-green': contentCopied(),
-											}}
-											onClick={copyToClipboard}
+											onClick={() => shareURL()}
 										>
 											<span class="text-sm font-semibold">Share profile</span>
-											<span class="material-symbols-rounded text-[14px]">
-												{contentCopied() ? 'check_circle' : 'content_copy'}
-											</span>
 										</button>
 									</div>
 									<p class="text-3xl text-pink">
