@@ -284,7 +284,9 @@ export default function UserProfilePage() {
 											class="flex h-8 flex-row items-center space-x-1.5 bg-transparent px-2.5"
 											onClick={() => shareURL()}
 										>
-											<span class="text-sm font-semibold">Share profile</span>
+											<span class="text-sm font-semibold text-main">
+												Share profile
+											</span>
 											<span class="material-symbols-rounded text-[16px] text-main">
 												content_copy
 											</span>
