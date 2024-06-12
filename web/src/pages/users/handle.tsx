@@ -170,13 +170,11 @@ export default function UserProfilePage() {
 		mainButton.hide()
 	})
 
-	const [contentCopied, setContentCopied] = createSignal(false)
-
 	function shareURL() {
 		window.Telegram.WebApp.openTelegramLink(
 			'https://t.me/share?' +
 				new URLSearchParams({
-					url: `t.me/peatch_bot/app?startapp=t-users-${query.data.username}`,
+					url: `https://t.me/peatch_bot/app?startapp=t-users-${query.data.username}`,
 					text: `Check out ${query.data.first_name} ${query.data.last_name}'s profile on Peatch`,
 				}).toString(),
 		)
@@ -282,10 +280,13 @@ export default function UserProfilePage() {
 											</Link>
 										</div>
 										<button
-											class="flex h-8 flex-row items-center space-x-2 bg-transparent px-2.5"
+											class="flex h-8 flex-row items-center space-x-1.5 bg-transparent px-2.5"
 											onClick={() => shareURL()}
 										>
 											<span class="text-sm font-semibold">Share profile</span>
+											<span class="material-symbols-rounded text-[16px] text-main">
+												content_copy
+											</span>
 										</button>
 									</div>
 									<p class="text-3xl text-pink">
