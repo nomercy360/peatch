@@ -175,10 +175,8 @@ export default function UserProfilePage() {
 			'https://t.me/share/url?' +
 			new URLSearchParams({
 				url: 'https://t.me/peatch_bot/app?startapp=t-users-' + username,
-				text: `Check out ${query.data.first_name} ${query.data.last_name}'s profile on Peatch`,
-			}).toString()
-
-		console.log('URL', url)
+			}).toString() +
+			`&text=Check out ${query.data.first_name} ${query.data.last_name}'s profile on Peatch! 🌟`
 
 		window.Telegram.WebApp.openTelegramLink(url)
 	}
