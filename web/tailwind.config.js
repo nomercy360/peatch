@@ -83,7 +83,6 @@ module.exports = {
 				section_header_text_color_dark: '#aaaaaa',
 				subtitle_text_color_dark: '#aaaaaa',
 				destructive_text_color_dark: '#e53935',
-
 				main: 'var(--telegram-text-color)',
 				secondary: 'var(--telegram-subtitle-text-color)',
 				hint: 'var(--telegram-hint-color)',

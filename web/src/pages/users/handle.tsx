@@ -29,6 +29,7 @@ import { queryClient } from '~/App'
 import { Link } from '~/components/Link'
 import { UserProfile } from '~/gen/types'
 import { PeatchIcon } from '~/components/peatch-icon'
+import { NotificationIcon } from '~/pages/users/activity'
 
 export default function UserProfilePage() {
 	const mainButton = useMainButton()
@@ -214,9 +215,9 @@ export default function UserProfilePage() {
 								<Show when={isCurrentUserProfile && store.user.hidden_at}>
 									<button
 										onClick={showInfoPopup}
-										class="absolute left-6 top-4 flex size-8 items-center justify-start"
+										class="absolute left-4 top-4 flex size-8 items-center justify-center rounded-lg bg-secondary"
 									>
-										<span class="material-symbols-rounded text-white">
+										<span class="material-symbols-rounded text-main">
 											visibility_off
 										</span>
 									</button>
@@ -224,25 +225,21 @@ export default function UserProfilePage() {
 								<Show when={store.user.published_at && !store.user.hidden_at}>
 									<Switch>
 										<Match when={isCurrentUserProfile}>
-											<div class="absolute right-4 top-4 z-10 flex flex-row items-center justify-end space-x-2">
-												<Link
-													href="/users/activity"
-													state={{ back: true }}
-													class="flex size-8 items-center justify-center rounded-lg bg-secondary"
-												>
-													<span class="material-symbols-rounded text-[20px] text-[#FF8C42]">
-														notifications
-													</span>
-												</Link>
-												<Link
-													class="flex h-8 items-center justify-center gap-2 rounded-lg bg-secondary px-4 text-sm font-semibold text-[#FF8C42]"
-													href="/rewards"
-													state={{ back: true }}
-												>
-													<PeatchIcon width={16} height={16} />
-													{store.user.peatch_points}
-												</Link>
-											</div>
+											<Link
+												href="/users/activity"
+												state={{ back: true }}
+												class="absolute left-4 top-4 z-10 flex size-8 items-center justify-center rounded-lg bg-secondary"
+											>
+												<NotificationIcon width={20} height={19} />
+											</Link>
+											<Link
+												class="absolute right-4 top-4 z-10 flex h-8 items-center justify-center gap-2 rounded-lg bg-secondary px-4 text-sm font-semibold text-orange"
+												href="/rewards"
+												state={{ back: true }}
+											>
+												<PeatchIcon width={16} height={16} />
+												{store.user.peatch_points}
+											</Link>
 										</Match>
 										<Match
 											when={!isCurrentUserProfile && !query.data?.is_following}
