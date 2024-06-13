@@ -75,6 +75,8 @@ type User struct {
 	LastCheckIn            *time.Time       `json:"last_check_in" db:"last_check_in"`
 	PeatchPoints           int              `json:"peatch_points" db:"peatch_points"`
 	ProfileScore           *int             `json:"-" db:"profile_score"`
+	LikesCount             int              `json:"likes_count" db:"likes_count"`
+	IsLiked                bool             `json:"is_liked" db:"is_liked"`
 } // @Name User
 
 type UserProfile struct {
@@ -94,6 +96,8 @@ type UserProfile struct {
 	IsFollowing    bool          `json:"is_following" db:"is_following"`
 	Badges         []Badge       `json:"badges" db:"badges"`
 	Opportunities  []Opportunity `json:"opportunities" db:"opportunities"`
+	LikesCount     int           `json:"likes_count" db:"likes_count"`
+	IsLiked        bool          `json:"is_liked" db:"is_liked"`
 } // @Name UserProfile
 
 type Base interface {
@@ -143,6 +147,8 @@ func (u *User) ToUserProfile() UserProfile {
 		IsFollowing:    u.IsFollowing,
 		Badges:         u.Badges,
 		Opportunities:  u.Opportunities,
+		LikesCount:     u.LikesCount,
+		IsLiked:        u.IsLiked,
 	}
 }
 
@@ -150,6 +156,7 @@ type UserQuery struct {
 	Page   int
 	Limit  int
 	Search string
+	UserID int64
 }
 
 func (s *storage) ListUsers(params UserQuery) ([]User, error) {
@@ -157,7 +164,8 @@ func (s *storage) ListUsers(params UserQuery) ([]User, error) {
 	query := `
         SELECT u.*,
                json_agg(distinct to_jsonb(b)) as badges,
-               json_agg(distinct to_jsonb(o)) as opportunities
+               json_agg(distinct to_jsonb(o)) as opportunities,
+			   exists (select 1 from likes l where l.content_id = u.id and l.user_id = $1 and l.content_type = 'user') as is_liked
         FROM users u
         LEFT JOIN user_opportunities uo ON u.id = uo.user_id
         LEFT JOIN opportunities o ON uo.opportunity_id = o.id
@@ -165,13 +173,13 @@ func (s *storage) ListUsers(params UserQuery) ([]User, error) {
         LEFT JOIN badges b ON ub.badge_id = b.id
     `
 
-	paramIndex := 1
-	args := make([]interface{}, 0)
+	paramIndex := 2
+	args := []interface{}{params.UserID}
 
 	whereClauses := []string{"u.published_at IS NOT NULL AND u.hidden_at IS NULL AND u.profile_score > 5"}
 
 	if params.Search != "" {
-		searchClause := " (u.first_name ILIKE $1 OR u.last_name ILIKE $1 OR u.title ILIKE $1 OR u.description ILIKE $1) "
+		searchClause := fmt.Sprintf(" (u.first_name ILIKE $%d OR u.last_name ILIKE $%d OR u.title ILIKE $%d OR u.description ILIKE $%d)", paramIndex, paramIndex, paramIndex, paramIndex)
 		args = append(args, "%"+params.Search+"%")
 		whereClauses = append(whereClauses, searchClause)
 		paramIndex++
@@ -184,8 +192,7 @@ func (s *storage) ListUsers(params UserQuery) ([]User, error) {
 	offset := (params.Page - 1) * params.Limit
 	args = append(args, params.Limit, offset)
 
-	err := s.pg.Select(&users, query, args...)
-	if err != nil {
+	if err := s.pg.Select(&users, query, args...); err != nil {
 		return nil, err
 	}
 

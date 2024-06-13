@@ -262,3 +262,31 @@ export const submitFeedbackSurvey = async (message: string) => {
 		body: { message },
 	})
 }
+
+export const likeContent = async (
+	contentID: number,
+	contentType: 'post' | 'user' | 'collaboration',
+) => {
+	return await apiFetch({
+		endpoint: `/likes`,
+		body: { content_id: contentID, content_type: contentType },
+		method: 'POST',
+		showProgress: false,
+	})
+}
+
+export const unlikeContent = async (
+	contentID: number,
+	contentType: 'post' | 'user' | 'collaboration',
+) => {
+	return await apiFetch({
+		endpoint: `/likes`,
+		body: { content_id: contentID, content_type: contentType },
+		method: 'DELETE',
+		showProgress: false,
+	})
+}
+
+export const fetchActivity = async () => {
+	return await apiFetch({ endpoint: '/activity' })
+}

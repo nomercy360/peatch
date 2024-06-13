@@ -19,6 +19,8 @@ type Post struct {
 	City        *string     `json:"city" db:"city"`
 	CountryCode *string     `json:"country_code" db:"country_code"`
 	User        UserProfile `json:"user" db:"user"`
+	LikesCount  int         `json:"likes_count" db:"likes_count"`
+	IsLiked     bool        `json:"is_liked" db:"is_liked"`
 } //@Name Post
 
 func (p Post) GetCreatedAt() time.Time {
@@ -45,6 +47,7 @@ func (s *storage) GetPostByID(uid, id int64) (*Post, error) {
 
 	query := `
 		SELECT p.id, p.user_id, p.title, p.description, p.created_at, p.updated_at, p.image_url, p.country, p.city, p.country_code,
+		       p.likes_count,
 		       to_json(u) as "user"
 		FROM posts p
 		LEFT JOIN users u ON p.user_id = u.id
@@ -71,14 +74,16 @@ func (s *storage) GetPosts(query PostQuery) ([]Post, error) {
 
 	q := `
 		SELECT p.id, p.user_id, p.title, p.description, p.created_at, p.updated_at, p.image_url, p.country, p.city, p.country_code,
+		       p.likes_count,
+		       exists(SELECT 1 FROM likes l WHERE l.content_id = p.id AND l.content_type = 'post' AND l.user_id = $1) as is_liked,
 		       to_json(u) as "user"
 		FROM posts p
 		LEFT JOIN users u ON p.user_id = u.id
 		WHERE 1=1
 	`
 
-	paramIndex := 1
-	var args []interface{}
+	paramIndex := 2
+	args := []interface{}{query.UserID}
 	var whereClauses []string
 
 	if query.Search != "" {

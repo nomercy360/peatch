@@ -28,6 +28,7 @@ func (s *service) GetFeed(uid int64, query FeedQuery) ([]FeedItem, error) {
 	}
 
 	res, err := s.storage.ListUsers(db.UserQuery{
+		UserID: uid,
 		Page:   query.Page,
 		Limit:  query.Limit,
 		Search: query.Search,
@@ -48,10 +49,10 @@ func (s *service) GetFeed(uid int64, query FeedQuery) ([]FeedItem, error) {
 
 	// fetch collaborations
 	c, err := s.storage.ListCollaborations(db.CollaborationQuery{
-		Page:      query.Page,
-		Limit:     query.Limit,
-		Search:    query.Search,
-		HiddenFor: &uid,
+		Page:   query.Page,
+		Limit:  query.Limit,
+		Search: query.Search,
+		UserID: uid,
 	})
 
 	if err != nil {
@@ -70,7 +71,12 @@ func (s *service) GetFeed(uid int64, query FeedQuery) ([]FeedItem, error) {
 	posts := make([]db.Post, 0)
 
 	// fetch posts
-	posts, err = s.storage.GetPosts(db.PostQuery{Search: query.Search, Page: query.Page, Limit: query.Limit, UserID: uid})
+	posts, err = s.storage.GetPosts(db.PostQuery{
+		Search: query.Search,
+		Page:   query.Page,
+		Limit:  query.Limit,
+		UserID: uid,
+	})
 
 	if err != nil {
 		return nil, err

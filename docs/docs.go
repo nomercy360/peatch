@@ -15,7 +15,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/activity-history": {
+        "/api/activity": {
             "get": {
                 "consumes": [
                     "application/json"
@@ -33,7 +33,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/ActivityEvent"
+                                "$ref": "#/definitions/Activity"
                             }
                         }
                     }
@@ -573,31 +573,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/users/preview": {
-            "get": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "List user preview",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/UserPreview"
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/api/users/{id}": {
             "get": {
                 "consumes": [
@@ -845,15 +820,38 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "ActivityEvent": {
+        "Activity": {
             "type": "object",
             "properties": {
-                "created_at": {
+                "activity_type": {
                     "type": "string"
                 },
-                "data": {},
-                "type": {
+                "actor_first_name": {
                     "type": "string"
+                },
+                "actor_id": {
+                    "type": "integer"
+                },
+                "actor_last_name": {
+                    "type": "string"
+                },
+                "actor_username": {
+                    "type": "string"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "content_id": {
+                    "type": "integer"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
                 }
             }
         },
@@ -907,8 +905,14 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
+                "is_liked": {
+                    "type": "boolean"
+                },
                 "is_payable": {
                     "type": "boolean"
+                },
+                "likes_count": {
+                    "type": "integer"
                 },
                 "opportunity": {
                     "$ref": "#/definitions/Opportunity"
@@ -919,13 +923,7 @@ const docTemplate = `{
                 "published_at": {
                     "type": "string"
                 },
-                "requests_count": {
-                    "type": "integer"
-                },
                 "title": {
-                    "type": "string"
-                },
-                "updated_at": {
                     "type": "string"
                 },
                 "user": {
@@ -1092,6 +1090,12 @@ const docTemplate = `{
                 "image_url": {
                     "type": "string"
                 },
+                "is_liked": {
+                    "type": "boolean"
+                },
+                "likes_count": {
+                    "type": "integer"
+                },
                 "title": {
                     "type": "string"
                 },
@@ -1210,14 +1214,17 @@ const docTemplate = `{
                 "is_following": {
                     "type": "boolean"
                 },
-                "language_code": {
+                "is_liked": {
+                    "type": "boolean"
+                },
+                "last_check_in": {
                     "type": "string"
                 },
                 "last_name": {
                     "type": "string"
                 },
-                "notifications_enabled_at": {
-                    "type": "string"
+                "likes_count": {
+                    "type": "integer"
                 },
                 "opportunities": {
                     "type": "array",
@@ -1231,24 +1238,10 @@ const docTemplate = `{
                 "published_at": {
                     "type": "string"
                 },
-                "requests_count": {
-                    "type": "integer"
-                },
                 "title": {
                     "type": "string"
                 },
-                "updated_at": {
-                    "type": "string"
-                },
                 "username": {
-                    "type": "string"
-                }
-            }
-        },
-        "UserPreview": {
-            "type": "object",
-            "properties": {
-                "avatar_url": {
                     "type": "string"
                 }
             }
@@ -1295,8 +1288,14 @@ const docTemplate = `{
                 "is_following": {
                     "type": "boolean"
                 },
+                "is_liked": {
+                    "type": "boolean"
+                },
                 "last_name": {
                     "type": "string"
+                },
+                "likes_count": {
+                    "type": "integer"
                 },
                 "opportunities": {
                     "type": "array",

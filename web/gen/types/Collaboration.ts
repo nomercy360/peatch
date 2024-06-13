@@ -38,7 +38,15 @@ import { UserProfile } from "./UserProfile";
     /**
      * @type boolean | undefined
     */
+    is_liked?: boolean;
+    /**
+     * @type boolean | undefined
+    */
     is_payable?: boolean;
+    /**
+     * @type integer | undefined
+    */
+    likes_count?: number;
     opportunity?: Opportunity;
     /**
      * @type integer | undefined
@@ -49,17 +57,9 @@ import { UserProfile } from "./UserProfile";
     */
     published_at?: string;
     /**
-     * @type integer | undefined
-    */
-    requests_count?: number;
-    /**
      * @type string | undefined
     */
     title?: string;
-    /**
-     * @type string | undefined
-    */
-    updated_at?: string;
     user?: UserProfile;
     /**
      * @type integer | undefined

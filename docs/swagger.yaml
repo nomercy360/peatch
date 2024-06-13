@@ -1,12 +1,27 @@
 basePath: /
 definitions:
-  ActivityEvent:
+  Activity:
     properties:
-      created_at:
+      activity_type:
         type: string
-      data: {}
-      type:
+      actor_first_name:
         type: string
+      actor_id:
+        type: integer
+      actor_last_name:
+        type: string
+      actor_username:
+        type: string
+      content:
+        type: string
+      content_id:
+        type: integer
+      message:
+        type: string
+      timestamp:
+        type: string
+      user_id:
+        type: integer
     type: object
   Badge:
     properties:
@@ -41,19 +56,19 @@ definitions:
         type: string
       id:
         type: integer
+      is_liked:
+        type: boolean
       is_payable:
         type: boolean
+      likes_count:
+        type: integer
       opportunity:
         $ref: '#/definitions/Opportunity'
       opportunity_id:
         type: integer
       published_at:
         type: string
-      requests_count:
-        type: integer
       title:
-        type: string
-      updated_at:
         type: string
       user:
         $ref: '#/definitions/UserProfile'
@@ -166,6 +181,10 @@ definitions:
         type: integer
       image_url:
         type: string
+      is_liked:
+        type: boolean
+      likes_count:
+        type: integer
       title:
         type: string
       updated_at:
@@ -248,12 +267,14 @@ definitions:
         type: integer
       is_following:
         type: boolean
-      language_code:
+      is_liked:
+        type: boolean
+      last_check_in:
         type: string
       last_name:
         type: string
-      notifications_enabled_at:
-        type: string
+      likes_count:
+        type: integer
       opportunities:
         items:
           $ref: '#/definitions/Opportunity'
@@ -262,18 +283,9 @@ definitions:
         type: integer
       published_at:
         type: string
-      requests_count:
-        type: integer
       title:
         type: string
-      updated_at:
-        type: string
       username:
-        type: string
-    type: object
-  UserPreview:
-    properties:
-      avatar_url:
         type: string
     type: object
   UserProfile:
@@ -304,8 +316,12 @@ definitions:
         type: integer
       is_following:
         type: boolean
+      is_liked:
+        type: boolean
       last_name:
         type: string
+      likes_count:
+        type: integer
       opportunities:
         items:
           $ref: '#/definitions/Opportunity'
@@ -346,7 +362,7 @@ info:
   title: Peatch API
   version: "1.0"
 paths:
-  /api/activity-history:
+  /api/activity:
     get:
       consumes:
       - application/json
@@ -357,7 +373,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/ActivityEvent'
+              $ref: '#/definitions/Activity'
             type: array
       summary: Get activity history
       tags:
@@ -827,22 +843,6 @@ paths:
         "204":
           description: No Content
       summary: Publish user
-      tags:
-      - users
-  /api/users/preview:
-    get:
-      consumes:
-      - application/json
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/UserPreview'
-            type: array
-      summary: List user preview
       tags:
       - users
   /users/{id}/follow:

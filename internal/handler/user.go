@@ -202,23 +202,6 @@ func (h *handler) handleCreateUserCollaboration(c echo.Context) error {
 	return c.JSON(http.StatusOK, collaboration)
 }
 
-// handleGetUserPreview godoc
-// @Summary List user preview
-// @Tags users
-// @Accept  json
-// @Produce  json
-// @Success 200 {array} UserPreview
-// @Router /api/users/preview [get]
-func (h *handler) handleGetUserPreview(c echo.Context) error {
-	uid := getUserID(c)
-	users, err := h.svc.GetUserPreview(uid)
-	if err != nil {
-		return err
-	}
-
-	return c.JSON(http.StatusOK, users)
-}
-
 // handleFindUserCollaborationRequest godoc
 // @Summary Find user collaboration request
 // @Tags collaborations
@@ -330,8 +313,8 @@ func (h *handler) handleCreateFeedbackSurvey(c echo.Context) error {
 // @Tags users
 // @Accept  json
 // @Produce  json
-// @Success 200 {array} ActivityEvent
-// @Router /api/activity-history [get]
+// @Success 200 {array} Activity
+// @Router /api/activity [get]
 func (h *handler) handleGetActivityHistory(c echo.Context) error {
 	uid := getUserID(c)
 

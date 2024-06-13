@@ -99,6 +99,7 @@ module.exports = {
 				blue: '#3478F6',
 			},
 			colors: {
+				logo: 'var(--logo)',
 				pink: '#EF5DA8',
 				red: '#FE5F55',
 				orange: '#FF8C42',

@@ -25,10 +25,10 @@ func (h *handler) handleListCollaborations(c echo.Context) error {
 	uid := getUserID(c)
 
 	query := db.CollaborationQuery{
-		Page:      page,
-		Limit:     limit,
-		Search:    search,
-		HiddenFor: &uid,
+		Page:   page,
+		Limit:  limit,
+		Search: search,
+		UserID: uid,
 	}
 
 	collaborations, err := h.svc.ListCollaborations(query)

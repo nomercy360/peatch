@@ -15,15 +15,17 @@ type Collaboration struct {
 	IsPayable     bool        `json:"is_payable" db:"is_payable"`
 	PublishedAt   *time.Time  `json:"published_at" db:"published_at"`
 	CreatedAt     time.Time   `json:"created_at" db:"created_at"`
-	UpdatedAt     time.Time   `json:"updated_at" db:"updated_at"`
+	UpdatedAt     time.Time   `json:"-" db:"updated_at"`
 	Country       string      `json:"country" db:"country"`
 	City          *string     `json:"city" db:"city"`
 	CountryCode   string      `json:"country_code" db:"country_code"`
 	HiddenAt      *time.Time  `json:"hidden_at" db:"hidden_at"`
-	RequestsCount int         `json:"requests_count" db:"requests_count"`
+	RequestsCount int         `json:"-" db:"requests_count"`
 	Opportunity   Opportunity `json:"opportunity" db:"opportunity"`
 	User          UserProfile `json:"user" db:"user"`
 	Badges        BadgeSlice  `json:"badges,omitempty" db:"badges"`
+	LikesCount    int         `json:"likes_count" db:"likes_count"`
+	IsLiked       bool        `json:"is_liked" db:"is_liked"`
 } // @Name Collaboration
 
 func (c *Collaboration) GetLocation() string {
@@ -35,12 +37,12 @@ func (c *Collaboration) GetLocation() string {
 }
 
 type CollaborationQuery struct {
-	Page      int
-	Limit     int
-	Search    string
-	From      *time.Time
-	HiddenFor *int64
-	Visible   bool
+	Page    int
+	Limit   int
+	Search  string
+	From    *time.Time
+	UserID  int64
+	Visible bool
 }
 
 func (s *storage) ListCollaborations(params CollaborationQuery) ([]Collaboration, error) {
@@ -48,24 +50,18 @@ func (s *storage) ListCollaborations(params CollaborationQuery) ([]Collaboration
 	query := `
         SELECT c.*,
 			to_jsonb(o) as opportunity,
-			to_jsonb(u) as "user"
+			to_jsonb(u) as "user",
+			exists(SELECT 1 FROM likes l WHERE l.content_id = c.id AND l.user_id = $1 AND l.content_type = 'collaboration') as is_liked
         FROM collaborations c
         LEFT JOIN opportunities o ON c.opportunity_id = o.id
 		LEFT JOIN users u ON c.user_id = u.id
-        WHERE 1=1
+        WHERE c.published_at IS NOT NULL AND c.hidden_at IS NULL
     `
 
-	paramIndex := 1
-	args := make([]interface{}, 0)
+	paramIndex := 2
+	args := []interface{}{params.UserID}
 
 	var whereClauses []string
-
-	if params.HiddenFor != nil {
-		// show only this user collaborations or published+not hidden
-		whereClauses = append(whereClauses, fmt.Sprintf("AND (c.user_id = $%d OR (c.published_at IS NOT NULL AND c.hidden_at IS NULL))", paramIndex))
-		args = append(args, *params.HiddenFor)
-		paramIndex++
-	}
 
 	if params.Search != "" {
 		searchClause := fmt.Sprintf("AND (c.title ILIKE $%d OR c.description ILIKE $%d)", paramIndex, paramIndex)
@@ -79,10 +75,6 @@ func (s *storage) ListCollaborations(params CollaborationQuery) ([]Collaboration
 		args = append(args, *params.From)
 		whereClauses = append(whereClauses, fromClause)
 		paramIndex++
-	}
-
-	if params.Visible {
-		whereClauses = append(whereClauses, "AND c.published_at IS NOT NULL AND c.hidden_at IS NULL")
 	}
 
 	query = query + strings.Join(whereClauses, " ")

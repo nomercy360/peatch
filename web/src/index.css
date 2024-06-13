@@ -20,6 +20,7 @@
 
         --border: var(--border-color, #aaaaaa);
 
+        --logo: radial-gradient(66.09% 82.8% at 65% 35.71%, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.00) 48.96%), radial-gradient(70.8% 70.8% at 26.43% 100%, #FFD67E 0%, rgba(255, 215, 127, 0.00) 100%), radial-gradient(57.85% 57.85% at 84.29% 81.43%, #F35D28 0%, rgba(243, 93, 40, 0.00) 100%);
     }
 }
 
@@ -28,4 +29,13 @@
     * {
         @apply border-border;
     }
+}
+
+
+.material-symbols-rounded {
+    font-variation-settings: 'FILL' 1;
+}
+
+.no-fill.material-symbols-rounded {
+    font-variation-settings: 'FILL' 0;
 }

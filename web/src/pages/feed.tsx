@@ -10,21 +10,22 @@ import {
 	Switch,
 } from 'solid-js'
 import { Collaboration, Post, User, UserProfile } from '~/gen/types'
-import { CDN_URL, fetchFeed } from '~/lib/api'
+import { CDN_URL, fetchFeed, likeContent, unlikeContent } from '~/lib/api'
 import { Link } from '~/components/Link'
 import BadgeList from '~/components/BadgeList'
 import useDebounce from '~/lib/useDebounce'
-import { createQuery } from '@tanstack/solid-query'
+import { createMutation, createQuery } from '@tanstack/solid-query'
 import { store } from '~/store'
 import FillProfilePopup from '~/components/FillProfilePopup'
 import { useMainButton } from '~/lib/useMainButton'
 import { useNavigate } from '@solidjs/router'
 import { UserCardSmall } from '~/pages/posts/id'
 import { LocationBadge } from '~/components/location-badge'
+import { queryClient } from '~/App'
+
+export const [search, setSearch] = createSignal('')
 
 export default function FeedPage() {
-	const [search, setSearch] = createSignal('')
-
 	const updateSearch = useDebounce(setSearch, 350)
 
 	const mainButton = useMainButton()
@@ -285,6 +286,12 @@ const UserCard = (props: { user: User; scroll: number }) => {
 					/>
 				</BadgeList>
 			</Show>
+			<LikeButton
+				liked={props.user.is_liked!}
+				likes={props.user.likes_count!}
+				id={props.user.id!}
+				type="user"
+			/>
 		</Link>
 	)
 }
@@ -349,6 +356,12 @@ const PostCard = (props: { post: Post }) => {
 					/>
 				</Show>
 			</div>
+			<LikeButton
+				liked={props.post.is_liked!}
+				likes={props.post.likes_count!}
+				id={props.post.id!}
+				type="post"
+			/>
 		</Link>
 	)
 }
@@ -430,6 +443,12 @@ const CollaborationCard = (props: {
 			<p class="mt-2 text-sm text-hint">
 				{shortenDescription(props.collab.description!)}
 			</p>
+			<LikeButton
+				liked={props.collab.is_liked!}
+				likes={props.collab.likes_count!}
+				id={props.collab.id!}
+				type="collaboration"
+			/>
 		</Link>
 	)
 }
@@ -442,5 +461,92 @@ const ListPlaceholder = () => {
 			<div class="h-48 w-full rounded-2xl bg-main" />
 			<div class="h-56 w-full rounded-2xl bg-main" />
 		</div>
+	)
+}
+
+const LikeButton = (props: {
+	id: number
+	liked: boolean
+	likes: number
+	type: 'user' | 'collaboration' | 'post'
+}) => {
+	const handleMutate = async (userId: number) => {
+		await queryClient.cancelQueries({ type: 'active' })
+		queryClient.setQueryData(['feed', search()], (old: any[]) =>
+			old.map(item => {
+				if (item.type === props.type && item.data.id === userId) {
+					return {
+						...item,
+						data: {
+							...item.data,
+							is_liked: !item.data.is_liked,
+							likes_count: item.data.is_liked
+								? item.data.likes_count - 1
+								: item.data.likes_count + 1,
+						},
+					}
+				}
+				return item
+			}),
+		)
+		if (search()) {
+			queryClient.invalidateQueries({ queryKey: ['feed', ''] })
+		}
+	}
+
+	const likeMutate = createMutation(() => ({
+		mutationFn: (id: number) => likeContent(id, props.type),
+		onMutate: id => handleMutate(id),
+	}))
+
+	const mutateUnLike = createMutation(() => ({
+		mutationFn: (id: number) => unlikeContent(id, props.type),
+		onMutate: id => handleMutate(id),
+	}))
+
+	const handleClick = (e: Event) => {
+		e.preventDefault()
+		if (!props.liked) {
+			likeMutate.mutate(props.id)
+		} else {
+			mutateUnLike.mutate(props.id)
+		}
+		window.Telegram.WebApp.HapticFeedback.impactOccurred('light')
+	}
+
+	return (
+		<button
+			class="mt-3 flex items-center justify-start rounded-xl text-sm font-semibold text-main"
+			onClick={(e: Event) => handleClick(e)}
+		>
+			<HeartIcon
+				class="size-5 shrink-0"
+				fill={props.liked ? 'currentColor' : 'none'}
+				style={{
+					color: props.liked ? '#FF8C42' : 'currentColor',
+				}}
+			/>
+			<Show when={props.likes > 0}>
+				<span class="ml-2 text-main">{props.likes}</span>
+			</Show>
+		</button>
+	)
+}
+
+function HeartIcon(props: any) {
+	return (
+		<svg
+			{...props}
+			xmlns="http://www.w3.org/2000/svg"
+			width="24"
+			height="24"
+			viewBox="0 0 24 24"
+			stroke="currentColor"
+			stroke-width="2"
+			stroke-linecap="round"
+			stroke-linejoin="round"
+		>
+			<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+		</svg>
 	)
 }

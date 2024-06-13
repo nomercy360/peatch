@@ -1,3 +1,4 @@
+export * from "./Activity";
 export * from "./ActivityEvent";
 export * from "./Badge";
 export * from "./Collaboration";
@@ -8,6 +9,7 @@ export * from "./CreateUserCollaboration";
 export * from "./DeleteApiCollaborationsId";
 export * from "./DeleteApiUsersChatId";
 export * from "./FeedbackSurveyRequest";
+export * from "./GetApiActivity";
 export * from "./GetApiActivityHistory";
 export * from "./GetApiAuthTelegram";
 export * from "./GetApiBadges";

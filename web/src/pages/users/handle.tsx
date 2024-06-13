@@ -224,14 +224,25 @@ export default function UserProfilePage() {
 								<Show when={store.user.published_at && !store.user.hidden_at}>
 									<Switch>
 										<Match when={isCurrentUserProfile}>
-											<Link
-												class="absolute right-4 top-4 z-10 flex h-8 items-center justify-center gap-2 rounded-lg bg-white px-4 text-sm font-semibold text-[#FF8C42]"
-												href="/rewards"
-												state={{ back: true }}
-											>
-												<PeatchIcon width={16} height={16} />
-												{store.user.peatch_points}
-											</Link>
+											<div class="absolute right-4 top-4 z-10 flex flex-row items-center justify-end space-x-2">
+												<Link
+													href="/users/activity"
+													state={{ back: true }}
+													class="flex size-8 items-center justify-center rounded-lg bg-secondary"
+												>
+													<span class="material-symbols-rounded text-[20px] text-[#FF8C42]">
+														notifications
+													</span>
+												</Link>
+												<Link
+													class="flex h-8 items-center justify-center gap-2 rounded-lg bg-secondary px-4 text-sm font-semibold text-[#FF8C42]"
+													href="/rewards"
+													state={{ back: true }}
+												>
+													<PeatchIcon width={16} height={16} />
+													{store.user.peatch_points}
+												</Link>
+											</div>
 										</Match>
 										<Match
 											when={!isCurrentUserProfile && !query.data?.is_following}

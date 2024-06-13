@@ -285,12 +285,6 @@ func (s *service) AcceptFeedbackSurvey(userID int64, survey FeedbackSurveyReques
 	return nil
 }
 
-type ActivityEvent struct {
-	Type      string      `json:"type"`
-	CreatedAt time.Time   `json:"created_at"`
-	Data      interface{} `json:"data"`
-} // @Name ActivityEvent
-
 type UserCollaborationRequest struct {
 	ID        int64            `json:"id"`
 	UserID    int64            `json:"user_id"`
@@ -301,53 +295,14 @@ type UserCollaborationRequest struct {
 	User      UserProfileShort `json:"user"`
 }
 
-func (s *service) GetActivityHistory(userID int64) ([]ActivityEvent, error) {
-	events := make([]ActivityEvent, 0)
+func (s *service) GetActivityHistory(userID int64) ([]db.Activity, error) {
+	res, err := s.storage.GetActivity(userID)
 
-	followers, err := s.storage.GetUserFollowers(userID, userID)
-	if err != nil {
+	if err != nil && errors.Is(err, db.ErrNotFound) {
+		return nil, terrors.NotFound(err)
+	} else if err != nil {
 		return nil, err
 	}
 
-	for _, follower := range followers {
-		events = append(events, ActivityEvent{
-			Type:      "follow",
-			CreatedAt: time.Now(),
-			Data:      follower,
-		})
-	}
-
-	collabRequests, err := s.storage.ListUserReceivedRequests(userID)
-
-	if err != nil {
-		return nil, err
-	}
-
-	for _, request := range collabRequests {
-		req := UserCollaborationRequest{
-			ID:        request.ID,
-			UserID:    request.UserID,
-			Message:   request.Message,
-			CreatedAt: request.CreatedAt,
-			UpdatedAt: request.UpdatedAt,
-			Status:    request.Status,
-			User: UserProfileShort{
-				ID:          request.Requester.ID,
-				Username:    request.Requester.Username,
-				AvatarURL:   request.Requester.AvatarURL,
-				FirstName:   request.Requester.FirstName,
-				LastName:    request.Requester.LastName,
-				Title:       request.Requester.Title,
-				IsFollowing: request.Requester.IsFollowing,
-			},
-		}
-
-		events = append(events, ActivityEvent{
-			Type:      "collaboration_request",
-			CreatedAt: request.CreatedAt,
-			Data:      req,
-		})
-	}
-
-	return events, nil
+	return res, nil
 }

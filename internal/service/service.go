@@ -41,11 +41,13 @@ type storage interface {
 	GetUserFollowing(uid int64, target int64) ([]db.User, error)
 	UpdateLastCheckIn(userID int64) (bool, error)
 	UpdateUserPoints(userID int64, adjustment int) error
-	ListUserReceivedRequests(userID int64) ([]db.UserCollaborationRequest, error)
 	GetPostByID(uid, id int64) (*db.Post, error)
 	CreatePost(post db.Post) (*db.Post, error)
 	GetPosts(query db.PostQuery) ([]db.Post, error)
 	UpdatePost(uid int64, postID int64, post db.Post) (*db.Post, error)
+	IncreaseLikeCount(userID, contentID int64, contentType string) error
+	DecreaseLikeCount(userID, contentID int64, contentType string) error
+	GetActivity(userID int64) ([]db.Activity, error)
 }
 
 type s3Client interface {

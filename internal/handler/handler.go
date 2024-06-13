@@ -36,8 +36,6 @@ type service interface {
 	CreateCollaborationRequest(userID, collaborationID int64, request svc.CreateCollaborationRequest) (*db.CollaborationRequest, error)
 	GetPresignedURL(userID int64, objectKey string) (*svc.PresignedURL, error)
 	CreateUserCollaboration(userID int64, receiverID int64, request svc.CreateUserCollaboration) (*db.UserCollaborationRequest, error)
-	// GetUserPreview fetch 3 random user avatars for the home page
-	GetUserPreview(uid int64) ([]svc.UserPreview, error)
 	FindUserCollaborationRequest(requesterID int64, username string) (*db.UserCollaborationRequest, error)
 	FindCollaborationRequest(userID, collabID int64) (*db.CollaborationRequest, error)
 	SearchLocations(query string) ([]db.Location, error)
@@ -46,10 +44,12 @@ type service interface {
 	GetFeed(uid int64, query svc.FeedQuery) ([]svc.FeedItem, error)
 	ClaimDailyReward(userID int64) error
 	AcceptFeedbackSurvey(userID int64, survey svc.FeedbackSurveyRequest) error
-	GetActivityHistory(userID int64) ([]svc.ActivityEvent, error)
+	GetActivityHistory(userID int64) ([]db.Activity, error)
 	GetPostByID(uid, id int64) (*db.Post, error)
 	CreatePost(userID int64, post svc.CreatePostRequest) (*db.Post, error)
 	UpdatePost(userID, postID int64, update svc.CreatePostRequest) (*db.Post, error)
+	IncreaseLikeCount(userID int64, req svc.LikeRequest) error
+	DecreaseLikeCount(userID int64, req svc.LikeRequest) error
 }
 
 type CustomValidator struct {
@@ -104,7 +104,6 @@ func (h *handler) RegisterRoutes(e *echo.Echo) {
 	a.POST("/collaborations/:id/publish", h.handlePublishCollaboration)
 	a.POST("/collaborations/:id/requests", h.handleCreateCollaborationRequest)
 	a.GET("/presigned-url", h.handleGetPresignedURL)
-	a.GET("/user-preview", h.handleGetUserPreview)
 	a.GET("/locations", h.handleSearchLocations)
 	a.GET("/users/:id/followers", h.handleGetUserFollowers)
 	a.GET("/users/:id/following", h.handleGetUserFollowing)
@@ -115,6 +114,8 @@ func (h *handler) RegisterRoutes(e *echo.Echo) {
 	a.GET("/posts/:id", h.handleGetPost)
 	a.POST("/posts", h.handleCreatePost)
 	a.PUT("/posts/:id", h.handleUpdatePost)
+	a.POST("/likes", h.handleIncreaseLikeCount)
+	a.DELETE("/likes", h.handleDecreaseLikeCount)
 }
 
 func (h *handler) handleIndex(c echo.Context) error {

@@ -51,9 +51,17 @@ import type { Opportunity } from "./Opportunity";
     */
     is_following?: boolean;
     /**
+     * @type boolean | undefined
+    */
+    is_liked?: boolean;
+    /**
      * @type string | undefined
     */
     last_name?: string;
+    /**
+     * @type integer | undefined
+    */
+    likes_count?: number;
     /**
      * @type array | undefined
     */
