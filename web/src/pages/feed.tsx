@@ -125,6 +125,7 @@ export default function FeedPage() {
 	onCleanup(() => {
 		mainButton.hide()
 		mainButton.offClick(toCreateCollab)
+		mainButton.offClick(openDropDown)
 		document.removeEventListener('click', closeDropDownOnOutsideClick)
 		document.body.style.overflow = 'auto'
 	})

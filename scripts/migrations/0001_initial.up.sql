@@ -345,9 +345,93 @@ CREATE TRIGGER update_peatch_points_trigger
 EXECUTE FUNCTION update_peatch_points();
 
 
-ALTER TABLE users
-    ADD COLUMN likes_count INTEGER DEFAULT 0;
-ALTER TABLE posts
-    ADD COLUMN likes_count INTEGER DEFAULT 0;
-ALTER TABLE collaborations
-    ADD COLUMN likes_count INTEGER DEFAULT 0;
+CREATE VIEW user_activity_feed AS
+SELECT l.content_id AS user_id,
+       u.id         AS actor_id,
+       u.username   AS actor_username,
+       u.first_name AS actor_first_name,
+       u.last_name  AS actor_last_name,
+       l.created_at AS timestamp,
+       NULL         AS message,
+       NULL         AS content,
+       NULL         AS content_id,
+       'user_like'  AS activity_type
+FROM likes l
+         JOIN users u ON l.user_id = u.id
+UNION ALL
+
+SELECT u2.id        AS user_id,
+       u.id         AS actor_id,
+       u.username   AS actor_username,
+       u.first_name AS actor_first_name,
+       u.last_name  AS actor_last_name,
+       l.created_at AS timestamp,
+       NULL         AS message,
+       p.title      AS content,
+       p.id         AS content_id,
+       'post_like'  AS activity_type
+FROM likes l
+         JOIN users u ON l.user_id = u.id
+         JOIN posts p ON l.content_id = p.id
+         JOIN users u2 ON p.user_id = u2.id
+UNION ALL
+
+SELECT u2.id         AS user_id,
+       u.id          AS actor_id,
+       u.username    AS actor_username,
+       u.first_name  AS actor_first_name,
+       u.last_name   AS actor_last_name,
+       c.created_at  AS timestamp,
+       NULL          AS message,
+       c.title       AS content,
+       c.id          AS content_id,
+       'collab_like' AS activity_type
+FROM likes l
+         JOIN users u ON l.user_id = u.id
+         JOIN collaborations c ON l.content_id = c.id
+         JOIN users u2 ON c.user_id = u2.id
+UNION ALL
+
+SELECT cr.user_id    AS user_id,
+       u.id          AS actor_id,
+       u.username    AS actor_username,
+       u.first_name  AS actor_first_name,
+       u.last_name   AS actor_last_name,
+       cr.created_at AS timestamp,
+       cr.message    AS message,
+       NULL          AS content,
+       NULL          AS content_id,
+       'user_collab' AS activity_type
+FROM user_collaboration_requests cr
+         JOIN users u ON cr.requester_id = u.id
+
+UNION ALL
+
+SELECT uf.user_id    AS user_id,
+       u.id          AS actor_id,
+       u.username    AS actor_username,
+       u.first_name  AS actor_first_name,
+       u.last_name   AS actor_last_name,
+       uf.created_at AS timestamp,
+       NULL          AS message,
+       NULL          AS content_id,
+       NULL          AS content,
+       'follow'      AS activity_type
+FROM user_followers uf
+         JOIN users u ON uf.follower_id = u.id
+
+UNION ALL
+
+SELECT c.user_id        AS user_id,
+       u.id             AS actor_id,
+       u.username       AS actor_username,
+       u.first_name     AS actor_first_name,
+       u.last_name      AS actor_last_name,
+       c.created_at     AS timestamp,
+       cr.message       AS message,
+       c.title          AS content,
+       c.id             AS content_id,
+       'collab_request' AS activity_type
+FROM collaboration_requests cr
+         JOIN collaborations c ON cr.collaboration_id = c.id
+         JOIN users u ON cr.user_id = u.id;
