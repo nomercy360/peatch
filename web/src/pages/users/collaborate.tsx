@@ -91,61 +91,63 @@ export default function Collaborate() {
 	})
 
 	return (
-		<Switch>
-			<Match when={created()}>
-				<ActionDonePopup
-					action="Message sent"
-					description={`Once ${query.data.first_name} accepts your invitation, we'll share your contacts`}
-					callToAction={`There are 12 people with a similar profiles like ${query.data.first_name}`}
-				/>
-			</Match>
-			<Match when={existedRequest.loading && !query.data}>
-				<div />
-			</Match>
-			<Match when={!existedRequest.loading && query.data}>
-				<Show when={existedRequest()}>
+		<Show when={query.isSuccess}>
+			<Switch>
+				<Match when={created()}>
 					<ActionDonePopup
 						action="Message sent"
 						description={`Once ${query.data.first_name} accepts your invitation, we'll share your contacts`}
 						callToAction={`There are 12 people with a similar profiles like ${query.data.first_name}`}
 					/>
-				</Show>
-				<Show when={!existedRequest()}>
-					<div class="flex flex-col items-center justify-center bg-secondary p-4">
-						<div class="mb-4 mt-1 flex flex-col items-center justify-center text-center">
-							<p class="max-w-[220px] text-3xl text-main">
-								Collaborate with {query.data.first_name}
-							</p>
-							<div class="my-5 flex w-full flex-row items-center justify-center">
-								<img
-									class="z-10 size-24 rounded-3xl border-2 border-secondary object-cover object-center"
-									src={CDN_URL + '/' + store.user.avatar_url}
-									alt="User Avatar"
-								/>
-								<img
-									class="-ml-4 size-24 rounded-3xl border-2 border-secondary object-cover object-center"
-									src={CDN_URL + '/' + query.data.avatar_url}
-									alt="User Avatar"
-								/>
-							</div>
-							<Show when={query.data.badges && query.data?.badges.length > 0}>
-								<BadgeList badges={query.data.user.badges!} position="center">
-									<LocationBadge
-										country={query.data.user.country!}
-										city={query.data.user.city!}
-										countryCode={query.data.user.country_code!}
-									/>
-								</BadgeList>
-							</Show>
-						</div>
-						<TextArea
-							value={message()}
-							setValue={(value: string) => setMessage(value)}
-							placeholder="Write a message to start collaboration"
+				</Match>
+				<Match when={existedRequest.loading && !query.data}>
+					<div />
+				</Match>
+				<Match when={!existedRequest.loading && query.data}>
+					<Show when={existedRequest()}>
+						<ActionDonePopup
+							action="Message sent"
+							description={`Once ${query.data.first_name} accepts your invitation, we'll share your contacts`}
+							callToAction={`There are 12 people with a similar profiles like ${query.data.first_name}`}
 						/>
-					</div>
-				</Show>
-			</Match>
-		</Switch>
+					</Show>
+					<Show when={!existedRequest()}>
+						<div class="flex flex-col items-center justify-center bg-secondary p-4">
+							<div class="mb-4 mt-1 flex flex-col items-center justify-center text-center">
+								<p class="max-w-[220px] text-3xl text-main">
+									Collaborate with {query.data.first_name}
+								</p>
+								<div class="my-5 flex w-full flex-row items-center justify-center">
+									<img
+										class="z-10 size-24 rounded-3xl border-2 border-secondary object-cover object-center"
+										src={CDN_URL + '/' + store.user.avatar_url}
+										alt="User Avatar"
+									/>
+									<img
+										class="-ml-4 size-24 rounded-3xl border-2 border-secondary object-cover object-center"
+										src={CDN_URL + '/' + query.data.avatar_url}
+										alt="User Avatar"
+									/>
+								</div>
+								<Show when={query.data.badges && query.data?.badges.length > 0}>
+									<BadgeList badges={query.data.badges!} position="center">
+										<LocationBadge
+											country={query.data.country!}
+											city={query.data.city!}
+											countryCode={query.data.country_code!}
+										/>
+									</BadgeList>
+								</Show>
+							</div>
+							<TextArea
+								value={message()}
+								setValue={(value: string) => setMessage(value)}
+								placeholder="Write a message to start collaboration"
+							/>
+						</div>
+					</Show>
+				</Match>
+			</Switch>
+		</Show>
 	)
 }

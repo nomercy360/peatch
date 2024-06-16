@@ -70,9 +70,21 @@ export default function Collaboration() {
 	}
 
 	const navigateToCollaborate = async () => {
-		navigate(`/collaborations/${collabId}/collaborate`, {
-			state: { back: true },
-		})
+		if (!store.user.published_at) {
+			window.Telegram.WebApp.showConfirm(
+				`Publish your profile first, so ${query.data.first_name} will see it`,
+				(ok: boolean) =>
+					ok && navigate('/users/edit', { state: { back: true } }),
+			)
+		} else if (store.user.hidden_at) {
+			window.Telegram.WebApp.showAlert(
+				'Your profile is hidden by our moderators. Please contact us for more information',
+			)
+		} else {
+			navigate(`/collaborations/${collabId}/collaborate`, {
+				state: { back: true },
+			})
+		}
 	}
 
 	const navigateToEdit = () => {
@@ -95,7 +107,7 @@ export default function Collaboration() {
 					mainButton.onClick(navigateToEdit)
 				}
 			}
-		} else if (!store.user.hidden_at && store.user.published_at) {
+		} else {
 			mainButton.onClick(navigateToCollaborate)
 			mainButton.enable('Collaborate')
 		}

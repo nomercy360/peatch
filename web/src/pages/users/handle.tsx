@@ -103,13 +103,13 @@ export default function UserProfilePage() {
 
 	const navigateToCollaborate = async () => {
 		if (!store.user.published_at) {
-			showAlert(
+			window.Telegram.WebApp.showConfirm(
 				`Publish your profile first, so ${query.data.first_name} will see it`,
+				(ok: boolean) =>
+					ok && navigate('/users/edit', { state: { back: true } }),
 			)
 		} else if (store.user.hidden_at) {
-			showAlert(
-				`Unhide your profile first, so ${query.data.first_name} will see it`,
-			)
+			showAlert('Your profile is hidden by our moderators')
 		} else {
 			navigate(`/users/${username}/collaborate`, { state: { back: true } })
 		}
@@ -154,7 +154,7 @@ export default function UserProfilePage() {
 					mainButton.onClick(navigateToEdit)
 				}
 			}
-		} else if (store.user.published_at && !store.user.hidden_at) {
+		} else {
 			mainButton.enable('Collaborate')
 			mainButton.onClick(navigateToCollaborate)
 		}
