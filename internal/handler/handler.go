@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"github.com/go-playground/validator"
 	"github.com/golang-jwt/jwt/v5"
 	echojwt "github.com/labstack/echo-jwt/v4"
@@ -8,7 +9,9 @@ import (
 	"github.com/peatch-io/peatch/internal/db"
 	svc "github.com/peatch-io/peatch/internal/service"
 	"io"
+	"math/rand"
 	"net/http"
+	"time"
 )
 
 type handler struct {
@@ -136,7 +139,12 @@ func (h *handler) handleGetPresignedURL(c echo.Context) error {
 
 func (h *handler) getRandomAvatar(c echo.Context) error {
 	// Set the URL of the avatar service
-	url := "https://source.boringavatars.com/beam/200?square"
+	s := rand.NewSource(time.Now().UnixNano())
+	r := rand.New(s)
+
+	// from 1 to 30
+	avatarID := r.Intn(30) + 1
+	url := fmt.Sprintf("https://assets.peatch.io/avatars/%d.svg", avatarID)
 
 	resp, err := http.Get(url)
 	if err != nil {
