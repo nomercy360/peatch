@@ -79,7 +79,7 @@ func (s *storage) GetPosts(query PostQuery) ([]Post, error) {
 		       to_json(u) as "user"
 		FROM posts p
 		LEFT JOIN users u ON p.user_id = u.id
-		WHERE 1=1
+		WHERE p.hidden_at IS NULL
 	`
 
 	paramIndex := 2
