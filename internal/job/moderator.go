@@ -197,6 +197,8 @@ func userToString(user db.User) string {
 
 	re := regexp.MustCompile(`\r?\n`)
 	msg = re.ReplaceAllString(msg, " ")
+	// replace tabs with spaces
+	msg = strings.ReplaceAll(msg, "\t", " ")
 
 	return msg
 }
