@@ -59,6 +59,7 @@ export default function App(props: any) {
 
 			window.Telegram.WebApp.ready()
 			window.Telegram.WebApp.expand()
+			window.Telegram.WebApp.disableVerticalSwipes()
 
 			setIsAuthenticated(true)
 			setIsLoading(false)

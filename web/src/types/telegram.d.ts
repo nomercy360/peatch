@@ -9,7 +9,7 @@ interface CloudStorage {
 	getItem(
 		key: string,
 		callback: (error: Error | null, value: string) => void,
-	): string
+	): void
 
 	getItems(
 		keys: string[],
@@ -29,7 +29,7 @@ interface CloudStorage {
 	getKeys(callback: (error: Error | null, keys: string[]) => void): void
 }
 
-// Telegram Interface Definitions
+// Updated Telegram Interface
 interface Telegram {
 	WebView: WebView
 	Utils: Utils
@@ -56,13 +56,27 @@ interface WebApp {
 	isExpanded: boolean
 	viewportHeight: number
 	viewportStableHeight: number
+	safeAreaInset: SafeAreaInset
+	contentSafeAreaInset: SafeAreaInset
 	isClosingConfirmationEnabled: boolean
+	isVerticalSwipesEnabled: boolean
+	isFullscreen: boolean
+	isOrientationLocked: boolean
+	isActive: boolean
 	headerColor: string
 	backgroundColor: string
+	bottomBarColor: string
 	BackButton: BackButton
 	MainButton: MainButton
+	SecondaryButton: SecondaryButton
+	SettingsButton: SettingsButton
 	HapticFeedback: HapticFeedback
 	CloudStorage: CloudStorage
+	BiometricManager: BiometricManager
+	Accelerometer: Accelerometer
+	DeviceOrientation: DeviceOrientation
+	Gyroscope: Gyroscope
+	LocationManager: LocationManager
 
 	openTelegramLink(url: string): void
 
@@ -89,6 +103,10 @@ interface WebApp {
 	enableClosingConfirmation(): void
 
 	disableClosingConfirmation(): void
+
+	disableVerticalSwipes(): void
+
+	enableVerticalSwipes(): void
 }
 
 interface BackButton {
@@ -105,7 +123,7 @@ interface BackButton {
 	setParams(params: { text_color?: string }): void
 }
 
-export interface MainButton {
+interface MainButton {
 	onClick: (callback: () => void) => MainButton
 	text: string
 	color: string
@@ -114,6 +132,7 @@ export interface MainButton {
 	isVisible: boolean
 	isProgressVisible: boolean
 	isActive: boolean
+	hasShineEffect: boolean
 
 	setParams(params: {
 		text_color?: string
@@ -136,10 +155,73 @@ export interface MainButton {
 	enable(): void
 }
 
+interface SecondaryButton {
+	type: string
+	text: string
+	color: string
+	textColor: string
+	isVisible: boolean
+	isProgressVisible: boolean
+	isActive: boolean
+	hasShineEffect: boolean
+	position: string
+}
+
+interface SettingsButton {
+	isVisible: boolean
+}
+
+interface BiometricManager {
+	isInited: boolean
+	isBiometricAvailable: boolean
+	biometricType: string
+	isAccessRequested: boolean
+	isAccessGranted: boolean
+	isBiometricTokenSaved: boolean
+	deviceId: string
+}
+
+interface Accelerometer {
+	isStarted: boolean
+	x: number | null
+	y: number | null
+	z: number | null
+}
+
+interface DeviceOrientation {
+	isStarted: boolean
+	absolute: boolean
+	alpha: number | null
+	beta: number | null
+	gamma: number | null
+}
+
+interface Gyroscope {
+	isStarted: boolean
+	x: number | null
+	y: number | null
+	z: number | null
+}
+
+interface LocationManager {
+	isInited: boolean
+	isLocationAvailable: boolean
+	isAccessRequested: boolean
+	isAccessGranted: boolean
+}
+
+interface SafeAreaInset {
+	top: number
+	bottom: number
+	left: number
+	right: number
+}
+
 interface InitDataUnsafe {
 	query_id: string
 	user: User
 	auth_date: string
+	signature: string
 	hash: string
 	start_param?: string
 }
@@ -152,8 +234,9 @@ interface User {
 	language_code: string
 	is_bot: boolean
 	is_premium: boolean
-	added_to_attachment_menu: boolean
+	added_to_attachment_menu?: boolean
 	allows_write_to_pm: boolean
+	photo_url: string
 }
 
 interface ThemeParams {
