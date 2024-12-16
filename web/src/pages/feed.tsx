@@ -7,10 +7,9 @@ import {
 	onMount,
 	Show,
 	Suspense,
-	Switch,
 } from 'solid-js'
 import { Collaboration, Post, User, UserProfile } from '~/gen/types'
-import { CDN_URL, fetchFeed, likeContent, unlikeContent } from '~/lib/api'
+import { CDN_URL, fetchUsers, likeContent, unlikeContent } from '~/lib/api'
 import { Link } from '~/components/Link'
 import BadgeList from '~/components/BadgeList'
 import useDebounce from '~/lib/useDebounce'
@@ -32,8 +31,8 @@ export default function FeedPage() {
 	const navigate = useNavigate()
 
 	const query = createQuery(() => ({
-		queryKey: ['feed', search()],
-		queryFn: () => fetchFeed(search()),
+		queryKey: ['users', search()],
+		queryFn: () => fetchUsers(search()),
 	}))
 
 	const [scroll, setScroll] = createSignal(0)
@@ -119,6 +118,7 @@ export default function FeedPage() {
 		mainButton.offClick(toCreateCollab)
 		mainButton.offClick(openDropDown)
 		document.removeEventListener('click', closeDropDownOnOutsideClick)
+		document.body.style.overflow = 'auto'
 	})
 
 	// if dropdown is open, every click outside of the dropdown will close
@@ -195,22 +195,9 @@ export default function FeedPage() {
 			<div class="flex h-full w-full flex-shrink-0 flex-col overflow-y-auto pb-20">
 				<Suspense fallback={<ListPlaceholder />}>
 					<For each={query.data}>
-						{(data, i) => (
+						{(user, i) => (
 							<>
-								<Switch fallback={<div />}>
-									<Match when={data.type === 'user'}>
-										<UserCard user={data.data as User} scroll={scroll()} />
-									</Match>
-									<Match when={data.type === 'collaboration'}>
-										<CollaborationCard
-											collab={data.data as Collaboration}
-											scroll={scroll()}
-										/>
-									</Match>
-									<Match when={data.type === 'post'}>
-										<PostCard post={data.data as Post} />
-									</Match>
-								</Switch>
+								<UserCard user={user as User} scroll={scroll()} />
 								<div class="h-px w-full bg-border" />
 							</>
 						)}
@@ -227,12 +214,14 @@ const UserCard = (props: { user: User; scroll: number }) => {
 		return description.slice(0, 120) + '...'
 	}
 
-	const imgUrl = `https://assets.peatch.io/${props.user.avatar_url}`
+	const user = props.user as UserProfile
+
+	const imgUrl = `https://assets.peatch.io/${user.avatar_url}`
 
 	return (
 		<Link
 			class="flex flex-col items-start bg-secondary px-4 pb-5 pt-4 text-start"
-			href={`/users/${props.user.username}`}
+			href={`/users/${user.username}`}
 			state={{ from: '/', scroll: props.scroll }}
 		>
 			<img
@@ -241,24 +230,24 @@ const UserCard = (props: { user: User; scroll: number }) => {
 				loading="lazy"
 				alt="User Avatar"
 			/>
-			<p class="mt-3 text-3xl text-blue">{props.user.first_name}:</p>
-			<p class="text-3xl text-main">{props.user.title}</p>
+			<p class="mt-3 text-3xl text-blue">{user.first_name}:</p>
+			<p class="text-3xl text-main">{user.title}</p>
 			<p class="mt-2 text-sm text-hint">
-				{shortenDescription(props.user.description!)}
+				{shortenDescription(user.description!)}
 			</p>
-			<Show when={props.user.badges && props.user.badges.length > 0}>
-				<BadgeList badges={props.user.badges!} position="start">
+			<Show when={user.badges && user.badges.length > 0}>
+				<BadgeList badges={user.badges!} position="start">
 					<LocationBadge
-						country={props.user.country!}
-						city={props.user.city!}
-						countryCode={props.user.country_code!}
+						country={user.country!}
+						city={user.city!}
+						countryCode={user.country_code!}
 					/>
 				</BadgeList>
 			</Show>
 			<LikeButton
-				liked={props.user.is_liked!}
-				likes={props.user.likes_count!}
-				id={props.user.id!}
+				liked={user.is_liked!}
+				likes={user.likes_count!}
+				id={user.id!}
 				type="user"
 			/>
 		</Link>
@@ -413,25 +402,22 @@ const LikeButton = (props: {
 }) => {
 	const handleMutate = async (userId: number) => {
 		await queryClient.cancelQueries({ type: 'active' })
-		queryClient.setQueryData(['feed', search()], (old: any[]) =>
+		queryClient.setQueryData(['users', search()], (old: any[]) =>
 			old.map(item => {
-				if (item.type === props.type && item.data.id === userId) {
+				if (item.id === userId) {
 					return {
 						...item,
-						data: {
-							...item.data,
-							is_liked: !item.data.is_liked,
-							likes_count: item.data.is_liked
-								? item.data.likes_count - 1
-								: item.data.likes_count + 1,
-						},
+						is_liked: !item.is_liked,
+						likes_count: item.is_liked
+							? item.likes_count - 1
+							: item.likes_count + 1,
 					}
 				}
 				return item
 			}),
 		)
 		if (search()) {
-			queryClient.invalidateQueries({ queryKey: ['feed', ''] })
+			queryClient.invalidateQueries({ queryKey: ['users', ''] })
 		}
 	}
 
@@ -452,7 +438,7 @@ const LikeButton = (props: {
 		} else {
 			mutateUnLike.mutate(props.id)
 		}
-		window.Telegram.WebApp.HapticFeedback.impactOccurred('light')
+		window.Telegram.WebApp.HapticFeedback.selectionChanged()
 	}
 
 	return (

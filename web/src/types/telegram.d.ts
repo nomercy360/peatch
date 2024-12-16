@@ -43,7 +43,7 @@ interface HapticFeedback {
 
 	impactOccurred(style: 'light' | 'medium' | 'heavy' | 'soft' | 'rigid'): void
 
-	selectionOccurred(): void
+	selectionChanged(): void
 }
 
 interface WebApp {
