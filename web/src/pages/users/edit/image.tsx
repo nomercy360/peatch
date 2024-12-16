@@ -154,7 +154,7 @@ function ImageBox(props: { imgURL: string; onFileChange: any }) {
 function UploadBox(props: { onFileChange: any }) {
 	return (
 		<>
-			<div class="relative flex size-56 flex-col items-center justify-center rounded-xl bg-main">
+			<div class="relative flex size-56 flex-col items-center justify-center rounded-xl">
 				<input
 					class="absolute size-full opacity-0"
 					type="file"

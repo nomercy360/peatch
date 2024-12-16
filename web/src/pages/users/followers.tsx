@@ -96,7 +96,7 @@ export default function UserFollowersPage() {
 				<li class="me-2 flex items-center justify-center" role="presentation">
 					<button
 						onClick={() => setShowFollowing(true)}
-						class="flex h-12 w-3/5 items-center justify-center px-4 text-sm font-medium text-main transition-all duration-300 ease-in-out"
+						class="flex h-12 w-3/5 items-center justify-center px-4 text-sm font-medium transition-all duration-300 ease-in-out"
 						classList={{
 							'border-b-4 border-accent': showFollowing(),
 							'border-b-4 border-transparent': !showFollowing(),
@@ -112,7 +112,7 @@ export default function UserFollowersPage() {
 				<li class="me-2 flex items-center justify-center" role="presentation">
 					<button
 						onClick={() => setShowFollowing(false)}
-						class="flex h-12 w-3/5 items-center justify-center px-4 text-sm font-medium text-main transition-all duration-300 ease-in-out"
+						class="flex h-12 w-3/5 items-center justify-center px-4 text-sm font-medium transition-all duration-300 ease-in-out"
 						classList={{
 							'border-b-4 border-accent': !showFollowing(),
 							'border-b-4 border-transparent': showFollowing(),
@@ -164,11 +164,11 @@ export default function UserFollowersPage() {
 
 const Loader = () => {
 	return (
-		<div class="flex h-screen flex-col items-start justify-start space-y-4 bg-secondary p-2">
-			<div class="h-14 w-full rounded-2xl bg-main" />
-			<div class="h-14 w-full rounded-2xl bg-main" />
-			<div class="h-14 w-full rounded-2xl bg-main" />
-			<div class="h-14 w-full rounded-2xl bg-main" />
+		<div class="flex min-h-screen flex-col items-start justify-start space-y-4 bg-secondary p-2">
+			<div class="h-14 w-full rounded-2xl bg-background" />
+			<div class="h-14 w-full rounded-2xl bg-background" />
+			<div class="h-14 w-full rounded-2xl bg-background" />
+			<div class="h-14 w-full rounded-2xl bg-background" />
 		</div>
 	)
 }
@@ -184,19 +184,19 @@ function UserCardSmall(props: {
 			class="flex w-full flex-row items-center justify-between"
 			state={{ back: true }}
 		>
-			<div class="flex flex-row items-center justify-start space-x-3.5">
+			<div class="flex flex-row items-center justify-start space-x-3.5 mr-3.5">
 				<img
 					src={CDN_URL + '/' + props.user.avatar_url}
 					alt={props.user.username}
 					class="size-11 shrink-0 rounded-xl object-cover"
 				/>
 				<div class="grid">
-					<p class="text-sm font-semibold text-main">
+					<p class="text-sm font-semibold">
 						{props.user.last_name
 							? props.user.first_name + ' ' + props.user.last_name
 							: props.user.first_name}
 					</p>
-					<p class="mt-px text-sm font-normal text-secondary">
+					<p class="mt-px text-xs font-normal text-secondary-foreground">
 						{props.user.title}
 					</p>
 				</div>
@@ -206,7 +206,7 @@ function UserCardSmall(props: {
 					when={props.user.is_following && props.user.id !== store.user.id}
 				>
 					<button
-						class="h-9 w-[90px] rounded-xl bg-main px-4 py-2 text-sm font-semibold text-main"
+						class="bg-secondary h-9 w-[90px] rounded-xl px-4 py-2 text-sm font-semibold"
 						onClick={(e: Event) => props.onUnfollow(e, props.user.id!)}
 					>
 						Followed

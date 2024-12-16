@@ -47,7 +47,7 @@ export default function SelectLocation(props: {
 
 	return (
 		<>
-			<div class="mt-5 flex h-10 w-full flex-row items-center justify-between rounded-lg bg-main px-2.5">
+			<div class="mt-5 flex h-10 w-full flex-row items-center justify-between rounded-lg bg-secondary px-2.5">
 				<input
 					class="w-full bg-transparent text-main placeholder:text-hint focus:outline-none"
 					placeholder="City and country"
@@ -113,10 +113,10 @@ function LocationButton(props: {
 	return (
 		<button
 			onClick={() => props.onClick()}
-			class="flex h-16 w-full flex-row items-center justify-between rounded-2xl px-2.5 text-sm text-main"
+			class="flex h-16 w-full flex-row items-center justify-between rounded-2xl px-4 text-sm text-main"
 			classList={{
 				'bg-secondary': !props.isActive,
-				'bg-main': props.isActive,
+				'bg-border': props.isActive,
 			}}
 		>
 			<p class="">
@@ -129,7 +129,7 @@ function LocationButton(props: {
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					viewBox={findFlag!.viewBox}
-					class="z-10 mr-2 size-5"
+					class="z-10 size-5"
 					innerHTML={findFlag!.flag}
 				/>
 			</Show>

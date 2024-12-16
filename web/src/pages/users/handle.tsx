@@ -211,13 +211,13 @@ export default function UserProfilePage() {
 							/>
 						</Match>
 						<Match when={!query.isLoading}>
-							<div class="h-fit min-h-screen bg-secondary">
+							<div class="h-fit min-h-screen p-2">
 								<Show when={isCurrentUserProfile && store.user.hidden_at}>
 									<button
 										onClick={showInfoPopup}
 										class="absolute left-4 top-4 flex size-8 items-center justify-center rounded-lg bg-secondary"
 									>
-										<span class="material-symbols-rounded text-main">
+										<span class="material-symbols-rounded">
 											visibility_off
 										</span>
 									</button>
@@ -261,50 +261,47 @@ export default function UserProfilePage() {
 										</Match>
 									</Switch>
 								</Show>
-								<div class="p-2">
-									<img
-										src={CDN_URL + '/' + query.data.avatar_url}
-										alt="avatar"
-										class="aspect-square size-full rounded-xl object-cover"
-									/>
-								</div>
-								<div class="px-4 py-2.5">
-									<div class="flex flex-row items-center justify-between pb-4">
+								<div class="w-full aspect-square bg-cover bg-center relative rounded-xl"
+										 style={{ 'background-image': `url(${CDN_URL + '/' + query.data.avatar_url})` }}>
+									<div
+										class="flex flex-row items-center justify-between absolute bottom-0 left-0 w-full rounded-b-xl h-10 px-4 bg-gradient-to-t from-background">
+										<button
+											class="flex h-8 flex-row items-center space-x-1 px-2.5 bg-secondary rounded-2xl"
+											onClick={() => shareURL()}
+										>
+											<span class="material-symbols-rounded text-[16px]">
+												ios_share
+											</span>
+											<span class="text-sm">
+												Share
+											</span>
+										</button>
 										<div class="flex h-8 flex-row items-center space-x-2 text-sm font-semibold">
 											<Link
 												href={`/users/${query.data.id}/followers?show=following`}
 												state={{ back: true }}
-												class="flex h-full flex-row items-center gap-1.5 text-main"
+												class="flex h-full flex-row items-center gap-1.5"
 											>
 												<span>{query.data.following_count}</span>
-												<span class="text-secondary">following</span>
+												<span class="text-secondary-foreground font-normal">following</span>
 											</Link>
 											<Link
-												class="flex h-full flex-row items-center gap-1.5 text-main"
+												class="flex h-full flex-row items-center gap-1.5"
 												href={`/users/${query.data.id}/followers?show=followers`}
 												state={{ back: true }}
 											>
 												{query.data.followers_count}{' '}
-												<span class="text-secondary">followers</span>
+												<span class="text-secondary-foreground font-normal">followers</span>
 											</Link>
 										</div>
-										<button
-											class="flex h-8 flex-row items-center space-x-1.5 bg-transparent px-2.5"
-											onClick={() => shareURL()}
-										>
-											<span class="text-sm font-semibold text-main">
-												Share profile
-											</span>
-											<span class="material-symbols-rounded text-[16px] text-main">
-												content_copy
-											</span>
-										</button>
 									</div>
-									<p class="text-3xl text-pink">
+								</div>
+								<div class="px-4 py-2.5">
+									<p class="capitalize text-3xl text-primary font-semibold">
 										{query.data.first_name} {query.data.last_name}:
 									</p>
-									<p class="text-3xl text-main">{query.data.title}</p>
-									<p class="mt-1 text-lg font-normal text-secondary">
+									<p class="text-3xl capitalize">{query.data.title}</p>
+									<p class="mt-1 text-sm font-normal text-secondary-foreground">
 										{query.data.description}
 									</p>
 									<div class="mt-5 flex flex-row flex-wrap items-center justify-start gap-1">
@@ -339,7 +336,7 @@ export default function UserProfilePage() {
 											setExpanded={setBadgesExpanded}
 										/>
 									</Show>
-									<p class="py-4 text-3xl font-extrabold text-main">
+									<p class="py-4 text-3xl font-extrabold">
 										Available for
 									</p>
 									<div class="flex w-full flex-col items-center justify-start gap-1">
@@ -358,13 +355,13 @@ export default function UserProfilePage() {
 													}}
 												>
 													<div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary">
-														<span class="material-symbols-rounded shrink-0 text-main">
+														<span class="material-symbols-rounded shrink-0">
 															{String.fromCodePoint(parseInt(op.icon!, 16))}
 														</span>
 													</div>
-													<div class="text-start text-white">
-														<p class="text-sm font-semibold">{op.text}</p>
-														<p class="text-xs leading-tight text-white/60">
+													<div class="text-start">
+														<p class="text-sm font-semibold text-white">{op.text}</p>
+														<p class="text-xs leading-tight text-white/80">
 															{op.description}
 														</p>
 													</div>
@@ -411,10 +408,10 @@ const ExpandButton = (props: {
 }) => {
 	return (
 		<button
-			class="flex h-8 w-full items-center justify-start rounded-xl bg-transparent text-sm font-semibold text-secondary"
+			class="flex h-8 w-full items-center justify-start rounded-xl bg-transparent text-sm font-semibold text-secondary-foreground"
 			onClick={() => props.setExpanded(!props.expanded)}
 		>
-			<span class="material-symbols-rounded text-secondary">
+			<span class="material-symbols-rounded text-secondary-foreground">
 				{props.expanded ? 'expand_less' : 'expand_more'}
 			</span>
 			{props.expanded ? 'show less' : 'show more'}
@@ -424,18 +421,18 @@ const ExpandButton = (props: {
 
 const Loader = () => {
 	return (
-		<div class="flex h-screen flex-col items-start justify-start bg-secondary p-2">
-			<div class="aspect-square w-full rounded-xl bg-main" />
+		<div class="flex min-h-screen flex-col items-start justify-start bg-secondary p-2">
+			<div class="aspect-square w-full rounded-xl bg-background" />
 			<div class="flex flex-col items-start justify-start p-2">
-				<div class="mt-2 h-6 w-1/2 rounded bg-main" />
-				<div class="mt-2 h-6 w-1/2 rounded bg-main" />
-				<div class="mt-2 h-20 w-full rounded bg-main" />
+				<div class="mt-2 h-6 w-1/2 rounded bg-background" />
+				<div class="mt-2 h-6 w-1/2 rounded bg-background" />
+				<div class="mt-2 h-20 w-full rounded bg-background" />
 				<div class="mt-4 flex w-full flex-row flex-wrap items-center justify-start gap-2">
-					<div class="h-10 w-40 rounded-2xl bg-main" />
-					<div class="h-10 w-32 rounded-2xl bg-main" />
-					<div class="h-10 w-40 rounded-2xl bg-main" />
-					<div class="h-10 w-28 rounded-2xl bg-main" />
-					<div class="h-10 w-32 rounded-2xl bg-main" />
+					<div class="h-10 w-40 rounded-2xl bg-background" />
+					<div class="h-10 w-32 rounded-2xl bg-background" />
+					<div class="h-10 w-40 rounded-2xl bg-background" />
+					<div class="h-10 w-28 rounded-2xl bg-background" />
+					<div class="h-10 w-32 rounded-2xl bg-background" />
 				</div>
 			</div>
 		</div>

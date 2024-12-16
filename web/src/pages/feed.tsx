@@ -2,7 +2,6 @@ import {
 	createEffect,
 	createSignal,
 	For,
-	Match,
 	onCleanup,
 	onMount,
 	Show,
@@ -71,10 +70,6 @@ export default function FeedPage() {
 			updateCommunityPopup,
 		)
 
-		if (store.user.published_at && !store.user.hidden_at) {
-			mainButton.enable('Post to Peatch').onClick(openDropDown)
-		}
-
 		window.Telegram.WebApp.disableClosingConfirmation()
 		// window.Telegram.WebApp.CloudStorage.removeItem('profilePopup')
 		// window.Telegram.WebApp.CloudStorage.removeItem('communityPopup')
@@ -134,7 +129,7 @@ export default function FeedPage() {
 	document.addEventListener('click', closeDropDownOnOutsideClick)
 
 	return (
-		<div class="flex h-screen flex-col bg-secondary">
+		<div class="flex h-screen flex-col">
 			<Show when={dropDown()}>
 				<div
 					class="fixed inset-0 z-50 flex h-screen w-full flex-col items-center justify-end px-4 py-2.5"
@@ -147,17 +142,17 @@ export default function FeedPage() {
 				>
 					<div
 						id="dropdown-menu"
-						class="flex w-full flex-col items-center justify-center rounded-xl bg-main"
+						class="flex w-full flex-col items-center justify-center rounded-xl bg-secondary"
 					>
 						<button
-							class="flex h-12 w-full items-center justify-center bg-transparent text-main"
+							class="flex h-12 w-full items-center justify-center bg-transparent"
 							onClick={() => navigate('/collaborations/edit')}
 						>
 							New collaboration
 						</button>
 						<div class="h-px w-full bg-border" />
 						<button
-							class="flex h-12 w-full items-center justify-center bg-transparent text-main"
+							class="flex h-12 w-full items-center justify-center bg-transparent"
 							onClick={() => navigate('/posts/edit')}
 						>
 							New post
@@ -165,16 +160,16 @@ export default function FeedPage() {
 					</div>
 				</div>
 			</Show>
-			<div class="flex w-full flex-shrink-0 flex-col items-center justify-between space-y-4 border-b bg-secondary p-4">
+			<div class="flex w-full flex-shrink-0 flex-col items-center justify-between space-y-4 border-b p-4">
 				<Show when={!store.user.published_at && profilePopup()}>
 					<FillProfilePopup onClose={() => closePopup('profilePopup')} />
 				</Show>
 				<Show when={communityPopup()}>
 					<OpenCommunityPopup onClose={() => closePopup('communityPopup')} />
 				</Show>
-				<div class="relative flex h-10 w-full flex-row items-center justify-center rounded-lg bg-main">
+				<div class="relative flex h-10 w-full flex-row items-center justify-center rounded-lg bg-secondary">
 					<input
-						class="h-full w-full bg-transparent px-2.5 text-main placeholder:text-hint"
+						class="h-full w-full bg-transparent px-2.5 placeholder:text-secondary-foreground"
 						placeholder="Search people or collaborations"
 						type="text"
 						value={search()}
@@ -182,7 +177,7 @@ export default function FeedPage() {
 					/>
 					<Show when={search()}>
 						<button
-							class="absolute right-2.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-main"
+							class="absolute right-2.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-secondary"
 							onClick={() => setSearch('')}
 						>
 							<span class="material-symbols-rounded text-[20px] text-secondary">
@@ -192,14 +187,14 @@ export default function FeedPage() {
 					</Show>
 				</div>
 			</div>
-			<div class="flex h-full w-full flex-shrink-0 flex-col overflow-y-auto pb-20">
+			<div class="bg-secondary flex h-full w-full flex-shrink-0 flex-col overflow-y-auto pb-20" id="feed">
 				<Suspense fallback={<ListPlaceholder />}>
 					<For each={query.data}>
 						{(user, i) => (
-							<>
+							<div>
 								<UserCard user={user as User} scroll={scroll()} />
 								<div class="h-px w-full bg-border" />
-							</>
+							</div>
 						)}
 					</For>
 				</Suspense>
@@ -220,7 +215,7 @@ const UserCard = (props: { user: User; scroll: number }) => {
 
 	return (
 		<Link
-			class="flex flex-col items-start bg-secondary px-4 pb-5 pt-4 text-start"
+			class="flex flex-col items-start px-4 pb-5 pt-4 text-start"
 			href={`/users/${user.username}`}
 			state={{ from: '/', scroll: props.scroll }}
 		>
@@ -230,9 +225,9 @@ const UserCard = (props: { user: User; scroll: number }) => {
 				loading="lazy"
 				alt="User Avatar"
 			/>
-			<p class="mt-3 text-3xl text-blue">{user.first_name}:</p>
-			<p class="text-3xl text-main">{user.title}</p>
-			<p class="mt-2 text-sm text-hint">
+			<p class="mt-3 text-3xl text-primary font-semibold capitalize">{user.first_name?.trimEnd()}:</p>
+			<p class="text-3xl capitalize">{user.title}</p>
+			<p class="mt-2 text-sm text-secondary-foreground">
 				{shortenDescription(user.description!)}
 			</p>
 			<Show when={user.badges && user.badges.length > 0}>
@@ -257,7 +252,7 @@ const UserCard = (props: { user: User; scroll: number }) => {
 const OpenCommunityPopup = (props: { onClose: () => void }) => {
 	return (
 		<div class="w-full">
-			<div class="relative rounded-2xl bg-main p-4 text-center">
+			<div class="relative rounded-2xl p-4 text-center">
 				<button
 					class="absolute right-4 top-4 flex size-6 items-center justify-center rounded-full bg-secondary"
 					onClick={props.onClose}
@@ -276,7 +271,7 @@ const OpenCommunityPopup = (props: { onClose: () => void }) => {
 					To talk with founders and users. Discuss and solve problems together
 				</p>
 				<button
-					class="mt-4 flex h-10 w-full items-center justify-center rounded-xl bg-secondary text-sm font-semibold text-main"
+					class="mt-4 flex h-10 w-full items-center justify-center rounded-xl text-sm font-semibold"
 					onClick={() =>
 						window.Telegram.WebApp.openTelegramLink(
 							'https://t.me/peatch_community',
@@ -290,106 +285,13 @@ const OpenCommunityPopup = (props: { onClose: () => void }) => {
 	)
 }
 
-const PostCard = (props: { post: Post }) => {
-	return (
-		<Link
-			class="flex flex-col items-start px-4 pb-5 pt-4 text-start"
-			href={`/posts/${props.post.id}`}
-		>
-			<UserCardSmall user={props.post.user as UserProfile} />
-			<p class="mt-4 text-3xl text-main">{props.post.title}</p>
-			<p class="mt-1 text-sm text-hint">{props.post.description}</p>
-			<Show when={props.post.image_url}>
-				<img
-					class="mt-3 aspect-[4/3] w-full rounded-xl object-cover"
-					src={props.post.image_url}
-					alt="Post Image"
-					loading="lazy"
-				/>
-			</Show>
-			<div class="mt-3">
-				<Show when={props.post.country && props.post.city}>
-					<LocationBadge
-						country={props.post.country!}
-						city={props.post.city!}
-						countryCode={props.post.country_code!}
-					/>
-				</Show>
-			</div>
-			<LikeButton
-				liked={props.post.is_liked!}
-				likes={props.post.likes_count!}
-				id={props.post.id!}
-				type="post"
-			/>
-		</Link>
-	)
-}
-
-const CollaborationCard = (props: {
-	collab: Collaboration
-	scroll: number
-}) => {
-	const shortenDescription = (description: string) => {
-		if (description.length <= 160) return description
-		return description.slice(0, 160) + '...'
-	}
-
-	return (
-		<Link
-			class="flex flex-col items-start px-4 pb-5 pt-4 text-start"
-			href={`/collaborations/${props.collab.id}`}
-			state={{ from: '/', scroll: props.scroll }}
-		>
-			<div class="flex flex-row items-center justify-center gap-2">
-				<div
-					class="flex size-10 flex-row items-center justify-center rounded-full"
-					style={{ 'background-color': `#${props.collab.opportunity?.color}` }}
-				>
-					<span class="material-symbols-rounded text-[20px] text-white">
-						{String.fromCodePoint(
-							parseInt(props.collab.opportunity?.icon!, 16),
-						)}
-					</span>
-				</div>
-				<Link
-					href={`/users/${props.collab.user?.username}`}
-					state={{ back: true, scroll: props.scroll }}
-				>
-					<img
-						class="size-10 rounded-xl object-cover"
-						src={CDN_URL + '/' + props.collab.user?.avatar_url}
-						alt="User Avatar"
-					/>
-				</Link>
-			</div>
-			<p
-				class="mt-3 text-3xl"
-				style={{ color: `#${props.collab.opportunity?.color}` }}
-			>
-				{props.collab.opportunity?.text}:
-			</p>
-			<p class="text-3xl text-main">{props.collab.title}</p>
-			<p class="mt-2 text-sm text-hint">
-				{shortenDescription(props.collab.description!)}
-			</p>
-			<LikeButton
-				liked={props.collab.is_liked!}
-				likes={props.collab.likes_count!}
-				id={props.collab.id!}
-				type="collaboration"
-			/>
-		</Link>
-	)
-}
-
-const ListPlaceholder = () => {
+export const ListPlaceholder = () => {
 	return (
 		<div class="flex flex-col items-start justify-start gap-4 px-4 py-2.5">
-			<div class="h-52 w-full rounded-2xl bg-main" />
-			<div class="h-64 w-full rounded-2xl bg-main" />
-			<div class="h-48 w-full rounded-2xl bg-main" />
-			<div class="h-56 w-full rounded-2xl bg-main" />
+			<div class="h-52 w-full rounded-2xl bg-secondary" />
+			<div class="h-64 w-full rounded-2xl bg-secondary" />
+			<div class="h-48 w-full rounded-2xl bg-secondary" />
+			<div class="h-56 w-full rounded-2xl bg-secondary" />
 		</div>
 	)
 }
@@ -398,7 +300,6 @@ const LikeButton = (props: {
 	id: number
 	liked: boolean
 	likes: number
-	type: 'user' | 'collaboration' | 'post'
 }) => {
 	const handleMutate = async (userId: number) => {
 		await queryClient.cancelQueries({ type: 'active' })
@@ -422,12 +323,12 @@ const LikeButton = (props: {
 	}
 
 	const likeMutate = createMutation(() => ({
-		mutationFn: (id: number) => likeContent(id, props.type),
+		mutationFn: (id: number) => likeContent(id, 'user'),
 		onMutate: id => handleMutate(id),
 	}))
 
 	const mutateUnLike = createMutation(() => ({
-		mutationFn: (id: number) => unlikeContent(id, props.type),
+		mutationFn: (id: number) => unlikeContent(id, 'user'),
 		onMutate: id => handleMutate(id),
 	}))
 
@@ -443,25 +344,25 @@ const LikeButton = (props: {
 
 	return (
 		<button
-			class="mt-2 flex items-center justify-start rounded-xl text-sm font-semibold text-main"
+			class="mt-2 flex items-center justify-start rounded-xl text-sm font-semibold"
 			onClick={(e: Event) => handleClick(e)}
 		>
 			<Show
 				when={!props.liked}
 				fallback={<HeartIcon class="size-6 shrink-0" />}
 			>
-				<span class="material-symbols-rounded no-fill text-[24px] text-main">
+				<span class="material-symbols-rounded no-fill text-[24px]">
 					favorite
 				</span>
 			</Show>
 			<Show when={props.likes > 0}>
-				<span class="ml-1 font-semibold text-main">{props.likes}</span>
+				<span class="ml-1 font-semibold">{props.likes}</span>
 			</Show>
 		</button>
 	)
 }
 
-function HeartIcon(props: any) {
+export function HeartIcon(props: any) {
 	return (
 		<svg
 			{...props}

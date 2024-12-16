@@ -5,6 +5,7 @@ import { NavigationProvider } from './lib/useNavigation'
 import { useNavigate } from '@solidjs/router'
 import { QueryClient, QueryClientProvider } from '@tanstack/solid-query'
 import Toast from '~/components/toast'
+import NavigationTabs from '~/components/navigation-tabs'
 
 export const queryClient = new QueryClient({
 	defaultOptions: {
@@ -88,12 +89,13 @@ export default function App(props: any) {
 				<Switch>
 					<Match when={isAuthenticated()}>
 						<div>{props.children}</div>
+						<NavigationTabs />
 					</Match>
 					<Match when={!isAuthenticated() && isLoading()}>
-						<div class="h-screen w-full flex-col items-start justify-center bg-main" />
+						<div class="h-screen w-full flex-col items-start justify-center" />
 					</Match>
 					<Match when={!isAuthenticated() && !isLoading()}>
-						<div class="h-screen min-h-screen w-full flex-col items-start justify-center bg-main text-3xl text-main">
+						<div class="h-screen min-h-screen w-full flex-col items-start justify-center text-3xl text-main">
 							Something went wrong. Please try again later.
 						</div>
 					</Match>

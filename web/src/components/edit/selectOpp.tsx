@@ -43,9 +43,9 @@ export function SelectOpportunity(props: {
 
 	return (
 		<>
-			<div class="mt-5 flex h-10 w-full flex-row items-center justify-between rounded-lg bg-main px-2.5">
+			<div class="mt-5 flex h-10 w-full bg-secondary flex-row items-center justify-between rounded-lg px-2.5">
 				<input
-					class="h-10 w-full bg-transparent text-main placeholder:text-hint focus:outline-none"
+					class="h-10 w-full text-main bg-transparent placeholder:text-hint focus:outline-none"
 					placeholder="Search collaboration opportunities"
 					type="text"
 					onInput={e => setSearch(e.currentTarget.value)}
@@ -76,10 +76,10 @@ export function SelectOpportunity(props: {
 								onClick={() => onClick(op.id!)}
 								class="flex h-[60px] w-full flex-row items-center justify-start gap-2.5 rounded-2xl px-2.5"
 								style={{
-									'background-color': `${includes(op.id!) ? `#${op.color}` : 'var(--tg-theme-secondary-bg-color)'}`,
+									'background-color': `${includes(op.id!) ? `#${op.color}` : 'var(--border)'}`,
 								}}
 							>
-								<div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-main">
+								<div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary">
 									<span class="material-symbols-rounded shrink-0 text-main">
 										{String.fromCodePoint(parseInt(op.icon!, 16))}
 									</span>

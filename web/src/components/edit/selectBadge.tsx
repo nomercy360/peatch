@@ -39,7 +39,7 @@ export function SelectBadge(props: {
 
 	return (
 		<>
-			<div class="mt-5 flex h-10 w-full flex-row items-center justify-between rounded-lg bg-main px-2.5">
+			<div class="mt-5 flex h-10 w-full flex-row items-center justify-between rounded-lg bg-secondary px-2.5">
 				<input
 					autofocus
 					autocomplete="off"
@@ -47,7 +47,7 @@ export function SelectBadge(props: {
 					autocapitalize="off"
 					spellcheck={false}
 					maxLength={50}
-					class="h-10 w-full bg-transparent text-main placeholder:text-hint focus:outline-none"
+					class="h-10 w-full bg-transparent text-main placeholder:text-secondary-foreground focus:outline-none"
 					placeholder="Search for a badge"
 					type="text"
 					onInput={e => props.setSearch(e.currentTarget.value)}
@@ -55,7 +55,7 @@ export function SelectBadge(props: {
 				/>
 				<Show when={props.search}>
 					<button
-						class="flex h-10 items-center justify-center px-2.5 text-sm text-hint"
+						class="flex h-10 items-center justify-center px-2.5 text-sm text-secondary-foreground"
 						onClick={() => props.setSearch('')}
 					>
 						Clear
@@ -66,20 +66,20 @@ export function SelectBadge(props: {
 				<Switch>
 					<Match when={filteredBadges()?.length > 0}>
 						<div />
-						<div class="flex h-11 items-center justify-center text-sm text-hint">
+						<div class="flex h-11 items-center justify-center text-sm text-secondary-foreground">
 							{props.selected.length} / 10
 						</div>
 					</Match>
 					<Match when={filteredBadges()?.length === 0}>
 						<button
-							class="size-full text-start text-sm text-hint"
+							class="size-full text-start text-sm text-secondary-foreground"
 							onClick={() =>
 								props.selected.length < 10 && props.onCreateBadgeButtonClick()
 							}
 						>
 							Can’t find such thing. <span class="text-accent">Create it</span>
 						</button>
-						<p class="text-nowrap text-sm text-hint">
+						<p class="text-nowrap text-sm text-secondary-foreground">
 							{props.selected.length} of 10
 						</p>
 					</Match>
@@ -93,7 +93,7 @@ export function SelectBadge(props: {
 								onClick={() => onBadgeClick(badge.id!)}
 								class="flex h-10 flex-row items-center justify-center gap-[5px] rounded-2xl px-2.5 transition-colors duration-200 ease-in-out"
 								style={{
-									'background-color': `${props.selected.includes(badge.id!) ? `#${badge.color}` : 'var(--tg-theme-secondary-bg-color)'}`,
+									'background-color': `${props.selected.includes(badge.id!) ? `#${badge.color}` : 'var(--secondary)'}`,
 								}}
 							>
 								<span
@@ -108,7 +108,7 @@ export function SelectBadge(props: {
 									class="text-sm font-semibold"
 									classList={{
 										'text-white': props.selected.includes(badge.id!),
-										'text-main': !props.selected.includes(badge.id!),
+										'text-foreground': !props.selected.includes(badge.id!),
 									}}
 								>
 									{badge.text}

@@ -39,7 +39,7 @@ export default function GeneralInfo() {
 		>
 			<div class="mt-5 flex w-full flex-col items-center justify-start gap-3">
 				<input
-					class="h-10 w-full rounded-lg bg-main px-2.5 text-main placeholder:text-hint"
+					class="h-10 w-full rounded-lg bg-secondary px-2.5 text-main placeholder:text-secondary-foreground"
 					placeholder="First Name"
 					autocomplete="given-name"
 					maxLength={50}
@@ -47,7 +47,7 @@ export default function GeneralInfo() {
 					onInput={e => setEditUser('first_name', e.currentTarget.value)}
 				/>
 				<input
-					class="h-10 w-full rounded-lg bg-main px-2.5 text-main placeholder:text-hint"
+					class="h-10 w-full rounded-lg bg-secondary px-2.5 text-main placeholder:text-secondary-foreground"
 					placeholder="Last Name"
 					autocomplete="family-name"
 					maxLength={50}
@@ -55,7 +55,7 @@ export default function GeneralInfo() {
 					onInput={e => setEditUser('last_name', e.currentTarget.value)}
 				/>
 				<input
-					class="h-10 w-full rounded-lg bg-main px-2.5 text-main placeholder:text-hint"
+					class="h-10 w-full rounded-lg bg-secondary px-2.5 text-main placeholder:text-secondary-foreground"
 					placeholder="Title"
 					maxLength={70}
 					value={editUser.title}

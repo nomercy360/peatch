@@ -112,9 +112,9 @@ export default function Collaborate() {
 						/>
 					</Show>
 					<Show when={!existedRequest()}>
-						<div class="flex flex-col items-center justify-center bg-secondary p-4">
+						<div class="flex flex-col items-center justify-center p-4">
 							<div class="mb-4 mt-1 flex flex-col items-center justify-center text-center">
-								<p class="max-w-[220px] text-3xl text-main">
+								<p class="max-w-[220px] text-3xl">
 									Collaborate with {query.data.first_name}
 								</p>
 								<div class="my-5 flex w-full flex-row items-center justify-center">

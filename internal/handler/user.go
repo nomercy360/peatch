@@ -30,6 +30,7 @@ func (h *handler) handleListUsers(c echo.Context) error {
 		Page:   page,
 		Limit:  limit,
 		Search: search,
+		UserID: getUserID(c),
 	}
 
 	users, err := h.svc.ListUserProfiles(query)

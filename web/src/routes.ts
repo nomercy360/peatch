@@ -2,11 +2,16 @@ import { lazy } from 'solid-js'
 import type { RouteDefinition } from '@solidjs/router'
 
 import FeedPage from '~/pages/feed'
+import PostsPage from '~/pages/posts'
 
 export const routes: RouteDefinition[] = [
 	{
 		path: '/',
 		component: FeedPage,
+	},
+	{
+		path: '/posts',
+		component: PostsPage,
 	},
 	{
 		path: '/users/:handle',

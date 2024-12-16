@@ -104,7 +104,7 @@ function ActivityCard(props: { activity: any }) {
 	return (
 		<div class="flex flex-row items-center justify-start gap-4">
 			<div class="flex-shrink-0">
-				<div class="flex size-10 items-center justify-center rounded-full bg-main text-main">
+				<div class="flex size-10 items-center justify-center rounded-full">
 					<Switch>
 						<Match
 							when={
@@ -147,7 +147,7 @@ function ActivityCard(props: { activity: any }) {
 						<span> "{props.activity.message}"</span>
 					</Show>
 				</div>
-				<div class="text-sm text-hint">
+				<div class="text-xs text-secondary-foreground">
 					{timeSince(props.activity.timestamp)}
 				</div>
 			</div>
@@ -157,12 +157,13 @@ function ActivityCard(props: { activity: any }) {
 
 const Loader = () => {
 	return (
-		<div class="flex h-screen flex-col items-start justify-start bg-secondary p-2">
-			<div class="aspect-square w-full rounded-xl bg-main" />
-			<div class="flex flex-col items-start justify-start p-2">
-				<div class="mt-2 h-6 w-full rounded bg-main" />
-				<div class="mt-2 h-6 w-full rounded bg-main" />
-			</div>
+		<div class="w-full flex h-screen flex-col items-start justify-start p-2">
+			<div class="mt-2 h-12 w-full rounded bg-secondary" />
+			<div class="mt-2 h-12 w-full rounded bg-secondary" />
+			<div class="mt-2 h-12 w-full rounded bg-secondary" />
+			<div class="mt-2 h-12 w-full rounded bg-secondary" />
+			<div class="mt-2 h-12 w-full rounded bg-secondary" />
+			<div class="mt-2 h-12 w-full rounded bg-secondary" />
 		</div>
 	)
 }
