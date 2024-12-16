@@ -40,7 +40,6 @@ export default function FeedPage() {
 
 	const [profilePopup, setProfilePopup] = createSignal(false)
 	const [communityPopup, setCommunityPopup] = createSignal(false)
-	const [rewardsPopup, setRewardsPopup] = createSignal(false)
 
 	createEffect(() => {
 		const onScroll = () => setScroll(window.scrollY)
@@ -72,10 +71,6 @@ export default function FeedPage() {
 			'communityPopup',
 			updateCommunityPopup,
 		)
-		window.Telegram.WebApp.CloudStorage.getItem(
-			'rewardsPopup',
-			updateRewardsPopup,
-		)
 
 		if (store.user.published_at && !store.user.hidden_at) {
 			mainButton.enable('Post to Peatch').onClick(openDropDown)
@@ -84,7 +79,6 @@ export default function FeedPage() {
 		window.Telegram.WebApp.disableClosingConfirmation()
 		// window.Telegram.WebApp.CloudStorage.removeItem('profilePopup')
 		// window.Telegram.WebApp.CloudStorage.removeItem('communityPopup')
-		// window.Telegram.WebApp.CloudStorage.removeItem('rewardsPopup')
 	})
 
 	const getUserLink = () => {
@@ -103,9 +97,6 @@ export default function FeedPage() {
 			case 'communityPopup':
 				setCommunityPopup(false)
 				break
-			case 'rewardsPopup':
-				setRewardsPopup(false)
-				break
 		}
 		window.Telegram.WebApp.CloudStorage.setItem(name, 'closed')
 	}
@@ -118,16 +109,17 @@ export default function FeedPage() {
 		setCommunityPopup(value !== 'closed')
 	}
 
-	const updateRewardsPopup = (err: unknown, value: unknown) => {
-		setRewardsPopup(value !== 'closed')
-	}
+	onMount(() => {
+		// disable scroll on body when drawer is open
+		document.body.style.overflow = 'hidden'
+		setHeight(window.Telegram.WebApp.viewportHeight - 140 - 56)
+	})
 
 	onCleanup(() => {
 		mainButton.hide()
 		mainButton.offClick(toCreateCollab)
 		mainButton.offClick(openDropDown)
 		document.removeEventListener('click', closeDropDownOnOutsideClick)
-		document.body.style.overflow = 'auto'
 	})
 
 	// if dropdown is open, every click outside of the dropdown will close
@@ -137,14 +129,13 @@ export default function FeedPage() {
 			!e.composedPath().includes(document.getElementById('dropdown-menu')!)
 		) {
 			closeDropDown()
-			document.body.style.overflow = 'auto'
 		}
 	}
 
 	document.addEventListener('click', closeDropDownOnOutsideClick)
 
 	return (
-		<div class="min-h-screen bg-secondary pb-56 pt-[76px]">
+		<div class="flex h-screen flex-col bg-secondary">
 			<Show when={dropDown()}>
 				<div
 					class="fixed inset-0 z-50 flex h-screen w-full flex-col items-center justify-end px-4 py-2.5"
@@ -175,16 +166,13 @@ export default function FeedPage() {
 					</div>
 				</div>
 			</Show>
-			<Show when={!store.user.published_at && profilePopup()}>
-				<FillProfilePopup onClose={() => closePopup('profilePopup')} />
-			</Show>
-			<Show when={communityPopup()}>
-				<OpenCommunityPopup onClose={() => closePopup('communityPopup')} />
-			</Show>
-			<Show when={!communityPopup() && rewardsPopup() && !store.user.hidden_at}>
-				<RewardsPopup onClose={() => closePopup('rewardsPopup')} />
-			</Show>
-			<div class="fixed top-0 z-20 flex w-full flex-row items-center justify-between space-x-4 border-b bg-secondary p-4">
+			<div class="flex w-full flex-shrink-0 flex-col items-center justify-between space-y-4 border-b bg-secondary p-4">
+				<Show when={!store.user.published_at && profilePopup()}>
+					<FillProfilePopup onClose={() => closePopup('profilePopup')} />
+				</Show>
+				<Show when={communityPopup()}>
+					<OpenCommunityPopup onClose={() => closePopup('communityPopup')} />
+				</Show>
 				<div class="relative flex h-10 w-full flex-row items-center justify-center rounded-lg bg-main">
 					<input
 						class="h-full w-full bg-transparent px-2.5 text-main placeholder:text-hint"
@@ -198,57 +186,38 @@ export default function FeedPage() {
 							class="absolute right-2.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-main"
 							onClick={() => setSearch('')}
 						>
-							<span class="material-symbols-rounded text-[20px] text-button">
+							<span class="material-symbols-rounded text-[20px] text-secondary">
 								close
 							</span>
 						</button>
 					</Show>
 				</div>
-				<Link
-					class="flex shrink-0 flex-row items-center justify-between"
-					href={getUserLink()}
-				>
-					<Switch>
-						<Match when={store.user.avatar_url}>
-							<img
-								class="size-10 rounded-xl border object-cover"
-								src={CDN_URL + '/' + store.user.avatar_url}
-								alt="User Avatar"
-							/>
-						</Match>
-						<Match when={!store.user.avatar_url}>
-							<div class="flex size-10 items-center justify-center rounded-xl border-2 bg-main">
-								<span class="material-symbols-rounded text-peatch-main">
-									account_circle
-								</span>
-							</div>
-						</Match>
-					</Switch>
-				</Link>
 			</div>
-			<Suspense fallback={<ListPlaceholder />}>
-				<For each={query.data}>
-					{(data, i) => (
-						<>
-							<Switch fallback={<div />}>
-								<Match when={data.type === 'user'}>
-									<UserCard user={data.data as User} scroll={scroll()} />
-								</Match>
-								<Match when={data.type === 'collaboration'}>
-									<CollaborationCard
-										collab={data.data as Collaboration}
-										scroll={scroll()}
-									/>
-								</Match>
-								<Match when={data.type === 'post'}>
-									<PostCard post={data.data as Post} />
-								</Match>
-							</Switch>
-							<div class="h-px w-full bg-border" />
-						</>
-					)}
-				</For>
-			</Suspense>
+			<div class="flex h-full w-full flex-shrink-0 flex-col overflow-y-auto pb-20">
+				<Suspense fallback={<ListPlaceholder />}>
+					<For each={query.data}>
+						{(data, i) => (
+							<>
+								<Switch fallback={<div />}>
+									<Match when={data.type === 'user'}>
+										<UserCard user={data.data as User} scroll={scroll()} />
+									</Match>
+									<Match when={data.type === 'collaboration'}>
+										<CollaborationCard
+											collab={data.data as Collaboration}
+											scroll={scroll()}
+										/>
+									</Match>
+									<Match when={data.type === 'post'}>
+										<PostCard post={data.data as Post} />
+									</Match>
+								</Switch>
+								<div class="h-px w-full bg-border" />
+							</>
+						)}
+					</For>
+				</Suspense>
+			</div>
 		</div>
 	)
 }
@@ -299,25 +268,27 @@ const UserCard = (props: { user: User; scroll: number }) => {
 
 const OpenCommunityPopup = (props: { onClose: () => void }) => {
 	return (
-		<div class="w-full p-4">
+		<div class="w-full">
 			<div class="relative rounded-2xl bg-main p-4 text-center">
-				<span class="material-symbols-rounded text-[48px] text-green">
-					maps_ugc
-				</span>
 				<button
 					class="absolute right-4 top-4 flex size-6 items-center justify-center rounded-full bg-secondary"
 					onClick={props.onClose}
 				>
-					<span class="material-symbols-rounded text-[24px] text-button">
+					<span class="material-symbols-rounded text-[20px] text-secondary">
 						close
 					</span>
 				</button>
-				<p class="text-3xl font-extrabold text-green">Join community</p>
-				<p class="mt-2 text-xl font-normal text-main">
-					to talk with founders and users. Discuss and solve problems together
+				<div class="flex items-center  justify-center text-2xl font-extrabold text-green">
+					<span class="material-symbols-rounded text-[36px] text-green">
+						maps_ugc
+					</span>
+					Join community
+				</div>
+				<p class="mt-2 text-base font-normal text-secondary">
+					To talk with founders and users. Discuss and solve problems together
 				</p>
 				<button
-					class="mt-4 flex h-12 w-full items-center justify-center rounded-xl bg-secondary text-main"
+					class="mt-4 flex h-10 w-full items-center justify-center rounded-xl bg-secondary text-sm font-semibold text-main"
 					onClick={() =>
 						window.Telegram.WebApp.openTelegramLink(
 							'https://t.me/peatch_community',
@@ -364,36 +335,6 @@ const PostCard = (props: { post: Post }) => {
 				type="post"
 			/>
 		</Link>
-	)
-}
-
-const RewardsPopup = (props: { onClose: () => void }) => {
-	return (
-		<div class="w-full p-4">
-			<div class="relative rounded-2xl bg-main p-4 text-center">
-				<span class="material-symbols-rounded text-[48px] text-pink">
-					emoji_events
-				</span>
-				<button
-					class="absolute right-4 top-4 flex size-6 items-center justify-center rounded-full bg-secondary"
-					onClick={props.onClose}
-				>
-					<span class="material-symbols-rounded text-[24px] text-secondary">
-						close
-					</span>
-				</button>
-				<p class="text-3xl font-extrabold text-pink">Peatch Rewards</p>
-				<p class="mt-2 text-xl font-normal text-main">
-					Learn more about our internal currency and how to earn it
-				</p>
-				<Link
-					href={'/rewards'}
-					class="mt-4 flex h-12 w-full items-center justify-center rounded-xl bg-secondary text-main"
-				>
-					Show me
-				</Link>
-			</div>
-		</div>
 	)
 }
 
