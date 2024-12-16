@@ -74,7 +74,7 @@ type User struct {
 	ReferrerID             *int64           `json:"-" db:"referrer_id"`
 	LastCheckIn            *time.Time       `json:"last_check_in" db:"last_check_in"`
 	PeatchPoints           int              `json:"peatch_points" db:"peatch_points"`
-	ProfileScore           *int             `json:"-" db:"profile_score"`
+	Rating                 *int             `json:"rating" db:"rating"`
 	LikesCount             int              `json:"likes_count" db:"likes_count"`
 	IsLiked                bool             `json:"is_liked" db:"is_liked"`
 } // @Name User
@@ -176,7 +176,7 @@ func (s *storage) ListUsers(params UserQuery) ([]User, error) {
 	paramIndex := 2
 	args := []interface{}{params.UserID}
 
-	whereClauses := []string{"u.published_at IS NOT NULL AND u.hidden_at IS NULL AND u.profile_score > 5"}
+	whereClauses := []string{"u.published_at IS NOT NULL AND u.hidden_at IS NULL AND u.rating > 500"}
 
 	if params.Search != "" {
 		searchClause := fmt.Sprintf(" (u.first_name ILIKE $%d OR u.last_name ILIKE $%d OR u.title ILIKE $%d OR u.description ILIKE $%d)", paramIndex, paramIndex, paramIndex, paramIndex)
@@ -186,7 +186,7 @@ func (s *storage) ListUsers(params UserQuery) ([]User, error) {
 	}
 
 	query = fmt.Sprintf("%s WHERE %s", query, strings.Join(whereClauses, " AND "))
-	query += fmt.Sprintf(" GROUP BY u.id ORDER BY u.created_at DESC")
+	query += fmt.Sprintf(" GROUP BY u.id ORDER BY u.rating DESC")
 	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", paramIndex, paramIndex+1)
 
 	offset := (params.Page - 1) * params.Limit
@@ -592,7 +592,7 @@ func (s *storage) ListNewUserProfiles(from time.Time) ([]User, error) {
 	query := `
 		SELECT u.id, u.first_name, u.last_name, u.chat_id, u.username, u.created_at, u.updated_at, u.published_at, u.avatar_url, u.title, u.description, u.language_code, u.country, u.city, u.country_code, u.followers_count, u.requests_count, u.notifications_enabled_at, u.hidden_at
 		FROM users u
-		WHERE u.published_at > $1 AND u.hidden_at IS NULL AND u.profile_score > 7
+		WHERE u.published_at > $1 AND u.hidden_at IS NULL AND u.rating > 600
 	`
 
 	users := make([]User, 0)
@@ -799,7 +799,7 @@ func (s *storage) ListProfilesForModeration() ([]User, error) {
 				 JOIN public.user_opportunities uo on u.id = uo.user_id
 				 JOIN opportunities o on uo.opportunity_id = o.id
 		where u.published_at is not null
-		  and u.profile_score is null
+		  and u.rating is null
 		group by u.id order by u.created_at desc;
 	`
 
@@ -815,7 +815,7 @@ func (s *storage) ListProfilesForModeration() ([]User, error) {
 func (s *storage) UpdateProfileScore(userID int64, score int) error {
 	query := `
 		UPDATE users
-		SET profile_score = $1
+		SET rating = $1
 		WHERE id = $2
 	`
 

@@ -24,7 +24,8 @@ CREATE TABLE users
     review_status            VARCHAR(255)  NOT NULL DEFAULT 'pending',
     peatch_points            INTEGER       NOT NULL DEFAULT 0,
     referrer_id              INTEGER REFERENCES users (id),
-    last_check_in            timestamptz
+    last_check_in            timestamptz,
+    rating                   INTEGER
 );
 
 CREATE OR REPLACE FUNCTION update_referrer_points()

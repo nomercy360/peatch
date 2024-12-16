@@ -22,7 +22,7 @@ func getRequestBody(userProfile string) string {
             "content": [
                 {
                     "type": "text",
-                    "text": "Review user profile description and give it a score. Its for a social network for collaboration and finding talents, so realistic and non-abstract profile is most important. Main fields are 'Title', 'First Name', 'Last Name', and 'Description' less important is to compare Badges and Opportunities with profile description and title, see if they correlate The RESULT is a number from 0 to 10, where 0 is a total spam and 10 is the most interesting profile ever seen"
+                    "text": "Review user profile description and give it a score. It’s for a social network for collaboration and finding talents, so realistic and non-abstract profile is most important. Main fields are 'Title', 'First Name', 'Last Name', and 'Description'; less important is to compare Badges and Opportunities with the profile description and title, see if they correlate. The RESULT is a number from 1 to 1000, where 1 is total spam and 1000 is the most interesting profile ever seen."
                 }
             ]
         },
@@ -40,7 +40,7 @@ func getRequestBody(userProfile string) string {
             "content": [
                 {
                     "type": "text",
-                    "text": "7"
+                    "text": "734"
                 }
             ]
         },
@@ -49,7 +49,7 @@ func getRequestBody(userProfile string) string {
             "content": [
                 {
                     "type": "text",
-                    "text": "Title: UX/UI designer, no-code developer Readymag/Tilda First Name: Nikita Last NameL Mironov Description: 26, UX/UI designer Badges: UX Designer, Figma, Web Designer, Web Designer Opportunities: Reaching design, Designing Websites, Co-founding a company, Brand strategy consulting, Brainstorming, Teaching design"
+                    "text": "Title: UX/UI designer, no-code developer Readymag/Tilda First Name: Nikita Last Name: Mironov Description: 26, UX/UI designer Badges: UX Designer, Figma, Web Designer, Web Designer Opportunities: Reaching design, Designing Websites, Co-founding a company, Brand strategy consulting, Brainstorming, Teaching design"
                 }
             ]
         },
@@ -58,7 +58,7 @@ func getRequestBody(userProfile string) string {
             "content": [
                 {
                     "type": "text",
-                    "text": "6"
+                    "text": "645"
                 }
             ]
         },
@@ -76,7 +76,7 @@ func getRequestBody(userProfile string) string {
             "content": [
                 {
                     "type": "text",
-                    "text": "3"
+                    "text": "240"
                 }
             ]
         },
@@ -94,7 +94,7 @@ func getRequestBody(userProfile string) string {
             "content": [
                 {
                     "type": "text",
-                    "text": "2"
+                    "text": "185"
                 }
             ]
         },
@@ -157,7 +157,8 @@ func sendOpenAIRequest(reqBody string, token string) (*OpenAIResponse, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("unexpected status code: %d, body: %s", resp.StatusCode, body)
 	}
 
 	defer resp.Body.Close()
@@ -191,6 +192,9 @@ func userToString(user db.User) string {
 	for _, opportunity := range user.Opportunities {
 		msg += fmt.Sprintf("%s,", opportunity.Text)
 	}
+
+	// replace \ with \\
+	msg = strings.ReplaceAll(msg, `\`, `\\`)
 
 	// replace all " with \"
 	msg = strings.ReplaceAll(msg, `"`, `\"`)
@@ -234,7 +238,7 @@ func (j *notifyJob) ModerateUserProfile() error {
 		}
 
 		score, err := strconv.Atoi(choice.Message.Content)
-		if err != nil || score < 0 || score > 10 {
+		if err != nil || score < 0 || score > 1000 {
 			return fmt.Errorf("failed to parse score: %w, reqBody: %s, resp: %v", err, reqBody, resp)
 		}
 
@@ -242,7 +246,7 @@ func (j *notifyJob) ModerateUserProfile() error {
 			return fmt.Errorf("failed to update user review status: %w", err)
 		}
 
-		log.Printf("User %s %s scoring status: %d", *user.FirstName, *user.LastName, score)
+		log.Printf("User %s %s %s scoring status: %d", *user.FirstName, *user.Title, *user.Description, score)
 		//
 		//var msg, url, btnText string
 		//if score < 4 {
