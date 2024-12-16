@@ -2,7 +2,6 @@ package service
 
 import (
 	"github.com/peatch-io/peatch/internal/db"
-	"sort"
 )
 
 type FeedQuery struct {
@@ -90,10 +89,6 @@ func (s *service) GetFeed(uid int64, query FeedQuery) ([]FeedItem, error) {
 
 		items = append(items, feedItem)
 	}
-
-	sort.Slice(items, func(i, j int) bool {
-		return items[i].Data.GetCreatedAt().After(items[j].Data.GetCreatedAt())
-	})
 
 	return items, nil
 }

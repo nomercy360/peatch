@@ -112,7 +112,6 @@ export default function FeedPage() {
 	onMount(() => {
 		// disable scroll on body when drawer is open
 		document.body.style.overflow = 'hidden'
-		setHeight(window.Telegram.WebApp.viewportHeight - 140 - 56)
 	})
 
 	onCleanup(() => {
