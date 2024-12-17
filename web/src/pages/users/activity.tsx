@@ -1,7 +1,7 @@
 import { For, Match, Show, Switch } from 'solid-js'
 import { fetchActivity } from '~/lib/api'
 import { createQuery } from '@tanstack/solid-query'
-import { Link } from '~/components/Link'
+import { Link } from '~/components/link'
 
 export function timeSince(dateString: string) {
 	const date = new Date(dateString)

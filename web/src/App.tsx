@@ -89,7 +89,6 @@ export default function App(props: any) {
 				<Switch>
 					<Match when={isAuthenticated()}>
 						<div>{props.children}</div>
-						<NavigationTabs />
 					</Match>
 					<Match when={!isAuthenticated() && isLoading()}>
 						<div class="h-screen w-full flex-col items-start justify-center" />

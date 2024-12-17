@@ -16,7 +16,7 @@ export const LocationBadge = ({
 	)
 
 	return (
-		<div class="flex h-5 flex-row items-center justify-center gap-[5px] rounded bg-primary text-primary-foreground px-2.5 text-xs font-semibold ">
+		<div class="flex h-5 flex-row items-center justify-center gap-[5px] rounded bg-muted text-muted-foreground px-2.5 text-xs font-semibold ">
 			<Show when={findFlag}>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"

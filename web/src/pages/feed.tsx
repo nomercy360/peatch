@@ -9,7 +9,7 @@ import {
 } from 'solid-js'
 import { Collaboration, Post, User, UserProfile } from '~/gen/types'
 import { CDN_URL, fetchUsers, likeContent, unlikeContent } from '~/lib/api'
-import { Link } from '~/components/Link'
+import { Link } from '~/components/link'
 import BadgeList from '~/components/BadgeList'
 import useDebounce from '~/lib/useDebounce'
 import { createMutation, createQuery } from '@tanstack/solid-query'
@@ -20,6 +20,7 @@ import { useNavigate } from '@solidjs/router'
 import { UserCardSmall } from '~/pages/posts/id'
 import { LocationBadge } from '~/components/location-badge'
 import { queryClient } from '~/App'
+import NavigationTabs from '~/components/navigation-tabs'
 
 export const [search, setSearch] = createSignal('')
 
@@ -130,6 +131,7 @@ export default function FeedPage() {
 
 	return (
 		<div class="flex h-screen flex-col">
+			<NavigationTabs />
 			<Show when={dropDown()}>
 				<div
 					class="fixed inset-0 z-50 flex h-screen w-full flex-col items-center justify-end px-4 py-2.5"
@@ -243,7 +245,6 @@ const UserCard = (props: { user: User; scroll: number }) => {
 				liked={user.is_liked!}
 				likes={user.likes_count!}
 				id={user.id!}
-				type="user"
 			/>
 		</Link>
 	)

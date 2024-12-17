@@ -9,7 +9,7 @@ import {
 } from 'solid-js'
 import { Collaboration, Post, UserProfile } from '~/gen/types'
 import { CDN_URL, fetchFeed, fetchUsers, likeContent, unlikeContent } from '~/lib/api'
-import { Link } from '~/components/Link'
+import { Link } from '~/components/link'
 import useDebounce from '~/lib/useDebounce'
 import { createMutation, createQuery } from '@tanstack/solid-query'
 import { useMainButton } from '~/lib/useMainButton'
@@ -18,6 +18,7 @@ import { UserCardSmall } from '~/pages/posts/id'
 import { LocationBadge } from '~/components/location-badge'
 import { queryClient } from '~/App'
 import { HeartIcon, ListPlaceholder } from '~/pages/feed'
+import NavigationTabs from '~/components/navigation-tabs'
 
 export const [search, setSearch] = createSignal('')
 
@@ -52,6 +53,7 @@ export default function PostsPage() {
 
 	return (
 		<div class="flex h-screen flex-col">
+			<NavigationTabs />
 			<div class="flex w-full flex-shrink-0 flex-col items-center justify-between space-y-4 border-b p-4">
 				<div class="relative flex h-10 w-full flex-row items-center justify-center rounded-lg bg-secondary">
 					<input

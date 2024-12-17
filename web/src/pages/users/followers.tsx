@@ -9,7 +9,7 @@ import {
 } from '~/lib/api'
 import { createMutation, createQuery } from '@tanstack/solid-query'
 import { queryClient } from '~/App'
-import { Link } from '~/components/Link'
+import { Link } from '~/components/link'
 import { store } from '~/store'
 import { UserProfileShort } from '~/gen/types'
 

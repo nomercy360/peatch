@@ -1,7 +1,7 @@
 import { For } from 'solid-js'
 import { fetchPreview } from '~/lib/api'
 import { createQuery } from '@tanstack/solid-query'
-import { Link } from '~/components/Link'
+import { Link } from '~/components/link'
 
 export default function ActionDonePopup(props: {
 	action: string

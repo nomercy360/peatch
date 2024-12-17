@@ -12,7 +12,7 @@ import { CDN_URL, fetchPost } from '~/lib/api'
 import { store } from '~/store'
 import { createQuery } from '@tanstack/solid-query'
 import { useMainButton } from '~/lib/useMainButton'
-import { Link } from '~/components/Link'
+import { Link } from '~/components/link'
 import { UserProfile } from '~/gen/types'
 
 export default function Collaboration() {

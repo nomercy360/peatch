@@ -10,7 +10,7 @@ import {
 	Switch,
 } from 'solid-js'
 import { useNavigate, useParams } from '@solidjs/router'
-import { Link } from '~/components/Link'
+import { Link } from '~/components/link'
 import {
 	createPost,
 	fetchPresignedUrl,

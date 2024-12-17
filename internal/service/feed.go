@@ -26,26 +26,6 @@ func (s *service) GetFeed(uid int64, query FeedQuery) ([]FeedItem, error) {
 		query.Page = 1
 	}
 
-	res, err := s.storage.ListUsers(db.UserQuery{
-		UserID: uid,
-		Page:   query.Page,
-		Limit:  query.Limit,
-		Search: query.Search,
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	for _, user := range res {
-		feedItem := FeedItem{
-			Type: "user",
-			Data: user.ToUserProfile(),
-		}
-
-		items = append(items, feedItem)
-	}
-
 	// fetch collaborations
 	c, err := s.storage.ListCollaborations(db.CollaborationQuery{
 		Page:   query.Page,
