@@ -20,7 +20,7 @@ export default function ActionDonePopup(props: {
 					schedule
 				</span>
 				<p class="text-3xl text-main">{props.action}</p>
-				<p class="mt-2 text-2xl text-secondary">{props.description}</p>
+				<p class="mt-2 text-2xl text-secondary-foreground">{props.description}</p>
 			</div>
 			<div class="flex flex-col items-center justify-center">
 				<div class="flex w-full flex-row items-center justify-center">

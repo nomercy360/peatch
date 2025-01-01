@@ -2,6 +2,7 @@ import { cn } from '~/lib/utils'
 import { useLocation } from '@solidjs/router'
 import { Link } from '~/components/link'
 import { store } from '~/store'
+import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
 
 export default function NavigationTabs(props: any) {
 	const location = useLocation()
@@ -30,21 +31,29 @@ export default function NavigationTabs(props: any) {
 		},
 	]
 
+	function getUserInitials() {
+		const firstInitial = store.user?.first_name ? store.user?.first_name[0] : ''
+		const lastInitial = store.user?.last_name ? store.user?.last_name[0] : ''
+
+		return `${firstInitial}${lastInitial}`
+	}
+
 	return (
 		<>
 			<div
-				class="grid grid-cols-5 items-center border shadow-sm h-[72px] pb-2 fixed bottom-0 w-full border-t bg-background z-50"
+				class="grid grid-cols-5 items-start border shadow-sm h-[100px] py-4 fixed bottom-0 w-full border-t bg-background z-50"
 			>
 				<Link
 					href={`/users/${store.user?.username}`}
 					state={{ from: location.pathname }}
 					class="flex items-center justify-center"
 				>
-					<img
-						src={`https://assets.peatch.io/${store.user?.avatar_url}`}
-						alt="User avatar"
-						class="size-9 rounded-full object-cover"
-					/>
+					<Avatar>
+						<AvatarImage src={`https://assets.peatch.io/${store.user?.avatar_url}`} />
+						<AvatarFallback>
+							{getUserInitials()}
+						</AvatarFallback>
+					</Avatar>
 				</Link>
 				{tabs.map(({ href, icon, name }) => (
 					<Link

@@ -7,8 +7,8 @@ import {
 	Show,
 	Suspense,
 } from 'solid-js'
-import { Collaboration, Post, User, UserProfile } from '~/gen/types'
-import { CDN_URL, fetchUsers, likeContent, unlikeContent } from '~/lib/api'
+import { User, UserProfile } from '~/gen/types'
+import { fetchUsers, likeContent, unlikeContent } from '~/lib/api'
 import { Link } from '~/components/link'
 import BadgeList from '~/components/BadgeList'
 import useDebounce from '~/lib/useDebounce'
@@ -17,7 +17,6 @@ import { store } from '~/store'
 import FillProfilePopup from '~/components/FillProfilePopup'
 import { useMainButton } from '~/lib/useMainButton'
 import { useNavigate } from '@solidjs/router'
-import { UserCardSmall } from '~/pages/posts/id'
 import { LocationBadge } from '~/components/location-badge'
 import { queryClient } from '~/App'
 import NavigationTabs from '~/components/navigation-tabs'
@@ -166,7 +165,7 @@ export default function FeedPage() {
 				<Show when={!store.user.published_at && profilePopup()}>
 					<FillProfilePopup onClose={() => closePopup('profilePopup')} />
 				</Show>
-				<Show when={communityPopup()}>
+				<Show when={communityPopup() && store.user.published_at}>
 					<OpenCommunityPopup onClose={() => closePopup('communityPopup')} />
 				</Show>
 				<div class="relative flex h-10 w-full flex-row items-center justify-center rounded-lg bg-secondary">
@@ -252,36 +251,34 @@ const UserCard = (props: { user: User; scroll: number }) => {
 
 const OpenCommunityPopup = (props: { onClose: () => void }) => {
 	return (
-		<div class="w-full">
-			<div class="relative rounded-2xl p-4 text-center">
-				<button
-					class="absolute right-4 top-4 flex size-6 items-center justify-center rounded-full bg-secondary"
-					onClick={props.onClose}
-				>
-					<span class="material-symbols-rounded text-[20px] text-secondary">
+		<div class="w-full bg-secondary rounded-xl relative p-3 text-center">
+			<button
+				class="absolute right-4 top-4 flex size-6 items-center justify-center rounded-full bg-background"
+				onClick={props.onClose}
+			>
+					<span class="material-symbols-rounded text-[20px] text-secondary-foreground">
 						close
 					</span>
-				</button>
-				<div class="flex items-center  justify-center text-2xl font-extrabold text-green">
-					<span class="material-symbols-rounded text-[36px] text-green">
+			</button>
+			<div class="flex items-center gap-1 justify-center text-2xl font-extrabold text-green">
+					<span class="material-symbols-rounded text-[36px] text-green-400">
 						maps_ugc
 					</span>
-					Join community
-				</div>
-				<p class="mt-2 text-base font-normal text-secondary">
-					To talk with founders and users. Discuss and solve problems together
-				</p>
-				<button
-					class="mt-4 flex h-10 w-full items-center justify-center rounded-xl text-sm font-semibold"
-					onClick={() =>
-						window.Telegram.WebApp.openTelegramLink(
-							'https://t.me/peatch_community',
-						)
-					}
-				>
-					Open Peatch Community
-				</button>
+				Join community
 			</div>
+			<p class="mt-2 text-base font-normal text-secondary-foreground">
+				To talk with founders and users. Discuss and solve problems together
+			</p>
+			<button
+				class="bg-primary mt-4 flex h-10 w-full items-center justify-center rounded-xl text-sm font-semibold"
+				onClick={() =>
+					window.Telegram.WebApp.openTelegramLink(
+						'https://t.me/peatch_community',
+					)
+				}
+			>
+				Open Peatch Community
+			</button>
 		</div>
 	)
 }

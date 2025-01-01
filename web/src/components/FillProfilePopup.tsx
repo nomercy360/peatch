@@ -1,32 +1,31 @@
-import { A } from '@solidjs/router'
+import { Link } from '~/components/link'
 
 export default function FillProfilePopup(props: { onClose: () => void }) {
 	return (
-		<div class="fixed bottom-0 right-0 z-30 flex w-full flex-col items-center justify-center rounded-t-3xl bg-button px-4 py-3">
+		<div class="w-full bg-secondary rounded-xl relative p-3 text-center">
 			<button
-				class="flex w-full flex-row items-start justify-between gap-4 text-start"
-				onClick={() => props.onClose()}
+				class="absolute right-4 top-4 flex size-6 items-center justify-center rounded-full bg-background"
+				onClick={props.onClose}
 			>
-				<span class="text-[24px] font-bold leading-tight text-button">
-					Set up your profile to collaborate with others.
-				</span>
-				<span class="flex size-6 items-center justify-center rounded-full bg-white/10">
-					<span class="material-symbols-rounded text-[24px] text-button">
-						close
-					</span>
+				<span class="material-symbols-rounded text-[20px] text-secondary-foreground">
+					close
 				</span>
 			</button>
-			<p class="mt-2 text-xl text-button">
-				It only takes 5 minutes, but it can significantly improve your
-				networking. According to our data, every third user finds someone to
-				collaborate with within the first three days.
+			<div class="flex items-center gap-1 justify-center text-2xl font-extrabold text-green">
+				<span class="material-symbols-rounded text-[36px] text-blue-400">
+					people
+				</span>
+				Set up your profile
+			</div>
+			<p class="mt-2 text-base font-normal text-secondary-foreground">
+				Complete your profile in just 5 minutes to enhance your networking and be able to collaborate with others.
 			</p>
-			<A
-				class="mt-4 flex h-12 w-full items-center justify-center rounded-2xl bg-secondary text-center text-main"
+			<Link
+				class="bg-primary mt-4 flex h-10 w-full items-center justify-center rounded-xl text-sm font-semibold"
 				href="/users/edit"
 			>
 				Set up profile
-			</A>
+			</Link>
 		</div>
 	)
 }
