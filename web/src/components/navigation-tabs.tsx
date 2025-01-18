@@ -3,9 +3,12 @@ import { useLocation } from '@solidjs/router'
 import { Link } from '~/components/link'
 import { store } from '~/store'
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
+import { useMainButton } from '~/lib/useMainButton'
+import { onMount } from 'solid-js'
 
 export default function NavigationTabs(props: any) {
 	const location = useLocation()
+	const mainButton = useMainButton()
 
 	const tabs = [
 		{
@@ -27,13 +30,17 @@ export default function NavigationTabs(props: any) {
 		return `${firstInitial}${lastInitial}`
 	}
 
+	onMount(() => {
+		mainButton.hide()
+	})
+
 	return (
 		<>
 			<div
 				class="grid grid-cols-3 items-start border shadow-sm h-[100px] py-4 fixed bottom-0 w-full border-t bg-background z-50"
 			>
 				<Link
-					href={`/users/${store.user?.username}`}
+					href={store.user.first_name && store.user.description ? `/users/${store.user?.username}` : '/users/edit'}
 					state={{ from: location.pathname }}
 					class="flex items-center justify-center"
 				>
