@@ -53,12 +53,11 @@ export default function PostsPage() {
 
 	return (
 		<div class="flex h-screen flex-col">
-			<NavigationTabs />
 			<div class="flex w-full flex-shrink-0 flex-col items-center justify-between space-y-4 border-b p-4">
 				<div class="relative flex h-10 w-full flex-row items-center justify-center rounded-lg bg-secondary">
 					<input
 						class="h-full w-full bg-transparent px-2.5 placeholder:text-secondary-foreground"
-						placeholder="Search people or collaborations"
+						placeholder="Search for posts"
 						type="text"
 						value={search()}
 						onInput={e => updateSearch(e.currentTarget.value)}

@@ -130,7 +130,6 @@ export default function FeedPage() {
 
 	return (
 		<div class="flex h-screen flex-col">
-			<NavigationTabs />
 			<Show when={dropDown()}>
 				<div
 					class="fixed inset-0 z-50 flex h-screen w-full flex-col items-center justify-end px-4 py-2.5"
@@ -171,7 +170,7 @@ export default function FeedPage() {
 				<div class="relative flex h-10 w-full flex-row items-center justify-center rounded-lg bg-secondary">
 					<input
 						class="h-full w-full bg-transparent px-2.5 placeholder:text-secondary-foreground"
-						placeholder="Search people or collaborations"
+						placeholder="Search people"
 						type="text"
 						value={search()}
 						onInput={e => updateSearch(e.currentTarget.value)}

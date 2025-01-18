@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/peatch-io/peatch/internal/db"
-	"github.com/peatch-io/peatch/internal/notification"
 	"github.com/peatch-io/peatch/internal/terrors"
 	"time"
 )
@@ -55,23 +54,18 @@ type s3Client interface {
 }
 
 type Config struct {
-	BotToken string
-	CdnURL   string
+	BotID  int64
+	CdnURL string
 }
 
-type notifier interface {
-	SendTextNotification(params notification.SendNotificationParams) error
-}
-
-func New(s storage, s3Client s3Client, config Config, notifier notifier) *service {
-	return &service{storage: s, s3Client: s3Client, config: config, notifier: notifier}
+func New(s storage, s3Client s3Client, config Config) *service {
+	return &service{storage: s, s3Client: s3Client, config: config}
 }
 
 type service struct {
 	storage  storage
 	config   Config
 	s3Client s3Client
-	notifier notifier
 }
 
 type PresignedURL struct {

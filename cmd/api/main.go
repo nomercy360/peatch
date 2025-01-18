@@ -4,13 +4,11 @@ import (
 	"context"
 	"errors"
 	"github.com/caarlos0/env/v11"
-	telegram "github.com/go-telegram/bot"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	_ "github.com/peatch-io/peatch/docs"
 	"github.com/peatch-io/peatch/internal/db"
 	"github.com/peatch-io/peatch/internal/handler"
-	"github.com/peatch-io/peatch/internal/notification"
 	storage "github.com/peatch-io/peatch/internal/s3"
 	"github.com/peatch-io/peatch/internal/service"
 	"github.com/peatch-io/peatch/internal/terrors"
@@ -19,13 +17,14 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"time"
 )
 
 type config struct {
 	DatabaseURL string `env:"DATABASE_URL,required"`
 	Server      ServerConfig
-	BotToken    string `env:"BOT_TOKEN,required"`
+	BotID       string `env:"BOT_ID,required"`
 	CdnURL      string `env:"CDN_URL,required"`
 	AWS         AWSConfig
 }
@@ -138,15 +137,14 @@ func main() {
 		log.Fatalf("Failed to initialize AWS S3 client: %v\n", err)
 	}
 
-	bot, err := telegram.New(cfg.BotToken)
-
+	botID, err := strconv.ParseInt(cfg.BotID, 10, 64)
 	if err != nil {
-		log.Fatalf("Failed to initialize bot: %v", err)
+		log.Fatalf("Failed to parse bot id: %v", err)
 	}
 
-	notifier := notification.NewTelegramNotifier(bot)
+	svcConfig := service.Config{BotID: botID, CdnURL: cfg.CdnURL}
 
-	svc := service.New(pg, s3Client, service.Config{BotToken: cfg.BotToken, CdnURL: cfg.CdnURL}, notifier)
+	svc := service.New(pg, s3Client, svcConfig)
 
 	h := handler.New(svc)
 

@@ -281,34 +281,6 @@ func (h *handler) handleClaimDailyReward(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-// handleCreateFeedbackSurvey godoc
-// @Summary Create feedback survey
-// @Tags users
-// @Accept  json
-// @Produce  json
-// @Param survey body FeedbackSurveyRequest true "Survey data"
-// @Success 204
-// @Router /api/feedback-survey [post]
-func (h *handler) handleCreateFeedbackSurvey(c echo.Context) error {
-	uid := getUserID(c)
-
-	var survey svc.FeedbackSurveyRequest
-	if err := c.Bind(&survey); err != nil {
-		return err
-	}
-
-	if err := c.Validate(survey); err != nil {
-		return err
-	}
-
-	err := h.svc.AcceptFeedbackSurvey(uid, survey)
-	if err != nil {
-		return err
-	}
-
-	return c.NoContent(http.StatusNoContent)
-}
-
 // handleGetActivityHistory godoc
 // @Summary Get activity history
 // @Tags users

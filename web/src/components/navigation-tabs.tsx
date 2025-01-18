@@ -14,20 +14,9 @@ export default function NavigationTabs(props: any) {
 			name: 'Opportunities',
 		},
 		{
-			href: '/home',
-			icon: 'home',
-			name: 'Home',
-		},
-		{
 			href: '/',
 			icon: 'groups_3',
 			name: 'People',
-		},
-
-		{
-			href: '/friends',
-			icon: 'group',
-			name: 'Friends',
 		},
 	]
 
@@ -41,7 +30,7 @@ export default function NavigationTabs(props: any) {
 	return (
 		<>
 			<div
-				class="grid grid-cols-5 items-start border shadow-sm h-[100px] py-4 fixed bottom-0 w-full border-t bg-background z-50"
+				class="grid grid-cols-3 items-start border shadow-sm h-[100px] py-4 fixed bottom-0 w-full border-t bg-background z-50"
 			>
 				<Link
 					href={`/users/${store.user?.username}`}
@@ -64,7 +53,7 @@ export default function NavigationTabs(props: any) {
 						})}
 					>
 						<span class="material-symbols-rounded text-[32px]">{icon}</span>
-						<span class="text-xs">{name}</span>
+						<span class="text-xs font-medium">{name}</span>
 					</Link>
 				))}
 			</div>

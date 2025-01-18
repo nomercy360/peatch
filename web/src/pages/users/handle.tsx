@@ -211,7 +211,7 @@ export default function UserProfilePage() {
 							/>
 						</Match>
 						<Match when={!query.isLoading}>
-							<div class="h-fit min-h-screen p-2">
+							<div class="h-fit min-h-screen p-2 bg-secondary">
 								<Show when={isCurrentUserProfile && store.user.hidden_at}>
 									<button
 										onClick={showInfoPopup}
@@ -232,14 +232,12 @@ export default function UserProfilePage() {
 											>
 												<NotificationIcon width={20} height={19} />
 											</Link>
-											<Link
+											<div
 												class="absolute right-4 top-4 z-10 flex h-8 items-center justify-center gap-2 rounded-lg bg-secondary px-4 text-sm font-semibold text-orange"
-												href="/rewards"
-												state={{ back: true }}
 											>
 												<PeatchIcon width={16} height={16} />
 												{store.user.peatch_points}
-											</Link>
+											</div>
 										</Match>
 										<Match
 											when={!isCurrentUserProfile && !query.data?.is_following}
@@ -280,18 +278,18 @@ export default function UserProfilePage() {
 											<Link
 												href={`/users/${query.data.id}/followers?show=following`}
 												state={{ back: true }}
-												class="flex h-full flex-row items-center gap-1.5"
+												class="text-primary-foreground flex h-full flex-row items-center gap-1.5"
 											>
 												<span>{query.data.following_count}</span>
-												<span class="text-secondary-foreground font-normal">following</span>
+												<span class="text-primary-foreground opacity-70 font-normal">following</span>
 											</Link>
 											<Link
-												class="flex h-full flex-row items-center gap-1.5"
+												class="text-primary-foreground flex h-full flex-row items-center gap-1.5"
 												href={`/users/${query.data.id}/followers?show=followers`}
 												state={{ back: true }}
 											>
 												{query.data.followers_count}{' '}
-												<span class="text-secondary-foreground font-normal">followers</span>
+												<span class="text-primary-foreground opacity-70 font-normal">followers</span>
 											</Link>
 										</div>
 									</div>

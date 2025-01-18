@@ -19,9 +19,9 @@ type UserWithToken struct {
 
 func (s *service) TelegramAuth(query string) (*UserWithToken, error) {
 	expIn := 24 * time.Hour
-	botToken := s.config.BotToken
+	botID := s.config.BotID // bot id is a space for future use
 
-	if err := initdata.Validate(query, botToken, expIn); err != nil {
+	if err := initdata.ValidateThirdParty(query, botID, expIn); err != nil {
 		return nil, terrors.Unauthorized(err, "invalid data")
 	}
 

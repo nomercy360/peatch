@@ -46,7 +46,6 @@ type service interface {
 	GetUserFollowing(uid, targetID int64) ([]svc.UserProfileShort, error)
 	GetFeed(uid int64, query svc.FeedQuery) ([]svc.FeedItem, error)
 	ClaimDailyReward(userID int64) error
-	AcceptFeedbackSurvey(userID int64, survey svc.FeedbackSurveyRequest) error
 	GetActivityHistory(userID int64) ([]db.Activity, error)
 	GetPostByID(uid, id int64) (*db.Post, error)
 	CreatePost(userID int64, post svc.CreatePostRequest) (*db.Post, error)
@@ -112,7 +111,6 @@ func (h *handler) RegisterRoutes(e *echo.Echo) {
 	a.GET("/users/:id/following", h.handleGetUserFollowing)
 	a.GET("/feed", h.handleGetFeed)
 	a.POST("/daily-reward", h.handleClaimDailyReward)
-	a.POST("/feedback-survey", h.handleCreateFeedbackSurvey)
 	a.GET("/activity", h.handleGetActivityHistory)
 	a.GET("/posts/:id", h.handleGetPost)
 	a.POST("/posts", h.handleCreatePost)

@@ -2,12 +2,8 @@ package service
 
 import (
 	"errors"
-	"fmt"
-	telegram "github.com/go-telegram/bot"
 	"github.com/peatch-io/peatch/internal/db"
-	"github.com/peatch-io/peatch/internal/notification"
 	"github.com/peatch-io/peatch/internal/terrors"
-	"log"
 	"time"
 )
 
@@ -267,23 +263,6 @@ func (s *service) ClaimDailyReward(userID int64) error {
 type FeedbackSurveyRequest struct {
 	Message string `json:"message" validate:"max=1000,required"`
 } // @Name FeedbackSurveyRequest
-
-func (s *service) AcceptFeedbackSurvey(userID int64, survey FeedbackSurveyRequest) error {
-	// send message to telegram
-	if err := s.notifier.SendTextNotification(notification.SendNotificationParams{
-		ChatID:  927635965,
-		Message: telegram.EscapeMarkdown(fmt.Sprintf("Feedback from user %d: %s", userID, survey.Message)),
-	}); err != nil {
-		log.Printf("Cannot send feedback to telegram: %v", err)
-		return nil
-	}
-
-	if err := s.storage.UpdateUserPoints(userID, 50); err != nil {
-		return err
-	}
-
-	return nil
-}
 
 type UserCollaborationRequest struct {
 	ID        int64            `json:"id"`

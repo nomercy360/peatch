@@ -6,15 +6,22 @@ import FeedPage from '~/pages/feed'
 import PostsPage from '~/pages/posts'
 import HomePage from '~/pages/home-page'
 import FriendsPage from '~/pages/friends-page'
+import NavigationTabs from '~/components/navigation-tabs'
 
 export const routes: RouteDefinition[] = [
 	{
 		path: '/',
-		component: FeedPage,
-	},
-	{
-		path: '/posts',
-		component: PostsPage,
+		component: NavigationTabs,
+		children: [
+			{
+				path: '/posts',
+				component: PostsPage,
+			},
+			{
+				path: '/',
+				component: FeedPage,
+			},
+		],
 	},
 	{
 		path: '/home',
