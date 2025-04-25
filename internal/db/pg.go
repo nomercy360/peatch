@@ -20,8 +20,8 @@ func New(connStr string) (*storage, error) {
 
 	db.SetConnMaxLifetime(60)
 	db.SetConnMaxIdleTime(30)
-	db.SetMaxIdleConns(3)
-	db.SetMaxOpenConns(15)
+	db.SetMaxIdleConns(5)
+	db.SetMaxOpenConns(5)
 
 	log.Println("Database connection established")
 
