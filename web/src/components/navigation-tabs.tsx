@@ -13,13 +13,18 @@ export default function NavigationTabs(props: any) {
 	const tabs = [
 		{
 			href: '/posts',
-			icon: 'workspace_premium',
-			name: 'Opportunities',
+			icon: 'local_fire_department',
+			name: 'Hot',
 		},
 		{
 			href: '/',
-			icon: 'groups_3',
+			icon: 'group',
 			name: 'People',
+		},
+		{
+			href: '/collaborations/edit',
+			icon: 'edit_note',
+			name: 'New',
 		},
 	]
 
@@ -37,32 +42,36 @@ export default function NavigationTabs(props: any) {
 	return (
 		<>
 			<div
-				class="grid grid-cols-3 items-start border shadow-sm h-[100px] py-4 fixed bottom-0 w-full border-t bg-background z-50"
-			>
-				<Link
-					href={store.user.first_name && store.user.description ? `/users/${store.user?.username}` : '/users/edit'}
-					state={{ from: location.pathname }}
-					class="flex items-center justify-center"
-				>
-					<Avatar>
-						<AvatarImage src={`https://assets.peatch.io/${store.user?.avatar_url}`} />
-						<AvatarFallback>
-							{getUserInitials()}
-						</AvatarFallback>
-					</Avatar>
-				</Link>
-				{tabs.map(({ href, icon, name }) => (
+				class="space-x-10 flex items-center justify-between border shadow-sm h-[100px] px-5 fixed bottom-0 w-full border-t bg-background z-50">
+				<div class="flex items-center">
 					<Link
-						href={href}
+						href={store.user.first_name && store.user.description ? `/users/${store.user?.username}` : '/users/edit'}
 						state={{ from: location.pathname }}
-						class={cn('h-12 flex items-center justify-between flex-col text-sm text-secondary-foreground', {
-							'text-foreground': location.pathname === href,
-						})}
+						class="flex items-center justify-center"
 					>
-						<span class="material-symbols-rounded text-[32px]">{icon}</span>
-						<span class="text-xs font-medium">{name}</span>
+						<Avatar>
+							<AvatarImage class="object-cover"
+													 src={`https://assets.peatch.io/cdn-cgi/image/width=100/${store.user?.avatar_url}`} />
+							<AvatarFallback>
+								{getUserInitials()}
+							</AvatarFallback>
+						</Avatar>
 					</Link>
-				))}
+				</div>
+				<div class="flex flex-1 justify-evenly">
+					{tabs.map(({ href, icon, name }) => (
+						<Link
+							href={href}
+							state={{ from: location.pathname }}
+							class={cn('h-12 flex items-center justify-between flex-col text-sm text-secondary-foreground', {
+								'text-foreground': location.pathname === href,
+							})}
+						>
+							<span class="material-symbols-rounded text-[32px]">{icon}</span>
+							<span class="text-xs font-medium">{name}</span>
+						</Link>
+					))}
+				</div>
 			</div>
 			{props.children}
 		</>

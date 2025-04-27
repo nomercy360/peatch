@@ -39,7 +39,7 @@ export default function GeneralInfo() {
 			<div class="mt-5 flex w-full flex-col items-center justify-start gap-3">
 				<input
 					maxLength={70}
-					class="h-10 w-full rounded-lg bg-main px-2.5 text-main placeholder:text-hint"
+					class="h-10 w-full rounded-lg bg-secondary px-2.5 text-main placeholder:text-hint"
 					placeholder="Looking for a product designer"
 					value={editCollaboration.title}
 					onInput={e => setEditCollaboration('title', e.currentTarget.value)}
@@ -65,15 +65,15 @@ const CheckBoxInput = (props: {
 	setChecked: (value: boolean) => void
 }) => {
 	return (
-		<label class="group flex h-10 w-full cursor-pointer items-center justify-between">
-			<p class="text-secondary">{props.text}</p>
+		<label class="px-1 group flex h-12 w-full cursor-pointer items-center justify-between">
+			<p class="text-secondary-foreground">{props.text}</p>
 			<input
 				type="checkbox"
 				class="sr-only"
 				checked={props.checked}
 				onChange={() => props.setChecked(!props.checked)}
 			/>
-			<span class="flex size-7 items-center justify-center rounded-lg border">
+			<span class="flex size-7 items-center justify-center rounded-lg border-2">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					viewBox="0 0 24 24"

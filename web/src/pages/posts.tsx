@@ -8,7 +8,7 @@ import {
 	Suspense, Switch,
 } from 'solid-js'
 import { Collaboration, Post, UserProfile } from '~/gen/types'
-import { CDN_URL, fetchFeed, fetchUsers, likeContent, unlikeContent } from '~/lib/api'
+import { fetchFeed, likeContent, unlikeContent } from '~/lib/api'
 import { Link } from '~/components/link'
 import useDebounce from '~/lib/useDebounce'
 import { createMutation, createQuery } from '@tanstack/solid-query'
@@ -18,7 +18,6 @@ import { UserCardSmall } from '~/pages/posts/id'
 import { LocationBadge } from '~/components/location-badge'
 import { queryClient } from '~/App'
 import { HeartIcon, ListPlaceholder } from '~/pages/feed'
-import NavigationTabs from '~/components/navigation-tabs'
 
 export const [search, setSearch] = createSignal('')
 
@@ -158,7 +157,7 @@ const CollaborationCard = (props: {
 				>
 					<img
 						class="size-10 rounded-xl object-cover"
-						src={CDN_URL + '/' + props.collab.user?.avatar_url}
+						src={`https://assets.peatch.io/cdn-cgi/image/width=100/${props.collab.user?.avatar_url}`}
 						alt="User Avatar"
 					/>
 				</Link>

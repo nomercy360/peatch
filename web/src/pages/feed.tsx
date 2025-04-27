@@ -211,7 +211,7 @@ const UserCard = (props: { user: User; scroll: number }) => {
 
 	const user = props.user as UserProfile
 
-	const imgUrl = `https://assets.peatch.io/${user.avatar_url}`
+	const imgUrl = `https://assets.peatch.io/cdn-cgi/image/width=100/${user.avatar_url}`
 
 	return (
 		<Link

@@ -157,7 +157,7 @@ export default function Collaboration() {
 							<div class="mt-4 flex w-full flex-row items-center justify-start gap-2">
 								<img
 									class="size-11 rounded-xl object-cover"
-									src={CDN_URL + '/' + query.data.user?.avatar_url}
+									src={`https://assets.peatch.io/cdn-cgi/image/width=100/${query.data.user?.avatar_url}`}
 									alt="User Avatar"
 								/>
 								<div>

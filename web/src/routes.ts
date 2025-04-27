@@ -4,8 +4,6 @@ import type { RouteDefinition } from '@solidjs/router'
 import UserProfilePage from '~/pages/users/handle'
 import FeedPage from '~/pages/feed'
 import PostsPage from '~/pages/posts'
-import HomePage from '~/pages/home-page'
-import FriendsPage from '~/pages/friends-page'
 import NavigationTabs from '~/components/navigation-tabs'
 
 export const routes: RouteDefinition[] = [
@@ -22,14 +20,6 @@ export const routes: RouteDefinition[] = [
 				component: FeedPage,
 			},
 		],
-	},
-	{
-		path: '/home',
-		component: HomePage,
-	},
-	{
-		path: '/friends',
-		component: FriendsPage,
 	},
 	{
 		path: '/users/:handle',
@@ -134,14 +124,6 @@ export const routes: RouteDefinition[] = [
 	{
 		path: 'collaborations/:id/collaborate',
 		component: lazy(() => import('~/pages/collaborations/collaborate')),
-	},
-	{
-		path: '/rewards',
-		component: lazy(() => import('~/pages/rewards')),
-	},
-	{
-		path: '/survey',
-		component: lazy(() => import('~/pages/survey')),
 	},
 	{
 		path: '**',

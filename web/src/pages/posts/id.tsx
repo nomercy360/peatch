@@ -8,7 +8,7 @@ import {
 	Switch,
 } from 'solid-js'
 import { useNavigate, useParams } from '@solidjs/router'
-import { CDN_URL, fetchPost } from '~/lib/api'
+import { fetchPost } from '~/lib/api'
 import { store } from '~/store'
 import { createQuery } from '@tanstack/solid-query'
 import { useMainButton } from '~/lib/useMainButton'
@@ -88,7 +88,7 @@ export const UserCardSmall = (props: { user: UserProfile }) => {
 		>
 			<img
 				class="size-10 rounded-xl object-cover"
-				src={CDN_URL + '/' + props.user.avatar_url}
+				src={`https://assets.peatch.io/cdn-cgi/image/width=100/${props.user.avatar_url}`}
 				alt="User Avatar"
 			/>
 			<div>
