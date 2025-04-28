@@ -1,40 +1,47 @@
-export type Activity = {
+import type { UserProfile } from "./UserProfile";
+
+ export type Post = {
     /**
      * @type string | undefined
     */
-    activity_type?: string;
+    city?: string;
     /**
      * @type string | undefined
     */
-    actor_first_name?: string;
+    country?: string;
+    /**
+     * @type string | undefined
+    */
+    country_code?: string;
+    /**
+     * @type string | undefined
+    */
+    created_at?: string;
+    /**
+     * @type string | undefined
+    */
+    description?: string;
+    /**
+     * @type string | undefined
+    */
+    hidden_at?: string;
     /**
      * @type integer | undefined
     */
-    actor_id?: number;
+    id?: number;
     /**
      * @type string | undefined
     */
-    actor_last_name?: string;
+    image_url?: string;
     /**
      * @type string | undefined
     */
-    actor_username?: string;
+    title?: string;
     /**
      * @type string | undefined
     */
-    content?: string;
-    /**
-     * @type integer | undefined
-    */
-    content_id?: number;
-    /**
-     * @type string | undefined
-    */
-    message?: string;
-    /**
-     * @type string | undefined
-    */
-    timestamp?: string;
+    updated_at?: string;
+    user?: UserProfile;
     /**
      * @type integer | undefined
     */

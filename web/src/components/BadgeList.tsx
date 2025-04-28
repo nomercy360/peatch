@@ -5,13 +5,13 @@ import { Badge as UserBadge } from '../../gen'
 export default function BadgeList(props: {
 	badges: UserBadge[]
 	position: 'center' | 'start'
-	children: any
+	children?: any
 }) {
 	const badgeSlice = props.badges!.slice(0, 5)
 
 	return (
 		<div
-			class="mt-3 flex w-full flex-row flex-wrap items-center justify-start gap-1"
+			class="mt-2 flex w-full flex-row flex-wrap items-center justify-start gap-1"
 			classList={{
 				'justify-center': props.position === 'center',
 			}}
@@ -24,7 +24,7 @@ export default function BadgeList(props: {
 			</For>
 			<Show when={props.badges.length > 5}>
 				<div
-					class="flex h-5 flex-row items-center justify-center rounded bg-muted text-muted-foreground px-2.5 text-xs font-semibold">
+					class="flex h-5 flex-row items-center justify-center rounded text-muted-foreground px-1.5 text-xs font-semibold">
 					+ {props.badges!.length - 5} more
 				</div>
 			</Show>

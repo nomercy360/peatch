@@ -36,22 +36,12 @@ type service interface {
 	CreateCollaboration(userID int64, create svc.CreateCollaboration) (*db.Collaboration, error)
 	UpdateCollaboration(userID, collabID int64, update svc.CreateCollaboration) error
 	PublishCollaboration(userID int64, collaborationID int64) error
-	CreateCollaborationRequest(userID, collaborationID int64, request svc.CreateCollaborationRequest) (*db.CollaborationRequest, error)
 	GetPresignedURL(userID int64, objectKey string) (*svc.PresignedURL, error)
-	CreateUserCollaboration(userID int64, receiverID int64, request svc.CreateUserCollaboration) (*db.UserCollaborationRequest, error)
-	FindUserCollaborationRequest(requesterID int64, username string) (*db.UserCollaborationRequest, error)
-	FindCollaborationRequest(userID, collabID int64) (*db.CollaborationRequest, error)
 	SearchLocations(query string) ([]db.Location, error)
-	GetUserFollowers(uid, targetID int64) ([]svc.UserProfileShort, error)
-	GetUserFollowing(uid, targetID int64) ([]svc.UserProfileShort, error)
 	GetFeed(uid int64, query svc.FeedQuery) ([]svc.FeedItem, error)
-	ClaimDailyReward(userID int64) error
-	GetActivityHistory(userID int64) ([]db.Activity, error)
 	GetPostByID(uid, id int64) (*db.Post, error)
 	CreatePost(userID int64, post svc.CreatePostRequest) (*db.Post, error)
 	UpdatePost(userID, postID int64, update svc.CreatePostRequest) (*db.Post, error)
-	IncreaseLikeCount(userID int64, req svc.LikeRequest) error
-	DecreaseLikeCount(userID int64, req svc.LikeRequest) error
 }
 
 type CustomValidator struct {
@@ -93,30 +83,18 @@ func (h *handler) RegisterRoutes(e *echo.Echo) {
 	a.GET("/opportunities", h.handleListOpportunities)
 	a.GET("/badges", h.handleListBadges)
 	a.POST("/badges", h.handleCreateBadge)
-	a.POST("/users/:id/follow", h.handleFollowUser)
-	a.DELETE("/users/:id/follow", h.handleUnfollowUser)
-	a.POST("/users/:id/collaborations/requests", h.handleCreateUserCollaboration)
-	a.GET("/users/:handle/collaborations/requests", h.handleFindUserCollaborationRequest)
 	a.POST("/users/publish", h.handlePublishUser)
 	a.GET("/collaborations", h.handleListCollaborations)
 	a.GET("/collaborations/:id", h.handleGetCollaboration)
 	a.POST("/collaborations", h.handleCreateCollaboration)
 	a.PUT("/collaborations/:id", h.handleUpdateCollaboration)
-	a.GET("/collaborations/:id/requests", h.handleFindCollaborationRequest)
 	a.POST("/collaborations/:id/publish", h.handlePublishCollaboration)
-	a.POST("/collaborations/:id/requests", h.handleCreateCollaborationRequest)
 	a.GET("/presigned-url", h.handleGetPresignedURL)
 	a.GET("/locations", h.handleSearchLocations)
-	a.GET("/users/:id/followers", h.handleGetUserFollowers)
-	a.GET("/users/:id/following", h.handleGetUserFollowing)
 	a.GET("/feed", h.handleGetFeed)
-	a.POST("/daily-reward", h.handleClaimDailyReward)
-	a.GET("/activity", h.handleGetActivityHistory)
 	a.GET("/posts/:id", h.handleGetPost)
 	a.POST("/posts", h.handleCreatePost)
 	a.PUT("/posts/:id", h.handleUpdatePost)
-	a.POST("/likes", h.handleIncreaseLikeCount)
-	a.DELETE("/likes", h.handleDecreaseLikeCount)
 }
 
 func (h *handler) handleIndex(c echo.Context) error {

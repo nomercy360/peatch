@@ -99,28 +99,6 @@ func (s *service) HideCollaboration(userID int64, collaborationID int64) error {
 	return nil
 }
 
-type CreateCollaborationRequest struct {
-	Message string `json:"message" validate:"max=1000,required"`
-} //@Name CreateCollaborationRequest
-
-func (cr CreateCollaborationRequest) toCollaborationRequest() db.CollaborationRequest {
-	return db.CollaborationRequest{
-		Message: cr.Message,
-	}
-}
-
-func (s *service) CreateCollaborationRequest(userID, collaborationID int64, request CreateCollaborationRequest) (*db.CollaborationRequest, error) {
-	res, err := s.storage.CreateCollaborationRequest(userID, collaborationID, request.Message)
-
-	if err != nil && errors.Is(err, db.ErrNotFound) {
-		return nil, terrors.NotFound(err)
-	} else if err != nil {
-		return nil, err
-	}
-
-	return res, nil
-}
-
 func (s *service) ShowCollaboration(userID int64, collaborationID int64) error {
 	err := s.storage.ShowCollaboration(userID, collaborationID)
 
@@ -131,18 +109,4 @@ func (s *service) ShowCollaboration(userID int64, collaborationID int64) error {
 	}
 
 	return nil
-}
-
-func (s *service) FindCollaborationRequest(userID, collabID int64) (*db.CollaborationRequest, error) {
-	res, err := s.storage.FindCollaborationRequest(userID, collabID)
-
-	if err != nil {
-		if errors.Is(err, db.ErrNotFound) {
-			return nil, terrors.NotFound(err)
-		}
-
-		return nil, err
-	}
-
-	return res, nil
 }

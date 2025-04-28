@@ -38,15 +38,7 @@ import { UserProfile } from "./UserProfile";
     /**
      * @type boolean | undefined
     */
-    is_liked?: boolean;
-    /**
-     * @type boolean | undefined
-    */
     is_payable?: boolean;
-    /**
-     * @type integer | undefined
-    */
-    likes_count?: number;
     opportunity?: Opportunity;
     /**
      * @type integer | undefined

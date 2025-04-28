@@ -15,31 +15,6 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/activity": {
-            "get": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "Get activity history",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/Activity"
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/api/auth/telegram": {
             "get": {
                 "consumes": [
@@ -284,41 +259,6 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
-            "delete": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "collaborations"
-                ],
-                "summary": "Delete collaboration",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Collaboration ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Collaboration data",
-                        "name": "collaboration",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/CreateCollaborationRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content"
-                    }
-                }
             }
         },
         "/api/collaborations/{id}/publish": {
@@ -345,86 +285,6 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "OK"
-                    }
-                }
-            }
-        },
-        "/api/collaborations/{id}/requests": {
-            "get": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "collaborations"
-                ],
-                "summary": "Find collaboration request",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Collaboration ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/CollaborationRequest"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/daily-reward": {
-            "post": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "Claim daily reward",
-                "responses": {
-                    "204": {
-                        "description": "No Content"
-                    }
-                }
-            }
-        },
-        "/api/feedback-survey": {
-            "post": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "Create feedback survey",
-                "parameters": [
-                    {
-                        "description": "Survey data",
-                        "name": "survey",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/FeedbackSurveyRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content"
                     }
                 }
             }
@@ -604,145 +464,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/users/{id}/collaborations/requests": {
-            "get": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "collaborations"
-                ],
-                "summary": "Find user collaboration request",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "User ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/CollaborationRequest"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/users/{id}/followers": {
-            "get": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "Get user followers",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "User ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/UserProfileShort"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/users/{id}/following": {
-            "get": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "Get user following",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "User ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/UserProfileShort"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/users/{user_id}/collaborations": {
-            "post": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "collaborations"
-                ],
-                "summary": "Create user collaboration",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "User ID",
-                        "name": "user_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Collaboration data",
-                        "name": "collaboration",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/CreateUserCollaboration"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/Collaboration"
-                        }
-                    }
-                }
-            }
-        },
         "/api/users/{user_id}/publish": {
             "post": {
                 "consumes": [
@@ -820,41 +541,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "Activity": {
-            "type": "object",
-            "properties": {
-                "activity_type": {
-                    "type": "string"
-                },
-                "actor_first_name": {
-                    "type": "string"
-                },
-                "actor_id": {
-                    "type": "integer"
-                },
-                "actor_last_name": {
-                    "type": "string"
-                },
-                "actor_username": {
-                    "type": "string"
-                },
-                "content": {
-                    "type": "string"
-                },
-                "content_id": {
-                    "type": "integer"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "timestamp": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "integer"
-                }
-            }
-        },
         "Badge": {
             "type": "object",
             "properties": {
@@ -905,14 +591,8 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
-                "is_liked": {
-                    "type": "boolean"
-                },
                 "is_payable": {
                     "type": "boolean"
-                },
-                "likes_count": {
-                    "type": "integer"
                 },
                 "opportunity": {
                     "$ref": "#/definitions/Opportunity"
@@ -928,32 +608,6 @@ const docTemplate = `{
                 },
                 "user": {
                     "$ref": "#/definitions/UserProfile"
-                },
-                "user_id": {
-                    "type": "integer"
-                }
-            }
-        },
-        "CollaborationRequest": {
-            "type": "object",
-            "properties": {
-                "collaboration_id": {
-                    "type": "integer"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
                 },
                 "user_id": {
                     "type": "integer"
@@ -1001,42 +655,6 @@ const docTemplate = `{
                 "title": {
                     "type": "string",
                     "maxLength": 255
-                }
-            }
-        },
-        "CreateCollaborationRequest": {
-            "type": "object",
-            "required": [
-                "message"
-            ],
-            "properties": {
-                "message": {
-                    "type": "string",
-                    "maxLength": 1000
-                }
-            }
-        },
-        "CreateUserCollaboration": {
-            "type": "object",
-            "required": [
-                "message"
-            ],
-            "properties": {
-                "message": {
-                    "type": "string",
-                    "maxLength": 1000
-                }
-            }
-        },
-        "FeedbackSurveyRequest": {
-            "type": "object",
-            "required": [
-                "message"
-            ],
-            "properties": {
-                "message": {
-                    "type": "string",
-                    "maxLength": 1000
                 }
             }
         },
@@ -1089,12 +707,6 @@ const docTemplate = `{
                 },
                 "image_url": {
                     "type": "string"
-                },
-                "is_liked": {
-                    "type": "boolean"
-                },
-                "likes_count": {
-                    "type": "integer"
                 },
                 "title": {
                     "type": "string"
@@ -1199,12 +811,6 @@ const docTemplate = `{
                 "first_name": {
                     "type": "string"
                 },
-                "followers_count": {
-                    "type": "integer"
-                },
-                "following_count": {
-                    "type": "integer"
-                },
                 "hidden_at": {
                     "type": "string"
                 },
@@ -1214,17 +820,11 @@ const docTemplate = `{
                 "is_following": {
                     "type": "boolean"
                 },
-                "is_liked": {
-                    "type": "boolean"
-                },
                 "last_check_in": {
                     "type": "string"
                 },
                 "last_name": {
                     "type": "string"
-                },
-                "likes_count": {
-                    "type": "integer"
                 },
                 "opportunities": {
                     "type": "array",
@@ -1232,11 +832,11 @@ const docTemplate = `{
                         "$ref": "#/definitions/Opportunity"
                     }
                 },
-                "peatch_points": {
-                    "type": "integer"
-                },
                 "published_at": {
                     "type": "string"
+                },
+                "rating": {
+                    "type": "integer"
                 },
                 "title": {
                     "type": "string"
@@ -1276,58 +876,20 @@ const docTemplate = `{
                 "first_name": {
                     "type": "string"
                 },
-                "followers_count": {
-                    "type": "integer"
-                },
-                "following_count": {
-                    "type": "integer"
-                },
                 "id": {
                     "type": "integer"
                 },
                 "is_following": {
                     "type": "boolean"
                 },
-                "is_liked": {
-                    "type": "boolean"
-                },
                 "last_name": {
                     "type": "string"
-                },
-                "likes_count": {
-                    "type": "integer"
                 },
                 "opportunities": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/Opportunity"
                     }
-                },
-                "title": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
-                }
-            }
-        },
-        "UserProfileShort": {
-            "type": "object",
-            "properties": {
-                "avatar_url": {
-                    "type": "string"
-                },
-                "first_name": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "is_following": {
-                    "type": "boolean"
-                },
-                "last_name": {
-                    "type": "string"
                 },
                 "title": {
                     "type": "string"

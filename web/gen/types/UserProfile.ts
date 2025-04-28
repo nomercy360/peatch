@@ -37,31 +37,15 @@ import type { Opportunity } from "./Opportunity";
     /**
      * @type integer | undefined
     */
-    followers_count?: number;
-    /**
-     * @type integer | undefined
-    */
-    following_count?: number;
-    /**
-     * @type integer | undefined
-    */
     id?: number;
     /**
      * @type boolean | undefined
     */
     is_following?: boolean;
     /**
-     * @type boolean | undefined
-    */
-    is_liked?: boolean;
-    /**
      * @type string | undefined
     */
     last_name?: string;
-    /**
-     * @type integer | undefined
-    */
-    likes_count?: number;
     /**
      * @type array | undefined
     */

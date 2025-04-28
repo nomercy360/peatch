@@ -13,51 +13,14 @@ CREATE TABLE users
     avatar_url               VARCHAR(512),
     title                    VARCHAR(255),
     description              TEXT,
-    likes_count              INTEGER       NOT NULL DEFAULT 0,
     language_code            VARCHAR(2)    NOT NULL DEFAULT 'en',
     country                  VARCHAR(255),
     city                     VARCHAR(255),
     country_code             VARCHAR(2),
-    followers_count          INTEGER       NOT NULL DEFAULT 0,
-    following_count          INTEGER       NOT NULL DEFAULT 0,
-    requests_count           INTEGER       NOT NULL DEFAULT 0,
     review_status            VARCHAR(255)  NOT NULL DEFAULT 'pending',
-    peatch_points            INTEGER       NOT NULL DEFAULT 0,
     referrer_id              INTEGER REFERENCES users (id),
     last_check_in            timestamptz,
     rating                   INTEGER
-);
-
-CREATE OR REPLACE FUNCTION update_referrer_points()
-    RETURNS TRIGGER AS
-$$
-BEGIN
-    IF NEW.referrer_id IS NOT NULL THEN
-        UPDATE users
-        SET peatch_points = peatch_points + 100
-        WHERE id = NEW.referrer_id;
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER update_referrer_points_trigger
-    AFTER INSERT
-    ON users
-    FOR EACH ROW
-EXECUTE FUNCTION update_referrer_points();
-
-CREATE INDEX users_chat_id_index ON users (chat_id);
-CREATE UNIQUE INDEX users_username_index ON users (username);
-CREATE INDEX review_status_index ON users (review_status);
-
-CREATE TABLE user_interactions
-(
-    id               SERIAL PRIMARY KEY,
-    user_id          INTEGER REFERENCES users (id),
-    target_user_id   INTEGER REFERENCES users (id),
-    interaction_type VARCHAR(10),
-    created_at       timestamptz DEFAULT NOW()
 );
 
 CREATE TABLE badges
@@ -86,15 +49,12 @@ CREATE TABLE user_badges
     UNIQUE (user_id, badge_id)
 );
 
--- user_opportunities
-
 CREATE TABLE user_opportunities
 (
     user_id        INTEGER REFERENCES users (id),
     opportunity_id INTEGER REFERENCES opportunities (id),
     UNIQUE (user_id, opportunity_id)
 );
-
 
 CREATE TABLE collaborations
 (
@@ -110,11 +70,8 @@ CREATE TABLE collaborations
     hidden_at      timestamptz,
     country        VARCHAR(255),
     city           VARCHAR(255),
-    country_code   VARCHAR(2),
-    likes_count    INTEGER      NOT NULL DEFAULT 0,
-    requests_count INTEGER      NOT NULL DEFAULT 0
+    country_code   VARCHAR(2)
 );
-
 
 CREATE TABLE user_followers
 (
@@ -124,110 +81,17 @@ CREATE TABLE user_followers
     UNIQUE (user_id, follower_id)
 );
 
-CREATE OR REPLACE FUNCTION update_follower_counts() RETURNS TRIGGER AS
-$$
-BEGIN
-    IF TG_OP = 'INSERT' THEN
-        UPDATE users SET followers_count = followers_count + 1 WHERE id = NEW.user_id;
-        UPDATE users SET following_count = following_count + 1 WHERE id = NEW.follower_id;
-        RETURN NEW;
-    ELSIF TG_OP = 'DELETE' THEN
-        UPDATE users SET followers_count = followers_count - 1 WHERE id = OLD.user_id;
-        UPDATE users SET following_count = following_count - 1 WHERE id = OLD.follower_id;
-        RETURN OLD;
-    END IF;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION update_collaborations_hidden_at() RETURNS TRIGGER AS
-$$
-BEGIN
-    IF NEW.hidden_at IS NOT NULL THEN
-        UPDATE collaborations
-        SET hidden_at = NOW()
-        WHERE user_id = NEW.id
-          AND hidden_at IS NULL;
-    ELSE
-        UPDATE collaborations
-        SET hidden_at = NULL
-        WHERE user_id = NEW.id;
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trigger_update_collaborations_hidden_at
-    AFTER UPDATE OF hidden_at
-    ON users
-    FOR EACH ROW
-    WHEN (OLD.hidden_at IS DISTINCT FROM NEW.hidden_at)
-EXECUTE FUNCTION update_collaborations_hidden_at();
-
-CREATE TRIGGER update_follower_counts_trigger
-    AFTER INSERT OR DELETE
-    ON user_followers
-    FOR EACH ROW
-EXECUTE FUNCTION update_follower_counts();
-
-
-CREATE TYPE collaboration_request_status AS ENUM ('pending', 'approved', 'rejected');
-
-
-CREATE TABLE collaboration_requests
+CREATE TABLE collaboration_followers
 (
-    id               SERIAL PRIMARY KEY,
     collaboration_id INTEGER REFERENCES collaborations (id),
-    user_id          INTEGER REFERENCES users (id),
-    message          TEXT,
-    created_at       timestamptz                  NOT NULL DEFAULT NOW(),
-    updated_at       timestamptz                  NOT NULL DEFAULT NOW(),
-    status           collaboration_request_status NOT NULL DEFAULT 'pending',
-    UNIQUE (collaboration_id, user_id)
+    follower_id      INTEGER REFERENCES users (id),
+    created_at       timestamptz DEFAULT NOW(),
+    UNIQUE (collaboration_id, follower_id)
 );
-
-CREATE OR REPLACE FUNCTION update_collaboration_requests_count() RETURNS TRIGGER AS
-$$
-BEGIN
-    IF TG_OP = 'INSERT' THEN
-        UPDATE collaborations SET requests_count = requests_count + 1 WHERE id = NEW.collaboration_id;
-        RETURN NEW;
-    ELSIF TG_OP = 'DELETE' THEN
-        UPDATE collaborations SET requests_count = requests_count - 1 WHERE id = OLD.collaboration_id;
-        RETURN OLD;
-    END IF;
-END;
-$$ LANGUAGE plpgsql;
-
-
-CREATE TABLE user_collaboration_requests
-(
-    id           SERIAL PRIMARY KEY,
-    user_id      INTEGER REFERENCES users (id),
-    requester_id INTEGER REFERENCES users (id),
-    message      TEXT,
-    status       collaboration_request_status NOT NULL DEFAULT 'pending',
-    created_at   timestamptz                  NOT NULL DEFAULT NOW(),
-    updated_at   timestamptz                  NOT NULL DEFAULT NOW(),
-    UNIQUE (user_id, requester_id)
-);
-
-CREATE OR REPLACE FUNCTION update_user_requests_count() RETURNS TRIGGER AS
-$$
-BEGIN
-    IF TG_OP = 'INSERT' THEN
-        UPDATE users SET requests_count = requests_count + 1 WHERE id = NEW.receiver_id;
-        RETURN NEW;
-    ELSIF TG_OP = 'DELETE' THEN
-        UPDATE users SET requests_count = requests_count - 1 WHERE id = OLD.receiver_id;
-        RETURN OLD;
-    END IF;
-END;
-$$ LANGUAGE plpgsql;
-
 
 CREATE table collaboration_badges
 (
-    collaboration_id INTEGER REFERENCES collaborations (id),
+    collaboration_id INTEGER REFERENCES collaborations (id) ON DELETE CASCADE,
     badge_id         INTEGER REFERENCES badges (id),
     UNIQUE (collaboration_id, badge_id)
 );
@@ -266,173 +130,59 @@ CREATE TABLE posts
     country      VARCHAR(255),
     city         VARCHAR(255),
     country_code VARCHAR(2),
-    likes_count  INTEGER     NOT NULL DEFAULT 0,
     hidden_at    timestamptz,
     created_at   timestamptz NOT NULL DEFAULT NOW(),
     updated_at   timestamptz NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE likes
+CREATE INDEX users_chat_id_index ON users (chat_id);
+CREATE UNIQUE INDEX users_username_index ON users (username);
+CREATE INDEX review_status_index ON users (review_status);
+
+---
+ALTER TABLE users
+    DROP COLUMN likes_count,
+    DROP COLUMN followers_count,
+    DROP COLUMN following_count,
+    DROP COLUMN requests_count,
+    DROP COLUMN peatch_points;
+
+ALTER TABLE collaborations
+    DROP COLUMN likes_count,
+    DROP COLUMN requests_count;
+
+DROP TRIGGER IF EXISTS update_referrer_points_trigger ON users;
+DROP FUNCTION IF EXISTS update_referrer_points;
+
+DROP TRIGGER IF EXISTS update_follower_counts_trigger ON user_followers;
+DROP FUNCTION IF EXISTS update_follower_counts;
+
+DROP TRIGGER IF EXISTS trigger_update_collaborations_hidden_at ON users;
+DROP FUNCTION IF EXISTS update_collaborations_hidden_at;
+
+DROP TRIGGER IF EXISTS update_peatch_points_trigger ON likes;
+DROP FUNCTION IF EXISTS update_peatch_points;
+
+DROP TABLE IF EXISTS user_interactions;
+
+DROP VIEW IF EXISTS user_activity_feed;
+DROP TABLE IF EXISTS collaboration_requests;
+DROP TABLE IF EXISTS user_collaboration_requests;
+DROP TYPE IF EXISTS collaboration_request_status;
+
+
+DROP TABLE IF EXISTS likes;
+DROP INDEX IF EXISTS likes_user_id_index;
+DROP INDEX IF EXISTS likes_content_id_index;
+DROP INDEX IF EXISTS likes_content_type_index;
+
+CREATE TABLE collaboration_followers
 (
-    id           SERIAL PRIMARY KEY,
-    user_id      INTEGER REFERENCES users (id),
-    content_id   INTEGER     NOT NULL,
-    content_type VARCHAR(20) NOT NULL,
-    created_at   timestamptz NOT NULL DEFAULT NOW(),
-    UNIQUE (user_id, content_id, content_type)
+    collaboration_id INTEGER REFERENCES collaborations (id),
+    follower_id      INTEGER REFERENCES users (id),
+    created_at       timestamptz DEFAULT NOW(),
+    UNIQUE (collaboration_id, follower_id)
 );
 
-CREATE INDEX likes_user_id_index ON likes (user_id);
-CREATE INDEX likes_content_id_index ON likes (content_id);
-CREATE INDEX likes_content_type_index ON likes (content_type);
-
-
-CREATE OR REPLACE FUNCTION update_peatch_points()
-    RETURNS TRIGGER AS
-$$
-BEGIN
-    IF TG_OP = 'INSERT' THEN
-        IF NEW.content_type = 'user' THEN
-            UPDATE users
-            SET peatch_points = peatch_points + 1,
-                likes_count   = likes_count + 1
-            WHERE id = NEW.content_id;
-        ELSIF NEW.content_type = 'post' THEN
-            UPDATE users
-            SET peatch_points = peatch_points + 1
-            WHERE id = (SELECT user_id FROM posts WHERE id = NEW.content_id);
-            UPDATE posts
-            SET likes_count = likes_count + 1
-            WHERE id = NEW.content_id;
-        ELSIF NEW.content_type = 'collaboration' THEN
-            UPDATE users
-            SET peatch_points = peatch_points + 1
-            WHERE id = (SELECT user_id FROM collaborations WHERE id = NEW.content_id);
-            UPDATE collaborations
-            SET likes_count = likes_count + 1
-            WHERE id = NEW.content_id;
-        END IF;
-        RETURN NEW;
-    ELSIF TG_OP = 'DELETE' THEN
-        IF OLD.content_type = 'user' THEN
-            UPDATE users
-            SET peatch_points = peatch_points - 1,
-                likes_count   = likes_count - 1
-            WHERE id = OLD.content_id;
-        ELSIF OLD.content_type = 'post' THEN
-            UPDATE users
-            SET peatch_points = peatch_points - 1
-            WHERE id = (SELECT user_id FROM posts WHERE id = OLD.content_id);
-            UPDATE posts
-            SET likes_count = likes_count - 1
-            WHERE id = OLD.content_id;
-        ELSIF OLD.content_type = 'collaboration' THEN
-            UPDATE users
-            SET peatch_points = peatch_points - 1
-            WHERE id = (SELECT user_id FROM collaborations WHERE id = OLD.content_id);
-            UPDATE collaborations
-            SET likes_count = likes_count - 1
-            WHERE id = OLD.content_id;
-        END IF;
-        RETURN OLD;
-    END IF;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER update_peatch_points_trigger
-    AFTER INSERT OR DELETE
-    ON likes
-    FOR EACH ROW
-EXECUTE FUNCTION update_peatch_points();
-
-
-CREATE VIEW user_activity_feed AS
-SELECT l.content_id AS user_id,
-       u.id         AS actor_id,
-       u.username   AS actor_username,
-       u.first_name AS actor_first_name,
-       u.last_name  AS actor_last_name,
-       l.created_at AS timestamp,
-       NULL         AS message,
-       NULL         AS content,
-       NULL         AS content_id,
-       'user_like'  AS activity_type
-FROM likes l
-         JOIN users u ON l.user_id = u.id
-UNION ALL
-
-SELECT u2.id        AS user_id,
-       u.id         AS actor_id,
-       u.username   AS actor_username,
-       u.first_name AS actor_first_name,
-       u.last_name  AS actor_last_name,
-       l.created_at AS timestamp,
-       NULL         AS message,
-       p.title      AS content,
-       p.id         AS content_id,
-       'post_like'  AS activity_type
-FROM likes l
-         JOIN users u ON l.user_id = u.id
-         JOIN posts p ON l.content_id = p.id
-         JOIN users u2 ON p.user_id = u2.id
-UNION ALL
-
-SELECT u2.id         AS user_id,
-       u.id          AS actor_id,
-       u.username    AS actor_username,
-       u.first_name  AS actor_first_name,
-       u.last_name   AS actor_last_name,
-       c.created_at  AS timestamp,
-       NULL          AS message,
-       c.title       AS content,
-       c.id          AS content_id,
-       'collab_like' AS activity_type
-FROM likes l
-         JOIN users u ON l.user_id = u.id
-         JOIN collaborations c ON l.content_id = c.id
-         JOIN users u2 ON c.user_id = u2.id
-UNION ALL
-
-SELECT cr.user_id    AS user_id,
-       u.id          AS actor_id,
-       u.username    AS actor_username,
-       u.first_name  AS actor_first_name,
-       u.last_name   AS actor_last_name,
-       cr.created_at AS timestamp,
-       cr.message    AS message,
-       NULL          AS content,
-       NULL          AS content_id,
-       'user_collab' AS activity_type
-FROM user_collaboration_requests cr
-         JOIN users u ON cr.requester_id = u.id
-
-UNION ALL
-
-SELECT uf.user_id    AS user_id,
-       u.id          AS actor_id,
-       u.username    AS actor_username,
-       u.first_name  AS actor_first_name,
-       u.last_name   AS actor_last_name,
-       uf.created_at AS timestamp,
-       NULL          AS message,
-       NULL          AS content_id,
-       NULL          AS content,
-       'follow'      AS activity_type
-FROM user_followers uf
-         JOIN users u ON uf.follower_id = u.id
-
-UNION ALL
-
-SELECT c.user_id        AS user_id,
-       u.id             AS actor_id,
-       u.username       AS actor_username,
-       u.first_name     AS actor_first_name,
-       u.last_name      AS actor_last_name,
-       c.created_at     AS timestamp,
-       cr.message       AS message,
-       c.title          AS content,
-       c.id             AS content_id,
-       'collab_request' AS activity_type
-FROM collaboration_requests cr
-         JOIN collaborations c ON cr.collaboration_id = c.id
-         JOIN users u ON cr.user_id = u.id;
+CREATE INDEX idx_users_published_hidden_rating ON users (rating) WHERE published_at IS NOT NULL AND hidden_at IS NULL;
+CREATE INDEX idx_users_published_hidden_created_at ON users (created_at DESC) WHERE published_at IS NOT NULL AND hidden_at IS NULL;

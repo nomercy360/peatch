@@ -8,16 +8,15 @@ import {
 	Suspense, Switch,
 } from 'solid-js'
 import { Collaboration, Post, UserProfile } from '~/gen/types'
-import { fetchFeed, likeContent, unlikeContent } from '~/lib/api'
+import { fetchFeed } from '~/lib/api'
 import { Link } from '~/components/link'
 import useDebounce from '~/lib/useDebounce'
-import { createMutation, createQuery } from '@tanstack/solid-query'
+import { createQuery } from '@tanstack/solid-query'
 import { useMainButton } from '~/lib/useMainButton'
 import { useNavigate } from '@solidjs/router'
 import { UserCardSmall } from '~/pages/posts/id'
 import { LocationBadge } from '~/components/location-badge'
-import { queryClient } from '~/App'
-import { HeartIcon, ListPlaceholder } from '~/pages/feed'
+import { ListPlaceholder } from '~/pages/feed'
 
 export const [search, setSearch] = createSignal('')
 
@@ -125,12 +124,6 @@ const PostCard = (props: { post: Post }) => {
 					/>
 				</Show>
 			</div>
-			<LikeButton
-				liked={props.post.is_liked!}
-				likes={props.post.likes_count!}
-				id={props.post.id!}
-				type="post"
-			/>
 		</Link>
 	)
 }
@@ -182,79 +175,6 @@ const CollaborationCard = (props: {
 			<p class="mt-2 text-sm text-secondary-foreground">
 				{shortenDescription(props.collab.description!)}
 			</p>
-			<LikeButton
-				liked={props.collab.is_liked!}
-				likes={props.collab.likes_count!}
-				id={props.collab.id!}
-				type="collaboration"
-			/>
 		</Link>
-	)
-}
-
-const LikeButton = (props: {
-	id: number
-	liked: boolean
-	likes: number
-	type: 'user' | 'collaboration' | 'post'
-}) => {
-	const handleMutate = async (userId: number) => {
-		await queryClient.cancelQueries({ type: 'active' })
-		queryClient.setQueryData(['users', search()], (old: any[]) =>
-			old.map(item => {
-				if (item.id === userId) {
-					return {
-						...item,
-						is_liked: !item.is_liked,
-						likes_count: item.is_liked
-							? item.likes_count - 1
-							: item.likes_count + 1,
-					}
-				}
-				return item
-			}),
-		)
-		if (search()) {
-			queryClient.invalidateQueries({ queryKey: ['users', ''] })
-		}
-	}
-
-	const likeMutate = createMutation(() => ({
-		mutationFn: (id: number) => likeContent(id, props.type),
-		onMutate: id => handleMutate(id),
-	}))
-
-	const mutateUnLike = createMutation(() => ({
-		mutationFn: (id: number) => unlikeContent(id, props.type),
-		onMutate: id => handleMutate(id),
-	}))
-
-	const handleClick = (e: Event) => {
-		e.preventDefault()
-		if (!props.liked) {
-			likeMutate.mutate(props.id)
-		} else {
-			mutateUnLike.mutate(props.id)
-		}
-		window.Telegram.WebApp.HapticFeedback.selectionChanged()
-	}
-
-	return (
-		<button
-			class="mt-2 flex items-center justify-start rounded-xl text-sm font-semibold"
-			onClick={(e: Event) => handleClick(e)}
-		>
-			<Show
-				when={!props.liked}
-				fallback={<HeartIcon class="size-6 shrink-0" />}
-			>
-				<span class="material-symbols-rounded no-fill text-[24px]">
-					favorite
-				</span>
-			</Show>
-			<Show when={props.likes > 0}>
-				<span class="ml-1 font-semibold">{props.likes}</span>
-			</Show>
-		</button>
 	)
 }

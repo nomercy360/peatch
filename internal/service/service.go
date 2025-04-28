@@ -29,24 +29,13 @@ type storage interface {
 	PublishCollaboration(userID int64, collaborationID int64) error
 	HideCollaboration(userID int64, collaborationID int64) error
 	CreateCollaborationRequest(userID int64, collaborationID int64, message string) (*db.CollaborationRequest, error)
-	CreateUserCollaboration(userID, receiverID int64, message string) (*db.UserCollaborationRequest, error)
 	ShowUser(userID int64) error
-	GetUserPreview(userID int64) ([]db.User, error)
-	FindUserCollaborationRequest(requesterID int64, username string) (*db.UserCollaborationRequest, error)
 	ShowCollaboration(userID int64, collaborationID int64) error
-	FindCollaborationRequest(userID, collabID int64) (*db.CollaborationRequest, error)
 	SearchLocations(query string) ([]db.Location, error)
-	GetUserFollowers(uid int64, target int64) ([]db.User, error)
-	GetUserFollowing(uid int64, target int64) ([]db.User, error)
-	UpdateLastCheckIn(userID int64) (bool, error)
-	UpdateUserPoints(userID int64, adjustment int) error
 	GetPostByID(uid, id int64) (*db.Post, error)
 	CreatePost(post db.Post) (*db.Post, error)
 	GetPosts(query db.PostQuery) ([]db.Post, error)
 	UpdatePost(uid int64, postID int64, post db.Post) (*db.Post, error)
-	IncreaseLikeCount(userID, contentID int64, contentType string) error
-	DecreaseLikeCount(userID, contentID int64, contentType string) error
-	GetActivity(userID int64) ([]db.Activity, error)
 }
 
 type s3Client interface {

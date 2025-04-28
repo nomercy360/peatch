@@ -20,15 +20,12 @@ type Collaboration struct {
 	City          *string     `json:"city" db:"city"`
 	CountryCode   string      `json:"country_code" db:"country_code"`
 	HiddenAt      *time.Time  `json:"hidden_at" db:"hidden_at"`
-	RequestsCount int         `json:"-" db:"requests_count"`
 	Opportunity   Opportunity `json:"opportunity" db:"opportunity"`
 	User          UserProfile `json:"user" db:"user"`
 	Badges        BadgeSlice  `json:"badges,omitempty" db:"badges"`
-	LikesCount    int         `json:"likes_count" db:"likes_count"`
-	IsLiked       bool        `json:"is_liked" db:"is_liked"`
 } // @Name Collaboration
 
-func (c *Collaboration) GetLocation() string {
+func (c Collaboration) GetLocation() string {
 	if c.City != nil {
 		return fmt.Sprintf("%s, %s", *c.City, c.Country)
 	}
@@ -50,16 +47,15 @@ func (s *storage) ListCollaborations(params CollaborationQuery) ([]Collaboration
 	query := `
         SELECT c.*,
 			to_jsonb(o) as opportunity,
-			to_jsonb(u) as "user",
-			exists(SELECT 1 FROM likes l WHERE l.content_id = c.id AND l.user_id = $1 AND l.content_type = 'collaboration') as is_liked
+			to_jsonb(u) as "user"
         FROM collaborations c
         LEFT JOIN opportunities o ON c.opportunity_id = o.id
 		LEFT JOIN users u ON c.user_id = u.id
         WHERE c.published_at IS NOT NULL AND c.hidden_at IS NULL
     `
 
-	paramIndex := 2
-	args := []interface{}{params.UserID}
+	paramIndex := 1
+	var args []interface{}
 
 	var whereClauses []string
 
@@ -98,7 +94,8 @@ func (s *storage) GetCollaborationByID(userID, id int64) (*Collaboration, error)
 
 	query := `
         SELECT 
-            c.*,
+            c.id, c.user_id, c.opportunity_id, c.title, c.description, c.is_payable,
+            c.published_at, c.hidden_at, c.created_at, c.updated_at, c.country, c.city, c.country_code,
 			to_jsonb(o) as opportunity,
 			to_jsonb(u) as "user",
 			json_agg(distinct to_jsonb(b)) as badges
@@ -141,7 +138,7 @@ func (s *storage) CreateCollaboration(userID int64, collaboration Collaboration,
 	query := `
 		INSERT INTO collaborations (user_id, opportunity_id, title, description, is_payable, country, city, country_code)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-		RETURNING id, user_id, opportunity_id, title, description, is_payable, published_at, hidden_at, created_at, updated_at, country, city, country_code, requests_count
+		RETURNING id, user_id, opportunity_id, title, description, is_payable, published_at, hidden_at, created_at, updated_at, country, city, country_code,
 	`
 
 	if err := tx.QueryRowx(
@@ -191,7 +188,14 @@ func (s *storage) UpdateCollaboration(userID, collabID int64, collaboration Coll
 
 	query := `
 		UPDATE collaborations
-		SET title = $1, description = $2, is_payable = $3, country = $4, city = $5, country_code = $6, updated_at = NOW(), opportunity_id = $7
+		SET title = $1,
+		    description = $2,
+		    is_payable = $3,
+		    country = $4,
+		    city = $5,
+		    country_code = $6,
+		    updated_at = NOW(), 
+		    opportunity_id = $7
 		WHERE id = $8 AND user_id = $9
 		RETURNING updated_at
 	`
@@ -328,39 +332,4 @@ func (s *storage) PublishCollaboration(userID int64, collaborationID int64) erro
 	}
 
 	return nil
-}
-
-func (s *storage) ListCollaborationRequests(from time.Time) ([]CollaborationRequest, error) {
-	requests := make([]CollaborationRequest, 0)
-
-	query := `
-		SELECT id, collaboration_id, user_id, message, created_at, updated_at, status
-		FROM collaboration_requests
-		WHERE created_at >= $1
-	`
-
-	err := s.pg.Select(&requests, query, from)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return requests, nil
-}
-
-func (s *storage) FindCollaborationRequest(userID, collabID int64) (*CollaborationRequest, error) {
-	var request CollaborationRequest
-
-	query := `
-		SELECT id, collaboration_id, user_id, message, created_at, updated_at, status
-		FROM collaboration_requests
-		WHERE collaboration_id = $1 AND user_id = $2
-	`
-
-	err := s.pg.Get(&request, query, collabID, userID)
-	if err != nil {
-		return nil, err
-	}
-
-	return &request, nil
 }

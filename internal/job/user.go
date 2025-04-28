@@ -19,12 +19,10 @@ type storage interface {
 	GetUserProfile(params db.GetUsersParams) (*db.User, error)
 	CreateNotification(notification db.Notification) (*db.Notification, error)
 	SearchNotification(params db.NotificationQuery) (*db.Notification, error)
-	ListUserCollaborations(from time.Time) ([]db.UserCollaborationRequest, error)
 	UpdateNotificationSentAt(notificationID int64) error
 	ListCollaborations(params db.CollaborationQuery) ([]db.Collaboration, error)
 	FindMatchingUsers(exclude int64, opportunityIDs []int64, badgeIDs []int64) ([]db.User, error)
 	ListNewUserProfiles(from time.Time) ([]db.User, error)
-	ListCollaborationRequests(from time.Time) ([]db.CollaborationRequest, error)
 	GetCollaborationOwner(collaborationID int64) (*db.User, error)
 	ListProfilesForModeration() ([]db.User, error)
 	UpdateProfileScore(userID int64, status int) error
@@ -346,174 +344,175 @@ func (j *notifyJob) NotifyMatchedCollaboration() error {
 	return nil
 }
 
-func (j *notifyJob) NotifyUserReceivedCollaborationRequest() error {
-	log.Println("Checking for new user collaboration requests")
+//
+//func (j *notifyJob) NotifyUserReceivedCollaborationRequest() error {
+//	log.Println("Checking for new user collaboration requests")
+//
+//	newCollaborations, err := j.storage.ListUserCollaborations(time.Now().Add(-24 * time.Hour))
+//
+//	if err != nil {
+//		return err
+//	}
+//
+//	for _, collaboration := range newCollaborations {
+//		// check if  user already received exact same notification
+//		q := db.NotificationQuery{
+//			UserID:           &collaboration.UserID,
+//			NotificationType: db.NotificationTypeUserCollaboration,
+//			EntityType:       "user_collaboration_requests",
+//			EntityID:         collaboration.ID,
+//		}
+//
+//		_, err := j.storage.SearchNotification(q)
+//
+//		if err != nil && errors.Is(err, db.ErrNotFound) {
+//
+//			requester, err := j.storage.GetUserProfile(db.GetUsersParams{UserID: collaboration.RequesterID})
+//
+//			if err != nil {
+//				return err
+//			}
+//
+//			receiver, err := j.storage.GetUserProfile(db.GetUsersParams{UserID: collaboration.UserID})
+//
+//			if err != nil {
+//				return err
+//			}
+//
+//			img, err := fetchPreviewImage(j.config.imgServiceURL, requester)
+//
+//			if err != nil {
+//				return err
+//			}
+//
+//			ntf := &db.Notification{
+//				UserID:           collaboration.UserID,
+//				NotificationType: db.NotificationTypeUserCollaboration,
+//				EntityType:       "user_collaboration_requests",
+//				EntityID:         collaboration.ID,
+//				ChatID:           receiver.ChatID,
+//			}
+//
+//			text := fmt.Sprintf(
+//				"%s sends you a message:\n%s",
+//				bot.EscapeMarkdown(*requester.FirstName),
+//				bot.EscapeMarkdown(collaboration.Message),
+//			)
+//
+//			created, err := j.storage.CreateNotification(*ntf)
+//
+//			if err != nil {
+//				return err
+//			}
+//
+//			linkToProfile := fmt.Sprintf("%s/users/%s", j.config.webappURL, requester.Username)
+//
+//			params := notification.SendNotificationParams{
+//				ChatID:    created.ChatID,
+//				Message:   text,
+//				WebAppURL: linkToProfile,
+//				Image:     img,
+//				Username:  &requester.Username,
+//			}
+//
+//			if err = j.notifier.SendPhotoNotification(params); err != nil {
+//				log.Printf("Failed to send notification to user %d", collaboration.UserID)
+//				return err
+//			}
+//
+//			if err = j.storage.UpdateNotificationSentAt(created.ID); err != nil {
+//				return err
+//			}
+//		} else if err != nil {
+//			return err
+//		}
+//	}
+//
+//	return nil
+//}
 
-	newCollaborations, err := j.storage.ListUserCollaborations(time.Now().Add(-24 * time.Hour))
-
-	if err != nil {
-		return err
-	}
-
-	for _, collaboration := range newCollaborations {
-		// check if  user already received exact same notification
-		q := db.NotificationQuery{
-			UserID:           &collaboration.UserID,
-			NotificationType: db.NotificationTypeUserCollaboration,
-			EntityType:       "user_collaboration_requests",
-			EntityID:         collaboration.ID,
-		}
-
-		_, err := j.storage.SearchNotification(q)
-
-		if err != nil && errors.Is(err, db.ErrNotFound) {
-
-			requester, err := j.storage.GetUserProfile(db.GetUsersParams{UserID: collaboration.RequesterID})
-
-			if err != nil {
-				return err
-			}
-
-			receiver, err := j.storage.GetUserProfile(db.GetUsersParams{UserID: collaboration.UserID})
-
-			if err != nil {
-				return err
-			}
-
-			img, err := fetchPreviewImage(j.config.imgServiceURL, requester)
-
-			if err != nil {
-				return err
-			}
-
-			ntf := &db.Notification{
-				UserID:           collaboration.UserID,
-				NotificationType: db.NotificationTypeUserCollaboration,
-				EntityType:       "user_collaboration_requests",
-				EntityID:         collaboration.ID,
-				ChatID:           receiver.ChatID,
-			}
-
-			text := fmt.Sprintf(
-				"%s sends you a message:\n%s",
-				bot.EscapeMarkdown(*requester.FirstName),
-				bot.EscapeMarkdown(collaboration.Message),
-			)
-
-			created, err := j.storage.CreateNotification(*ntf)
-
-			if err != nil {
-				return err
-			}
-
-			linkToProfile := fmt.Sprintf("%s/users/%s", j.config.webappURL, requester.Username)
-
-			params := notification.SendNotificationParams{
-				ChatID:    created.ChatID,
-				Message:   text,
-				WebAppURL: linkToProfile,
-				Image:     img,
-				Username:  &requester.Username,
-			}
-
-			if err = j.notifier.SendPhotoNotification(params); err != nil {
-				log.Printf("Failed to send notification to user %d", collaboration.UserID)
-				return err
-			}
-
-			if err = j.storage.UpdateNotificationSentAt(created.ID); err != nil {
-				return err
-			}
-		} else if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (j *notifyJob) NotifyCollaborationRequest() error {
-	// Here fetch latest collaboration requests. Send notification to user who received the request on their collaboration
-	log.Println("Checking for new collaboration requests")
-
-	newRequests, err := j.storage.ListCollaborationRequests(time.Now().Add(-24 * time.Hour))
-
-	if err != nil {
-		return err
-	}
-
-	for _, request := range newRequests {
-		// get the one who created the collaboration
-		creator, err := j.storage.GetCollaborationOwner(request.CollaborationID)
-
-		if err != nil {
-			return err
-		}
-
-		// check if  user already received exact same notification
-		q := db.NotificationQuery{
-			UserID:           &creator.ID,
-			NotificationType: db.NotificationTypeCollaborationRequest,
-			EntityType:       "collaboration_requests",
-			EntityID:         request.ID,
-		}
-
-		if _, err := j.storage.SearchNotification(q); err != nil && errors.Is(err, db.ErrNotFound) {
-			// get the one who created the request
-			requester, err := j.storage.GetUserProfile(db.GetUsersParams{UserID: request.UserID})
-
-			if err != nil {
-				return err
-			}
-
-			img, err := fetchPreviewImage(j.config.imgServiceURL, requester)
-
-			if err != nil {
-				return err
-			}
-
-			ntf := &db.Notification{
-				UserID:           creator.ID,
-				NotificationType: db.NotificationTypeCollaborationRequest,
-				EntityType:       "collaboration_requests",
-				EntityID:         request.ID,
-				ChatID:           creator.ChatID,
-			}
-
-			text := fmt.Sprintf(
-				"*%s wants to collaborate with you on your opportunity*\n%s",
-				bot.EscapeMarkdown(*requester.FirstName),
-				bot.EscapeMarkdown(request.Message))
-
-			created, err := j.storage.CreateNotification(*ntf)
-
-			if err != nil {
-				return err
-			}
-
-			linkToProfile := fmt.Sprintf("%s/users/%s", j.config.webappURL, requester.Username)
-
-			params := notification.SendNotificationParams{
-				ChatID:    creator.ChatID,
-				Message:   text,
-				WebAppURL: linkToProfile,
-				Image:     img,
-				Username:  &requester.Username,
-			}
-
-			if err = j.notifier.SendPhotoNotification(params); err != nil {
-				log.Printf("Failed to send notification to user %d", creator.ID)
-			}
-
-			if err = j.storage.UpdateNotificationSentAt(created.ID); err != nil {
-				return err
-			}
-		} else if err != nil {
-			return err
-		}
-	}
-	return nil
-}
+//func (j *notifyJob) NotifyCollaborationRequest() error {
+//	// Here fetch latest collaboration requests. Send notification to user who received the request on their collaboration
+//	log.Println("Checking for new collaboration requests")
+//
+//	newRequests, err := j.storage.ListCollaborationRequests(time.Now().Add(-24 * time.Hour))
+//
+//	if err != nil {
+//		return err
+//	}
+//
+//	for _, request := range newRequests {
+//		// get the one who created the collaboration
+//		creator, err := j.storage.GetCollaborationOwner(request.CollaborationID)
+//
+//		if err != nil {
+//			return err
+//		}
+//
+//		// check if  user already received exact same notification
+//		q := db.NotificationQuery{
+//			UserID:           &creator.ID,
+//			NotificationType: db.NotificationTypeCollaborationRequest,
+//			EntityType:       "collaboration_requests",
+//			EntityID:         request.ID,
+//		}
+//
+//		if _, err := j.storage.SearchNotification(q); err != nil && errors.Is(err, db.ErrNotFound) {
+//			// get the one who created the request
+//			requester, err := j.storage.GetUserProfile(db.GetUsersParams{UserID: request.UserID})
+//
+//			if err != nil {
+//				return err
+//			}
+//
+//			img, err := fetchPreviewImage(j.config.imgServiceURL, requester)
+//
+//			if err != nil {
+//				return err
+//			}
+//
+//			ntf := &db.Notification{
+//				UserID:           creator.ID,
+//				NotificationType: db.NotificationTypeCollaborationRequest,
+//				EntityType:       "collaboration_requests",
+//				EntityID:         request.ID,
+//				ChatID:           creator.ChatID,
+//			}
+//
+//			text := fmt.Sprintf(
+//				"*%s wants to collaborate with you on your opportunity*\n%s",
+//				bot.EscapeMarkdown(*requester.FirstName),
+//				bot.EscapeMarkdown(request.Message))
+//
+//			created, err := j.storage.CreateNotification(*ntf)
+//
+//			if err != nil {
+//				return err
+//			}
+//
+//			linkToProfile := fmt.Sprintf("%s/users/%s", j.config.webappURL, requester.Username)
+//
+//			params := notification.SendNotificationParams{
+//				ChatID:    creator.ChatID,
+//				Message:   text,
+//				WebAppURL: linkToProfile,
+//				Image:     img,
+//				Username:  &requester.Username,
+//			}
+//
+//			if err = j.notifier.SendPhotoNotification(params); err != nil {
+//				log.Printf("Failed to send notification to user %d", creator.ID)
+//			}
+//
+//			if err = j.storage.UpdateNotificationSentAt(created.ID); err != nil {
+//				return err
+//			}
+//		} else if err != nil {
+//			return err
+//		}
+//	}
+//	return nil
+//}
 
 type ImageRequest struct {
 	Title    string `json:"title"`

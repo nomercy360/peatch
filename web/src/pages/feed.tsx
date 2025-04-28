@@ -8,18 +8,17 @@ import {
 	Suspense,
 } from 'solid-js'
 import { User, UserProfile } from '~/gen/types'
-import { fetchUsers, likeContent, unlikeContent } from '~/lib/api'
+import { fetchUsers } from '~/lib/api'
 import { Link } from '~/components/link'
 import BadgeList from '~/components/BadgeList'
 import useDebounce from '~/lib/useDebounce'
-import { createMutation, createQuery } from '@tanstack/solid-query'
+import { createQuery } from '@tanstack/solid-query'
 import { store } from '~/store'
 import FillProfilePopup from '~/components/FillProfilePopup'
 import { useMainButton } from '~/lib/useMainButton'
 import { useNavigate } from '@solidjs/router'
 import { LocationBadge } from '~/components/location-badge'
-import { queryClient } from '~/App'
-import NavigationTabs from '~/components/navigation-tabs'
+
 
 export const [search, setSearch] = createSignal('')
 
@@ -230,20 +229,14 @@ const UserCard = (props: { user: User; scroll: number }) => {
 			<p class="mt-2 text-sm text-secondary-foreground">
 				{shortenDescription(user.description!)}
 			</p>
-			<Show when={user.badges && user.badges.length > 0}>
-				<BadgeList badges={user.badges!} position="start">
-					<LocationBadge
-						country={user.country!}
-						city={user.city!}
-						countryCode={user.country_code!}
-					/>
-				</BadgeList>
-			</Show>
-			<LikeButton
-				liked={user.is_liked!}
-				likes={user.likes_count!}
-				id={user.id!}
+			<LocationBadge
+				country={user.country!}
+				city={user.city!}
+				countryCode={user.country_code!}
 			/>
+			<Show when={user.badges && user.badges.length > 0}>
+				<BadgeList badges={user.badges!} position="start" />
+			</Show>
 		</Link>
 	)
 }
@@ -290,150 +283,5 @@ export const ListPlaceholder = () => {
 			<div class="h-48 w-full rounded-2xl bg-secondary" />
 			<div class="h-56 w-full rounded-2xl bg-secondary" />
 		</div>
-	)
-}
-
-const LikeButton = (props: {
-	id: number
-	liked: boolean
-	likes: number
-}) => {
-	const handleMutate = async (userId: number) => {
-		await queryClient.cancelQueries({ type: 'active' })
-		queryClient.setQueryData(['users', search()], (old: any[]) =>
-			old.map(item => {
-				if (item.id === userId) {
-					return {
-						...item,
-						is_liked: !item.is_liked,
-						likes_count: item.is_liked
-							? item.likes_count - 1
-							: item.likes_count + 1,
-					}
-				}
-				return item
-			}),
-		)
-		if (search()) {
-			queryClient.invalidateQueries({ queryKey: ['users', ''] })
-		}
-	}
-
-	const likeMutate = createMutation(() => ({
-		mutationFn: (id: number) => likeContent(id, 'user'),
-		onMutate: id => handleMutate(id),
-	}))
-
-	const mutateUnLike = createMutation(() => ({
-		mutationFn: (id: number) => unlikeContent(id, 'user'),
-		onMutate: id => handleMutate(id),
-	}))
-
-	const handleClick = (e: Event) => {
-		e.preventDefault()
-		if (!props.liked) {
-			likeMutate.mutate(props.id)
-		} else {
-			mutateUnLike.mutate(props.id)
-		}
-		window.Telegram.WebApp.HapticFeedback.selectionChanged()
-	}
-
-	return (
-		<button
-			class="mt-2 flex items-center justify-start rounded-xl text-sm font-semibold"
-			onClick={(e: Event) => handleClick(e)}
-		>
-			<Show
-				when={!props.liked}
-				fallback={<HeartIcon class="size-6 shrink-0" />}
-			>
-				<span class="material-symbols-rounded no-fill text-[24px]">
-					favorite
-				</span>
-			</Show>
-			<Show when={props.likes > 0}>
-				<span class="ml-1 font-semibold">{props.likes}</span>
-			</Show>
-		</button>
-	)
-}
-
-export function HeartIcon(props: any) {
-	return (
-		<svg
-			{...props}
-			width="24"
-			height="24"
-			viewBox="0 0 24 24"
-			fill="none"
-			xmlns="http://www.w3.org/2000/svg"
-		>
-			<mask
-				id="mask0_4780_1925"
-				style="mask-type:alpha"
-				maskUnits="userSpaceOnUse"
-				x="0"
-				y="0"
-				width="24"
-				height="24"
-			>
-				<rect width="24" height="24" fill="#D9D9D9" />
-			</mask>
-			<g mask="url(#mask0_4780_1925)">
-				<path
-					d="M12 20.3249C11.7667 20.3249 11.5292 20.2832 11.2875 20.1999C11.0458 20.1166 10.8333 19.9832 10.65 19.7999L8.925 18.2249C7.15833 16.6082 5.5625 15.0041 4.1375 13.4124C2.7125 11.8207 2 10.0666 2 8.1499C2 6.58324 2.525 5.2749 3.575 4.2249C4.625 3.1749 5.93333 2.6499 7.5 2.6499C8.38333 2.6499 9.21667 2.8374 10 3.2124C10.7833 3.5874 11.45 4.0999 12 4.7499C12.55 4.0999 13.2167 3.5874 14 3.2124C14.7833 2.8374 15.6167 2.6499 16.5 2.6499C18.0667 2.6499 19.375 3.1749 20.425 4.2249C21.475 5.2749 22 6.58324 22 8.1499C22 10.0666 21.2917 11.8249 19.875 13.4249C18.4583 15.0249 16.85 16.6332 15.05 18.2499L13.35 19.7999C13.1667 19.9832 12.9542 20.1166 12.7125 20.1999C12.4708 20.2832 12.2333 20.3249 12 20.3249Z"
-					fill="#FF8C42"
-				/>
-				<path
-					d="M12 20.3249C11.7667 20.3249 11.5292 20.2832 11.2875 20.1999C11.0458 20.1166 10.8333 19.9832 10.65 19.7999L8.925 18.2249C7.15833 16.6082 5.5625 15.0041 4.1375 13.4124C2.7125 11.8207 2 10.0666 2 8.1499C2 6.58324 2.525 5.2749 3.575 4.2249C4.625 3.1749 5.93333 2.6499 7.5 2.6499C8.38333 2.6499 9.21667 2.8374 10 3.2124C10.7833 3.5874 11.45 4.0999 12 4.7499C12.55 4.0999 13.2167 3.5874 14 3.2124C14.7833 2.8374 15.6167 2.6499 16.5 2.6499C18.0667 2.6499 19.375 3.1749 20.425 4.2249C21.475 5.2749 22 6.58324 22 8.1499C22 10.0666 21.2917 11.8249 19.875 13.4249C18.4583 15.0249 16.85 16.6332 15.05 18.2499L13.35 19.7999C13.1667 19.9832 12.9542 20.1166 12.7125 20.1999C12.4708 20.2832 12.2333 20.3249 12 20.3249Z"
-					fill="url(#paint0_radial_4780_1925)"
-				/>
-				<path
-					d="M12 20.3249C11.7667 20.3249 11.5292 20.2832 11.2875 20.1999C11.0458 20.1166 10.8333 19.9832 10.65 19.7999L8.925 18.2249C7.15833 16.6082 5.5625 15.0041 4.1375 13.4124C2.7125 11.8207 2 10.0666 2 8.1499C2 6.58324 2.525 5.2749 3.575 4.2249C4.625 3.1749 5.93333 2.6499 7.5 2.6499C8.38333 2.6499 9.21667 2.8374 10 3.2124C10.7833 3.5874 11.45 4.0999 12 4.7499C12.55 4.0999 13.2167 3.5874 14 3.2124C14.7833 2.8374 15.6167 2.6499 16.5 2.6499C18.0667 2.6499 19.375 3.1749 20.425 4.2249C21.475 5.2749 22 6.58324 22 8.1499C22 10.0666 21.2917 11.8249 19.875 13.4249C18.4583 15.0249 16.85 16.6332 15.05 18.2499L13.35 19.7999C13.1667 19.9832 12.9542 20.1166 12.7125 20.1999C12.4708 20.2832 12.2333 20.3249 12 20.3249Z"
-					fill="url(#paint1_radial_4780_1925)"
-				/>
-				<path
-					d="M12 20.3249C11.7667 20.3249 11.5292 20.2832 11.2875 20.1999C11.0458 20.1166 10.8333 19.9832 10.65 19.7999L8.925 18.2249C7.15833 16.6082 5.5625 15.0041 4.1375 13.4124C2.7125 11.8207 2 10.0666 2 8.1499C2 6.58324 2.525 5.2749 3.575 4.2249C4.625 3.1749 5.93333 2.6499 7.5 2.6499C8.38333 2.6499 9.21667 2.8374 10 3.2124C10.7833 3.5874 11.45 4.0999 12 4.7499C12.55 4.0999 13.2167 3.5874 14 3.2124C14.7833 2.8374 15.6167 2.6499 16.5 2.6499C18.0667 2.6499 19.375 3.1749 20.425 4.2249C21.475 5.2749 22 6.58324 22 8.1499C22 10.0666 21.2917 11.8249 19.875 13.4249C18.4583 15.0249 16.85 16.6332 15.05 18.2499L13.35 19.7999C13.1667 19.9832 12.9542 20.1166 12.7125 20.1999C12.4708 20.2832 12.2333 20.3249 12 20.3249Z"
-					fill="url(#paint2_radial_4780_1925)"
-					fill-opacity="0.6"
-				/>
-			</g>
-			<defs>
-				<radialGradient
-					id="paint0_radial_4780_1925"
-					cx="0"
-					cy="0"
-					r="1"
-					gradientUnits="userSpaceOnUse"
-					gradientTransform="translate(18.8571 17.0424) rotate(-161.965) scale(11.4181 10.362)"
-				>
-					<stop stop-color="#F35D28" />
-					<stop offset="1" stop-color="#F35D28" stop-opacity="0" />
-				</radialGradient>
-				<radialGradient
-					id="paint1_radial_4780_1925"
-					cx="0"
-					cy="0"
-					r="1"
-					gradientUnits="userSpaceOnUse"
-					gradientTransform="translate(7.28571 20.3249) rotate(-55.8264) scale(12.9708 13.6629)"
-				>
-					<stop stop-color="#FFD67E" />
-					<stop offset="1" stop-color="#FFD77F" stop-opacity="0" />
-				</radialGradient>
-				<radialGradient
-					id="paint2_radial_4780_1925"
-					cx="0"
-					cy="0"
-					r="1"
-					gradientUnits="userSpaceOnUse"
-					gradientTransform="translate(15 8.9624) rotate(101.774) scale(14.7018 13.1583)"
-				>
-					<stop stop-color="white" />
-					<stop offset="0.489583" stop-color="white" stop-opacity="0" />
-				</radialGradient>
-			</defs>
-		</svg>
 	)
 }

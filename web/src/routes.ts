@@ -30,10 +30,6 @@ export const routes: RouteDefinition[] = [
 		component: lazy(() => import('~/pages/users/activity')),
 	},
 	{
-		path: '/users/:id/followers',
-		component: lazy(() => import('~/pages/users/followers')),
-	},
-	{
 		path: '/users/edit',
 		component: lazy(() => import('~/pages/users/edit/index')),
 		children: [

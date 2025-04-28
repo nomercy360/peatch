@@ -57,7 +57,6 @@ export default function UserProfilePage() {
 					return {
 						...old,
 						is_following: true,
-						followers_count: old.followers_count! + 1,
 					}
 				}
 				return old
@@ -75,7 +74,6 @@ export default function UserProfilePage() {
 					return {
 						...old,
 						is_following: false,
-						followers_count: old.followers_count! - 1,
 					}
 				}
 				return old
@@ -100,20 +98,6 @@ export default function UserProfilePage() {
 			}
 		}
 	})
-
-	const navigateToCollaborate = async () => {
-		if (!store.user.published_at) {
-			window.Telegram.WebApp.showConfirm(
-				`Publish your profile first, so ${query.data.first_name} will see it`,
-				(ok: boolean) =>
-					ok && navigate('/users/edit', { state: { back: true } }),
-			)
-		} else if (store.user.hidden_at) {
-			showAlert('Your profile is hidden by our moderators')
-		} else {
-			navigate(`/users/${username}/collaborate`, { state: { back: true } })
-		}
-	}
 
 	const closePopup = () => {
 		setPublished(false)
@@ -154,13 +138,9 @@ export default function UserProfilePage() {
 					mainButton.onClick(navigateToEdit)
 				}
 			}
-		} else {
-			mainButton.enable('Collaborate')
-			mainButton.onClick(navigateToCollaborate)
 		}
 
 		onCleanup(() => {
-			mainButton.offClick(navigateToCollaborate)
 			mainButton.offClick(publish)
 			mainButton.offClick(closePopup)
 			mainButton.offClick(navigateToEdit)
@@ -202,201 +182,119 @@ export default function UserProfilePage() {
 					<Navigate href={'/404'} />
 				</Match>
 				<Match when={query.isSuccess}>
-					<Switch>
-						<Match when={published() && isCurrentUserProfile}>
-							<ActionDonePopup
-								action="Profile is under review"
-								description="We will notify you once we finish moderation process"
-								callToAction="There are 12 people you might be interested to collaborate with"
-							/>
-						</Match>
-						<Match when={!query.isLoading}>
-							<div class="h-fit min-h-screen p-2 bg-secondary">
-								<Show when={isCurrentUserProfile && store.user.hidden_at}>
-									<button
-										onClick={showInfoPopup}
-										class="absolute left-4 top-4 flex size-8 items-center justify-center rounded-lg bg-secondary"
-									>
+
+					<div class="h-fit min-h-screen p-2 bg-secondary items-center flex flex-col text-center">
+						<Show when={isCurrentUserProfile && store.user.hidden_at}>
+							<button
+								onClick={showInfoPopup}
+								class="absolute left-4 top-4 flex size-8 items-center justify-center rounded-lg bg-secondary"
+							>
 										<span class="material-symbols-rounded">
 											visibility_off
 										</span>
-									</button>
-								</Show>
-								<Show when={store.user.published_at && !store.user.hidden_at}>
-									<Switch>
-										<Match when={isCurrentUserProfile}>
-											<Link
-												href="/users/activity"
-												state={{ back: true }}
-												class="absolute left-4 top-4 z-10 flex size-8 items-center justify-center rounded-lg bg-secondary"
-											>
-												<NotificationIcon width={20} height={19} />
-											</Link>
-											<div
-												class="absolute right-4 top-4 z-10 flex h-8 items-center justify-center gap-2 rounded-lg bg-secondary px-4 text-sm font-semibold text-orange"
-											>
-												<PeatchIcon width={16} height={16} />
-												{store.user.peatch_points}
-											</div>
-										</Match>
-										<Match
-											when={!isCurrentUserProfile && !query.data?.is_following}
+							</button>
+						</Show>
+						<img
+							alt="User Avatar"
+							class="w-32 aspect-square bg-cover bg-center relative rounded-xl"
+							src={CDN_URL + '/' + query.data.avatar_url} />
+						<Show when={store.user.published_at && !store.user.hidden_at}>
+							<button
+								class="flex h-8 flex-row items-center space-x-1 px-3 bg-background mt-2 shadow-md border rounded-2xl"
+								onClick={() => shareURL()}
+							>
+								<span class="material-symbols-rounded text-[16px]">
+									waving_hand
+								</span>
+								<span class="text-sm">
+									Say hi
+								</span>
+							</button>
+						</Show>
+						<div class="px-4 py-2.5">
+							<p class="capitalize text-3xl text-primary font-semibold">
+								{query.data.first_name} {query.data.last_name}:
+							</p>
+							<p class="text-3xl capitalize">{query.data.title}</p>
+							<p class="text-start mt-1 text-sm font-normal text-secondary-foreground">
+								{query.data.description}
+							</p>
+							<div class="mt-5 flex flex-row flex-wrap items-center justify-start gap-1">
+								<For
+									each={
+										badgesExpanded()
+											? query.data.badges
+											: query.data.badges.slice(0, 3)
+									}
+								>
+									{badge => (
+										<div
+											class="flex h-10 flex-row items-center justify-center gap-[5px] rounded-2xl border px-2.5"
+											style={{
+												'background-color': `#${badge.color}`,
+												'border-color': `#${badge.color}`,
+											}}
 										>
-											<ActionButton
-												disabled={unfollowMutate.isPending}
-												text="Follow"
-												onClick={follow}
-											/>
-										</Match>
-										<Match
-											when={!isCurrentUserProfile && query.data?.is_following}
-										>
-											<ActionButton
-												disabled={followMutate.isPending}
-												text="Unfollow"
-												onClick={unfollow}
-											/>
-										</Match>
-									</Switch>
-								</Show>
-								<div class="w-full aspect-square bg-cover bg-center relative rounded-xl"
-										 style={{ 'background-image': `url(${CDN_URL + '/' + query.data.avatar_url})` }}>
-									<div
-										class="flex flex-row items-center justify-between absolute bottom-0 left-0 w-full rounded-b-xl h-10 px-4 bg-gradient-to-t from-background">
-										<button
-											class="flex h-8 flex-row items-center space-x-1 px-2.5 bg-secondary rounded-2xl"
-											onClick={() => shareURL()}
-										>
-											<span class="material-symbols-rounded text-[16px]">
-												ios_share
+											<span class="material-symbols-rounded text-white">
+												{String.fromCodePoint(parseInt(badge.icon!, 16))}
 											</span>
-											<span class="text-sm">
-												Share
-											</span>
-										</button>
-										<div class="flex h-8 flex-row items-center space-x-2 text-sm font-semibold">
-											<Link
-												href={`/users/${query.data.id}/followers?show=following`}
-												state={{ back: true }}
-												class="text-primary-foreground flex h-full flex-row items-center gap-1.5"
-											>
-												<span>{query.data.following_count}</span>
-												<span class="text-primary-foreground opacity-70 font-normal">following</span>
-											</Link>
-											<Link
-												class="text-primary-foreground flex h-full flex-row items-center gap-1.5"
-												href={`/users/${query.data.id}/followers?show=followers`}
-												state={{ back: true }}
-											>
-												{query.data.followers_count}{' '}
-												<span class="text-primary-foreground opacity-70 font-normal">followers</span>
-											</Link>
+											<p class="text-sm font-semibold text-white">
+												{badge.text}
+											</p>
 										</div>
-									</div>
-								</div>
-								<div class="px-4 py-2.5">
-									<p class="capitalize text-3xl text-primary font-semibold">
-										{query.data.first_name} {query.data.last_name}:
-									</p>
-									<p class="text-3xl capitalize">{query.data.title}</p>
-									<p class="mt-1 text-sm font-normal text-secondary-foreground">
-										{query.data.description}
-									</p>
-									<div class="mt-5 flex flex-row flex-wrap items-center justify-start gap-1">
-										<For
-											each={
-												badgesExpanded()
-													? query.data.badges
-													: query.data.badges.slice(0, 3)
-											}
+									)}
+								</For>
+							</div>
+							<Show when={query.data.badges.length > 3}>
+								<ExpandButton
+									expanded={badgesExpanded()}
+									setExpanded={setBadgesExpanded}
+								/>
+							</Show>
+							<p class="pt-4 pb-2 text-xl font-extrabold text-start">
+								Available for
+							</p>
+							<div class="flex w-full flex-col items-center justify-start gap-1">
+								<For
+									each={
+										opportunitiesExpanded()
+											? query.data.opportunities
+											: query.data.opportunities.slice(0, 3)
+									}
+								>
+									{op => (
+										<div
+											class="flex h-[60px] w-full flex-row items-center justify-start gap-2.5 rounded-2xl border px-2.5"
+											style={{
+												'background-color': `#${op.color}`,
+											}}
 										>
-											{badge => (
-												<div
-													class="flex h-10 flex-row items-center justify-center gap-[5px] rounded-2xl border px-2.5"
-													style={{
-														'background-color': `#${badge.color}`,
-														'border-color': `#${badge.color}`,
-													}}
-												>
-													<span class="material-symbols-rounded text-white">
-														{String.fromCodePoint(parseInt(badge.icon!, 16))}
-													</span>
-													<p class="text-sm font-semibold text-white">
-														{badge.text}
-													</p>
-												</div>
-											)}
-										</For>
-									</div>
-									<Show when={query.data.badges.length > 3}>
-										<ExpandButton
-											expanded={badgesExpanded()}
-											setExpanded={setBadgesExpanded}
-										/>
-									</Show>
-									<p class="py-4 text-3xl font-extrabold">
-										Available for
-									</p>
-									<div class="flex w-full flex-col items-center justify-start gap-1">
-										<For
-											each={
-												opportunitiesExpanded()
-													? query.data.opportunities
-													: query.data.opportunities.slice(0, 3)
-											}
-										>
-											{op => (
-												<div
-													class="flex h-[60px] w-full flex-row items-center justify-start gap-2.5 rounded-2xl border px-2.5"
-													style={{
-														'background-color': `#${op.color}`,
-													}}
-												>
-													<div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary">
+											<div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary">
 														<span class="material-symbols-rounded shrink-0">
 															{String.fromCodePoint(parseInt(op.icon!, 16))}
 														</span>
-													</div>
-													<div class="text-start">
-														<p class="text-sm font-semibold text-white">{op.text}</p>
-														<p class="text-xs leading-tight text-white/80">
-															{op.description}
-														</p>
-													</div>
-												</div>
-											)}
-										</For>
-										<Show when={query.data.opportunities.length > 3}>
-											<ExpandButton
-												expanded={opportunitiesExpanded()}
-												setExpanded={setOpportunitiesExpanded}
-											/>
-										</Show>
-									</div>
-								</div>
+											</div>
+											<div class="text-start">
+												<p class="text-sm font-semibold text-white">{op.text}</p>
+												<p class="text-xs leading-tight text-white/80">
+													{op.description}
+												</p>
+											</div>
+										</div>
+									)}
+								</For>
+								<Show when={query.data.opportunities.length > 3}>
+									<ExpandButton
+										expanded={opportunitiesExpanded()}
+										setExpanded={setOpportunitiesExpanded}
+									/>
+								</Show>
 							</div>
-						</Match>
-					</Switch>
+						</div>
+					</div>
 				</Match>
 			</Switch>
 		</div>
-	)
-}
-// background: ;
-
-const ActionButton = (props: {
-	disabled: boolean
-	text: string
-	onClick: () => void
-}) => {
-	return (
-		<button
-			disabled={props.disabled}
-			class="absolute right-4 top-4 z-10 h-9 w-[90px] rounded-xl bg-black/80 px-2.5 text-sm font-semibold text-white"
-			onClick={() => props.onClick()}
-		>
-			{props.text}
-		</button>
 	)
 }
 
@@ -406,7 +304,7 @@ const ExpandButton = (props: {
 }) => {
 	return (
 		<button
-			class="flex h-8 w-full items-center justify-start rounded-xl bg-transparent text-sm font-semibold text-secondary-foreground"
+			class="flex h-8 w-full items-center justify-start rounded-xl bg-transparent text-xs font-medium text-secondary-foreground"
 			onClick={() => props.setExpanded(!props.expanded)}
 		>
 			<span class="material-symbols-rounded text-secondary-foreground">

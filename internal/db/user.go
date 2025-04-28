@@ -1,7 +1,6 @@
 package db
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/lib/pq"
@@ -64,40 +63,30 @@ type User struct {
 	Country                *string          `json:"country" db:"country"`
 	City                   *string          `json:"city" db:"city"`
 	CountryCode            *string          `json:"country_code" db:"country_code"`
-	FollowersCount         int              `json:"followers_count" db:"followers_count"`
-	FollowingCount         int              `json:"following_count" db:"following_count"`
 	IsFollowing            bool             `json:"is_following" db:"is_following"`
-	RequestsCount          int              `json:"-" db:"requests_count"`
 	Badges                 BadgeSlice       `json:"badges" db:"badges"`
 	Opportunities          OpportunitySlice `json:"opportunities" db:"opportunities"`
 	ReviewStatus           string           `json:"-" db:"review_status"`
 	ReferrerID             *int64           `json:"-" db:"referrer_id"`
 	LastCheckIn            *time.Time       `json:"last_check_in" db:"last_check_in"`
-	PeatchPoints           int              `json:"peatch_points" db:"peatch_points"`
 	Rating                 *int             `json:"rating" db:"rating"`
-	LikesCount             int              `json:"likes_count" db:"likes_count"`
-	IsLiked                bool             `json:"is_liked" db:"is_liked"`
 } // @Name User
 
 type UserProfile struct {
-	ID             int64         `json:"id" db:"id"`
-	FirstName      *string       `json:"first_name" db:"first_name"`
-	LastName       *string       `json:"last_name" db:"last_name"`
-	CreatedAt      time.Time     `json:"created_at" db:"created_at"`
-	Username       string        `json:"username" db:"username"`
-	AvatarURL      *string       `json:"avatar_url" db:"avatar_url"`
-	Title          *string       `json:"title" db:"title"`
-	Description    *string       `json:"description" db:"description"`
-	Country        *string       `json:"country" db:"country"`
-	City           *string       `json:"city" db:"city"`
-	CountryCode    *string       `json:"country_code" db:"country_code"`
-	FollowersCount int           `json:"followers_count" db:"followers_count"`
-	FollowingCount int           `json:"following_count" db:"following_count"`
-	IsFollowing    bool          `json:"is_following" db:"is_following"`
-	Badges         []Badge       `json:"badges" db:"badges"`
-	Opportunities  []Opportunity `json:"opportunities" db:"opportunities"`
-	LikesCount     int           `json:"likes_count" db:"likes_count"`
-	IsLiked        bool          `json:"is_liked" db:"is_liked"`
+	ID            int64         `json:"id" db:"id"`
+	FirstName     *string       `json:"first_name" db:"first_name"`
+	LastName      *string       `json:"last_name" db:"last_name"`
+	CreatedAt     time.Time     `json:"created_at" db:"created_at"`
+	Username      string        `json:"username" db:"username"`
+	AvatarURL     *string       `json:"avatar_url" db:"avatar_url"`
+	Title         *string       `json:"title" db:"title"`
+	Description   *string       `json:"description" db:"description"`
+	Country       *string       `json:"country" db:"country"`
+	City          *string       `json:"city" db:"city"`
+	CountryCode   *string       `json:"country_code" db:"country_code"`
+	IsFollowing   bool          `json:"is_following" db:"is_following"`
+	Badges        []Badge       `json:"badges" db:"badges"`
+	Opportunities []Opportunity `json:"opportunities" db:"opportunities"`
 } // @Name UserProfile
 
 type Base interface {
@@ -131,24 +120,20 @@ func (u *UserProfile) Scan(src interface{}) error {
 
 func (u *User) ToUserProfile() UserProfile {
 	return UserProfile{
-		ID:             u.ID,
-		FirstName:      u.FirstName,
-		Username:       u.Username,
-		LastName:       u.LastName,
-		CreatedAt:      u.CreatedAt,
-		AvatarURL:      u.AvatarURL,
-		Title:          u.Title,
-		Description:    u.Description,
-		Country:        u.Country,
-		City:           u.City,
-		CountryCode:    u.CountryCode,
-		FollowersCount: u.FollowersCount,
-		FollowingCount: u.FollowingCount,
-		IsFollowing:    u.IsFollowing,
-		Badges:         u.Badges,
-		Opportunities:  u.Opportunities,
-		LikesCount:     u.LikesCount,
-		IsLiked:        u.IsLiked,
+		ID:            u.ID,
+		FirstName:     u.FirstName,
+		Username:      u.Username,
+		LastName:      u.LastName,
+		CreatedAt:     u.CreatedAt,
+		AvatarURL:     u.AvatarURL,
+		Title:         u.Title,
+		Description:   u.Description,
+		Country:       u.Country,
+		City:          u.City,
+		CountryCode:   u.CountryCode,
+		IsFollowing:   u.IsFollowing,
+		Badges:        u.Badges,
+		Opportunities: u.Opportunities,
 	}
 }
 
@@ -161,39 +146,89 @@ type UserQuery struct {
 
 func (s *storage) ListUsers(params UserQuery) ([]User, error) {
 	users := make([]User, 0)
-	query := `
-        SELECT u.*,
-               json_agg(distinct to_jsonb(b)) as badges,
-               json_agg(distinct to_jsonb(o)) as opportunities,
-			   exists (select 1 from likes l where l.content_id = u.id and l.user_id = $1 and l.content_type = 'user') as is_liked
-        FROM users u
-        LEFT JOIN user_opportunities uo ON u.id = uo.user_id
-        LEFT JOIN opportunities o ON uo.opportunity_id = o.id
-        LEFT JOIN user_badges ub ON u.id = ub.user_id
-        LEFT JOIN badges b ON ub.badge_id = b.id
-    `
 
-	paramIndex := 2
-	args := []interface{}{params.UserID}
+	whereClauses := []string{
+		"u.published_at IS NOT NULL",
+		"u.hidden_at IS NULL",
+		"u.rating > 500",
+	}
 
-	whereClauses := []string{"u.published_at IS NOT NULL AND u.hidden_at IS NULL AND u.rating > 500"}
+	paramIndex := 1
+	var args []interface{}
 
 	if params.Search != "" {
-		searchClause := fmt.Sprintf(" (u.first_name ILIKE $%d OR u.last_name ILIKE $%d OR u.title ILIKE $%d OR u.description ILIKE $%d)", paramIndex, paramIndex, paramIndex, paramIndex)
+		searchClause := fmt.Sprintf(
+			"(u.first_name ILIKE $%d OR u.last_name ILIKE $%d OR u.title ILIKE $%d OR u.description ILIKE $%d)",
+			paramIndex, paramIndex, paramIndex, paramIndex,
+		)
 		args = append(args, "%"+params.Search+"%")
 		whereClauses = append(whereClauses, searchClause)
 		paramIndex++
 	}
 
-	query = fmt.Sprintf("%s WHERE %s", query, strings.Join(whereClauses, " AND "))
-	query += fmt.Sprintf(" GROUP BY u.id ORDER BY u.rating DESC")
-	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", paramIndex, paramIndex+1)
+	query := fmt.Sprintf(`
+        WITH FilteredUsers AS (
+            SELECT
+                u.id,
+                u.first_name,
+                u.last_name,
+                u.chat_id,
+                u.username,
+                u.created_at,
+                u.updated_at,
+                u.published_at,
+                u.avatar_url,
+                u.title,
+                u.description,
+                u.language_code,
+                u.country,
+                u.city,
+                u.country_code,
+                u.notifications_enabled_at,
+                u.hidden_at,
+                u.referrer_id,
+                u.rating
+            FROM users u
+            WHERE %s
+            ORDER BY u.rating DESC -- Or u.created_at DESC if needed
+            LIMIT $%d OFFSET $%d
+        ),
+        UserOpportunities AS (
+            SELECT
+                uo.user_id,
+                json_agg(distinct to_jsonb(o)) as opportunities
+            FROM user_opportunities uo
+            JOIN opportunities o ON uo.opportunity_id = o.id
+            WHERE uo.user_id IN (SELECT id FROM FilteredUsers)
+            GROUP BY uo.user_id
+        ),
+        UserBadges AS (
+            SELECT
+                ub.user_id,
+                json_agg(distinct to_jsonb(b)) as badges
+            FROM user_badges ub
+            JOIN badges b ON ub.badge_id = b.id
+            WHERE ub.user_id IN (SELECT id FROM FilteredUsers)
+            GROUP BY ub.user_id
+        )
+        SELECT
+            fu.*,
+            uo.opportunities,
+            ub.badges
+        FROM FilteredUsers fu
+        LEFT JOIN UserOpportunities uo ON fu.id = uo.user_id
+        LEFT JOIN UserBadges ub ON fu.id = ub.user_id
+        ORDER BY fu.rating DESC; -- Ensure final order matches FilteredUsers CTE order
+    `, strings.Join(whereClauses, " AND "), paramIndex, paramIndex+1)
 
 	offset := (params.Page - 1) * params.Limit
 	args = append(args, params.Limit, offset)
 
+	// Execute the query
 	if err := s.pg.Select(&users, query, args...); err != nil {
-		return nil, err
+		// Log the error for debugging
+		// log.Printf("Error executing ListUsers query: %v", err)
+		return nil, fmt.Errorf("failed to list users: %w", err)
 	}
 
 	return users, nil
@@ -229,7 +264,7 @@ func (s *storage) CreateUser(user User) (*User, error) {
 	query := `
 		INSERT INTO users (first_name, last_name, chat_id, username, avatar_url, title, description, language_code, country, city, country_code, notifications_enabled_at, referrer_id)
 		VALUES (:first_name, :last_name, :chat_id, :username, :avatar_url, :title, :description, :language_code, :country, :city, :country_code, :notifications_enabled_at, :referrer_id)
-		RETURNING id, first_name, last_name, chat_id, username, created_at, updated_at, avatar_url, title, description, language_code, country, city, country_code, followers_count, requests_count, notifications_enabled_at, hidden_at, published_at, referrer_id;
+		RETURNING id, first_name, last_name, chat_id, username, created_at, updated_at, avatar_url, title, description, language_code, country, city, country_code, notifications_enabled_at, hidden_at, published_at, referrer_id;
 	`
 
 	rows, err := s.pg.NamedQuery(query, user)
@@ -268,7 +303,7 @@ func (s *storage) UpdateUser(userID int64, user User, badges, opportunities []in
 		UPDATE users
 		SET first_name =$1, last_name = $2, updated_at = NOW(), avatar_url = $3, title = $4, description = $5, country = $6, city = $7, country_code = $8
 		WHERE id = $9
-		RETURNING id, first_name, last_name, chat_id, username, created_at, updated_at, published_at, avatar_url, title, description, language_code, country, city, country_code, followers_count, requests_count, notifications_enabled_at, hidden_at;
+		RETURNING id, first_name, last_name, chat_id, username, created_at, updated_at, published_at, avatar_url, title, description, language_code, country, city, country_code, notifications_enabled_at, hidden_at;
 	`
 
 	err = s.pg.QueryRowx(
@@ -486,58 +521,11 @@ func (s *storage) HideUser(userID int64) error {
 	return nil
 }
 
-type UserCollaborationRequest struct {
-	ID          int64     `json:"id" db:"id"`
-	UserID      int64     `json:"user_id" db:"user_id"`
-	RequesterID int64     `json:"requester_id" db:"requester_id"`
-	Message     string    `json:"message" db:"message"`
-	CreatedAt   time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
-	Status      string    `json:"status" db:"status"`
-	Requester   *User     `json:"requester" db:"requester"`
-} // @Name UserCollaborationRequest
-
-func (s *storage) CreateUserCollaboration(userID, receiverID int64, message string) (*UserCollaborationRequest, error) {
-	var res UserCollaborationRequest
-
-	query := `
-		INSERT INTO user_collaboration_requests (user_id, requester_id, message)
-		VALUES ($1, $2, $3)
-		RETURNING id, user_id, requester_id, message, created_at, updated_at, status;
-	`
-
-	err := s.pg.QueryRowx(query, receiverID, userID, message).StructScan(&res)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &res, nil
-}
-
-func (s *storage) ListUserCollaborations(from time.Time) ([]UserCollaborationRequest, error) {
-	requests := make([]UserCollaborationRequest, 0)
-
-	query := `
-		SELECT id, user_id, requester_id, message, created_at, updated_at, status
-		FROM user_collaboration_requests
-		WHERE created_at > $1
-	`
-
-	err := s.pg.Select(&requests, query, from)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return requests, nil
-}
-
 func (s *storage) FindMatchingUsers(exclude int64, opportunities []int64, badges []int64) ([]User, error) {
 	query := `
 		SELECT DISTINCT u.id, u.first_name, u.last_name, u.chat_id, u.username, u.created_at, u.updated_at,
 			u.published_at, u.avatar_url, u.title, u.description, u.language_code, u.country, u.city, u.country_code,
-			u.followers_count, u.requests_count, u.notifications_enabled_at, u.hidden_at
+			u.notifications_enabled_at, u.hidden_at
 		FROM users u
 		JOIN user_opportunities uo ON u.id = uo.user_id
 		JOIN user_badges ub ON u.id = ub.user_id
@@ -590,7 +578,7 @@ func (s *storage) UpdateUserAvatarURL(userID int64, avatarURL string) error {
 
 func (s *storage) ListNewUserProfiles(from time.Time) ([]User, error) {
 	query := `
-		SELECT u.id, u.first_name, u.last_name, u.chat_id, u.username, u.created_at, u.updated_at, u.published_at, u.avatar_url, u.title, u.description, u.language_code, u.country, u.city, u.country_code, u.followers_count, u.requests_count, u.notifications_enabled_at, u.hidden_at
+		SELECT u.id, u.first_name, u.last_name, u.chat_id, u.username, u.created_at, u.updated_at, u.published_at, u.avatar_url, u.title, u.description, u.language_code, u.country, u.city, u.country_code, u.notifications_enabled_at, u.hidden_at
 		FROM users u
 		WHERE u.published_at > $1 AND u.hidden_at IS NULL AND u.rating > 600
 	`
@@ -598,26 +586,6 @@ func (s *storage) ListNewUserProfiles(from time.Time) ([]User, error) {
 	users := make([]User, 0)
 
 	err := s.pg.Select(&users, query, from)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return users, nil
-}
-
-func (s *storage) GetUserPreview(userID int64) ([]User, error) {
-	query := `
-		SELECT u.avatar_url
-		FROM users u
-		WHERE u.hidden_at IS NULL AND u.published_at IS NOT NULL AND u.avatar_url IS NOT NULL AND u.id != $1
-		ORDER BY random()
-		LIMIT 3
-	`
-
-	users := make([]User, 0)
-
-	err := s.pg.Select(&users, query, userID)
 
 	if err != nil {
 		return nil, err
@@ -647,26 +615,6 @@ func (s *storage) GetCollaborationOwner(collaborationID int64) (*User, error) {
 	return user, nil
 }
 
-func (s *storage) FindUserCollaborationRequest(requesterID int64, username string) (*UserCollaborationRequest, error) {
-	var request UserCollaborationRequest
-
-	query := `
-		SELECT id, user_id, requester_id, message, created_at, updated_at, status
-		FROM user_collaboration_requests
-		WHERE user_id = (SELECT id FROM users WHERE username = $1) AND requester_id = $2
-	`
-
-	err := s.pg.Get(&request, query, username, requesterID)
-
-	if err != nil {
-		if IsNoRowsError(err) {
-			return nil, ErrNotFound
-		}
-	}
-
-	return &request, nil
-}
-
 func (s *storage) DeleteUserByID(userID int64) error {
 	// first delete collaboration_requests -> collaboration_badges, collborations, user_collaboration_requests, user_opportunities, user_badges, user_followers, users
 
@@ -692,11 +640,6 @@ func (s *storage) DeleteUserByID(userID int64) error {
 	}
 
 	if _, err := tx.Exec("DELETE FROM collaborations WHERE user_id = $1", userID); err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	if _, err := tx.Exec("DELETE FROM user_collaboration_requests WHERE user_id = $1 OR requester_id = $1", userID); err != nil {
 		tx.Rollback()
 		return err
 	}
@@ -731,46 +674,6 @@ func (s *storage) DeleteUserByID(userID int64) error {
 	}
 
 	return nil
-}
-
-func (s *storage) GetUserFollowing(uid, targetID int64) ([]User, error) {
-	users := make([]User, 0)
-
-	query := `
-		SELECT u.id, u.username, u.first_name, u.avatar_url, u.title, u.description, u.country, u.city, u.country_code,
-		       EXISTS (SELECT 1 FROM user_followers uf WHERE uf.user_id = u.id AND uf.follower_id = $1) as is_following
-		FROM users u
-		JOIN user_followers uf ON u.id = uf.user_id
-		WHERE uf.follower_id = $2 AND u.hidden_at IS NULL AND u.published_at IS NOT NULL
-	`
-
-	err := s.pg.Select(&users, query, uid, targetID)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return users, nil
-}
-
-func (s *storage) GetUserFollowers(uid, targetID int64) ([]User, error) {
-	users := make([]User, 0)
-
-	query := `
-		SELECT u.id, u.username, u.first_name, u.avatar_url, u.title, u.description, u.country, u.city, u.country_code,
-		       EXISTS (SELECT 1 FROM user_followers uf WHERE uf.user_id = u.id AND uf.follower_id = $1) as is_following
-		FROM users u
-		JOIN user_followers uf ON u.id = uf.follower_id
-		WHERE uf.user_id = $2 AND u.hidden_at IS NULL AND u.published_at IS NOT NULL
-	`
-
-	err := s.pg.Select(&users, query, uid, targetID)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return users, nil
 }
 
 func (s *storage) ListProfilesForModeration() ([]User, error) {
@@ -838,77 +741,4 @@ func (s *storage) UpdateProfileScore(userID int64, score int) error {
 	}
 
 	return nil
-}
-
-func (s *storage) UpdateLastCheckIn(userID int64) (bool, error) {
-	query := `
-    WITH check_reward AS (
-        SELECT id, last_check_in
-        FROM users
-        WHERE id = $1 AND (last_check_in IS NULL OR last_check_in < CURRENT_DATE)
-        FOR UPDATE
-    )
-    UPDATE users
-    SET last_check_in = NOW(), peatch_points = peatch_points + 10
-    WHERE id = (SELECT id FROM check_reward)
-    RETURNING id, last_check_in;
-    `
-
-	var lastCheckIn sql.NullTime
-
-	err := s.pg.QueryRow(query, userID).Scan(&userID, &lastCheckIn)
-	if IsNoRowsError(err) {
-		return false, nil
-	} else if err != nil {
-		return false, err
-	}
-
-	return true, nil
-}
-
-func (s *storage) UpdateUserPoints(userID int64, points int) error {
-	query := `
-		UPDATE users
-		SET peatch_points = peatch_points + $1
-		WHERE id = $2
-	`
-
-	res, err := s.pg.Exec(query, points, userID)
-
-	if err != nil {
-		return err
-	}
-
-	if rowsAffected, _ := res.RowsAffected(); rowsAffected == 0 {
-		return ErrNotFound
-	}
-
-	return nil
-}
-
-func (s *storage) ListUserReceivedRequests(userID int64) ([]UserCollaborationRequest, error) {
-	requests := make([]UserCollaborationRequest, 0)
-
-	query := `
-		SELECT 
-		    uc.id, 
-		    uc.user_id,
-		    uc.requester_id, 
-		    uc.message,
-		    uc.created_at, 
-		    uc.updated_at,
-		    uc.status,
-		    to_jsonb(u) as requester
-		FROM user_collaboration_requests uc
-		JOIN users u ON uc.requester_id = u.id
-		WHERE user_id = $1
-	`
-
-	err := s.pg.Select(&requests, query, userID)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return requests, nil
 }

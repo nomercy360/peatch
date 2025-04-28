@@ -39,14 +39,6 @@ import type { Opportunity } from "./Opportunity";
     */
     first_name?: string;
     /**
-     * @type integer | undefined
-    */
-    followers_count?: number;
-    /**
-     * @type integer | undefined
-    */
-    following_count?: number;
-    /**
      * @type string | undefined
     */
     hidden_at?: string;
@@ -59,10 +51,6 @@ import type { Opportunity } from "./Opportunity";
     */
     is_following?: boolean;
     /**
-     * @type boolean | undefined
-    */
-    is_liked?: boolean;
-    /**
      * @type string | undefined
     */
     last_check_in?: string;
@@ -71,21 +59,17 @@ import type { Opportunity } from "./Opportunity";
     */
     last_name?: string;
     /**
-     * @type integer | undefined
-    */
-    likes_count?: number;
-    /**
      * @type array | undefined
     */
     opportunities?: Opportunity[];
     /**
-     * @type integer | undefined
-    */
-    peatch_points?: number;
-    /**
      * @type string | undefined
     */
     published_at?: string;
+    /**
+     * @type integer | undefined
+    */
+    rating?: number;
     /**
      * @type string | undefined
     */

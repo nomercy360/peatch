@@ -3,10 +3,10 @@ import countryFlags from '~/assets/countries.json'
 import { CountryFlag } from '~/components/edit/selectLocation'
 
 export const LocationBadge = ({
-	country,
-	city,
-	countryCode,
-}: {
+																country,
+																city,
+																countryCode,
+															}: {
 	country: string
 	city: string
 	countryCode: string
@@ -16,7 +16,8 @@ export const LocationBadge = ({
 	)
 
 	return (
-		<div class="flex h-5 flex-row items-center justify-center gap-[5px] rounded bg-muted text-muted-foreground px-2.5 text-xs font-semibold ">
+		<div
+			class="mt-2 flex h-5 flex-row items-center justify-center gap-[5px] rounded text-muted-foreground text-xs font-semibold ">
 			<Show when={findFlag}>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
