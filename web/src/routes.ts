@@ -1,10 +1,35 @@
-import { lazy } from 'solid-js'
 import type { RouteDefinition } from '@solidjs/router'
 
 import UserProfilePage from '~/pages/users/handle'
 import FeedPage from '~/pages/feed'
 import PostsPage from '~/pages/posts'
 import NavigationTabs from '~/components/navigation-tabs'
+
+import UserEditPage from '~/pages/users/edit/index'
+import UserEditGeneralPage from '~/pages/users/edit/general'
+import UserEditBadgesPage from '~/pages/users/edit/badges'
+import UserEditCreateBadgePage from '~/pages/users/edit/createBadge'
+import UserEditLocationPage from '~/pages/users/edit/location'
+import UserEditInterestsPage from '~/pages/users/edit/interests'
+import UserEditDescriptionPage from '~/pages/users/edit/description'
+import UserEditImagePage from '~/pages/users/edit/image'
+
+import CollaborationPage from '~/pages/collaborations/id'
+import CollaborationEditPage from '~/pages/collaborations/edit'
+import CollaborationEditGeneralPage from '~/pages/collaborations/edit/general'
+import CollaborationEditLocationPage from '~/pages/collaborations/edit/location'
+import CollaborationEditCreateBadgePage from '~/pages/collaborations/edit/createBadge'
+import CollaborationEditBadgesPage from '~/pages/collaborations/edit/badges'
+import CollaborationEditInterestsPage from '~/pages/collaborations/edit/interests'
+
+import PostIdPage from '~/pages/posts/id'
+import PostEditPage from '~/pages/posts/edit'
+import PostEditGeneralPage from '~/pages/posts/edit/general'
+import PostEditLocationPage from '~/pages/posts/edit/location'
+
+import UserCollaboratePage from '~/pages/users/collaborate'
+import CollaborationCollaboratePage from '~/pages/collaborations/collaborate'
+import NotFoundPage from './pages/404'
 
 export const routes: RouteDefinition[] = [
 	{
@@ -26,103 +51,97 @@ export const routes: RouteDefinition[] = [
 		component: UserProfilePage,
 	},
 	{
-		path: '/users/activity',
-		component: lazy(() => import('~/pages/users/activity')),
-	},
-	{
 		path: '/users/edit',
-		component: lazy(() => import('~/pages/users/edit/index')),
+		component: UserEditPage,
 		children: [
 			{
 				path: '/',
-				component: lazy(() => import('~/pages/users/edit/general')),
+				component: UserEditGeneralPage,
 			},
 			{
 				path: '/badges',
-				component: lazy(() => import('~/pages/users/edit/badges')),
+				component: UserEditBadgesPage,
 			},
 			{
 				path: '/create-badge',
-				component: lazy(() => import('~/pages/users/edit/createBadge')),
+				component: UserEditCreateBadgePage,
 			},
 			{
 				path: '/location',
-				component: lazy(() => import('~/pages/users/edit/location')),
+				component: UserEditLocationPage,
 			},
 			{
 				path: '/interests',
-				component: lazy(() => import('~/pages/users/edit/interests')),
+				component: UserEditInterestsPage,
 			},
 			{
 				path: '/description',
-				component: lazy(() => import('~/pages/users/edit/description')),
+				component: UserEditDescriptionPage,
 			},
 			{
 				path: '/image',
-				component: lazy(() => import('~/pages/users/edit/image')),
+				component: UserEditImagePage,
 			},
 		],
 	},
 	{
 		path: '/collaborations/:id',
-		component: lazy(() => import('~/pages/collaborations/id')),
+		component: CollaborationPage,
 	},
 	{
 		path: '/collaborations/edit/:id?',
-		component: lazy(() => import('~/pages/collaborations/edit')),
+		component: CollaborationEditPage,
 		children: [
 			{
 				path: '/',
-				component: lazy(() => import('~/pages/collaborations/edit/general')),
+				component: CollaborationEditGeneralPage,
 			},
 			{
 				path: '/location',
-				component: lazy(() => import('~/pages/collaborations/edit/location')),
+				component: CollaborationEditLocationPage,
 			},
 			{
 				path: '/create-badge',
-				component: lazy(
-					() => import('~/pages/collaborations/edit/createBadge'),
-				),
+				component: CollaborationEditCreateBadgePage,
 			},
 			{
 				path: '/badges',
-				component: lazy(() => import('~/pages/collaborations/edit/badges')),
+				component: CollaborationEditBadgesPage,
 			},
 			{
 				path: '/interests',
-				component: lazy(() => import('~/pages/collaborations/edit/interests')),
+				component: CollaborationEditInterestsPage,
 			},
 		],
 	},
 	{
 		path: '/posts/:id',
-		component: lazy(() => import('~/pages/posts/id')),
+		component: PostIdPage,
 	},
 	{
 		path: '/posts/edit/:id?',
-		component: lazy(() => import('~/pages/posts/edit')),
+		component: PostEditPage,
 		children: [
 			{
 				path: '/',
-				component: lazy(() => import('~/pages/posts/edit/general')),
+				component: PostEditGeneralPage,
 			},
 			{
 				path: '/location',
-				component: lazy(() => import('~/pages/posts/edit/location')),
+				component: PostEditLocationPage,
 			},
 		],
 	},
 	{
 		path: '/users/:handle/collaborate',
-		component: lazy(() => import('~/pages/users/collaborate')),
+		component: UserCollaboratePage,
 	},
 	{
 		path: 'collaborations/:id/collaborate',
-		component: lazy(() => import('~/pages/collaborations/collaborate')),
+		component: CollaborationCollaboratePage,
 	},
 	{
 		path: '**',
-		component: lazy(() => import('./pages/404')),
+		component: NotFoundPage,
 	},
 ]

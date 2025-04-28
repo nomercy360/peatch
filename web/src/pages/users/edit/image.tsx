@@ -11,9 +11,11 @@ import {
 	uploadToS3,
 } from '~/lib/api'
 import { usePopup } from '~/lib/usePopup'
+import { useTranslations } from '~/lib/locale-context'
 
-export default function SelectBadges() {
+export default function ImageUpload() {
 	const mainButton = useMainButton()
+	const { t } = useTranslations()
 	const [imgFile, setImgFile] = createSignal<File | null>(null)
 	const [_, setImgUploadProgress] = createSignal(0)
 
@@ -21,7 +23,7 @@ export default function SelectBadges() {
 	const { showAlert } = usePopup()
 
 	const imgFromCDN = store.user.avatar_url
-		? CDN_URL + '/' + store.user.avatar_url
+		? `https://assets.peatch.io/cdn-cgi/image/width=400/${store.user.avatar_url}`
 		: ''
 
 	const [previewUrl, setPreviewUrl] = createSignal(imgFromCDN || '')
@@ -95,9 +97,9 @@ export default function SelectBadges() {
 
 	createEffect(() => {
 		if (editUser.avatar_url || imgFile()) {
-			mainButton.enable('Save')
+			mainButton.enable(t('common.buttons.save'))
 		} else {
-			mainButton.disable('Save')
+			mainButton.disable(t('common.buttons.save'))
 		}
 	})
 
@@ -107,8 +109,8 @@ export default function SelectBadges() {
 
 	return (
 		<FormLayout
-			title="Upload your photo"
-			description="Select one with good lighting and minimal background details"
+			title={t('pages.users.edit.image.title')}
+			description={t('pages.users.edit.image.description')}
 			screen={5}
 			totalScreens={6}
 		>
@@ -123,7 +125,7 @@ export default function SelectBadges() {
 						</Match>
 					</Switch>
 					<button class="h-10 text-link" onClick={generateRandomAvatar}>
-						Generate a random avatar
+						{t('common.buttons.generateRandomAvatar')}
 					</button>
 				</div>
 			</div>

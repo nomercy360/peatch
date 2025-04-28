@@ -138,7 +138,7 @@ func (s *storage) CreateCollaboration(userID int64, collaboration Collaboration,
 	query := `
 		INSERT INTO collaborations (user_id, opportunity_id, title, description, is_payable, country, city, country_code)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-		RETURNING id, user_id, opportunity_id, title, description, is_payable, published_at, hidden_at, created_at, updated_at, country, city, country_code,
+		RETURNING id, user_id, opportunity_id, title, description, is_payable, published_at, hidden_at, created_at, updated_at, country, city, country_code
 	`
 
 	if err := tx.QueryRowx(

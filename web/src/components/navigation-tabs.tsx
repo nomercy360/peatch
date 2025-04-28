@@ -2,38 +2,32 @@ import { cn } from '~/lib/utils'
 import { useLocation } from '@solidjs/router'
 import { Link } from '~/components/link'
 import { store } from '~/store'
-import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
 import { useMainButton } from '~/lib/useMainButton'
 import { onMount } from 'solid-js'
+import { useTranslations } from '~/lib/locale-context'
 
 export default function NavigationTabs(props: any) {
 	const location = useLocation()
 	const mainButton = useMainButton()
+	const { t } = useTranslations()
 
 	const tabs = [
 		{
 			href: '/posts',
 			icon: 'local_fire_department',
-			name: 'Hot',
+			name: t('common.tabs.posts'),
 		},
 		{
 			href: '/',
 			icon: 'group',
-			name: 'People',
+			name: t('common.tabs.network'),
 		},
 		{
 			href: '/collaborations/edit',
 			icon: 'edit_note',
-			name: 'New',
+			name: t('common.tabs.collaborations'),
 		},
 	]
-
-	function getUserInitials() {
-		const firstInitial = store.user?.first_name ? store.user?.first_name[0] : ''
-		const lastInitial = store.user?.last_name ? store.user?.last_name[0] : ''
-
-		return `${firstInitial}${lastInitial}`
-	}
 
 	onMount(() => {
 		mainButton.hide()
@@ -49,13 +43,15 @@ export default function NavigationTabs(props: any) {
 						state={{ from: location.pathname }}
 						class="flex items-center justify-center"
 					>
-						<Avatar>
-							<AvatarImage class="object-cover"
-													 src={`https://assets.peatch.io/cdn-cgi/image/width=100/${store.user?.avatar_url}`} />
-							<AvatarFallback>
-								{getUserInitials()}
-							</AvatarFallback>
-						</Avatar>
+						<img
+							src={`https://assets.peatch.io/cdn-cgi/image/width=100/${store.user?.avatar_url}`}
+							alt="User Avatar"
+							class="h-10 w-10 rounded-full object-cover"
+							onError={(e) => {
+								const target = e.target as HTMLImageElement
+								target.src = '/fallback-avatar.svg'
+							}}
+						/>
 					</Link>
 				</div>
 				<div class="flex flex-1 justify-evenly">

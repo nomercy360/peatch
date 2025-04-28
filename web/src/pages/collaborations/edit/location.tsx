@@ -9,9 +9,11 @@ import {
 } from '~/store'
 import SelectLocation from '~/components/edit/selectLocation'
 import { createCollaboration, updateCollaboration } from '~/lib/api'
+import { useTranslations } from '~/lib/locale-context'
 
 export default function SelectBadges() {
 	const mainButton = useMainButton()
+	const { t } = useTranslations()
 
 	const navigate = useNavigate()
 
@@ -37,9 +39,9 @@ export default function SelectBadges() {
 
 	createEffect(() => {
 		if (editCollaboration.country && editCollaboration.country_code) {
-			mainButton.enable('Choose & Save')
+			mainButton.enable(t('common.buttons.chooseAndSave'))
 		} else {
-			mainButton.disable('Choose & Save')
+			mainButton.disable(t('common.buttons.chooseAndSave'))
 		}
 	})
 
@@ -49,8 +51,8 @@ export default function SelectBadges() {
 
 	return (
 		<FormLayout
-			title="Any special location?"
-			description="This will help us to recommend it to other people"
+			title={t('pages.collaborations.edit.location.title')}
+			description={t('pages.collaborations.edit.location.description')}
 			screen={4}
 			totalScreens={6}
 		>

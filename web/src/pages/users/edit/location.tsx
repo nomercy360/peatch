@@ -4,9 +4,11 @@ import { createEffect, onCleanup, onMount } from 'solid-js'
 import { editUser, setEditUser } from '~/store'
 import SelectLocation from '~/components/edit/selectLocation'
 import { useNavigate } from '@solidjs/router'
+import { useTranslations } from '~/lib/locale-context'
 
 export default function SelectBadges() {
 	const mainButton = useMainButton()
+	const { t } = useTranslations()
 
 	const navigate = useNavigate()
 
@@ -32,8 +34,8 @@ export default function SelectBadges() {
 
 	return (
 		<FormLayout
-			title="Where do you live?"
-			description="It will appears in your profile card, everyone will see it"
+			title={t('pages.users.edit.location.title')}
+			description={t('pages.users.edit.location.description')}
 			screen={4}
 			totalScreens={6}
 		>

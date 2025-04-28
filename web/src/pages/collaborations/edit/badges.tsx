@@ -2,16 +2,18 @@ import { SelectBadge } from '~/components/edit/selectBadge'
 import { FormLayout } from '~/components/edit/layout'
 import { useMainButton } from '~/lib/useMainButton'
 import { useNavigate, useParams, useSearchParams } from '@solidjs/router'
-import { createEffect, createResource, createSignal, onCleanup } from 'solid-js'
+import { createEffect, createSignal, onCleanup } from 'solid-js'
 import { editCollaboration, setEditCollaboration } from '~/store'
 import { fetchBadges } from '~/lib/api'
 import { Badge } from '~/gen/types'
 import { createQuery } from '@tanstack/solid-query'
+import { useTranslations } from '~/lib/locale-context'
 
 export default function SelectBadges() {
 	const mainButton = useMainButton()
 
 	const [badgeSearch, setBadgeSearch] = createSignal('')
+	const { t } = useTranslations()
 
 	const fetchBadgeQuery = createQuery(() => ({
 		queryKey: ['badges'],
@@ -53,9 +55,9 @@ export default function SelectBadges() {
 
 	createEffect(() => {
 		if (editCollaboration.badge_ids && editCollaboration.badge_ids.length > 0) {
-			mainButton.enable('Next')
+			mainButton.enable(t('common.buttons.next'))
 		} else {
-			mainButton.disable('Next')
+			mainButton.disable(t('common.buttons.next'))
 		}
 	})
 
@@ -65,8 +67,8 @@ export default function SelectBadges() {
 
 	return (
 		<FormLayout
-			title="Who are you looking for?"
-			description="This will help us to recommend it to other people"
+			title={t('pages.collaborations.edit.badges.title')}
+			description={t('pages.collaborations.edit.badges.description')}
 			screen={2}
 			totalScreens={6}
 		>

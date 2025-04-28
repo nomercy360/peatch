@@ -21,7 +21,7 @@ import {
 	unfollowUser,
 } from '~/lib/api'
 import { setUser, store } from '~/store'
-import ActionDonePopup from '~/components/ActionDonePopup'
+import ActionDonePopup from '~/components/action-done-popup'
 import { useMainButton } from '~/lib/useMainButton'
 import { usePopup } from '~/lib/usePopup'
 import { createMutation, createQuery } from '@tanstack/solid-query'
@@ -30,6 +30,7 @@ import { Link } from '~/components/link'
 import { UserProfile } from '~/gen/types'
 import { PeatchIcon } from '~/components/peatch-icon'
 import { NotificationIcon } from '~/pages/users/activity'
+import { useTranslations } from '~/lib/locale-context'
 
 export default function UserProfilePage() {
 	const mainButton = useMainButton()
@@ -41,6 +42,8 @@ export default function UserProfilePage() {
 	const [searchParams] = useSearchParams()
 
 	const username = params.handle
+
+	const { t } = useTranslations()
 
 	const query = createQuery(() => ({
 		queryKey: ['profiles', username],
@@ -127,14 +130,14 @@ export default function UserProfilePage() {
 	createEffect(() => {
 		if (isCurrentUserProfile) {
 			if (!store.user.published_at) {
-				mainButton.enable('Publish')
+				mainButton.enable(t('common.buttons.publish'))
 				mainButton.onClick(publish)
 			} else {
 				if (published()) {
 					mainButton.onClick(closePopup)
-					mainButton.enable('Back to profile')
+					mainButton.enable(t('common.buttons.done'))
 				} else {
-					mainButton.enable('Edit')
+					mainButton.enable(t('common.buttons.edit'))
 					mainButton.onClick(navigateToEdit)
 				}
 			}
@@ -182,22 +185,22 @@ export default function UserProfilePage() {
 					<Navigate href={'/404'} />
 				</Match>
 				<Match when={query.isSuccess}>
-
 					<div class="h-fit min-h-screen p-2 bg-secondary items-center flex flex-col text-center">
 						<Show when={isCurrentUserProfile && store.user.hidden_at}>
 							<button
 								onClick={showInfoPopup}
 								class="absolute left-4 top-4 flex size-8 items-center justify-center rounded-lg bg-secondary"
 							>
-										<span class="material-symbols-rounded">
-											visibility_off
-										</span>
+								<span class="material-symbols-rounded">
+									visibility_off
+								</span>
 							</button>
 						</Show>
 						<img
 							alt="User Avatar"
-							class="w-32 aspect-square bg-cover bg-center relative rounded-xl"
-							src={CDN_URL + '/' + query.data.avatar_url} />
+							class="w-32 aspect-square bg-cover bg-center relative rounded-xl object-cover"
+							src={`https://assets.peatch.io/cdn-cgi/image/width=400/${query.data.avatar_url}`}
+						/>
 						<Show when={store.user.published_at && !store.user.hidden_at}>
 							<button
 								class="flex h-8 flex-row items-center space-x-1 px-3 bg-background mt-2 shadow-md border rounded-2xl"
@@ -207,7 +210,7 @@ export default function UserProfilePage() {
 									waving_hand
 								</span>
 								<span class="text-sm">
-									Say hi
+									{t('pages.users.sayHi')}
 								</span>
 							</button>
 						</Show>
@@ -252,7 +255,7 @@ export default function UserProfilePage() {
 								/>
 							</Show>
 							<p class="pt-4 pb-2 text-xl font-extrabold text-start">
-								Available for
+								{t('pages.users.availableFor')}
 							</p>
 							<div class="flex w-full flex-col items-center justify-start gap-1">
 								<For

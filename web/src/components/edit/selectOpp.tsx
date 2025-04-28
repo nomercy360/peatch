@@ -1,5 +1,6 @@
 import { createEffect, createSignal, For, Show, Suspense } from 'solid-js'
 import { Opportunity } from '~/gen/types'
+import { useTranslations } from '~/lib/locale-context'
 
 export function SelectOpportunity(props: {
 	selected: number[] | number
@@ -9,6 +10,7 @@ export function SelectOpportunity(props: {
 }) {
 	const [filtered, setFiltered] = createSignal(props.opportunities)
 	const [search, setSearch] = createSignal('')
+	const { t } = useTranslations()
 
 	const onClick = (oppId: number) => {
 		if (Array.isArray(props.selected)) {
@@ -46,7 +48,7 @@ export function SelectOpportunity(props: {
 			<div class="mt-5 flex h-10 w-full bg-secondary flex-row items-center justify-between rounded-lg px-2.5">
 				<input
 					class="h-10 w-full text-main bg-transparent placeholder:text-hint focus:outline-none"
-					placeholder="Search collaboration opportunities"
+					placeholder={t('pages.collaborations.edit.interests.searchPlaceholder')}
 					type="text"
 					onInput={e => setSearch(e.currentTarget.value)}
 					value={search()}

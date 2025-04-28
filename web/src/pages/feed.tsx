@@ -10,23 +10,22 @@ import {
 import { User, UserProfile } from '~/gen/types'
 import { fetchUsers } from '~/lib/api'
 import { Link } from '~/components/link'
-import BadgeList from '~/components/BadgeList'
+import BadgeList from '~/components/badge-list'
 import useDebounce from '~/lib/useDebounce'
 import { createQuery } from '@tanstack/solid-query'
 import { store } from '~/store'
-import FillProfilePopup from '~/components/FillProfilePopup'
+import FillProfilePopup from '~/components/fill-profile-popup'
 import { useMainButton } from '~/lib/useMainButton'
 import { useNavigate } from '@solidjs/router'
 import { LocationBadge } from '~/components/location-badge'
+import { useTranslations } from '~/lib/locale-context'
 
 
 export const [search, setSearch] = createSignal('')
 
 export default function FeedPage() {
+	const { t } = useTranslations()
 	const updateSearch = useDebounce(setSearch, 350)
-
-	const mainButton = useMainButton()
-	const navigate = useNavigate()
 
 	const query = createQuery(() => ({
 		queryKey: ['users', search()],
@@ -43,21 +42,6 @@ export default function FeedPage() {
 		window.addEventListener('scroll', onScroll)
 		return () => window.removeEventListener('scroll', onScroll)
 	})
-
-	const toCreateCollab = () => {
-		navigate('/collaborations/edit')
-	}
-
-	const [dropDown, setDropDown] = createSignal(false)
-
-	const closeDropDown = () => {
-		setDropDown(false)
-	}
-
-	const openDropDown = () => {
-		document.body.style.overflow = 'hidden'
-		setDropDown(true)
-	}
 
 	onMount(() => {
 		window.Telegram.WebApp.CloudStorage.getItem(
@@ -102,63 +86,8 @@ export default function FeedPage() {
 		setCommunityPopup(value !== 'closed')
 	}
 
-	onMount(() => {
-		// disable scroll on body when drawer is open
-		document.body.style.overflow = 'hidden'
-	})
-
-	onCleanup(() => {
-		mainButton.hide()
-		mainButton.offClick(toCreateCollab)
-		mainButton.offClick(openDropDown)
-		document.removeEventListener('click', closeDropDownOnOutsideClick)
-		document.body.style.overflow = 'auto'
-	})
-
-	// if dropdown is open, every click outside of the dropdown will close
-	const closeDropDownOnOutsideClick = (e: MouseEvent) => {
-		if (
-			dropDown() &&
-			!e.composedPath().includes(document.getElementById('dropdown-menu')!)
-		) {
-			closeDropDown()
-		}
-	}
-
-	document.addEventListener('click', closeDropDownOnOutsideClick)
-
 	return (
 		<div class="flex h-screen flex-col">
-			<Show when={dropDown()}>
-				<div
-					class="fixed inset-0 z-50 flex h-screen w-full flex-col items-center justify-end px-4 py-2.5"
-					style={{
-						'background-color':
-							window.Telegram.WebApp.colorScheme === 'dark'
-								? 'rgba(0, 0, 0, 0.8)'
-								: 'rgba(255, 255, 255, 0.8)',
-					}}
-				>
-					<div
-						id="dropdown-menu"
-						class="flex w-full flex-col items-center justify-center rounded-xl bg-secondary"
-					>
-						<button
-							class="flex h-12 w-full items-center justify-center bg-transparent"
-							onClick={() => navigate('/collaborations/edit')}
-						>
-							New collaboration
-						</button>
-						<div class="h-px w-full bg-border" />
-						<button
-							class="flex h-12 w-full items-center justify-center bg-transparent"
-							onClick={() => navigate('/posts/edit')}
-						>
-							New post
-						</button>
-					</div>
-				</div>
-			</Show>
 			<div class="flex w-full flex-shrink-0 flex-col items-center justify-between space-y-4 border-b p-4">
 				<Show when={!store.user.published_at && profilePopup()}>
 					<FillProfilePopup onClose={() => closePopup('profilePopup')} />
@@ -169,7 +98,7 @@ export default function FeedPage() {
 				<div class="relative flex h-10 w-full flex-row items-center justify-center rounded-lg bg-secondary">
 					<input
 						class="h-full w-full bg-transparent px-2.5 placeholder:text-secondary-foreground"
-						placeholder="Search people"
+						placeholder={t('common.search.people')}
 						type="text"
 						value={search()}
 						onInput={e => updateSearch(e.currentTarget.value)}

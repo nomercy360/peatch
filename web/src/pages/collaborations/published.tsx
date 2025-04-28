@@ -1,4 +1,4 @@
-import ActionDonePopup from '~/components/ActionDonePopup'
+import ActionDonePopup from '~/components/action-done-popup'
 
 export default function CollaborationPublished() {
 	return (

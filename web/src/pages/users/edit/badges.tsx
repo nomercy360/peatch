@@ -7,9 +7,11 @@ import { editUser, setEditUser } from '~/store'
 import { fetchBadges } from '~/lib/api'
 import { Badge } from '~/gen/types'
 import { createQuery } from '@tanstack/solid-query'
+import { useTranslations } from '~/lib/locale-context'
 
 export default function SelectBadges() {
 	const mainButton = useMainButton()
+	const { t } = useTranslations()
 
 	const [badgeSearch, setBadgeSearch] = createSignal('')
 
@@ -61,8 +63,8 @@ export default function SelectBadges() {
 
 	return (
 		<FormLayout
-			title="What describes you?"
-			description="This will help us to recommend you to other people"
+			title={t('pages.users.edit.badges.title')}
+			description={t('pages.users.edit.badges.description')}
 			screen={2}
 			totalScreens={6}
 		>

@@ -10,7 +10,7 @@ import {
 import { useNavigate, useParams, useSearchParams } from '@solidjs/router'
 import { CDN_URL, fetchCollaboration, publishCollaboration } from '~/lib/api'
 import { store } from '~/store'
-import ActionDonePopup from '~/components/ActionDonePopup'
+import ActionDonePopup from '~/components/action-done-popup'
 import { useMainButton } from '~/lib/useMainButton'
 import { createMutation, createQuery } from '@tanstack/solid-query'
 import { queryClient } from '~/App'
@@ -169,7 +169,7 @@ export default function Collaboration() {
 							</div>
 						</div>
 						<div class="px-4 py-2.5">
-							<p class="text-lg font-normal text-secondary">
+							<p class="text-start mt-1 text-sm font-normal text-secondary-foreground">
 								{query.data.description}
 							</p>
 							<div class="mt-5 flex flex-row flex-wrap items-center justify-start gap-1">

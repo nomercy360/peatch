@@ -18,8 +18,8 @@ import {
 
 import { usePopup } from '~/lib/usePopup'
 import { useMainButton } from '~/lib/useMainButton'
-import ActionDonePopup from '~/components/ActionDonePopup'
-import TextArea from '~/components/TextArea'
+import ActionDonePopup from '~/components/action-done-popup'
+import TextArea from '~/components/text-area'
 import { Badge } from '~/gen/types'
 import { createQuery } from '@tanstack/solid-query'
 

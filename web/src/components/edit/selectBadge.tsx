@@ -8,6 +8,7 @@ import {
 	Switch,
 } from 'solid-js'
 import { Badge } from '~/gen/types'
+import { useTranslations } from '~/lib/locale-context'
 
 export function SelectBadge(props: {
 	selected: number[]
@@ -17,6 +18,7 @@ export function SelectBadge(props: {
 	badges: Badge[]
 	onCreateBadgeButtonClick: () => void
 }) {
+	const { t } = useTranslations()
 	const [filteredBadges, setFilteredBadges] = createSignal(props.badges)
 
 	const onBadgeClick = (badgeId: number) => {
@@ -48,7 +50,7 @@ export function SelectBadge(props: {
 					spellcheck={false}
 					maxLength={50}
 					class="h-10 w-full bg-transparent text-main placeholder:text-secondary-foreground focus:outline-none"
-					placeholder="Search for a badge"
+					placeholder={t('pages.collaborations.edit.badges.searchPlaceholder')}
 					type="text"
 					onInput={e => props.setSearch(e.currentTarget.value)}
 					value={props.search}
@@ -58,7 +60,7 @@ export function SelectBadge(props: {
 						class="flex h-10 items-center justify-center px-2.5 text-sm text-secondary-foreground"
 						onClick={() => props.setSearch('')}
 					>
-						Clear
+						{t('common.buttons.clear')}
 					</button>
 				</Show>
 			</div>

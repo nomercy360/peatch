@@ -6,9 +6,11 @@ import { editUser, setEditUser } from '~/store'
 import { postBadge } from '~/lib/api'
 import { createStore } from 'solid-js/store'
 import CreateBadge from '~/components/edit/createBadge'
+import { useTranslations } from '~/lib/locale-context'
 
 export default function SelectBadges() {
 	const mainButton = useMainButton()
+	const { t } = useTranslations()
 
 	const [searchParams, _] = useSearchParams()
 
@@ -21,7 +23,7 @@ export default function SelectBadges() {
 	const publishBadge = async () => {
 		if (createBadge.text && createBadge.color && createBadge.icon) {
 			const { id } = await postBadge(
-				createBadge.text,
+				createBadge.text as string,
 				createBadge.color,
 				createBadge.icon,
 			)
@@ -55,8 +57,8 @@ export default function SelectBadges() {
 
 	return (
 		<FormLayout
-			title={`Creating ${createBadge.text}`}
-			description="This will help us to recommend you to other people"
+			title={t('pages.collaborations.edit.createBadge.title')}
+			description={t('pages.collaborations.edit.createBadge.description')}
 			screen={2}
 			totalScreens={6}
 		>

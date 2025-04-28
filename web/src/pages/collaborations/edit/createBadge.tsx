@@ -6,14 +6,17 @@ import { editCollaboration, setEditCollaboration } from '~/store'
 import { postBadge } from '~/lib/api'
 import { createStore } from 'solid-js/store'
 import CreateBadge from '~/components/edit/createBadge'
+import { useTranslations } from '~/lib/locale-context'
 
 export default function SelectBadges() {
 	const mainButton = useMainButton()
 
 	const [searchParams] = useSearchParams()
 
+	const { t } = useTranslations()
+
 	const [createBadge, setCreateBadge] = createStore({
-		text: searchParams.badge_name,
+		text: searchParams.badge_name as string,
 		color: 'EF5DA8',
 		icon: '',
 	})
@@ -57,8 +60,8 @@ export default function SelectBadges() {
 
 	return (
 		<FormLayout
-			title={`Creating ${createBadge.text}`}
-			description="This will help us to recommend you to other people"
+			title={t('pages.collaborations.edit.createBadge.title', { name: createBadge.text })}
+			description={t('pages.collaborations.edit.createBadge.description')}
 			screen={2}
 			totalScreens={6}
 		>

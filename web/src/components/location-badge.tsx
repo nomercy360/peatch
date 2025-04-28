@@ -2,17 +2,14 @@ import { Show } from 'solid-js'
 import countryFlags from '~/assets/countries.json'
 import { CountryFlag } from '~/components/edit/selectLocation'
 
-export const LocationBadge = ({
-																country,
-																city,
-																countryCode,
-															}: {
+type LocationBadgeProps = {
 	country: string
 	city: string
 	countryCode: string
-}) => {
+}
+export const LocationBadge = (props: LocationBadgeProps) => {
 	const findFlag = countryFlags.find(
-		(flag: CountryFlag) => flag.code === countryCode,
+		(flag: CountryFlag) => flag.code === props.countryCode,
 	)
 
 	return (
@@ -27,7 +24,7 @@ export const LocationBadge = ({
 				/>
 			</Show>
 			<p class="text-secondary-bg text-xs font-semibold">
-				{city ? `${city}, ${country}` : country}
+				{props.city ? `${props.city}, ${props.country}` : props.country}
 			</p>
 		</div>
 	)

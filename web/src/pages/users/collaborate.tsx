@@ -15,17 +15,19 @@ import {
 	Show,
 	Switch,
 } from 'solid-js'
-import TextArea from '~/components/TextArea'
+import TextArea from '~/components/text-area'
 import { usePopup } from '~/lib/usePopup'
 import { useMainButton } from '~/lib/useMainButton'
-import BadgeList from '~/components/BadgeList'
-import ActionDonePopup from '~/components/ActionDonePopup'
+import BadgeList from '~/components/badge-list'
+import ActionDonePopup from '~/components/action-done-popup'
 import { createQuery } from '@tanstack/solid-query'
 import { LocationBadge } from '~/components/location-badge'
+import { useTranslations } from '~/lib/locale-context'
 
 export default function Collaborate() {
 	const params = useParams()
 	const username = params.handle
+	const { t } = useTranslations()
 
 	const [created, setCreated] = createSignal(false)
 	const mainButton = useMainButton()
@@ -78,9 +80,9 @@ export default function Collaborate() {
 		} else if (!existedRequest.loading && !existedRequest()) {
 			mainButton.onClick(postCollaboration)
 			if (message()) {
-				mainButton.enable('Send message')
+				mainButton.enable(t('common.buttons.startCollaboration'))
 			} else {
-				mainButton.disable('Send message')
+				mainButton.disable(t('common.buttons.startCollaboration'))
 			}
 		}
 
@@ -95,7 +97,7 @@ export default function Collaborate() {
 			<Switch>
 				<Match when={created()}>
 					<ActionDonePopup
-						action="Message sent"
+						action={t('pages.users.collaborate.title')}
 						description={`Once ${query.data.first_name} accepts your invitation, we'll share your contacts`}
 						callToAction={`There are 12 people with a similar profiles like ${query.data.first_name}`}
 					/>
@@ -106,7 +108,7 @@ export default function Collaborate() {
 				<Match when={!existedRequest.loading && query.data}>
 					<Show when={existedRequest()}>
 						<ActionDonePopup
-							action="Message sent"
+							action={t('pages.users.collaborate.title')}
 							description={`Once ${query.data.first_name} accepts your invitation, we'll share your contacts`}
 							callToAction={`There are 12 people with a similar profiles like ${query.data.first_name}`}
 						/>
@@ -115,7 +117,7 @@ export default function Collaborate() {
 						<div class="flex flex-col items-center justify-center p-4">
 							<div class="mb-4 mt-1 flex flex-col items-center justify-center text-center">
 								<p class="max-w-[220px] text-3xl">
-									Collaborate with {query.data.first_name}
+									{t('pages.users.collaborate.title')} {query.data.first_name}
 								</p>
 								<div class="my-5 flex w-full flex-row items-center justify-center">
 									<img
@@ -142,7 +144,7 @@ export default function Collaborate() {
 							<TextArea
 								value={message()}
 								setValue={(value: string) => setMessage(value)}
-								placeholder="Write a message to start collaboration"
+								placeholder={t('pages.users.collaborate.description')}
 							/>
 						</div>
 					</Show>

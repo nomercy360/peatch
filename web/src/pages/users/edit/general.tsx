@@ -3,9 +3,11 @@ import { editUser, setEditUser } from '~/store'
 import { useMainButton } from '~/lib/useMainButton'
 import { createEffect, onCleanup, onMount } from 'solid-js'
 import { useNavigate } from '@solidjs/router'
+import { useTranslations } from '~/lib/locale-context'
 
 export default function GeneralInfo() {
 	const mainButton = useMainButton()
+	const { t } = useTranslations()
 
 	const navigate = useNavigate()
 
@@ -32,15 +34,15 @@ export default function GeneralInfo() {
 
 	return (
 		<FormLayout
-			title="Introduce yourself"
-			description="It will appears in your profile card, everyone will see it"
+			title={t('pages.users.edit.general.title')}
+			description={t('pages.users.edit.general.description')}
 			screen={1}
 			totalScreens={6}
 		>
 			<div class="mt-5 flex w-full flex-col items-center justify-start gap-3">
 				<input
 					class="h-10 w-full rounded-lg bg-secondary px-2.5 text-main placeholder:text-secondary-foreground"
-					placeholder="First Name"
+					placeholder={t('pages.users.edit.general.firstName')}
 					autocomplete="given-name"
 					maxLength={50}
 					value={editUser.first_name}
@@ -48,7 +50,7 @@ export default function GeneralInfo() {
 				/>
 				<input
 					class="h-10 w-full rounded-lg bg-secondary px-2.5 text-main placeholder:text-secondary-foreground"
-					placeholder="Last Name"
+					placeholder={t('pages.users.edit.general.lastName')}
 					autocomplete="family-name"
 					maxLength={50}
 					value={editUser.last_name}
@@ -56,7 +58,7 @@ export default function GeneralInfo() {
 				/>
 				<input
 					class="h-10 w-full rounded-lg bg-secondary px-2.5 text-main placeholder:text-secondary-foreground"
-					placeholder="Title"
+					placeholder={t('pages.users.edit.general.jobTitle')}
 					maxLength={70}
 					value={editUser.title}
 					onInput={e => setEditUser('title', e.currentTarget.value)}

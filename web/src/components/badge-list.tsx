@@ -1,5 +1,5 @@
 import { For, Show } from 'solid-js'
-import Badge from '~/components/Badge'
+import Badge from '~/components/badge'
 import { Badge as UserBadge } from '../../gen'
 
 export default function BadgeList(props: {

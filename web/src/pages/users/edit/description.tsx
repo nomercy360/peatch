@@ -2,11 +2,13 @@ import { useMainButton } from '~/lib/useMainButton'
 import { useNavigate } from '@solidjs/router'
 import { createEffect, onCleanup } from 'solid-js'
 import { editUser, setEditUser } from '~/store'
-import TextArea from '~/components/TextArea'
+import TextArea from '~/components/text-area'
 import { FormLayout } from '~/components/edit/layout'
+import { useTranslations } from '~/lib/locale-context'
 
 export default function Description() {
 	const mainButton = useMainButton()
+	const { t } = useTranslations()
 
 	const navigate = useNavigate()
 
@@ -30,7 +32,7 @@ export default function Description() {
 
 	return (
 		<FormLayout
-			title="Introduce yourself"
+			title={t('pages.users.edit.description.title')}
 			description="Tell others about your backround, achievments and goals"
 			screen={5}
 			totalScreens={6}
@@ -38,7 +40,7 @@ export default function Description() {
 			<TextArea
 				value={editUser.description}
 				setValue={d => setEditUser('description', d)}
-				placeholder="For example: 32 y.o. serial entrepreneur & product director with architecture, product design, marketing & tech development background. "
+				placeholder={t('pages.users.edit.description.placeholder')}
 			/>
 		</FormLayout>
 	)

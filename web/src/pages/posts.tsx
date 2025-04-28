@@ -17,10 +17,12 @@ import { useNavigate } from '@solidjs/router'
 import { UserCardSmall } from '~/pages/posts/id'
 import { LocationBadge } from '~/components/location-badge'
 import { ListPlaceholder } from '~/pages/feed'
+import { useTranslations } from '~/lib/locale-context'
 
 export const [search, setSearch] = createSignal('')
 
 export default function PostsPage() {
+	const { t } = useTranslations()
 	const updateSearch = useDebounce(setSearch, 350)
 
 	const mainButton = useMainButton()
@@ -55,7 +57,7 @@ export default function PostsPage() {
 				<div class="relative flex h-10 w-full flex-row items-center justify-center rounded-lg bg-secondary">
 					<input
 						class="h-full w-full bg-transparent px-2.5 placeholder:text-secondary-foreground"
-						placeholder="Search for posts"
+						placeholder={t('common.search.posts')}
 						type="text"
 						value={search()}
 						onInput={e => updateSearch(e.currentTarget.value)}

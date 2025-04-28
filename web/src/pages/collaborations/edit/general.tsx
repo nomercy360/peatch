@@ -3,12 +3,16 @@ import { editCollaboration, setEditCollaboration } from '~/store'
 import { useMainButton } from '~/lib/useMainButton'
 import { createEffect, onCleanup } from 'solid-js'
 import { useLocation, useNavigate } from '@solidjs/router'
-import TextArea from '~/components/TextArea'
+import TextArea from '~/components/text-area'
+import { useTranslations } from '~/lib/locale-context'
 
 export default function GeneralInfo() {
 	const mainButton = useMainButton()
 
 	const navigate = useNavigate()
+
+	const { t } = useTranslations()
+
 	const path = useLocation().pathname
 
 	const navigateNext = () => {
@@ -19,9 +23,9 @@ export default function GeneralInfo() {
 
 	createEffect(() => {
 		if (editCollaboration.title && editCollaboration.description) {
-			mainButton.enable('Next')
+			mainButton.enable(t('common.buttons.next'))
 		} else {
-			mainButton.disable('Next')
+			mainButton.disable(t('common.buttons.next'))
 		}
 	})
 
@@ -31,8 +35,8 @@ export default function GeneralInfo() {
 
 	return (
 		<FormLayout
-			title="Describe collaboration"
-			description="This will help people to understand it clearly"
+			title={t('pages.collaborations.edit.general.title')}
+			description={t('pages.collaborations.edit.general.description')}
 			screen={1}
 			totalScreens={4}
 		>
@@ -40,19 +44,19 @@ export default function GeneralInfo() {
 				<input
 					maxLength={70}
 					class="h-10 w-full rounded-lg bg-secondary px-2.5 text-main placeholder:text-hint"
-					placeholder="Looking for a product designer"
+					placeholder={t('pages.collaborations.edit.general.titlePlaceholder')}
 					value={editCollaboration.title}
 					onInput={e => setEditCollaboration('title', e.currentTarget.value)}
 				/>
 				<CheckBoxInput
-					text="Is it this opportunity payable?"
+					text={t('pages.collaborations.edit.general.checkboxPlaceholder')}
 					checked={editCollaboration.is_payable || false}
 					setChecked={v => setEditCollaboration('is_payable', v)}
 				/>
 				<TextArea
 					value={editCollaboration.description}
 					setValue={d => setEditCollaboration('description', d)}
-					placeholder="For example: I'm looking for a designer to participate in non-profit hackaton"
+					placeholder={t('pages.collaborations.edit.general.descriptionPlaceholder')}
 				/>
 			</div>
 		</FormLayout>

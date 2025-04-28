@@ -1,4 +1,5 @@
 import { createEffect, createSignal, Match, Switch } from 'solid-js'
+import { useTranslations } from '~/lib/locale-context'
 
 export default function TextArea(props: {
 	value: string
@@ -7,6 +8,8 @@ export default function TextArea(props: {
 }) {
 	const [count, setCount] = createSignal(0)
 	const maxLength = 500
+
+	const {t} = useTranslations()
 
 	createEffect(() => {
 		setCount(props.value.length)
@@ -32,7 +35,7 @@ export default function TextArea(props: {
 				</Match>
 				<Match when={count() === 0}>
 					<div class="absolute bottom-2 left-2 text-sm text-hint">
-						max {maxLength} characters
+						{t('common.textarea.maxLength', { maxLength })}
 					</div>
 				</Match>
 			</Switch>

@@ -16,9 +16,6 @@ export const setUser = (user: User) => setStore('user', user)
 
 export const setToken = (token: string) => setStore('token', token)
 
-export const setFollowing = (following: number[]) =>
-	setStore('following', following)
-
 export const [editUser, setEditUser] = createStore<UpdateUserRequest>({
 	first_name: '',
 	last_name: '',

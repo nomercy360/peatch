@@ -6,6 +6,7 @@ import { editCollaboration, setEditCollaboration } from '~/store'
 import { fetchOpportunities } from '~/lib/api'
 import { SelectOpportunity } from '~/components/edit/selectOpp'
 import { createQuery } from '@tanstack/solid-query'
+import { useTranslations } from '~/lib/locale-context'
 
 export default function SelectOpportunities() {
 	const mainButton = useMainButton()
@@ -32,9 +33,9 @@ export default function SelectOpportunities() {
 			editCollaboration.opportunity_id &&
 			editCollaboration.opportunity_id > 0
 		) {
-			mainButton.enable('Next')
+			mainButton.enable(t('common.buttons.next'))
 		} else {
-			mainButton.disable('Next')
+			mainButton.disable(t('common.buttons.next'))
 		}
 	})
 
@@ -42,10 +43,12 @@ export default function SelectOpportunities() {
 		mainButton.offClick(navigateNext)
 	})
 
+	const { t } = useTranslations()
+
 	return (
 		<FormLayout
-			title="Select a theme"
-			description="This will help us to recommend it to other people"
+			title={t('pages.collaborations.edit.interests.title')}
+			description={t('pages.collaborations.edit.interests.description')}
 			screen={3}
 			totalScreens={6}
 		>
