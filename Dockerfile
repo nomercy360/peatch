@@ -12,7 +12,6 @@ RUN go mod download
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o /api ./cmd/api/main.go
 RUN CGO_ENABLED=0 GOOS=linux go build -o /bot ./cmd/bot/main.go
-RUN CGO_ENABLED=0 GOOS=linux go build -o /job ./cmd/job/main.go
 
 FROM alpine:3.19 AS build-release-stage
 
