@@ -22,7 +22,6 @@ WORKDIR /app
 
 COPY --from=build-stage /api /app/api
 COPY --from=build-stage /bot /app/bot
-COPY --from=build-stage /job /app/job
 
 COPY /scripts/migrations /app/migrations
 
