@@ -4,7 +4,7 @@ export const PeatchIcon: Component<ComponentProps<'svg'>> = props => {
 	return (
 		<svg
 			{...props}
-			viewBox="0 0 200 200"
+			viewBox="0 200"
 			fill="none"
 			xmlns="http://www.w3.org/2000/svg"
 		>
@@ -34,7 +34,7 @@ export const PeatchIcon: Component<ComponentProps<'svg'>> = props => {
 				/>
 			</g>
 			<path
-				d="M199 100C199 154.676 154.676 199 100 199C45.3238 199 1 154.676 1 100C1 45.3238 45.3238 1 100 1C154.676 1 199 45.3238 199 100Z"
+				d="M199 100C199 154.676 199 100 199C45.3238 199 1 154.676 1 100C1 45.3238 1 100 1C154.676 1 199 45.3238 199 100Z"
 				stroke="url(#paint3_linear_2909_9537)"
 				stroke-opacity="0.16"
 				stroke-width="2"
@@ -59,7 +59,7 @@ export const PeatchIcon: Component<ComponentProps<'svg'>> = props => {
 					<feColorMatrix
 						in="SourceAlpha"
 						type="matrix"
-						values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
+						values="0 127 0"
 						result="hardAlpha"
 					/>
 					<feOffset />
@@ -67,7 +67,7 @@ export const PeatchIcon: Component<ComponentProps<'svg'>> = props => {
 					<feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1" />
 					<feColorMatrix
 						type="matrix"
-						values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.45 0"
+						values="0 1 0 1 0 1 0 0.45 0"
 					/>
 					<feBlend
 						mode="normal"
@@ -77,7 +77,7 @@ export const PeatchIcon: Component<ComponentProps<'svg'>> = props => {
 					<feColorMatrix
 						in="SourceAlpha"
 						type="matrix"
-						values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
+						values="0 127 0"
 						result="hardAlpha"
 					/>
 					<feMorphology
@@ -91,7 +91,7 @@ export const PeatchIcon: Component<ComponentProps<'svg'>> = props => {
 					<feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1" />
 					<feColorMatrix
 						type="matrix"
-						values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.55 0"
+						values="0 1 0 1 0 1 0 0.55 0"
 					/>
 					<feBlend
 						mode="normal"

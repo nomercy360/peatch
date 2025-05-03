@@ -2,23 +2,20 @@ import {
 	createEffect,
 	createSignal,
 	For,
-	onCleanup,
 	onMount,
 	Show,
 	Suspense,
 } from 'solid-js'
-import { User, UserProfile } from '~/gen/types'
 import { fetchUsers } from '~/lib/api'
 import { Link } from '~/components/link'
 import BadgeList from '~/components/badge-list'
 import useDebounce from '~/lib/useDebounce'
-import { createQuery } from '@tanstack/solid-query'
 import { store } from '~/store'
 import FillProfilePopup from '~/components/fill-profile-popup'
-import { useMainButton } from '~/lib/useMainButton'
-import { useNavigate } from '@solidjs/router'
 import { LocationBadge } from '~/components/location-badge'
 import { useTranslations } from '~/lib/locale-context'
+import { useQuery } from '@tanstack/solid-query'
+import { UserProfile } from '~/gen'
 
 
 export const [search, setSearch] = createSignal('')
@@ -27,7 +24,7 @@ export default function FeedPage() {
 	const { t } = useTranslations()
 	const updateSearch = useDebounce(setSearch, 350)
 
-	const query = createQuery(() => ({
+	const query = useQuery(() => ({
 		queryKey: ['users', search()],
 		queryFn: () => fetchUsers(search()),
 	}))
@@ -87,7 +84,7 @@ export default function FeedPage() {
 	}
 
 	return (
-		<div class="flex h-screen flex-col">
+		<div class="flex h-screen flex-col overflow-hidden">
 			<div class="flex w-full flex-shrink-0 flex-col items-center justify-between space-y-4 border-b p-4">
 				<Show when={!store.user.published_at && profilePopup()}>
 					<FillProfilePopup onClose={() => closePopup('profilePopup')} />
@@ -115,10 +112,10 @@ export default function FeedPage() {
 					</Show>
 				</div>
 			</div>
-			<div class="bg-secondary flex h-full w-full flex-shrink-0 flex-col overflow-y-auto pb-20" id="feed">
+			<div class="flex h-full w-full flex-shrink-0 flex-col overflow-y-auto pb-20" id="feed">
 				<Suspense fallback={<ListPlaceholder />}>
 					<For each={query.data}>
-						{(user, i) => (
+						{(user, _) => (
 							<div>
 								<UserCard user={user as User} scroll={scroll()} />
 								<div class="h-px w-full bg-border" />
@@ -153,7 +150,7 @@ const UserCard = (props: { user: User; scroll: number }) => {
 				loading="lazy"
 				alt="User Avatar"
 			/>
-			<p class="mt-3 text-3xl text-primary font-semibold capitalize">{user.first_name?.trimEnd()}:</p>
+			<p class="mt-3 text-3xl font-semibold capitalize text-primary">{user.first_name?.trimEnd()}:</p>
 			<p class="text-3xl capitalize">{user.title}</p>
 			<p class="mt-2 text-sm text-secondary-foreground">
 				{shortenDescription(user.description!)}
@@ -172,7 +169,7 @@ const UserCard = (props: { user: User; scroll: number }) => {
 
 const OpenCommunityPopup = (props: { onClose: () => void }) => {
 	return (
-		<div class="w-full bg-secondary rounded-xl relative p-3 text-center">
+		<div class="relative w-full rounded-xl bg-secondary p-3 text-center">
 			<button
 				class="absolute right-4 top-4 flex size-6 items-center justify-center rounded-full bg-background"
 				onClick={props.onClose}
@@ -181,7 +178,7 @@ const OpenCommunityPopup = (props: { onClose: () => void }) => {
 						close
 					</span>
 			</button>
-			<div class="flex items-center gap-1 justify-center text-2xl font-extrabold text-green">
+			<div class="text-green flex items-center justify-center gap-1 text-2xl font-extrabold">
 					<span class="material-symbols-rounded text-[36px] text-green-400">
 						maps_ugc
 					</span>
@@ -191,7 +188,7 @@ const OpenCommunityPopup = (props: { onClose: () => void }) => {
 				To talk with founders and users. Discuss and solve problems together
 			</p>
 			<button
-				class="bg-primary mt-4 flex h-10 w-full items-center justify-center rounded-xl text-sm font-semibold"
+				class="mt-4 flex h-10 w-full items-center justify-center rounded-xl bg-primary text-sm font-semibold"
 				onClick={() =>
 					window.Telegram.WebApp.openTelegramLink(
 						'https://t.me/peatch_community',

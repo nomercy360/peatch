@@ -14,23 +14,17 @@ import {
 	useSearchParams,
 } from '@solidjs/router'
 import {
-	CDN_URL,
 	fetchProfile,
 	followUser,
 	publishProfile,
 	unfollowUser,
 } from '~/lib/api'
 import { setUser, store } from '~/store'
-import ActionDonePopup from '~/components/action-done-popup'
 import { useMainButton } from '~/lib/useMainButton'
-import { usePopup } from '~/lib/usePopup'
-import { createMutation, createQuery } from '@tanstack/solid-query'
 import { queryClient } from '~/App'
-import { Link } from '~/components/link'
-import { UserProfile } from '~/gen/types'
-import { PeatchIcon } from '~/components/peatch-icon'
-import { NotificationIcon } from '~/pages/users/activity'
+import { UserProfile } from '~/gen'
 import { useTranslations } from '~/lib/locale-context'
+import { useMutation, useQuery } from '@tanstack/solid-query'
 
 export default function UserProfilePage() {
 	const mainButton = useMainButton()
@@ -45,13 +39,13 @@ export default function UserProfilePage() {
 
 	const { t } = useTranslations()
 
-	const query = createQuery(() => ({
+	const query = useQuery(() => ({
 		queryKey: ['profiles', username],
 		queryFn: () => fetchProfile(username),
 		retry: 1,
 	}))
 
-	const followMutate = createMutation(() => ({
+	const followMutate = useMutation(() => ({
 		mutationFn: (id: number) => followUser(id),
 		onMutate: async (id: number) => {
 			await queryClient.cancelQueries({ queryKey: ['profiles', username] })
@@ -68,7 +62,7 @@ export default function UserProfilePage() {
 		},
 	}))
 
-	const unfollowMutate = createMutation(() => ({
+	const unfollowMutate = useMutation(() => ({
 		mutationFn: (id: number) => unfollowUser(id),
 		onMutate: async (id: number) => {
 			await queryClient.cancelQueries({ queryKey: ['profiles', username] })
@@ -84,8 +78,6 @@ export default function UserProfilePage() {
 			queryClient.invalidateQueries({ queryKey: ['followers', id.toString()] })
 		},
 	}))
-
-	const { showAlert } = usePopup()
 
 	const isCurrentUserProfile = store.user.username === username
 
@@ -185,7 +177,7 @@ export default function UserProfilePage() {
 					<Navigate href={'/404'} />
 				</Match>
 				<Match when={query.isSuccess}>
-					<div class="h-fit min-h-screen p-2 bg-secondary items-center flex flex-col text-center">
+					<div class="flex h-fit min-h-screen flex-col items-center p-2 text-center">
 						<Show when={isCurrentUserProfile && store.user.hidden_at}>
 							<button
 								onClick={showInfoPopup}
@@ -198,12 +190,12 @@ export default function UserProfilePage() {
 						</Show>
 						<img
 							alt="User Avatar"
-							class="w-32 aspect-square bg-cover bg-center relative rounded-xl object-cover"
+							class="relative aspect-square w-32 rounded-xl bg-cover bg-center object-cover"
 							src={`https://assets.peatch.io/cdn-cgi/image/width=400/${query.data.avatar_url}`}
 						/>
-						<Show when={store.user.published_at && !store.user.hidden_at}>
+						<Show when={!isCurrentUserProfile}>
 							<button
-								class="flex h-8 flex-row items-center space-x-1 px-3 bg-background mt-2 shadow-md border rounded-2xl"
+								class="mt-4 flex h-8 flex-row items-center space-x-1 rounded-2xl border bg-primary px-3 text-primary-foreground"
 								onClick={() => shareURL()}
 							>
 								<span class="material-symbols-rounded text-[16px]">
@@ -215,14 +207,14 @@ export default function UserProfilePage() {
 							</button>
 						</Show>
 						<div class="px-4 py-2.5">
-							<p class="capitalize text-3xl text-primary font-semibold">
+							<p class="text-3xl font-semibold capitalize text-primary">
 								{query.data.first_name} {query.data.last_name}:
 							</p>
 							<p class="text-3xl capitalize">{query.data.title}</p>
-							<p class="text-start mt-1 text-sm font-normal text-secondary-foreground">
+							<p class="mt-1 text-start text-sm font-normal text-secondary-foreground">
 								{query.data.description}
 							</p>
-							<div class="mt-5 flex flex-row flex-wrap items-center justify-start gap-1">
+							<div class="mt-3 flex flex-row flex-wrap items-center justify-start gap-1">
 								<For
 									each={
 										badgesExpanded()
@@ -232,16 +224,16 @@ export default function UserProfilePage() {
 								>
 									{badge => (
 										<div
-											class="flex h-10 flex-row items-center justify-center gap-[5px] rounded-2xl border px-2.5"
+											class="flex h-8 flex-row items-center justify-center gap-1 rounded-xl border px-2"
 											style={{
 												'background-color': `#${badge.color}`,
 												'border-color': `#${badge.color}`,
 											}}
 										>
-											<span class="material-symbols-rounded text-white">
+											<span class="material-symbols-rounded text-sm text-white">
 												{String.fromCodePoint(parseInt(badge.icon!, 16))}
 											</span>
-											<p class="text-sm font-semibold text-white">
+											<p class="text-xs font-semibold text-white">
 												{badge.text}
 											</p>
 										</div>
@@ -254,7 +246,7 @@ export default function UserProfilePage() {
 									setExpanded={setBadgesExpanded}
 								/>
 							</Show>
-							<p class="pt-4 pb-2 text-xl font-extrabold text-start">
+							<p class="pb-1 pt-3 text-start text-xl font-extrabold">
 								{t('pages.users.availableFor')}
 							</p>
 							<div class="flex w-full flex-col items-center justify-start gap-1">
@@ -267,19 +259,18 @@ export default function UserProfilePage() {
 								>
 									{op => (
 										<div
-											class="flex h-[60px] w-full flex-row items-center justify-start gap-2.5 rounded-2xl border px-2.5"
-											style={{
-												'background-color': `#${op.color}`,
-											}}
+											class="flex h-14 w-full flex-row items-center justify-start gap-2 rounded-xl bg-secondary px-2 text-secondary-foreground"
 										>
-											<div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary">
-														<span class="material-symbols-rounded shrink-0">
-															{String.fromCodePoint(parseInt(op.icon!, 16))}
-														</span>
+											<div class="flex size-8 shrink-0 items-center justify-center rounded-full text-white"
+													 style={{ 'background-color': `#${op.color}` }}
+											>
+												<span class="material-symbols-rounded text-sm">
+													{String.fromCodePoint(parseInt(op.icon!, 16))}
+												</span>
 											</div>
 											<div class="text-start">
-												<p class="text-sm font-semibold text-white">{op.text}</p>
-												<p class="text-xs leading-tight text-white/80">
+												<p class="text-xs font-semibold text-foreground">{op.text}</p>
+												<p class="text-[10px] leading-tight">
 													{op.description}
 												</p>
 											</div>

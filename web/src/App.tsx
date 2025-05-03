@@ -43,44 +43,44 @@ export default function App(props: any) {
 
 	const navigate = useNavigate()
 
-	createEffect(async () => {
-		const initData = window.Telegram.WebApp.initData
+	createEffect(() => {
+		const authenticate = async () => {
+			const initData = window.Telegram.WebApp.initData
 
-		console.log('WEBAPP:', window.Telegram)
+			console.log('WEBAPP:', window.Telegram)
 
-		try {
-			const resp = await fetch(`${API_BASE_URL}/auth/telegram?` + initData, {
-				method: 'POST',
-			})
+			try {
+				const resp = await fetch(`${API_BASE_URL}/auth/telegram?` + initData, {
+					method: 'POST',
+				})
 
-			const { user, token } = await resp.json()
+				const { user, token } = await resp.json()
 
-			setUser(user)
-			setToken(token)
+				setUser(user)
+				setToken(token)
 
-			window.Telegram.WebApp.ready()
-			window.Telegram.WebApp.expand()
-			window.Telegram.WebApp.disableVerticalSwipes()
+				window.Telegram.WebApp.ready()
+				window.Telegram.WebApp.expand()
+				window.Telegram.WebApp.disableVerticalSwipes()
 
-			setIsAuthenticated(true)
-			setIsLoading(false)
+				setIsAuthenticated(true)
+				setIsLoading(false)
 
-			// if there is a redirect url, redirect to it
-			// ?startapp=redirect-to=/users/
+				const startapp = window.Telegram.WebApp.initDataUnsafe.start_param
+				const redirectUrl = transformStartParam(startapp)
 
-			const startapp = window.Telegram.WebApp.initDataUnsafe.start_param
-
-			const redirectUrl = transformStartParam(startapp)
-
-			if (redirectUrl) {
-				navigate(redirectUrl)
-				return
+				if (redirectUrl) {
+					navigate(redirectUrl)
+					return
+				}
+			} catch (e) {
+				console.error('Failed to authenticate user:', e)
+				setIsAuthenticated(false)
+				setIsLoading(false)
 			}
-		} catch (e) {
-			console.error('Failed to authenticate user:', e)
-			setIsAuthenticated(false)
-			setIsLoading(false)
 		}
+
+		authenticate()
 	})
 
 	return (
@@ -95,7 +95,7 @@ export default function App(props: any) {
 							<div class="h-screen w-full flex-col items-start justify-center" />
 						</Match>
 						<Match when={!isAuthenticated() && !isLoading()}>
-							<div class="h-screen min-h-screen w-full flex-col items-start justify-center text-3xl text-main">
+							<div class="text-main h-screen min-h-screen w-full flex-col items-start justify-center text-3xl">
 								Something went wrong. Please try again later.
 							</div>
 						</Match>

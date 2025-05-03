@@ -7,7 +7,7 @@ import {
 	Suspense,
 	Switch,
 } from 'solid-js'
-import { Badge } from '~/gen/types'
+import { Badge } from '~/gen'
 import { useTranslations } from '~/lib/locale-context'
 
 export function SelectBadge(props: {
@@ -49,7 +49,7 @@ export function SelectBadge(props: {
 					autocapitalize="off"
 					spellcheck={false}
 					maxLength={50}
-					class="h-10 w-full bg-transparent text-main placeholder:text-secondary-foreground focus:outline-none"
+					class="text-main h-10 w-full bg-transparent placeholder:text-secondary-foreground focus:outline-none"
 					placeholder={t('pages.collaborations.edit.badges.searchPlaceholder')}
 					type="text"
 					onInput={e => props.setSearch(e.currentTarget.value)}

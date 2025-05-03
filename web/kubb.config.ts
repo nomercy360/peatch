@@ -1,22 +1,23 @@
 import { defineConfig } from '@kubb/core'
-import { definePlugin as createSwagger } from '@kubb/swagger'
-import { definePlugin as createSwaggerTS } from '@kubb/swagger-ts'
+import { pluginTs } from '@kubb/plugin-ts'
+import { pluginOas } from '@kubb/plugin-oas'
 
-export default defineConfig(async () => {
+export default defineConfig(() => {
 	return {
 		root: '.',
 		input: {
 			path: '../docs/swagger.yaml',
 		},
 		output: {
-			path: './gen',
+			path: './src/gen',
 		},
 		plugins: [
-			createSwagger({
-				output: false,
-				validate: true,
+			pluginOas(),
+			pluginTs({
+				output: {
+					path: './types',
+				},
 			}),
-			createSwaggerTS({}),
 		],
 	}
 })

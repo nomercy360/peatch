@@ -15,18 +15,6 @@
 	<title>Vite App</title>
 </head>
 <body style="margin: 0">
-<script>
-	document.addEventListener('DOMContentLoaded', function() {
-		const root = document.documentElement
-		const colorScheme = getComputedStyle(root).getPropertyValue('--tg-color-scheme').trim()
-
-		if (colorScheme === 'dark') {
-			root.style.setProperty('--border', '#333')
-		} else {
-			root.style.setProperty('--border', 'rgb(241,240,240)')
-		}
-	})
-</script>
 <noscript>You need to enable JavaScript to run this app.</noscript>
 <div id="root" style="min-height: 100vh; padding: 0">
 

@@ -70,7 +70,7 @@ export const dict = {
 				title: 'Уведомления',
 			},
 			availableFor: 'Готов к',
-			sayHi: 'Поздороваться',
+			sayHi: 'Привет',
 		},
 		collaborations: {
 			edit: {

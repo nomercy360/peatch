@@ -122,13 +122,13 @@ export default function GeneralInfo() {
 			<div class="mt-5 flex w-full flex-col items-center justify-start gap-3">
 				<input
 					maxLength={70}
-					class="h-10 w-full rounded-lg bg-main px-2.5 text-main placeholder:text-hint"
+					class="bg-main text-main placeholder:text-hint h-10 w-full rounded-lg px-2.5"
 					placeholder="Title"
 					value={editPost.title}
 					onInput={e => setEditPost('title', e.currentTarget.value)}
 				/>
 				<textarea
-					class="size-full h-24 resize-none rounded-lg bg-main p-2.5 text-main placeholder:text-hint"
+					class="bg-main text-main placeholder:text-hint size-full h-24 resize-none rounded-lg p-2.5"
 					placeholder="Description"
 					value={editPost.description}
 					onInput={e => setEditPost('description', e.currentTarget.value)}
@@ -146,23 +146,23 @@ export default function GeneralInfo() {
 								class="aspect-[4/3] rounded-xl object-cover"
 							/>
 							<button
-								class="absolute right-2.5 top-2.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-main"
+								class="bg-main absolute right-2.5 top-2.5 flex size-5 shrink-0 items-center justify-center rounded-full"
 								onClick={() => {
 									setPreviewUrl('')
 									setImgFile(null)
 									setEditPost('image_url', null)
 								}}
 							>
-								<span class="material-symbols-rounded text-[20px] text-button">
+								<span class="material-symbols-rounded text-button text-[20px]">
 									close
 								</span>
 							</button>
 						</div>
 					</Match>
 					<Match when={!previewUrl()}>
-						<label class="flex h-10 w-full cursor-pointer items-center justify-between rounded-lg bg-main px-2.5 text-hint">
+						<label class="bg-main text-hint flex h-10 w-full cursor-pointer items-center justify-between rounded-lg px-2.5">
 							<input
-								class="sr-only h-10 w-40 rounded-lg bg-main px-2.5 text-main placeholder:text-hint"
+								class="bg-main text-main placeholder:text-hint sr-only h-10 w-40 rounded-lg px-2.5"
 								type="file"
 								accept="image/*"
 								onChange={handleFileChange}
@@ -174,14 +174,14 @@ export default function GeneralInfo() {
 				<Link
 					href={`/posts/edit${idPath}/location`}
 					state={{ back: true }}
-					class="flex h-10 w-full cursor-pointer flex-row items-center justify-between rounded-lg px-2.5 text-hint"
+					class="text-hint flex h-10 w-full cursor-pointer flex-row items-center justify-between rounded-lg px-2.5"
 				>
 					<Switch>
 						<Match when={editPost.city && editPost.country}>
 							<span>
 								{editPost.city}, {editPost.country}
 							</span>
-							<span class="material-symbols-rounded text-[20px] text-hint">
+							<span class="material-symbols-rounded text-hint text-[20px]">
 								edit
 							</span>
 						</Match>
@@ -215,7 +215,7 @@ const CheckBoxInput = (props: {
 			<span class="flex size-7 items-center justify-center rounded-lg border">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
-					viewBox="0 0 24 24"
+					viewBox="0 24"
 					fill="none"
 					stroke="currentColor"
 					stroke-width="3"

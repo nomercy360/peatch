@@ -20,8 +20,8 @@ import { usePopup } from '~/lib/usePopup'
 import { useMainButton } from '~/lib/useMainButton'
 import ActionDonePopup from '~/components/action-done-popup'
 import TextArea from '~/components/text-area'
-import { Badge } from '~/gen/types'
-import { createQuery } from '@tanstack/solid-query'
+import { Badge } from '~/gen'
+import { useQuery } from '@tanstack/solid-query'
 
 export default function Collaborate() {
 	const params = useParams()
@@ -40,7 +40,7 @@ export default function Collaborate() {
 
 	const [message, setMessage] = createSignal('')
 
-	const query = createQuery(() => ({
+	const query = useQuery(() => ({
 		queryKey: ['collaborations', collabId],
 		queryFn: () => fetchCollaboration(collabId),
 	}))
@@ -111,7 +111,7 @@ export default function Collaborate() {
 				<Show when={!existedRequest()}>
 					<div class="flex flex-col items-center justify-center bg-secondary p-4">
 						<div class="mb-4 mt-1 flex flex-col items-center justify-center text-center">
-							<p class="max-w-[220px] text-3xl text-main">Express interest</p>
+							<p class="text-main max-w-[220px] text-3xl">Express interest</p>
 							<p class="mt-2 text-sm text-secondary">
 								Say hello, ask question and let {query.data.user.first_name}{' '}
 								know you’re interested

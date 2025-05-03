@@ -1,6 +1,6 @@
 import { For, Show } from 'solid-js'
 import icons from '../../assets/icons.json'
-import { Badge } from '~/gen/types'
+import { Badge } from '~/gen'
 
 export default function CreateBadge(props: {
 	createBadge: Badge

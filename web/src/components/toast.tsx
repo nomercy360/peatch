@@ -26,8 +26,8 @@ const Toast = () => {
 	return (
 		<div class="fixed bottom-4 left-1/2 -translate-x-1/2 transform space-y-2">
 			{toasts().map(toast => (
-				<div class="flex h-9 w-[calc(100vw-2rem)] items-center justify-center rounded-lg bg-accent px-4 py-2 text-sm font-medium text-button">
-					<span class="material-symbols-rounded mr-2 text-[20px] text-button">
+				<div class="text-button flex h-9 w-[calc(100vw-2rem)] items-center justify-center rounded-lg bg-accent px-4 py-2 text-sm font-medium">
+					<span class="material-symbols-rounded text-button mr-2 text-[20px]">
 						info
 					</span>
 					{toast.message}

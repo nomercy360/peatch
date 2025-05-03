@@ -3,65 +3,112 @@
 @tailwind utilities;
 
 :root {
-    /* Background Colors */
-    --background: var(--tg-theme-secondary-bg-color, #f5f5f5);
-    --foreground: var(--tg-theme-text-color, #23241f);
+    /* Base Colors */
+    --background: #f9f9fb;
+    --foreground: #1e1e20;
 
     /* Muted Colors */
-    --muted: var(--tg-theme-secondary-bg-color, #f5f5f5);
-    --muted-foreground: var(--tg-theme-hint-color, #b0b0b0);
+    --muted: #f0f0f3;
+    --muted-foreground: #7a7a85;
 
     /* Popover Colors */
-    --popover: var(--tg-theme-bg-color, #f5f5f5);
-    --popover-foreground: var(--tg-theme-text-color, #23241f);
+    --popover: #ffffff;
+    --popover-foreground: #1e1e20;
 
     /* Border & Input Colors */
-    --border: var(--tg-theme-section-separator-color, #aaaaaa);
-    --input: var(--tg-theme-section-separator-color, #aaaaaa);
+    --border: #e8e8ec;
+    --input: #cccccc;
 
     /* Card Colors */
-    --card: var(--tg-theme-section-bg-color, #f5f5f5);
-    --card-foreground: var(--tg-theme-section-header-text-color, #23241f);
+    --card: #ffffff;
+    --card-foreground: #1e1e20;
 
     /* Primary Colors */
-    --primary: var(--tg-theme-link-color, #0078d7);
-    --primary-foreground: var(--tg-theme-button-text-color, #ffffff);
+    --primary: #4a90e2;
+    --primary-foreground: #ffffff;
 
     /* Secondary Colors */
-    --secondary: var(--tg-theme-bg-color, #f5f5f5);
-    --secondary-foreground: var(--tg-theme-subtitle-text-color, #0078d7);
+    --secondary: #eaeaea;
+    --secondary-foreground: #5b5b66;
 
     /* Accent Colors */
-    --accent: var(--tg-theme-accent-text-color, #0078d7);
-    --accent-foreground: var(--tg-theme-accent-text-color, #ffffff);
+    --accent: #7b61ff;
+    --accent-foreground: #ffffff;
 
     /* Destructive Colors */
-    --destructive: var(--tg-theme-destructive-text-color, #d93f51);
-    --destructive-foreground: var(--tg-theme-button-text-color, #ffffff);
+    --destructive: #e85a71;
+    --destructive-foreground: #ffffff;
 
     /* Info Colors */
-    --info: var(--tg-theme-link-color, #0078d7);
-    --info-foreground: var(--tg-theme-button-text-color, #ffffff);
+    --info: #5a9bd4;
+    --info-foreground: #ffffff;
 
     /* Success Colors */
-    --success: var(--tg-theme-button-color, #0078d7);
-    --success-foreground: var(--tg-theme-button-text-color, #ffffff);
+    --success: #4bbf73;
+    --success-foreground: #ffffff;
 
     /* Warning Colors */
-    --warning: var(--tg-theme-hint-color, #b0b0b0);
-    --warning-foreground: var(--tg-theme-text-color, #23241f);
+    --warning: #f5c26b;
+    --warning-foreground: #1e1e20;
 
     /* Error Colors */
-    --error: var(--tg-theme-destructive-text-color, #d93f51);
-    --error-foreground: var(--tg-theme-button-text-color, #ffffff);
+    --error: #e85a71;
+    --error-foreground: #ffffff;
 
     /* Ring Color */
-    --ring: var(--tg-theme-link-color, #0078d7);
+    --ring: #7b61ff;
 
     /* Radius */
     --radius: 0.5rem;
 
-    --logo: radial-gradient(66.09% 82.8% at 65% 35.71%, rgba(255, 255, 255, 0.60) 0%, rgba(255, 255, 255, 0.00) 48.96%), radial-gradient(70.8% 70.8% at 26.43% 100%, #FFD67E 0%, rgba(255, 215, 127, 0.00) 100%), radial-gradient(57.85% 57.85% at 84.29% 81.43%, #F35D28 0%, rgba(243, 93, 40, 0.00) 100%);
+    --logo: radial-gradient(66.09% 82.8% at 65% 35.71%, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.00) 48.96%), radial-gradient(70.8% 70.8% at 26.43% 100%, #e5e8f0 0%, rgba(229, 232, 240, 0.00) 100%), radial-gradient(57.85% 57.85% at 84.29% 81.43%, #7b61ff 0%, rgba(123, 97, 255, 0.00) 100%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #1a1a1d;
+    --foreground: #f0f0f3;
+
+    --muted: #2a2a2e;
+    --muted-foreground: #a0a0b0;
+
+    --popover: #2a2a2e;
+    --popover-foreground: #f0f0f3;
+
+    --border: #3a3a3e;
+    --input: #5a5a5e;
+
+    --card: #2a2a2e;
+    --card-foreground: #f0f0f3;
+
+    --primary: #4a90e2;
+    --primary-foreground: #ffffff;
+
+    --secondary: #2f2f33;
+    --secondary-foreground: #b0b0c0;
+
+    --accent: #7b61ff;
+    --accent-foreground: #ffffff;
+
+    --destructive: #e85a71;
+    --destructive-foreground: #ffffff;
+
+    --info: #5a9bd4;
+    --info-foreground: #ffffff;
+
+    --success: #4bbf73;
+    --success-foreground: #ffffff;
+
+    --warning: #f5c26b;
+    --warning-foreground: #1e1e20;
+
+    --error: #e85a71;
+    --error-foreground: #ffffff;
+
+    --ring: #7b61ff;
+
+    --logo: radial-gradient(66.09% 82.8% at 65% 35.71%, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.00) 48.96%), radial-gradient(70.8% 70.8% at 26.43% 100%, #3a3a3e 0%, rgba(58, 58, 62, 0.00) 100%), radial-gradient(57.85% 57.85% at 84.29% 81.43%, #7b61ff 0%, rgba(123, 97, 255, 0.00) 100%);
+  }
 }
 
 @layer base {

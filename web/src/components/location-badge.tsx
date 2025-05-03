@@ -14,7 +14,7 @@ export const LocationBadge = (props: LocationBadgeProps) => {
 
 	return (
 		<div
-			class="mt-2 flex h-5 flex-row items-center justify-center gap-[5px] rounded text-muted-foreground text-xs font-semibold ">
+			class="mt-2 flex h-5 flex-row items-center justify-center gap-[5px] rounded text-xs font-semibold text-muted-foreground ">
 			<Show when={findFlag}>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"

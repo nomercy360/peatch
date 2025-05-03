@@ -10,10 +10,10 @@ import {
 import { useNavigate, useParams } from '@solidjs/router'
 import { fetchPost } from '~/lib/api'
 import { store } from '~/store'
-import { createQuery } from '@tanstack/solid-query'
+import { useQuery } from '@tanstack/solid-query'
 import { useMainButton } from '~/lib/useMainButton'
 import { Link } from '~/components/link'
-import { UserProfile } from '~/gen/types'
+import { UserProfile } from '~/gen'
 
 export default function Collaboration() {
 	const [isCurrentUserCollab, setIsCurrentUserCollab] = createSignal(false)
@@ -24,7 +24,7 @@ export default function Collaboration() {
 
 	const mainButton = useMainButton()
 
-	const query = createQuery(() => ({
+	const query = useQuery(() => ({
 		queryKey: ['posts', postId],
 		queryFn: () => fetchPost(Number(postId)),
 	}))
@@ -56,7 +56,7 @@ export default function Collaboration() {
 			<Switch>
 				<Match when={!query.isLoading}>
 					<div class="h-fit min-h-screen bg-secondary">
-						<div class="flex w-full flex-col items-start justify-start bg-main px-4 py-4">
+						<div class="bg-main flex w-full flex-col items-start justify-start px-4 py-4">
 							<Show when={query.data.image_url}>
 								<img
 									class="aspect-[4/3] w-full rounded-xl object-cover"
@@ -64,11 +64,11 @@ export default function Collaboration() {
 									alt="Collaboration Image"
 								/>
 							</Show>
-							<p class="mb-5 mt-4 text-3xl text-main">{query.data.title}</p>
+							<p class="text-main mb-5 mt-4 text-3xl">{query.data.title}</p>
 							<UserCardSmall user={query.data.user} />
 						</div>
 						<div class="px-4 py-2.5">
-							<p class="text-lg font-normal text-main">
+							<p class="text-main text-lg font-normal">
 								{query.data.description}
 							</p>
 						</div>
@@ -92,7 +92,7 @@ export const UserCardSmall = (props: { user: UserProfile }) => {
 				alt="User Avatar"
 			/>
 			<div>
-				<p class="text-sm font-bold text-main">
+				<p class="text-main text-sm font-bold">
 					{props.user.first_name} {props.user.last_name}
 				</p>
 				<p class="text-sm text-secondary">{props.user.title}</p>
@@ -103,17 +103,17 @@ export const UserCardSmall = (props: { user: UserProfile }) => {
 const Loader = () => {
 	return (
 		<div class="flex h-screen flex-col items-start justify-start bg-secondary">
-			<div class="h-[260px] w-full bg-main" />
+			<div class="bg-main h-[260px] w-full" />
 			<div class="flex flex-col items-start justify-start p-4">
-				<div class="h-36 w-full rounded bg-main" />
+				<div class="bg-main h-36 w-full rounded" />
 				<div class="mt-4 flex w-full flex-row flex-wrap items-center justify-start gap-2">
-					<div class="h-10 w-40 rounded-2xl bg-main" />
-					<div class="h-10 w-32 rounded-2xl bg-main" />
-					<div class="h-10 w-36 rounded-2xl bg-main" />
-					<div class="h-10 w-24 rounded-2xl bg-main" />
-					<div class="h-10 w-40 rounded-2xl bg-main" />
-					<div class="h-10 w-28 rounded-2xl bg-main" />
-					<div class="h-10 w-32 rounded-2xl bg-main" />
+					<div class="bg-main h-10 w-40 rounded-2xl" />
+					<div class="bg-main h-10 w-32 rounded-2xl" />
+					<div class="bg-main h-10 w-36 rounded-2xl" />
+					<div class="bg-main h-10 w-24 rounded-2xl" />
+					<div class="bg-main h-10 w-40 rounded-2xl" />
+					<div class="bg-main h-10 w-28 rounded-2xl" />
+					<div class="bg-main h-10 w-32 rounded-2xl" />
 				</div>
 			</div>
 		</div>

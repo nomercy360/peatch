@@ -124,7 +124,7 @@ export default function ImageUpload() {
 							<UploadBox onFileChange={handleFileChange} />
 						</Match>
 					</Switch>
-					<button class="h-10 text-link" onClick={generateRandomAvatar}>
+					<button class="text-link h-10" onClick={generateRandomAvatar}>
 						{t('common.buttons.generateRandomAvatar')}
 					</button>
 				</div>

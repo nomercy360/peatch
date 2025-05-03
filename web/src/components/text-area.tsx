@@ -18,7 +18,7 @@ export default function TextArea(props: {
 	return (
 		<div class="relative mt-5 h-80 w-full rounded-lg bg-secondary pb-6">
 			<textarea
-				class="size-full resize-none bg-transparent p-2.5 text-main placeholder:text-hint focus:outline-none w-full h-full"
+				class="text-main placeholder:text-hint size-full h-full w-full resize-none bg-transparent p-2.5 focus:outline-none"
 				placeholder={props.placeholder}
 				value={props.value}
 				onInput={e => props.setValue((e.target as HTMLTextAreaElement).value)}
@@ -29,12 +29,12 @@ export default function TextArea(props: {
 			/>
 			<Switch>
 				<Match when={count() > 0}>
-					<div class="absolute bottom-2 left-2 text-sm text-hint">
+					<div class="text-hint absolute bottom-2 left-2 text-sm">
 						{count()} / {maxLength}
 					</div>
 				</Match>
 				<Match when={count() === 0}>
-					<div class="absolute bottom-2 left-2 text-sm text-hint">
+					<div class="text-hint absolute bottom-2 left-2 text-sm">
 						{t('common.textarea.maxLength', { maxLength })}
 					</div>
 				</Match>

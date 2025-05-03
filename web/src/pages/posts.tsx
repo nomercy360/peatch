@@ -7,13 +7,12 @@ import {
 	Show,
 	Suspense, Switch,
 } from 'solid-js'
-import { Collaboration, Post, UserProfile } from '~/gen/types'
+import { Collaboration, Post, UserProfile } from '~/gen'
 import { fetchFeed } from '~/lib/api'
 import { Link } from '~/components/link'
 import useDebounce from '~/lib/useDebounce'
-import { createQuery } from '@tanstack/solid-query'
+import { useQuery } from '@tanstack/solid-query'
 import { useMainButton } from '~/lib/useMainButton'
-import { useNavigate } from '@solidjs/router'
 import { UserCardSmall } from '~/pages/posts/id'
 import { LocationBadge } from '~/components/location-badge'
 import { ListPlaceholder } from '~/pages/feed'
@@ -26,9 +25,8 @@ export default function PostsPage() {
 	const updateSearch = useDebounce(setSearch, 350)
 
 	const mainButton = useMainButton()
-	const navigate = useNavigate()
 
-	const query = createQuery(() => ({
+	const query = useQuery(() => ({
 		queryKey: ['posts', search()],
 		queryFn: () => fetchFeed(search()),
 	}))
@@ -52,7 +50,7 @@ export default function PostsPage() {
 	})
 
 	return (
-		<div class="flex h-screen flex-col">
+		<div class="flex h-screen flex-col overflow-hidden">
 			<div class="flex w-full flex-shrink-0 flex-col items-center justify-between space-y-4 border-b p-4">
 				<div class="relative flex h-10 w-full flex-row items-center justify-center rounded-lg bg-secondary">
 					<input
@@ -74,10 +72,10 @@ export default function PostsPage() {
 					</Show>
 				</div>
 			</div>
-			<div class="bg-secondary flex h-full w-full flex-shrink-0 flex-col overflow-y-auto pb-20">
+			<div class="flex h-full w-full flex-shrink-0 flex-col overflow-y-auto pb-20">
 				<Suspense fallback={<ListPlaceholder />}>
 					<For each={query.data}>
-						{(data, i) => (
+						{(data, _) => (
 							<div>
 								<Switch fallback={<div />}>
 									<Match when={data.type === 'collaboration'}>

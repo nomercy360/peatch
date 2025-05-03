@@ -49,7 +49,7 @@ export default function SelectLocation(props: {
 		<>
 			<div class="mt-5 flex h-10 w-full flex-row items-center justify-between rounded-lg bg-secondary px-2.5">
 				<input
-					class="w-full bg-transparent text-main placeholder:text-hint focus:outline-none"
+					class="text-main placeholder:text-hint w-full bg-transparent focus:outline-none"
 					placeholder="City and country"
 					type="text"
 					onInput={e => updateSearch(e.currentTarget.value)}
@@ -57,7 +57,7 @@ export default function SelectLocation(props: {
 				/>
 				<Show when={search()}>
 					<button
-						class="flex h-full items-center justify-center px-2.5 text-sm text-hint"
+						class="text-hint flex h-full items-center justify-center px-2.5 text-sm"
 						onClick={() => setSearch('')}
 					>
 						Clear
@@ -77,7 +77,7 @@ export default function SelectLocation(props: {
 					/>
 				</Show>
 				<Show when={search() || (!props.country && !props.city)}>
-					<Suspense fallback={<div class="text-sm text-hint">Loading...</div>}>
+					<Suspense fallback={<div class="text-hint text-sm">Loading...</div>}>
 						<For each={query.data!}>
 							{location => (
 								<div class="w-full">
@@ -90,7 +90,7 @@ export default function SelectLocation(props: {
 										onClick={() => onLocationClick(location)}
 										location={location}
 									/>
-									<div class="mt-2 h-px w-full bg-main" />
+									<div class="bg-main mt-2 h-px w-full" />
 								</div>
 							)}
 						</For>
@@ -113,7 +113,7 @@ function LocationButton(props: {
 	return (
 		<button
 			onClick={() => props.onClick()}
-			class="flex h-16 w-full flex-row items-center justify-between rounded-2xl px-4 text-sm text-main"
+			class="text-main flex h-16 w-full flex-row items-center justify-between rounded-2xl px-4 text-sm"
 			classList={{
 				'bg-secondary': !props.isActive,
 				'bg-border': props.isActive,

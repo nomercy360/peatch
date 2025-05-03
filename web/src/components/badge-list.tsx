@@ -24,7 +24,7 @@ export default function BadgeList(props: {
 			</For>
 			<Show when={props.badges.length > 5}>
 				<div
-					class="flex h-5 flex-row items-center justify-center rounded text-muted-foreground px-1.5 text-xs font-semibold">
+					class="flex h-5 flex-row items-center justify-center rounded px-1.5 text-xs font-semibold text-muted-foreground">
 					+ {props.badges!.length - 5} more
 				</div>
 			</Show>

@@ -1,16 +1,16 @@
 import { store } from '~/store'
-import { CreateCollaboration } from '../../gen'
+import { CreateCollaboration } from '~/gen'
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string
 export const CDN_URL = 'https://assets.peatch.io'
 
 export const apiFetch = async ({
-	endpoint,
-	method = 'GET',
-	body = null,
-	showProgress = true,
-	responseContentType = 'json' as 'json' | 'blob',
-}: {
+																 endpoint,
+																 method = 'GET',
+																 body = null,
+																 showProgress = true,
+																 responseContentType = 'json' as 'json' | 'blob',
+															 }: {
 	endpoint: string
 	method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
 	body?: any
@@ -49,13 +49,13 @@ export const apiFetch = async ({
 
 export const fetchUsers = async (search: string) => {
 	return await apiFetch({
-		endpoint: '/users?search=' + search + '&page=1&limit=120',
+		endpoint: '/users?search=' + search + '&page=1&limit=20',
 	})
 }
 
 export const fetchFeed = async (search: string) => {
 	return await apiFetch({
-		endpoint: '/feed?search=' + search + '&page=1&limit=120',
+		endpoint: '/feed?search=' + search + '&page=1&limit=20',
 	})
 }
 
@@ -241,52 +241,4 @@ export const updatePost = async (postID: number, post: any) => {
 
 export const searchLocations = async (search: string) => {
 	return await apiFetch({ endpoint: `/locations?search=${search}` })
-}
-
-export const fetchFollowing = async (id: number) => {
-	return await apiFetch({ endpoint: `/users/${id}/following` })
-}
-
-export const fetchFollowers = async (id: number) => {
-	return await apiFetch({ endpoint: `/users/${id}/followers` })
-}
-
-export const claimDailyReward = async () => {
-	return await apiFetch({ endpoint: '/daily-reward', method: 'POST' })
-}
-
-export const submitFeedbackSurvey = async (message: string) => {
-	return await apiFetch({
-		endpoint: '/feedback-survey',
-		method: 'POST',
-		body: { message },
-	})
-}
-
-export const likeContent = async (
-	contentID: number,
-	contentType: 'post' | 'user' | 'collaboration',
-) => {
-	return await apiFetch({
-		endpoint: `/likes`,
-		body: { content_id: contentID, content_type: contentType },
-		method: 'POST',
-		showProgress: false,
-	})
-}
-
-export const unlikeContent = async (
-	contentID: number,
-	contentType: 'post' | 'user' | 'collaboration',
-) => {
-	return await apiFetch({
-		endpoint: `/likes`,
-		body: { content_id: contentID, content_type: contentType },
-		method: 'DELETE',
-		showProgress: false,
-	})
-}
-
-export const fetchActivity = async () => {
-	return await apiFetch({ endpoint: '/activity' })
 }

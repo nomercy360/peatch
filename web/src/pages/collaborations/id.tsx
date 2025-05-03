@@ -169,7 +169,7 @@ export default function Collaboration() {
 							</div>
 						</div>
 						<div class="px-4 py-2.5">
-							<p class="text-start mt-1 text-sm font-normal text-secondary-foreground">
+							<p class="mt-1 text-start text-sm font-normal text-secondary-foreground">
 								{query.data.description}
 							</p>
 							<div class="mt-5 flex flex-row flex-wrap items-center justify-start gap-1">
@@ -214,17 +214,17 @@ const ActionButton = (props: { text: string; onClick: () => void }) => {
 const Loader = () => {
 	return (
 		<div class="flex h-screen flex-col items-start justify-start bg-secondary">
-			<div class="h-[260px] w-full bg-main" />
+			<div class="bg-main h-[260px] w-full" />
 			<div class="flex flex-col items-start justify-start p-4">
-				<div class="h-36 w-full rounded bg-main" />
+				<div class="bg-main h-36 w-full rounded" />
 				<div class="mt-4 flex w-full flex-row flex-wrap items-center justify-start gap-2">
-					<div class="h-10 w-40 rounded-2xl bg-main" />
-					<div class="h-10 w-32 rounded-2xl bg-main" />
-					<div class="h-10 w-36 rounded-2xl bg-main" />
-					<div class="h-10 w-24 rounded-2xl bg-main" />
-					<div class="h-10 w-40 rounded-2xl bg-main" />
-					<div class="h-10 w-28 rounded-2xl bg-main" />
-					<div class="h-10 w-32 rounded-2xl bg-main" />
+					<div class="bg-main h-10 w-40 rounded-2xl" />
+					<div class="bg-main h-10 w-32 rounded-2xl" />
+					<div class="bg-main h-10 w-36 rounded-2xl" />
+					<div class="bg-main h-10 w-24 rounded-2xl" />
+					<div class="bg-main h-10 w-40 rounded-2xl" />
+					<div class="bg-main h-10 w-28 rounded-2xl" />
+					<div class="bg-main h-10 w-32 rounded-2xl" />
 				</div>
 			</div>
 		</div>

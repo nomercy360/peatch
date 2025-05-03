@@ -1,7 +1,7 @@
-import { useTranslations } from '~/lib/locale-context';
+import { useTranslations } from '~/lib/locale-context'
 
 export default function NotFound() {
-	const { t } = useTranslations();
+	const { t } = useTranslations()
 
 	return (
 		<section class="p-8 text-gray-700">

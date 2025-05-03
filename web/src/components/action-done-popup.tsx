@@ -16,10 +16,10 @@ export default function ActionDonePopup(props: {
 	return (
 		<div class="flex h-screen w-full flex-col items-center justify-between bg-secondary p-5 text-center">
 			<div class="flex flex-col items-center justify-start">
-				<span class="material-symbols-rounded text-peatch-green text-[60px] text-green">
+				<span class="material-symbols-rounded text-peatch-green text-green text-[60px]">
 					schedule
 				</span>
-				<p class="text-3xl text-main">{props.action}</p>
+				<p class="text-main text-3xl">{props.action}</p>
 				<p class="mt-2 text-2xl text-secondary-foreground">{props.description}</p>
 			</div>
 			<div class="flex flex-col items-center justify-center">
@@ -41,7 +41,7 @@ export default function ActionDonePopup(props: {
 				</div>
 				<p class="mt-4 max-w-xs text-lg text-secondary">{props.callToAction}</p>
 				<Link
-					class="mt-2 flex h-12 w-full items-center justify-center text-sm font-medium text-link"
+					class="text-link mt-2 flex h-12 w-full items-center justify-center text-sm font-medium"
 					href="/"
 				>
 					Show them

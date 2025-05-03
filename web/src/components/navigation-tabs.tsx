@@ -36,7 +36,7 @@ export default function NavigationTabs(props: any) {
 	return (
 		<>
 			<div
-				class="space-x-10 flex items-center justify-between border shadow-sm h-[100px] px-5 fixed bottom-0 w-full border-t bg-background z-50">
+				class="fixed bottom-0 z-50 flex h-[100px] w-full items-center justify-between space-x-10 border border-t bg-background px-5 shadow-sm">
 				<div class="flex items-center">
 					<Link
 						href={store.user.first_name && store.user.description ? `/users/${store.user?.username}` : '/users/edit'}
@@ -55,16 +55,16 @@ export default function NavigationTabs(props: any) {
 					</Link>
 				</div>
 				<div class="flex flex-1 justify-evenly">
-					{tabs.map(({ href, icon, name }) => (
+					{tabs.map((props) => (
 						<Link
-							href={href}
+							href={props.href}
 							state={{ from: location.pathname }}
-							class={cn('h-12 flex items-center justify-between flex-col text-sm text-secondary-foreground', {
-								'text-foreground': location.pathname === href,
+							class={cn('flex h-12 flex-col items-center justify-between text-sm text-secondary-foreground', {
+								'text-foreground': location.pathname === props.href,
 							})}
 						>
-							<span class="material-symbols-rounded text-[32px]">{icon}</span>
-							<span class="text-xs font-medium">{name}</span>
+							<span class="material-symbols-rounded text-[32px]">{props.icon}</span>
+							<span class="text-xs font-medium">{props.name}</span>
 						</Link>
 					))}
 				</div>
