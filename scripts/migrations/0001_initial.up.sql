@@ -186,3 +186,11 @@ CREATE TABLE collaboration_followers
 
 CREATE INDEX idx_users_published_hidden_rating ON users (rating) WHERE published_at IS NOT NULL AND hidden_at IS NULL;
 CREATE INDEX idx_users_published_hidden_created_at ON users (created_at DESC) WHERE published_at IS NOT NULL AND hidden_at IS NULL;
+
+
+alter table public.opportunities
+    add text_ru varchar(255);
+
+alter table public.opportunities
+    add description_ru text;
+

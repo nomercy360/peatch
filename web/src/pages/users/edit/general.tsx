@@ -22,9 +22,9 @@ export default function GeneralInfo() {
 
 	createEffect(() => {
 		if (editUser.first_name && editUser.last_name && editUser.title) {
-			mainButton.enable('Next')
+			mainButton.enable(t('common.buttons.next'))
 		} else {
-			mainButton.disable('Next')
+			mainButton.disable(t('common.buttons.next'))
 		}
 	})
 

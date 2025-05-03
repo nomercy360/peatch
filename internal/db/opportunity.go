@@ -41,16 +41,23 @@ func (o *Opportunity) Scan(src interface{}) error {
 	return nil
 }
 
-func (s *storage) ListOpportunities() ([]LOpportunity, error) {
+func (s *storage) ListOpportunities(lang string) ([]LOpportunity, error) {
 	opportunities := make([]LOpportunity, 0)
 
-	query := `
-		SELECT id, text, description, icon, color, created_at
-		FROM opportunities
-	`
+	var query string
+	if lang == "ru" {
+		query = `
+			SELECT id, text_ru AS text, description_ru AS description, icon, color, created_at
+			FROM opportunities
+		`
+	} else {
+		query = `
+			SELECT id, text, description, icon, color, created_at
+			FROM opportunities
+		`
+	}
 
-	err := s.pg.Select(&opportunities, query)
-	if err != nil {
+	if err := s.pg.Select(&opportunities, query); err != nil {
 		return nil, err
 	}
 

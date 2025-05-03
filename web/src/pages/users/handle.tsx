@@ -125,22 +125,18 @@ export default function UserProfilePage() {
 				mainButton.enable(t('common.buttons.publish'))
 				mainButton.onClick(publish)
 			} else {
-				if (published()) {
-					mainButton.onClick(closePopup)
-					mainButton.enable(t('common.buttons.done'))
-				} else {
-					mainButton.enable(t('common.buttons.edit'))
-					mainButton.onClick(navigateToEdit)
-				}
+				mainButton.enable(t('common.buttons.edit'))
+				mainButton.onClick(navigateToEdit)
 			}
 		}
-
-		onCleanup(() => {
-			mainButton.offClick(publish)
-			mainButton.offClick(closePopup)
-			mainButton.offClick(navigateToEdit)
-		})
 	})
+
+	onCleanup(() => {
+		mainButton.offClick(publish)
+		mainButton.offClick(closePopup)
+		mainButton.offClick(navigateToEdit)
+	})
+
 
 	onCleanup(async () => {
 		mainButton.hide()
@@ -181,9 +177,9 @@ export default function UserProfilePage() {
 						<Show when={isCurrentUserProfile && store.user.hidden_at}>
 							<button
 								onClick={showInfoPopup}
-								class="absolute left-4 top-4 flex size-8 items-center justify-center rounded-lg bg-secondary"
+								class="absolute left-4 top-4 flex size-7 items-center justify-center rounded-lg bg-secondary"
 							>
-								<span class="material-symbols-rounded">
+								<span class="material-symbols-rounded text-[16px] text-secondary-foreground">
 									visibility_off
 								</span>
 							</button>
@@ -206,7 +202,7 @@ export default function UserProfilePage() {
 								</span>
 							</button>
 						</Show>
-						<div class="px-4 py-2.5">
+						<div class="w-full px-4 py-2.5">
 							<p class="text-3xl font-semibold capitalize text-primary">
 								{query.data.first_name} {query.data.last_name}:
 							</p>

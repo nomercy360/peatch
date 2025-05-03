@@ -7,7 +7,7 @@ import {
 	editCollaborationId,
 	setEditCollaboration,
 } from '~/store'
-import SelectLocation from '~/components/edit/selectLocation'
+import SelectLocation from '~/components/edit/select-location'
 import { createCollaboration, updateCollaboration } from '~/lib/api'
 import { useTranslations } from '~/lib/locale-context'
 

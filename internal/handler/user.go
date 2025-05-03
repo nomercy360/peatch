@@ -41,26 +41,6 @@ func (h *handler) handleListUsers(c echo.Context) error {
 	return c.JSON(http.StatusOK, users)
 }
 
-func (h *handler) handleGetFeed(c echo.Context) error {
-	uid := getUserID(c)
-	page, _ := strconv.Atoi(c.QueryParam("page"))
-	limit, _ := strconv.Atoi(c.QueryParam("limit"))
-	search := c.QueryParam("search")
-
-	query := svc.FeedQuery{
-		Page:   page,
-		Limit:  limit,
-		Search: search,
-	}
-
-	feed, err := h.svc.GetFeed(uid, query)
-	if err != nil {
-		return err
-	}
-
-	return c.JSON(http.StatusOK, feed)
-}
-
 // handleGetUser godoc
 // @Summary Get user
 // @Tags users
@@ -85,6 +65,12 @@ func getUserID(c echo.Context) int64 {
 	user := c.Get("user").(*jwt.Token)
 	claims := user.Claims.(*svc.JWTClaims)
 	return claims.UID
+}
+
+func getUserLang(c echo.Context) string {
+	user := c.Get("user").(*jwt.Token)
+	claims := user.Claims.(*svc.JWTClaims)
+	return claims.Lang
 }
 
 // handleUpdateUser godoc

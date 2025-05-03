@@ -5,7 +5,6 @@ import { createEffect, createSignal, Match, onCleanup, Switch } from 'solid-js'
 import { editUser, setEditUser, store } from '~/store'
 import {
 	API_BASE_URL,
-	CDN_URL,
 	fetchPresignedUrl,
 	updateUser,
 	uploadToS3,
@@ -90,7 +89,7 @@ export default function ImageUpload() {
 
 		mainButton.hideProgress()
 		window.Telegram.WebApp.disableClosingConfirmation()
-		navigate('/users/' + store.user.username + '?refetch=true')
+		navigate(`/users/${store.user.username}`)
 	}
 
 	mainButton.onClick(saveUser)

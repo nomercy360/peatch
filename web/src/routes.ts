@@ -2,7 +2,6 @@ import type { RouteDefinition } from '@solidjs/router'
 
 import UserProfilePage from '~/pages/users/handle'
 import FeedPage from '~/pages/feed'
-import PostsPage from '~/pages/posts'
 import NavigationTabs from '~/components/navigation-tabs'
 
 import UserEditPage from '~/pages/users/edit/index'
@@ -22,14 +21,10 @@ import CollaborationEditCreateBadgePage from '~/pages/collaborations/edit/create
 import CollaborationEditBadgesPage from '~/pages/collaborations/edit/badges'
 import CollaborationEditInterestsPage from '~/pages/collaborations/edit/interests'
 
-import PostIdPage from '~/pages/posts/id'
-import PostEditPage from '~/pages/posts/edit'
-import PostEditGeneralPage from '~/pages/posts/edit/general'
-import PostEditLocationPage from '~/pages/posts/edit/location'
-
 import UserCollaboratePage from '~/pages/users/collaborate'
 import CollaborationCollaboratePage from '~/pages/collaborations/collaborate'
 import NotFoundPage from './pages/404'
+import PostsPage from '~/pages/posts'
 
 export const routes: RouteDefinition[] = [
 	{
@@ -111,24 +106,6 @@ export const routes: RouteDefinition[] = [
 			{
 				path: '/interests',
 				component: CollaborationEditInterestsPage,
-			},
-		],
-	},
-	{
-		path: '/posts/:id',
-		component: PostIdPage,
-	},
-	{
-		path: '/posts/edit/:id?',
-		component: PostEditPage,
-		children: [
-			{
-				path: '/',
-				component: PostEditGeneralPage,
-			},
-			{
-				path: '/location',
-				component: PostEditLocationPage,
 			},
 		],
 	},

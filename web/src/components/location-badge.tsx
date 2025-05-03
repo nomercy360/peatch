@@ -1,6 +1,6 @@
 import { Show } from 'solid-js'
 import countryFlags from '~/assets/countries.json'
-import { CountryFlag } from '~/components/edit/selectLocation'
+import { CountryFlag } from '~/components/edit/select-location'
 
 type LocationBadgeProps = {
 	country: string

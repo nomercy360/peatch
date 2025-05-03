@@ -2,7 +2,7 @@ import { createSignal, For, Show, Suspense } from 'solid-js'
 import countryFlags from '../../assets/countries.json'
 import useDebounce from '../../lib/useDebounce'
 import { searchLocations } from '~/lib/api'
-import { createQuery } from '@tanstack/solid-query'
+import { useQuery } from '@tanstack/solid-query'
 
 type Location = {
 	country: string
@@ -26,7 +26,7 @@ export default function SelectLocation(props: {
 }) {
 	const [search, setSearch] = createSignal('')
 
-	const query = createQuery(() => ({
+	const query = useQuery(() => ({
 		queryKey: ['locations', search()],
 		queryFn: () => searchLocations(search()),
 	}))
@@ -80,18 +80,15 @@ export default function SelectLocation(props: {
 					<Suspense fallback={<div class="text-hint text-sm">Loading...</div>}>
 						<For each={query.data!}>
 							{location => (
-								<div class="w-full">
-									<LocationButton
-										isActive={
-											location.country === props.country &&
-											location.city === props.city &&
-											location.country_code === props.countryCode
-										}
-										onClick={() => onLocationClick(location)}
-										location={location}
-									/>
-									<div class="bg-main mt-2 h-px w-full" />
-								</div>
+								<LocationButton
+									isActive={
+										location.country === props.country &&
+										location.city === props.city &&
+										location.country_code === props.countryCode
+									}
+									onClick={() => onLocationClick(location)}
+									location={location}
+								/>
 							)}
 						</For>
 					</Suspense>
@@ -113,26 +110,30 @@ function LocationButton(props: {
 	return (
 		<button
 			onClick={() => props.onClick()}
-			class="text-main flex h-16 w-full flex-row items-center justify-between rounded-2xl px-4 text-sm"
+			class="flex h-12 w-full flex-row items-center justify-start space-x-3 rounded-xl px-4 text-sm"
 			classList={{
-				'bg-secondary': !props.isActive,
+				'bg-secondary': props.isActive,
 				'bg-border': props.isActive,
 			}}
 		>
-			<p class="">
-				<Show when={props.location.country && props.location.city}>
-					{props.location.city}, {props.location.country}
-				</Show>
-				<Show when={!props.location.city}>{props.location.country}</Show>
-			</p>
 			<Show when={findFlag}>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					viewBox={findFlag!.viewBox}
-					class="z-10 size-5"
+					class="z-10 size-7 flex-shrink-0"
 					innerHTML={findFlag!.flag}
 				/>
 			</Show>
+			<div class="flex flex-col justify-start text-start">
+				<Show when={props.location.city}>
+					<p class="text-sm">
+						{props.location.city}
+					</p>
+				</Show>
+				<p class="text-xs text-secondary-foreground">
+					{props.location.country}
+				</p>
+			</div>
 		</button>
 	)
 }

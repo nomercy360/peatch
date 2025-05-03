@@ -63,7 +63,7 @@ export const dict = {
 			edit: {
 				general: {
 					description: 'Помогите другим лучше понять вашу задачу',
-					title: 'Опишите сотрудничество',
+					title: 'Опишите проект',
 					titlePlaceholder: 'Ищу дизайнера продукта',
 					descriptionPlaceholder: 'Например: Ищу дизайнера для участия в некоммерционном хакатоне',
 					checkboxPlaceholder: 'Оплачивается ли эта возможность?',

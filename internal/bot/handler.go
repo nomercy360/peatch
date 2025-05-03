@@ -228,7 +228,7 @@ func (b *bot) createUser(update tgModels.Update) *db.User {
 		lang = "en"
 	}
 
-	user.LanguageCode = &lang
+	user.LanguageCode = lang
 
 	if strings.HasPrefix(update.Message.Text, "/start") {
 		// /start friend123 or can be just /start

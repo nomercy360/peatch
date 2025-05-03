@@ -1,22 +1,20 @@
 import {
 	createEffect,
 	createSignal,
-	For, Match,
+	For,
 	onCleanup,
 	onMount,
 	Show,
-	Suspense, Switch,
+	Suspense,
 } from 'solid-js'
-import { Collaboration, Post, UserProfile } from '~/gen'
-import { fetchFeed } from '~/lib/api'
+import { Collaboration } from '~/gen'
 import { Link } from '~/components/link'
 import useDebounce from '~/lib/useDebounce'
 import { useQuery } from '@tanstack/solid-query'
 import { useMainButton } from '~/lib/useMainButton'
-import { UserCardSmall } from '~/pages/posts/id'
-import { LocationBadge } from '~/components/location-badge'
 import { ListPlaceholder } from '~/pages/feed'
 import { useTranslations } from '~/lib/locale-context'
+import { fetchCollaborations } from '~/lib/api'
 
 export const [search, setSearch] = createSignal('')
 
@@ -28,7 +26,7 @@ export default function PostsPage() {
 
 	const query = useQuery(() => ({
 		queryKey: ['posts', search()],
-		queryFn: () => fetchFeed(search()),
+		queryFn: () => fetchCollaborations(search()),
 	}))
 
 	const [scroll, setScroll] = createSignal(0)
@@ -77,17 +75,10 @@ export default function PostsPage() {
 					<For each={query.data}>
 						{(data, _) => (
 							<div>
-								<Switch fallback={<div />}>
-									<Match when={data.type === 'collaboration'}>
-										<CollaborationCard
-											collab={data.data as Collaboration}
-											scroll={scroll()}
-										/>
-									</Match>
-									<Match when={data.type === 'post'}>
-										<PostCard post={data.data as Post} />
-									</Match>
-								</Switch>
+								<CollaborationCard
+									collab={data as Collaboration}
+									scroll={scroll()}
+								/>
 								<div class="h-px w-full bg-border" />
 							</div>
 						)}
@@ -95,36 +86,6 @@ export default function PostsPage() {
 				</Suspense>
 			</div>
 		</div>
-	)
-}
-
-const PostCard = (props: { post: Post }) => {
-	return (
-		<Link
-			class="flex flex-col items-start px-4 pb-5 pt-4 text-start"
-			href={`/posts/${props.post.id}`}
-		>
-			<UserCardSmall user={props.post.user as UserProfile} />
-			<p class="mt-4 text-3xl">{props.post.title}</p>
-			<p class="mt-1 text-sm text-secondary-foreground">{props.post.description}</p>
-			<Show when={props.post.image_url}>
-				<img
-					class="mt-3 aspect-[4/3] w-full rounded-xl object-cover"
-					src={props.post.image_url}
-					alt="Post Image"
-					loading="lazy"
-				/>
-			</Show>
-			<div class="mt-3">
-				<Show when={props.post.country && props.post.city}>
-					<LocationBadge
-						country={props.post.country!}
-						city={props.post.city!}
-						countryCode={props.post.country_code!}
-					/>
-				</Show>
-			</div>
-		</Link>
 	)
 }
 

@@ -4,7 +4,7 @@ import { useNavigate } from '@solidjs/router'
 import { createEffect, createResource, onCleanup } from 'solid-js'
 import { editUser, setEditUser } from '~/store'
 import { fetchOpportunities } from '~/lib/api'
-import { SelectOpportunity } from '~/components/edit/selectOpp'
+import { SelectOpportunity } from '~/components/edit/select-opp'
 import { createQuery } from '@tanstack/solid-query'
 import { useTranslations } from '~/lib/locale-context'
 
@@ -27,9 +27,9 @@ export default function SelectOpportunities() {
 
 	createEffect(() => {
 		if (editUser.opportunity_ids.length) {
-			mainButton.enable('Next')
+			mainButton.enable(t('common.buttons.next'))
 		} else {
-			mainButton.disable('Next')
+			mainButton.disable(t('common.buttons.next'))
 		}
 	})
 

@@ -154,10 +154,6 @@ type UserProfileShort struct {
 	IsFollowing bool    `json:"is_following"`
 } // @Name UserProfileShort
 
-type FeedbackSurveyRequest struct {
-	Message string `json:"message" validate:"max=1000,required"`
-} // @Name FeedbackSurveyRequest
-
 type UserCollaborationRequest struct {
 	ID        int64            `json:"id"`
 	UserID    int64            `json:"user_id"`

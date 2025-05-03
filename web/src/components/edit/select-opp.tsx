@@ -1,6 +1,7 @@
 import { createEffect, createSignal, For, onMount, Show } from 'solid-js'
 import { Opportunity } from '~/gen'
 import { useTranslations } from '~/lib/locale-context'
+import { cn } from '~/lib/utils'
 
 export function SelectOpportunity(props: {
 	selected: number[] | number
@@ -86,29 +87,18 @@ export function SelectOpportunity(props: {
 								class={'flex h-[60px] w-full flex-row items-center justify-start gap-2.5 rounded-2xl px-2.5'}
 								style={{ 'background-color': includes(op.id!) ? `#${op.color}` : 'var(--secondary)' }}
 							>
-								<div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary">
-									<span class="material-symbols-rounded text-main shrink-0">
+								<div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-border">
+									<span class="material-symbols-rounded shrink-0">
 										{String.fromCodePoint(parseInt(op.icon!, 16))}
 									</span>
 								</div>
 
 								<div class="text-start">
-									<p
-										class="text-sm font-semibold"
-										classList={{
-											'text-white': includes(op.id!),
-											'text-main': !includes(op.id!),
-										}}
-									>
+									<p class={cn('text-xs font-semibold', includes(op.id!) ? 'text-white' : 'text-secondary-foreground')}>
 										{op.text}
 									</p>
 									<p
-										class="text-xs leading-tight"
-										classList={{
-											'text-white/60': includes(op.id!),
-											'text-hint': !includes(op.id!),
-										}}
-									>
+										class={cn('text-xs leading-tight', includes(op.id!) ? 'text-white/80' : 'text-secondary-foreground')}>
 										{op.description}
 									</p>
 								</div>

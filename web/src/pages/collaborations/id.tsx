@@ -8,11 +8,11 @@ import {
 	Switch,
 } from 'solid-js'
 import { useNavigate, useParams, useSearchParams } from '@solidjs/router'
-import { CDN_URL, fetchCollaboration, publishCollaboration } from '~/lib/api'
+import { fetchCollaboration, publishCollaboration } from '~/lib/api'
 import { store } from '~/store'
 import ActionDonePopup from '~/components/action-done-popup'
 import { useMainButton } from '~/lib/useMainButton'
-import { createMutation, createQuery } from '@tanstack/solid-query'
+import { useMutation, useQuery } from '@tanstack/solid-query'
 import { queryClient } from '~/App'
 
 export default function Collaboration() {
@@ -27,12 +27,12 @@ export default function Collaboration() {
 
 	const collabId = params.id
 
-	const query = createQuery(() => ({
+	const query = useQuery(() => ({
 		queryKey: ['collaborations', collabId],
 		queryFn: () => fetchCollaboration(Number(collabId)),
 	}))
 
-	const publishMutate = createMutation(() => ({
+	const publishMutate = useMutation(() => ({
 		mutationFn: () => publishCollaboration(query.data.id),
 		onMutate: async () => {
 			await queryClient.cancelQueries({

@@ -4,7 +4,7 @@ import { useNavigate, useParams } from '@solidjs/router'
 import { createEffect, createResource, onCleanup } from 'solid-js'
 import { editCollaboration, setEditCollaboration } from '~/store'
 import { fetchOpportunities } from '~/lib/api'
-import { SelectOpportunity } from '~/components/edit/selectOpp'
+import { SelectOpportunity } from '~/components/edit/select-opp'
 import { createQuery } from '@tanstack/solid-query'
 import { useTranslations } from '~/lib/locale-context'
 

@@ -25,7 +25,7 @@ type service interface {
 	CreateUser(user db.User) (*db.User, error)
 	GetUserProfile(userID int64, username string) (*db.UserProfile, error)
 	UpdateUser(userID int64, updateRequest svc.UpdateUserRequest) error
-	ListOpportunities() ([]db.LOpportunity, error)
+	ListOpportunities(lang string) ([]db.LOpportunity, error)
 	ListBadges(search string) ([]db.Badge, error)
 	CreateBadge(badge svc.CreateBadgeRequest) (*db.Badge, error)
 	FollowUser(userID, followerID int64) error
@@ -38,10 +38,6 @@ type service interface {
 	PublishCollaboration(userID int64, collaborationID int64) error
 	GetPresignedURL(userID int64, objectKey string) (*svc.PresignedURL, error)
 	SearchLocations(query string) ([]db.Location, error)
-	GetFeed(uid int64, query svc.FeedQuery) ([]svc.FeedItem, error)
-	GetPostByID(uid, id int64) (*db.Post, error)
-	CreatePost(userID int64, post svc.CreatePostRequest) (*db.Post, error)
-	UpdatePost(userID, postID int64, update svc.CreatePostRequest) (*db.Post, error)
 }
 
 type CustomValidator struct {
@@ -91,10 +87,6 @@ func (h *handler) RegisterRoutes(e *echo.Echo) {
 	a.POST("/collaborations/:id/publish", h.handlePublishCollaboration)
 	a.GET("/presigned-url", h.handleGetPresignedURL)
 	a.GET("/locations", h.handleSearchLocations)
-	a.GET("/feed", h.handleGetFeed)
-	a.GET("/posts/:id", h.handleGetPost)
-	a.POST("/posts", h.handleCreatePost)
-	a.PUT("/posts/:id", h.handleUpdatePost)
 }
 
 func (h *handler) handleIndex(c echo.Context) error {

@@ -49,7 +49,7 @@ export default function NavigationTabs(props: any) {
 							class="h-10 w-10 rounded-full object-cover"
 							onError={(e) => {
 								const target = e.target as HTMLImageElement
-								target.src = '/fallback-avatar.svg'
+								target.src = '/avatar-fallback.svg'
 							}}
 						/>
 					</Link>

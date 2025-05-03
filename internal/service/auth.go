@@ -61,7 +61,7 @@ func (s *service) TelegramAuth(query string) (*UserWithToken, error) {
 			lang = "en"
 		}
 
-		create.LanguageCode = &lang
+		create.LanguageCode = lang
 
 		user, err = s.storage.CreateUser(create)
 		if err != nil {
@@ -71,7 +71,7 @@ func (s *service) TelegramAuth(query string) (*UserWithToken, error) {
 		return nil, err
 	}
 
-	token, err := generateJWT(user.ID, user.ChatID)
+	token, err := generateJWT(user.ID, user.ChatID, user.LanguageCode)
 
 	if err != nil {
 		return nil, err
@@ -85,17 +85,19 @@ func (s *service) TelegramAuth(query string) (*UserWithToken, error) {
 
 type JWTClaims struct {
 	jwt.RegisteredClaims
-	UID    int64 `json:"uid"`
-	ChatID int64 `json:"chat_id"`
+	UID    int64  `json:"uid"`
+	ChatID int64  `json:"chat_id"`
+	Lang   string `json:"lang"`
 }
 
-func generateJWT(id, chatID int64) (string, error) {
+func generateJWT(id, chatID int64, lang string) (string, error) {
 	claims := &JWTClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 		},
 		UID:    id,
 		ChatID: chatID,
+		Lang:   lang,
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

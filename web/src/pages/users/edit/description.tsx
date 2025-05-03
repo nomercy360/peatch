@@ -20,9 +20,9 @@ export default function Description() {
 
 	createEffect(() => {
 		if (editUser.description) {
-			mainButton.enable('Next')
+			mainButton.enable(t('common.buttons.next'))
 		} else {
-			mainButton.disable('Next')
+			mainButton.disable(t('common.buttons.next'))
 		}
 	})
 
@@ -33,7 +33,7 @@ export default function Description() {
 	return (
 		<FormLayout
 			title={t('pages.users.edit.description.title')}
-			description="Tell others about your backround, achievments and goals"
+			description={t('pages.users.edit.description.description')}
 			screen={5}
 			totalScreens={6}
 		>

@@ -2,7 +2,7 @@ import { FormLayout } from '~/components/edit/layout'
 import { useMainButton } from '~/lib/useMainButton'
 import { createEffect, onCleanup, onMount } from 'solid-js'
 import { editUser, setEditUser } from '~/store'
-import SelectLocation from '~/components/edit/selectLocation'
+import SelectLocation from '~/components/edit/select-location'
 import { useNavigate } from '@solidjs/router'
 import { useTranslations } from '~/lib/locale-context'
 
@@ -22,9 +22,9 @@ export default function SelectBadges() {
 
 	createEffect(() => {
 		if (editUser.country && editUser.country_code) {
-			mainButton.enable('Next')
+			mainButton.enable(t('common.buttons.next'))
 		} else {
-			mainButton.disable('Next')
+			mainButton.disable(t('common.buttons.next'))
 		}
 	})
 

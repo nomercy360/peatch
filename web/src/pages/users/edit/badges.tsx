@@ -51,9 +51,9 @@ export default function SelectBadges() {
 
 	createEffect(() => {
 		if (editUser.badge_ids.length) {
-			mainButton.enable('Next')
+			mainButton.enable(t('common.buttons.next'))
 		} else {
-			mainButton.disable('Next')
+			mainButton.disable(t('common.buttons.next'))
 		}
 	})
 

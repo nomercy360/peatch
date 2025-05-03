@@ -59,7 +59,7 @@ type User struct {
 	AvatarURL              *string          `json:"avatar_url" db:"avatar_url"`
 	Title                  *string          `json:"title" db:"title"`
 	Description            *string          `json:"description" db:"description"`
-	LanguageCode           *string          `json:"-" db:"language_code"`
+	LanguageCode           string           `json:"-" db:"language_code"`
 	Country                *string          `json:"country" db:"country"`
 	City                   *string          `json:"city" db:"city"`
 	CountryCode            *string          `json:"country_code" db:"country_code"`

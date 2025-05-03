@@ -53,12 +53,6 @@ export const fetchUsers = async (search: string) => {
 	})
 }
 
-export const fetchFeed = async (search: string) => {
-	return await apiFetch({
-		endpoint: '/feed?search=' + search + '&page=1&limit=20',
-	})
-}
-
 export const fetchBadges = async () => {
 	return await apiFetch({
 		endpoint: '/badges',

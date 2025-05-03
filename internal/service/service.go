@@ -15,7 +15,7 @@ type storage interface {
 	Ping() error
 	GetUserProfile(params db.GetUsersParams) (*db.User, error)
 	UpdateUser(userID int64, user db.User, badges, opportunities []int64) error
-	ListOpportunities() ([]db.LOpportunity, error)
+	ListOpportunities(lang string) ([]db.LOpportunity, error)
 	ListBadges(search string) ([]db.Badge, error)
 	CreateBadge(badge db.Badge) (*db.Badge, error)
 	FollowUser(userID, followerID int64) error
@@ -32,10 +32,6 @@ type storage interface {
 	ShowUser(userID int64) error
 	ShowCollaboration(userID int64, collaborationID int64) error
 	SearchLocations(query string) ([]db.Location, error)
-	GetPostByID(uid, id int64) (*db.Post, error)
-	CreatePost(post db.Post) (*db.Post, error)
-	GetPosts(query db.PostQuery) ([]db.Post, error)
-	UpdatePost(uid int64, postID int64, post db.Post) (*db.Post, error)
 }
 
 type s3Client interface {

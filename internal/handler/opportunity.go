@@ -13,7 +13,7 @@ import (
 // @Success 200 {array} Opportunity
 // @Router /api/opportunities [get]
 func (h *handler) handleListOpportunities(c echo.Context) error {
-	res, err := h.svc.ListOpportunities()
+	res, err := h.svc.ListOpportunities(getUserLang(c))
 
 	if err != nil {
 		return err
