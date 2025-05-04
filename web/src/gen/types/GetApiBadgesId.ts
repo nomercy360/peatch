@@ -3,7 +3,7 @@
  * Do not edit manually.
  */
 
-import type { Badge } from './Badge.ts'
+import type { BadgeResponse } from './BadgeResponse.ts'
 
 export type GetApiBadgesIdPathParams = {
   /**
@@ -16,7 +16,7 @@ export type GetApiBadgesIdPathParams = {
 /**
  * @description OK
  */
-export type GetApiBadgesId200 = Badge
+export type GetApiBadgesId200 = BadgeResponse
 
 export type GetApiBadgesIdQueryResponse = GetApiBadgesId200
 

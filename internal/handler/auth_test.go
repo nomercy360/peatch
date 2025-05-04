@@ -225,7 +225,7 @@ func authHelper(t *testing.T, e *echo.Echo, telegramID int64, username, firstNam
 
 	body, _ := json.Marshal(reqBody)
 
-	rec := performRequest(t, e, http.MethodPost, "/auth-telegram", string(body), "", http.StatusOK)
+	rec := performRequest(t, e, http.MethodPost, "/auth/telegram", string(body), "", http.StatusOK)
 
 	resp := parseResponse[contract.AuthResponse](t, rec)
 
@@ -268,7 +268,7 @@ func TestTelegramAuth_InvalidInitData(t *testing.T) {
 	}
 	body, _ := json.Marshal(reqBody)
 
-	rec := performRequest(t, e, http.MethodPost, "/auth-telegram", string(body), "", http.StatusUnauthorized)
+	rec := performRequest(t, e, http.MethodPost, "/auth/telegram", string(body), "", http.StatusUnauthorized)
 
 	resp := parseResponse[contract.ErrorResponse](t, rec)
 	if resp.Error != handler.ErrInvalidInitData {
@@ -282,7 +282,7 @@ func TestTelegramAuth_MissingQuery(t *testing.T) {
 	reqBody := contract.AuthTelegramRequest{}
 	body, _ := json.Marshal(reqBody)
 
-	rec := performRequest(t, e, http.MethodPost, "/auth-telegram", string(body), "", http.StatusBadRequest)
+	rec := performRequest(t, e, http.MethodPost, "/auth/telegram", string(body), "", http.StatusBadRequest)
 
 	resp := parseResponse[contract.ErrorResponse](t, rec)
 	if resp.Error != handler.ErrInvalidRequest {

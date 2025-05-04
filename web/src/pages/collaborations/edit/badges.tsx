@@ -2,12 +2,12 @@ import { SelectBadge } from '~/components/edit/selectBadge'
 import { FormLayout } from '~/components/edit/layout'
 import { useMainButton } from '~/lib/useMainButton'
 import { useNavigate, useParams, useSearchParams } from '@solidjs/router'
-import { createEffect, createSignal, onCleanup } from 'solid-js'
+import { createEffect, createSignal, onCleanup, onMount } from 'solid-js'
 import { editCollaboration, setEditCollaboration } from '~/store'
 import { fetchBadges } from '~/lib/api'
-import { Badge } from '~/gen'
 import { useTranslations } from '~/lib/locale-context'
 import { useQuery } from '@tanstack/solid-query'
+import { BadgeResponse } from '~/gen'
 
 export default function SelectBadges() {
 	const mainButton = useMainButton()
@@ -22,8 +22,8 @@ export default function SelectBadges() {
 			fetchBadges().then(badges => {
 				const selected = editCollaboration.badge_ids
 				return [
-					...selected.map((id: number) => badges.find((b: Badge) => b.id === id)),
-					...badges.filter((b: Badge) => !selected.includes(b.id!)),
+					...selected.map((id: string) => badges.find((b: BadgeResponse) => b.id === id)),
+					...badges.filter((b: BadgeResponse) => !selected.includes(b.id!)),
 				]
 			}),
 	}))
@@ -51,14 +51,16 @@ export default function SelectBadges() {
 		}
 	})
 
-	mainButton.onClick(navigateNext)
-
 	createEffect(() => {
 		if (editCollaboration.badge_ids && editCollaboration.badge_ids.length > 0) {
 			mainButton.enable(t('common.buttons.next'))
 		} else {
 			mainButton.disable(t('common.buttons.next'))
 		}
+	})
+
+	onMount(() => {
+		mainButton.onClick(navigateNext)
 	})
 
 	onCleanup(() => {

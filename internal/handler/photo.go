@@ -16,6 +16,7 @@ var allowedPhotoExtensions = map[string]struct{}{
 	".jpeg": {},
 	".png":  {},
 	".webp": {},
+	".svg":  {},
 }
 
 var ErrInvalidPhotoFormat = "Invalid photo format"
@@ -31,7 +32,7 @@ var ErrInvalidPhotoFormat = "Invalid photo format"
 // @Failure 400 {object} contract.ErrorResponse
 // @Failure 401 {object} contract.ErrorResponse
 // @Failure 500 {object} contract.ErrorResponse
-// @Router /v1/users/avatar [post]
+// @Router /api/users/avatar [post]
 func (h *handler) handleUserAvatar(c echo.Context) error {
 	userID := getUserID(c)
 

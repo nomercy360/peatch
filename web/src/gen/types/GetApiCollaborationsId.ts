@@ -3,7 +3,7 @@
  * Do not edit manually.
  */
 
-import type { Collaboration } from './Collaboration.ts'
+import type { CollaborationResponse } from './CollaborationResponse.ts'
 
 export type GetApiCollaborationsIdPathParams = {
   /**
@@ -16,7 +16,7 @@ export type GetApiCollaborationsIdPathParams = {
 /**
  * @description OK
  */
-export type GetApiCollaborationsId200 = Collaboration
+export type GetApiCollaborationsId200 = CollaborationResponse
 
 export type GetApiCollaborationsIdQueryResponse = GetApiCollaborationsId200
 

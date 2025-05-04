@@ -21,8 +21,6 @@ import CollaborationEditCreateBadgePage from '~/pages/collaborations/edit/create
 import CollaborationEditBadgesPage from '~/pages/collaborations/edit/badges'
 import CollaborationEditInterestsPage from '~/pages/collaborations/edit/interests'
 
-import UserCollaboratePage from '~/pages/users/collaborate'
-import CollaborationCollaboratePage from '~/pages/collaborations/collaborate'
 import NotFoundPage from './pages/404'
 import PostsPage from '~/pages/posts'
 
@@ -108,14 +106,6 @@ export const routes: RouteDefinition[] = [
 				component: CollaborationEditInterestsPage,
 			},
 		],
-	},
-	{
-		path: '/users/:handle/collaborate',
-		component: UserCollaboratePage,
-	},
-	{
-		path: 'collaborations/:id/collaborate',
-		component: CollaborationCollaboratePage,
 	},
 	{
 		path: '**',

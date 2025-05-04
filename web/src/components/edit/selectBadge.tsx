@@ -7,21 +7,22 @@ import {
 	Suspense,
 	Switch,
 } from 'solid-js'
-import { Badge } from '~/gen'
 import { useTranslations } from '~/lib/locale-context'
+import { BadgeResponse } from '~/gen'
 
 export function SelectBadge(props: {
-	selected: number[]
-	setSelected: (selected: number[]) => void
+	selected: string[]
+	setSelected: (selected: string[]) => void
 	search: string
 	setSearch: (search: string) => void
-	badges: Badge[]
+	badges: BadgeResponse[]
 	onCreateBadgeButtonClick: () => void
 }) {
 	const { t } = useTranslations()
 	const [filteredBadges, setFilteredBadges] = createSignal(props.badges)
 
-	const onBadgeClick = (badgeId: number) => {
+	const onBadgeClick = (badgeId?: string) => {
+		if (!badgeId) return
 		if (props.selected.includes(badgeId!)) {
 			props.setSelected(props.selected.filter(b => b !== badgeId))
 		} else if (props.selected.length < 10) {

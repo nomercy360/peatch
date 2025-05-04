@@ -5,47 +5,31 @@
 
 export type UpdateUserRequest = {
   /**
-   * @type string
+   * @type array | undefined
    */
-  avatar_url: string
-  /**
-   * @type array
-   */
-  badge_ids: number[]
+  badge_ids?: string[]
   /**
    * @type string | undefined
    */
-  city?: string
+  description?: string
   /**
-   * @maxLength 255
-   * @type string
+   * @type string | undefined
    */
-  country: string
+  first_name?: string
   /**
-   * @maxLength 2
-   * @type string
+   * @type string | undefined
    */
-  country_code: string
+  last_name?: string
   /**
-   * @maxLength 1000
-   * @type string
+   * @type string | undefined
    */
-  description: string
+  location_id?: string
   /**
-   * @type string
+   * @type array | undefined
    */
-  first_name: string
+  opportunity_ids?: string[]
   /**
-   * @type string
+   * @type string | undefined
    */
-  last_name: string
-  /**
-   * @type array
-   */
-  opportunity_ids: number[]
-  /**
-   * @maxLength 255
-   * @type string
-   */
-  title: string
+  title?: string
 }

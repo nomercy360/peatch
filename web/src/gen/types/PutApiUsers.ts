@@ -4,12 +4,12 @@
  */
 
 import type { UpdateUserRequest } from './UpdateUserRequest.ts'
-import type { User } from './User.ts'
+import type { UserResponse } from './UserResponse.ts'
 
 /**
  * @description OK
  */
-export type PutApiUsers200 = User
+export type PutApiUsers200 = UserResponse
 
 /**
  * @description User data

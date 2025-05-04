@@ -8,17 +8,14 @@ import {
 	Switch,
 } from 'solid-js'
 import { useNavigate, useParams, useSearchParams } from '@solidjs/router'
-import { fetchCollaboration, publishCollaboration } from '~/lib/api'
+import { fetchCollaboration } from '~/lib/api'
 import { store } from '~/store'
-import ActionDonePopup from '~/components/action-done-popup'
 import { useMainButton } from '~/lib/useMainButton'
-import { useMutation, useQuery } from '@tanstack/solid-query'
-import { queryClient } from '~/App'
+import { useQuery } from '@tanstack/solid-query'
 
 export default function Collaboration() {
 	const mainButton = useMainButton()
 
-	const [wasPublished, setWasPublished] = createSignal(false)
 	const [isCurrentUserCollab, setIsCurrentUserCollab] = createSignal(false)
 
 	const navigate = useNavigate()
@@ -29,22 +26,7 @@ export default function Collaboration() {
 
 	const query = useQuery(() => ({
 		queryKey: ['collaborations', collabId],
-		queryFn: () => fetchCollaboration(Number(collabId)),
-	}))
-
-	const publishMutate = useMutation(() => ({
-		mutationFn: () => publishCollaboration(query.data.id),
-		onMutate: async () => {
-			await queryClient.cancelQueries({
-				queryKey: ['collaborations', collabId],
-			})
-			queryClient.setQueryData(['collaborations', collabId], old => {
-				if (old) {
-					return { ...old, published_at: new Date().toISOString() }
-				}
-				return old
-			})
-		},
+		queryFn: () => fetchCollaboration(collabId),
 	}))
 
 	createEffect(async () => {
@@ -59,34 +41,6 @@ export default function Collaboration() {
 		}
 	})
 
-	const closePopup = () => {
-		setWasPublished(false)
-	}
-
-	const publish = async () => {
-		publishMutate.mutate()
-		window.Telegram.WebApp.HapticFeedback.impactOccurred('light')
-		setWasPublished(true)
-	}
-
-	const navigateToCollaborate = async () => {
-		if (!store.user.published_at) {
-			window.Telegram.WebApp.showConfirm(
-				`Publish your profile first, so ${query.data.first_name} will see it`,
-				(ok: boolean) =>
-					ok && navigate('/users/edit', { state: { back: true } }),
-			)
-		} else if (store.user.hidden_at) {
-			window.Telegram.WebApp.showAlert(
-				'Your profile is hidden by our moderators. Please contact us for more information',
-			)
-		} else {
-			navigate(`/collaborations/${collabId}/collaborate`, {
-				state: { back: true },
-			})
-		}
-	}
-
 	const navigateToEdit = () => {
 		navigate('/collaborations/edit/' + collabId, {
 			state: { from: '/collaborations/' + collabId },
@@ -95,28 +49,11 @@ export default function Collaboration() {
 
 	createEffect(() => {
 		if (isCurrentUserCollab()) {
-			if (!query.data.published_at) {
-				mainButton.enable('Publish')
-				mainButton.onClick(publish)
-			} else {
-				if (wasPublished()) {
-					mainButton.enable('Back to collaboration')
-					mainButton.onClick(closePopup)
-				} else {
-					mainButton.enable('Edit')
-					mainButton.onClick(navigateToEdit)
-				}
-			}
-		} else {
-			mainButton.onClick(navigateToCollaborate)
-			mainButton.enable('Collaborate')
+			mainButton.enable('Edit')
+			mainButton.onClick(navigateToEdit)
 		}
-
 		onCleanup(() => {
-			mainButton.offClick(closePopup)
-			mainButton.offClick(publish)
 			mainButton.offClick(navigateToEdit)
-			mainButton.offClick(navigateToCollaborate)
 		})
 	})
 
@@ -127,13 +64,6 @@ export default function Collaboration() {
 	return (
 		<Suspense fallback={<Loader />}>
 			<Switch>
-				<Match when={wasPublished() && isCurrentUserCollab()}>
-					<ActionDonePopup
-						action="Collaboration published!"
-						description="We have shared your collaboration with the community"
-						callToAction="There are 12 people you might be interested to collaborate with"
-					/>
-				</Match>
 				<Match when={!query.isLoading}>
 					<div class="h-fit min-h-screen bg-secondary">
 						<Switch>

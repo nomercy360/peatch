@@ -13,7 +13,7 @@ import (
 // @Tags badges
 // @Accept  json
 // @Produce  json
-// @Success 200 {array} Badge
+// @Success 200 {array} contract.BadgeResponse
 // @Router /api/badges [get]
 func (h *handler) handleListBadges(c echo.Context) error {
 	query := c.QueryParam("search")
@@ -23,7 +23,7 @@ func (h *handler) handleListBadges(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get badges").WithInternal(err)
 	}
 
-	return c.JSON(http.StatusOK, badges)
+	return c.JSON(http.StatusOK, contract.ToBadgeResponseList(badges))
 }
 
 // handleGetBadge godoc
@@ -32,7 +32,7 @@ func (h *handler) handleListBadges(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param id path int true "Badge ID"
-// @Success 200 {object} Badge
+// @Success 200 {object} contract.BadgeResponse
 // @Router /api/badges/{id} [get]
 func (h *handler) handleCreateBadge(c echo.Context) error {
 	var req contract.CreateBadgeRequest
@@ -55,5 +55,5 @@ func (h *handler) handleCreateBadge(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to create badge").WithInternal(err)
 	}
 
-	return c.JSON(http.StatusCreated, badge)
+	return c.JSON(http.StatusCreated, contract.ToBadgeResponse(badge))
 }

@@ -25,12 +25,16 @@ export function NavigationProvider(props: { children: JSX.Element }) {
 
 		!state && navigate('/')
 
-		const deserialize = (state: Readonly<Partial<unknown>> | null) => {
-			try {
-				return JSON.parse(state as string)
-			} catch (e) {
-				return state
+		const deserialize = (state: unknown) => {
+			if (typeof state === 'string') {
+				try {
+					return JSON.parse(state)
+				} catch (e) {
+					console.error('Error deserializing state:', e)
+					return state
+				}
 			}
+			return state
 		}
 
 		const stateData = deserialize(state)

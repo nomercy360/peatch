@@ -226,19 +226,6 @@ interface InitDataUnsafe {
 	start_param?: string
 }
 
-interface User {
-	id: number
-	first_name: string
-	last_name: string
-	username: string
-	language_code: string
-	is_bot: boolean
-	is_premium: boolean
-	added_to_attachment_menu?: boolean
-	allows_write_to_pm: boolean
-	photo_url: string
-}
-
 interface ThemeParams {
 	bg_color: string
 	text_color: string

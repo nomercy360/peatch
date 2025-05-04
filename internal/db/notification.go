@@ -70,7 +70,7 @@ func (s *Storage) SearchNotification(ctx context.Context, params NotificationQue
 			{"user_id": *params.UserID},
 			{"chat_id": *params.ChatID},
 		}
-		log.Println("Warning: Both UserID and ChatID provided for SearchNotification. Using OR condition.")
+		log.Println("Warning: Both ViewerID and ChatID provided for SearchNotification. Using OR condition.")
 	} else if params.UserID != nil {
 		filter["user_id"] = *params.UserID
 	} else if params.ChatID != nil {

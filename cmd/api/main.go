@@ -36,11 +36,11 @@ func gracefulShutdown(e *echo.Echo, logr *slog.Logger) {
 	logr.Info("Server gracefully stopped")
 }
 
-// @title Loook API
+// @title Peatch API
 // @version 1.0
-// @description API Documentation for the Loook Dating Project
+// @description API Documentation for the Api Dating Project
 
-// @host loook-api.mxksimdev.com
+// @host api.peatch.io
 // @schemes https
 func main() {
 	cfg, err := config.LoadConfig()

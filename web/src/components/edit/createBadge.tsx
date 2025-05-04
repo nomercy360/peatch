@@ -1,9 +1,9 @@
 import { For, Show } from 'solid-js'
 import icons from '../../assets/icons.json'
-import { Badge } from '~/gen'
+import { BadgeResponse } from '~/gen'
 
 export default function CreateBadge(props: {
-	createBadge: Badge
+	createBadge: BadgeResponse
 	setCreateBadge: any
 }) {
 	const colors = [

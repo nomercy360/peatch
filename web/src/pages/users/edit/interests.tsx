@@ -1,12 +1,12 @@
 import { FormLayout } from '~/components/edit/layout'
 import { useMainButton } from '~/lib/useMainButton'
 import { useNavigate } from '@solidjs/router'
-import { createEffect, createResource, onCleanup } from 'solid-js'
+import { createEffect, onCleanup } from 'solid-js'
 import { editUser, setEditUser } from '~/store'
 import { fetchOpportunities } from '~/lib/api'
 import { SelectOpportunity } from '~/components/edit/select-opp'
-import { createQuery } from '@tanstack/solid-query'
 import { useTranslations } from '~/lib/locale-context'
+import { useQuery } from '@tanstack/solid-query'
 
 export default function SelectOpportunities() {
 	const mainButton = useMainButton()
@@ -18,7 +18,7 @@ export default function SelectOpportunities() {
 		navigate('/users/edit/location', { state: { back: true } })
 	}
 
-	const fetchOpportunityQuery = createQuery(() => ({
+	const fetchOpportunityQuery = useQuery(() => ({
 		queryKey: ['opportunities'],
 		queryFn: () => fetchOpportunities(),
 	}))

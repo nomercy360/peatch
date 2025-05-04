@@ -7,7 +7,6 @@ import {
 	Show,
 	Suspense,
 } from 'solid-js'
-import { Collaboration } from '~/gen'
 import { Link } from '~/components/link'
 import useDebounce from '~/lib/useDebounce'
 import { useQuery } from '@tanstack/solid-query'
@@ -15,6 +14,7 @@ import { useMainButton } from '~/lib/useMainButton'
 import { ListPlaceholder } from '~/pages/feed'
 import { useTranslations } from '~/lib/locale-context'
 import { fetchCollaborations } from '~/lib/api'
+import { CollaborationResponse } from '~/gen'
 
 export const [search, setSearch] = createSignal('')
 
@@ -76,7 +76,7 @@ export default function PostsPage() {
 						{(data, _) => (
 							<div>
 								<CollaborationCard
-									collab={data as Collaboration}
+									collab={data}
 									scroll={scroll()}
 								/>
 								<div class="h-px w-full bg-border" />
@@ -90,7 +90,7 @@ export default function PostsPage() {
 }
 
 const CollaborationCard = (props: {
-	collab: Collaboration
+	collab: CollaborationResponse
 	scroll: number
 }) => {
 	const shortenDescription = (description: string) => {
@@ -102,12 +102,12 @@ const CollaborationCard = (props: {
 		<Link
 			class="flex flex-col items-start px-4 pb-5 pt-4 text-start"
 			href={`/collaborations/${props.collab.id}`}
-			state={{ from: '/', scroll: props.scroll }}
+			state={{ from: '/posts', scroll: props.scroll }}
 		>
 			<div class="flex flex-row items-center justify-center">
 				<Link
-					href={`/users/${props.collab.user?.username}`}
-					state={{ back: true, scroll: props.scroll }}
+					href={`/users/${props.collab.user?.id}`}
+					state={{ from: '/posts', scroll: props.scroll }}
 				>
 					<img
 						class="size-10 rounded-xl object-cover"
@@ -121,7 +121,7 @@ const CollaborationCard = (props: {
 				>
 					<span class="material-symbols-rounded text-[20px] text-white">
 						{String.fromCodePoint(
-							parseInt(props.collab.opportunity?.icon!, 16),
+							parseInt(props.collab.opportunity?.icon ?? '0', 16),
 						)}
 					</span>
 				</div>

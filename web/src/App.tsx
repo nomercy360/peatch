@@ -50,8 +50,12 @@ export default function App(props: any) {
 			console.log('WEBAPP:', window.Telegram)
 
 			try {
-				const resp = await fetch(`${API_BASE_URL}/auth/telegram?` + initData, {
+				const resp = await fetch(`${API_BASE_URL}/auth/telegram`, {
 					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({ query: initData }),
 				})
 
 				const { user, token } = await resp.json()

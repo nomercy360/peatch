@@ -21,7 +21,7 @@ export default function SelectBadges() {
 	})
 
 	createEffect(() => {
-		if (editUser.country && editUser.country_code) {
+		if (editUser.location.id) {
 			mainButton.enable(t('common.buttons.next'))
 		} else {
 			mainButton.disable(t('common.buttons.next'))
@@ -40,12 +40,8 @@ export default function SelectBadges() {
 			totalScreens={6}
 		>
 			<SelectLocation
-				city={editUser.city}
-				setCity={c => setEditUser('city', c)}
-				country={editUser.country}
-				setCountry={c => setEditUser('country', c)}
-				countryCode={editUser.country_code}
-				setCountryCode={c => setEditUser('country_code', c)}
+				initialLocation={editUser.location}
+				setLocation={b => setEditUser('location', b)}
 			/>
 		</FormLayout>
 	)

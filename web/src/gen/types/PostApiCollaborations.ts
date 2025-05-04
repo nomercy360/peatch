@@ -3,13 +3,13 @@
  * Do not edit manually.
  */
 
-import type { Collaboration } from './Collaboration.ts'
+import type { CollaborationResponse } from './CollaborationResponse.ts'
 import type { CreateCollaboration } from './CreateCollaboration.ts'
 
 /**
  * @description Created
  */
-export type PostApiCollaborations201 = Collaboration
+export type PostApiCollaborations201 = CollaborationResponse
 
 /**
  * @description Collaboration data

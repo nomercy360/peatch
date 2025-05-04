@@ -3,12 +3,12 @@
  * Do not edit manually.
  */
 
-import type { Badge } from './Badge.ts'
+import type { BadgeResponse } from './BadgeResponse.ts'
 
 /**
  * @description OK
  */
-export type GetApiBadges200 = Badge[]
+export type GetApiBadges200 = BadgeResponse[]
 
 export type GetApiBadgesQueryResponse = GetApiBadges200
 

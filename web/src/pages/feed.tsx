@@ -6,7 +6,6 @@ import {
 	Show,
 	Suspense,
 } from 'solid-js'
-import { fetchUsers } from '~/lib/api'
 import { Link } from '~/components/link'
 import BadgeList from '~/components/badge-list'
 import useDebounce from '~/lib/useDebounce'
@@ -14,30 +13,57 @@ import { store } from '~/store'
 import FillProfilePopup from '~/components/fill-profile-popup'
 import { LocationBadge } from '~/components/location-badge'
 import { useTranslations } from '~/lib/locale-context'
-import { useQuery } from '@tanstack/solid-query'
-import { UserProfile } from '~/gen'
+import { useInfiniteQuery } from '@tanstack/solid-query'
+import { verificationStatus, UserProfileResponse } from '~/gen'
+import { fetchUsers } from '~/lib/api'
+import { useNavigation } from '~/lib/useNavigation'
 
 
 export const [search, setSearch] = createSignal('')
 
 export default function FeedPage() {
 	const { t } = useTranslations()
+	const navigation = useNavigation()
+
 	const updateSearch = useDebounce(setSearch, 350)
 
-	const query = useQuery(() => ({
+	const query = useInfiniteQuery(() => ({
 		queryKey: ['users', search()],
-		queryFn: () => fetchUsers(search()),
+		queryFn: fetchUsers,
+		getNextPageParam: (lastPage) => lastPage.nextPage,
+		initialPageParam: 1,
 	}))
 
 	const [scroll, setScroll] = createSignal(0)
-
 	const [profilePopup, setProfilePopup] = createSignal(false)
 	const [communityPopup, setCommunityPopup] = createSignal(false)
+	const [isLoadingMore, setIsLoadingMore] = createSignal(false)
+
+	const loadMoreUsers = () => {
+		if (query.hasNextPage && !query.isFetchingNextPage && !isLoadingMore()) {
+			setIsLoadingMore(true)
+			query.fetchNextPage().finally(() => setIsLoadingMore(false))
+		}
+	}
 
 	createEffect(() => {
-		const onScroll = () => setScroll(window.scrollY)
-		window.addEventListener('scroll', onScroll)
-		return () => window.removeEventListener('scroll', onScroll)
+		const onScroll = () => {
+			setScroll(window.scrollY)
+
+			const feedElement = document.getElementById('feed')
+			if (feedElement) {
+				const { scrollTop, scrollHeight, clientHeight } = feedElement
+				if (scrollHeight - scrollTop - clientHeight < 300) {
+					loadMoreUsers()
+				}
+			}
+		}
+
+		const feedElement = document.getElementById('feed')
+		if (feedElement) {
+			feedElement.addEventListener('scroll', onScroll)
+			return () => feedElement.removeEventListener('scroll', onScroll)
+		}
 	})
 
 	onMount(() => {
@@ -54,14 +80,6 @@ export default function FeedPage() {
 		// window.Telegram.WebApp.CloudStorage.removeItem('profilePopup')
 		// window.Telegram.WebApp.CloudStorage.removeItem('communityPopup')
 	})
-
-	const getUserLink = () => {
-		if (store.user.first_name && store.user.description) {
-			return '/users/' + store.user?.username
-		} else {
-			return '/users/edit'
-		}
-	}
 
 	const closePopup = (name: string) => {
 		switch (name) {
@@ -83,13 +101,20 @@ export default function FeedPage() {
 		setCommunityPopup(value !== 'closed')
 	}
 
+	const allUsers = () => {
+		if (!query.data) return []
+		return query.data.pages.flatMap(page => page.data)
+	}
+
 	return (
 		<div class="flex h-screen flex-col overflow-hidden">
 			<div class="flex w-full flex-shrink-0 flex-col items-center justify-between space-y-4 border-b p-4">
-				<Show when={!store.user.published_at && profilePopup()}>
+				<Show
+					when={store.user.verification_status == verificationStatus.VerificationStatusUnverified && profilePopup()}>
 					<FillProfilePopup onClose={() => closePopup('profilePopup')} />
 				</Show>
-				<Show when={communityPopup() && store.user.published_at}>
+				<Show
+					when={communityPopup() && store.user.verification_status == verificationStatus.VerificationStatusVerified}>
 					<OpenCommunityPopup onClose={() => closePopup('communityPopup')} />
 				</Show>
 				<div class="relative flex h-10 w-full flex-row items-center justify-center rounded-lg bg-secondary">
@@ -114,54 +139,72 @@ export default function FeedPage() {
 			</div>
 			<div class="flex h-full w-full flex-shrink-0 flex-col overflow-y-auto pb-20" id="feed">
 				<Suspense fallback={<ListPlaceholder />}>
-					<For each={query.data}>
+					<For each={allUsers()}>
 						{(user, _) => (
 							<div>
-								<UserCard user={user as User} scroll={scroll()} />
+								<UserCard user={user} scroll={scroll()} />
 								<div class="h-px w-full bg-border" />
 							</div>
 						)}
 					</For>
+
+					<Show when={query.isFetchingNextPage}>
+						<div class="flex justify-center p-4">
+							<div class="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+						</div>
+					</Show>
+
+					<Show when={!query.hasNextPage && allUsers().length > 0}>
+						<div class="p-4 text-center text-secondary-foreground">
+							{t('common.search.noMoreResults')}
+						</div>
+					</Show>
+
+					<Show when={allUsers().length === 0 && !query.isLoading}>
+						<div class="p-4 text-center text-secondary-foreground">
+							{t('common.search.noResults')}
+						</div>
+					</Show>
 				</Suspense>
 			</div>
 		</div>
 	)
 }
 
-const UserCard = (props: { user: User; scroll: number }) => {
+type UserCardProps = {
+	user: UserProfileResponse
+	scroll: number
+}
+
+const UserCard = (props: UserCardProps) => {
 	const shortenDescription = (description: string) => {
 		if (description.length <= 120) return description
 		return description.slice(0, 120) + '...'
 	}
-
-	const user = props.user as UserProfile
-
-	const imgUrl = `https://assets.peatch.io/cdn-cgi/image/width=100/${user.avatar_url}`
-
 	return (
 		<Link
 			class="flex flex-col items-start px-4 pb-5 pt-4 text-start"
-			href={`/users/${user.username}`}
-			state={{ from: '/', scroll: props.scroll }}
+			href={`/users/${props.user.id}`}
+			state={{ from: '/' }}
 		>
 			<img
 				class="size-10 rounded-xl object-cover"
-				src={imgUrl}
+				src={`https://assets.peatch.io/cdn-cgi/image/width=100/${props.user.avatar_url}`}
 				loading="lazy"
 				alt="User Avatar"
 			/>
-			<p class="mt-3 text-3xl font-semibold capitalize text-primary">{user.first_name?.trimEnd()}:</p>
-			<p class="text-3xl capitalize">{user.title}</p>
+			<p class="mt-3 text-3xl font-semibold capitalize text-primary">{props.user.first_name?.trimEnd()}:</p>
+			<p class="text-3xl capitalize">{props.user.title}</p>
 			<p class="mt-2 text-sm text-secondary-foreground">
-				{shortenDescription(user.description!)}
+				{shortenDescription(props.user.description!)}
 			</p>
 			<LocationBadge
-				country={user.country!}
-				city={user.city!}
-				countryCode={user.country_code!}
+				country={props.user.location?.country_name}
+				city={props.user.location?.name}
+				countryCode={props.user.location?.country_code}
 			/>
-			<Show when={user.badges && user.badges.length > 0}>
-				<BadgeList badges={user.badges!} position="start" />
+			<Show when={props.user.badges && props.user.badges.length > 0}>
+				<BadgeList badges={props.user.badges || []} position="start" />
 			</Show>
 		</Link>
 	)
@@ -172,7 +215,7 @@ const OpenCommunityPopup = (props: { onClose: () => void }) => {
 		<div class="relative w-full rounded-xl bg-secondary p-3 text-center">
 			<button
 				class="absolute right-4 top-4 flex size-6 items-center justify-center rounded-full bg-background"
-				onClick={props.onClose}
+				onClick={() => props.onClose()}
 			>
 					<span class="material-symbols-rounded text-[20px] text-secondary-foreground">
 						close

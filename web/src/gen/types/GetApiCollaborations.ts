@@ -3,7 +3,7 @@
  * Do not edit manually.
  */
 
-import type { Collaboration } from './Collaboration.ts'
+import type { CollaborationResponse } from './CollaborationResponse.ts'
 
 export type GetApiCollaborationsQueryParams = {
   /**
@@ -26,7 +26,7 @@ export type GetApiCollaborationsQueryParams = {
 /**
  * @description OK
  */
-export type GetApiCollaborations200 = Collaboration[]
+export type GetApiCollaborations200 = CollaborationResponse[]
 
 export type GetApiCollaborationsQueryResponse = GetApiCollaborations200
 

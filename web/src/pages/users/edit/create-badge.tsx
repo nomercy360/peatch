@@ -1,13 +1,13 @@
 import { FormLayout } from '~/components/edit/layout'
 import { useMainButton } from '~/lib/useMainButton'
 import { useNavigate, useSearchParams } from '@solidjs/router'
-import { createEffect, onCleanup } from 'solid-js'
+import { createEffect, onCleanup, onMount } from 'solid-js'
 import { editUser, setEditUser } from '~/store'
 import { postBadge } from '~/lib/api'
 import { createStore } from 'solid-js/store'
 import CreateBadge from '~/components/edit/createBadge'
 import { useTranslations } from '~/lib/locale-context'
-import { Badge } from '~/gen'
+import { BadgeResponse } from '~/gen'
 
 export default function SelectBadges() {
 	const mainButton = useMainButton()
@@ -15,7 +15,7 @@ export default function SelectBadges() {
 
 	const [searchParams, _] = useSearchParams()
 
-	const [createBadge, setCreateBadge] = createStore<Badge>({
+	const [createBadge, setCreateBadge] = createStore<BadgeResponse>({
 		text: searchParams.badge_name as string,
 		color: 'EF5DA8',
 		icon: '',
@@ -42,14 +42,16 @@ export default function SelectBadges() {
 		})
 	}
 
-	mainButton.onClick(onCreateBadgeButtonClick)
-
 	createEffect(() => {
 		if (createBadge.icon && createBadge.color && createBadge.text) {
 			mainButton.enable('Create ' + createBadge.text)
 		} else {
 			mainButton.disable('Create ' + createBadge.text)
 		}
+	})
+
+	onMount(() => {
+		mainButton.onClick(onCreateBadgeButtonClick)
 	})
 
 	onCleanup(() => {

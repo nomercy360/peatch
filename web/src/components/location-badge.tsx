@@ -3,9 +3,9 @@ import countryFlags from '~/assets/countries.json'
 import { CountryFlag } from '~/components/edit/select-location'
 
 type LocationBadgeProps = {
-	country: string
-	city: string
-	countryCode: string
+	country?: string
+	city?: string
+	countryCode?: string
 }
 export const LocationBadge = (props: LocationBadgeProps) => {
 	const findFlag = countryFlags.find(

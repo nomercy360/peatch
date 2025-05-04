@@ -15,6 +15,13 @@ func parseIntQuery(c echo.Context, key string, defaultValue int) int {
 	return value
 }
 
+// handleSearchLocations godoc
+// @Summary List cities
+// @Tags cities
+// @Accept  json
+// @Produce  json
+// @Success 200 {array} contract.CityResponse
+// @Router /api/locations [get]
 func (h *handler) handleSearchLocations(c echo.Context) error {
 	query := c.QueryParam("search")
 

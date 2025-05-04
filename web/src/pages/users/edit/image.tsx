@@ -1,22 +1,21 @@
 import { FormLayout } from '~/components/edit/layout'
 import { useMainButton } from '~/lib/useMainButton'
 import { useNavigate } from '@solidjs/router'
-import { createEffect, createSignal, Match, onCleanup, Switch } from 'solid-js'
-import { editUser, setEditUser, store } from '~/store'
+import { createSignal, Match, onCleanup, onMount, Switch } from 'solid-js'
+import { editUser, store } from '~/store'
 import {
 	API_BASE_URL,
-	fetchPresignedUrl,
 	updateUser,
-	uploadToS3,
+	uploadUserAvatar,
 } from '~/lib/api'
 import { usePopup } from '~/lib/usePopup'
 import { useTranslations } from '~/lib/locale-context'
+import { queryClient } from '~/App'
 
 export default function ImageUpload() {
 	const mainButton = useMainButton()
 	const { t } = useTranslations()
 	const [imgFile, setImgFile] = createSignal<File | null>(null)
-	const [_, setImgUploadProgress] = createSignal(0)
 
 	const navigate = useNavigate()
 	const { showAlert } = usePopup()
@@ -66,40 +65,36 @@ export default function ImageUpload() {
 	}
 
 	const saveUser = async () => {
-		if (imgFile() && imgFile() !== null) {
-			mainButton.showProgress(true)
-			try {
-				const { path, url } = await fetchPresignedUrl(imgFile()!.name)
-				await uploadToS3(
-					url,
-					imgFile()!,
-					e => {
-						setImgUploadProgress(Math.round((e.loaded / e.total) * 100))
-					},
-					() => {
-						setImgUploadProgress(0)
-					},
-				)
-				setEditUser('avatar_url', path)
-			} catch (e) {
-				console.error(e)
+		try {
+			const file = imgFile()
+			if (file) {
+				mainButton.showProgress(true)
+				await uploadUserAvatar(file)
 			}
-		}
-		await updateUser(editUser)
 
-		mainButton.hideProgress()
+			await updateUser({
+				location_id: editUser.location.id,
+				first_name: editUser.first_name,
+				last_name: editUser.last_name,
+				title: editUser.title,
+				description: editUser.description,
+				badge_ids: editUser.badge_ids,
+				opportunity_ids: editUser.opportunity_ids,
+			})
+		} catch (e) {
+			console.error(e)
+		} finally {
+			mainButton.hideProgress()
+		}
+
+		queryClient.invalidateQueries({ queryKey: ['profiles', store.user.id] })
 		window.Telegram.WebApp.disableClosingConfirmation()
-		navigate(`/users/${store.user.username}`)
+		navigate(`/users/${store.user.id}`)
 	}
 
-	mainButton.onClick(saveUser)
-
-	createEffect(() => {
-		if (editUser.avatar_url || imgFile()) {
-			mainButton.enable(t('common.buttons.save'))
-		} else {
-			mainButton.disable(t('common.buttons.save'))
-		}
+	onMount(() => {
+		mainButton.onClick(saveUser)
+		mainButton.enable(t('common.buttons.save'))
 	})
 
 	onCleanup(() => {
@@ -132,7 +127,12 @@ export default function ImageUpload() {
 	)
 }
 
-function ImageBox(props: { imgURL: string; onFileChange: any }) {
+type ImageBoxProps = {
+	imgURL: string
+	onFileChange: (event: any) => void
+}
+
+function ImageBox(props: ImageBoxProps) {
 	return (
 		<div class="mt-5 flex h-full items-center justify-center">
 			<div class="relative flex size-56 flex-col items-center justify-center gap-2">
@@ -145,14 +145,18 @@ function ImageBox(props: { imgURL: string; onFileChange: any }) {
 					class="absolute size-full cursor-pointer rounded-xl opacity-0"
 					type="file"
 					accept="image/*"
-					onChange={props.onFileChange}
+					onChange={e => props.onFileChange(e)}
 				/>
 			</div>
 		</div>
 	)
 }
 
-function UploadBox(props: { onFileChange: any }) {
+type UploadBoxProps = {
+	onFileChange: (event: any) => void
+}
+
+function UploadBox(props: UploadBoxProps) {
 	return (
 		<>
 			<div class="relative flex size-56 flex-col items-center justify-center rounded-xl">
@@ -160,7 +164,7 @@ function UploadBox(props: { onFileChange: any }) {
 					class="absolute size-full opacity-0"
 					type="file"
 					accept="image/*"
-					onChange={props.onFileChange}
+					onChange={e => props.onFileChange(e)}
 				/>
 				<span class="material-symbols-rounded pointer-events-none z-10 text-[45px] text-secondary">
 					camera_alt

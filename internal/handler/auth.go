@@ -30,7 +30,7 @@ const (
 // @UserStatus 200 {object} contract.AuthResponse
 // @Failure 400 {object} contract.ErrorResponse
 // @Failure 500 {object} contract.ErrorResponse
-// @Router /auth-telegram [post]
+// @Router /auth/telegram [post]
 func (h *handler) TelegramAuth(c echo.Context) error {
 	var req contract.AuthTelegramRequest
 	if err := c.Bind(&req); err != nil {
@@ -76,13 +76,12 @@ func (h *handler) TelegramAuth(c echo.Context) error {
 		}
 
 		create := db.User{
-			ID:                 nanoid.Must(),
-			Username:           username,
-			ChatID:             data.User.ID,
-			FirstName:          first,
-			LastName:           last,
-			LanguageCode:       lang,
-			VerificationStatus: db.VerificationStatusPending,
+			ID:           nanoid.Must(),
+			Username:     username,
+			ChatID:       data.User.ID,
+			FirstName:    first,
+			LastName:     last,
+			LanguageCode: lang,
 		}
 
 		if err = h.storage.CreateUser(c.Request().Context(), create); err != nil {
@@ -116,7 +115,7 @@ func (h *handler) TelegramAuth(c echo.Context) error {
 
 	resp := contract.AuthResponse{
 		Token: token,
-		User:  user,
+		User:  contract.ToUserResponse(user),
 	}
 
 	return c.JSON(http.StatusOK, resp)

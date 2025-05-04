@@ -1,11 +1,11 @@
 import { FormLayout } from '~/components/edit/layout'
 import { useMainButton } from '~/lib/useMainButton'
 import { useNavigate, useParams } from '@solidjs/router'
-import { createEffect, createResource, onCleanup } from 'solid-js'
+import { createEffect, onCleanup } from 'solid-js'
 import { editCollaboration, setEditCollaboration } from '~/store'
 import { fetchOpportunities } from '~/lib/api'
 import { SelectOpportunity } from '~/components/edit/select-opp'
-import { createQuery } from '@tanstack/solid-query'
+import { useQuery } from '@tanstack/solid-query'
 import { useTranslations } from '~/lib/locale-context'
 
 export default function SelectOpportunities() {
@@ -21,7 +21,7 @@ export default function SelectOpportunities() {
 		})
 	}
 
-	const query = createQuery(() => ({
+	const query = useQuery(() => ({
 		queryKey: ['opportunities'],
 		queryFn: () => fetchOpportunities(),
 	}))
@@ -31,7 +31,7 @@ export default function SelectOpportunities() {
 	createEffect(() => {
 		if (
 			editCollaboration.opportunity_id &&
-			editCollaboration.opportunity_id > 0
+			editCollaboration.opportunity_id !== ''
 		) {
 			mainButton.enable(t('common.buttons.next'))
 		} else {
@@ -53,7 +53,7 @@ export default function SelectOpportunities() {
 			totalScreens={6}
 		>
 			<SelectOpportunity
-				selected={editCollaboration.opportunity_id}
+				selected={editCollaboration.opportunity_id || ''}
 				setSelected={b => setEditCollaboration('opportunity_id', b as any)}
 				opportunities={query.data}
 				loading={query.isLoading}

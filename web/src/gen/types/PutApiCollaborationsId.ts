@@ -3,17 +3,18 @@
  * Do not edit manually.
  */
 
-import type { Collaboration } from './Collaboration.ts'
+import type { CollaborationResponse } from './CollaborationResponse.ts'
+import type { CreateCollaboration } from './CreateCollaboration.ts'
 
 /**
  * @description OK
  */
-export type PutApiCollaborationsId200 = Collaboration
+export type PutApiCollaborationsId200 = CollaborationResponse
 
 /**
  * @description Collaboration data
  */
-export type PutApiCollaborationsIdMutationRequest = Collaboration
+export type PutApiCollaborationsIdMutationRequest = CreateCollaboration
 
 export type PutApiCollaborationsIdMutationResponse = PutApiCollaborationsId200
 

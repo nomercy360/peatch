@@ -3,6 +3,8 @@ export const dict = {
 		search: {
 			posts: 'Введите название или описание',
 			people: 'Введите имя, должность или описанию',
+			noMoreResults: 'Больше нет результатов',
+			noResults: 'Ничего не найдено',
 		},
 		tabs: {
 			posts: 'Топ',
@@ -32,6 +34,8 @@ export const dict = {
 			title: '404: Страница не найдена',
 		},
 		users: {
+			verificationStatusDenied: 'Мы скрыли ваш профиль. Попробуйте сделать его более личным и настоящим.',
+			shareURLText: 'Посмотри профиль {{first_name}} {{last_name}} на Peatch! 🌟',
 			edit: {
 				general: {
 					title: 'Расскажите о себе',
@@ -62,6 +66,11 @@ export const dict = {
 					title: 'Загрузите своё фото',
 				},
 			},
+			fillProfilePopup: {
+				title: 'Set up your profile',
+				description: 'Complete your profile in just 5 minutes to enhance your networking and be able to collaborate with others.',
+				action: 'Set up profile',
+			},
 			collaborate: {
 				title: 'Проявить интерес',
 				description: 'Напишите сообщение, чтобы начать сотрудничество',
@@ -71,6 +80,8 @@ export const dict = {
 			},
 			availableFor: 'Готов к',
 			sayHi: 'Привет',
+			saidHi: 'Запрос отправлен',
+			shareProfile: 'Поделиться',
 		},
 		collaborations: {
 			edit: {

@@ -39,7 +39,7 @@ type storager interface {
 	GetUserByID(ctx context.Context, ID string) (db.User, error)
 	CreateUser(ctx context.Context, user db.User) error
 	Health() (db.HealthStats, error)
-	GetUserProfile(ctx context.Context, viewerID string, username string) (db.User, error)
+	GetUserProfile(ctx context.Context, viewerID string, id string) (db.User, error)
 	UpdateUser(ctx context.Context, user db.User, badges, opportunities []string, locationID string) error
 	ListOpportunities(ctx context.Context) ([]db.Opportunity, error)
 	ListBadges(ctx context.Context, search string) ([]db.Badge, error)
@@ -93,7 +93,7 @@ func getAuthConfig(secret string) echojwt.Config {
 }
 
 func (h *handler) SetupRoutes(e *echo.Echo) {
-	e.POST("/auth-telegram", h.TelegramAuth)
+	e.POST("/auth/telegram", h.TelegramAuth)
 
 	e.GET("/", h.handleIndex)
 
@@ -105,7 +105,7 @@ func (h *handler) SetupRoutes(e *echo.Echo) {
 	a.GET("/users", h.handleListUsers)
 	a.GET("/users/me", h.handleGetMe)
 	a.POST("/users/avatar", h.handleUserAvatar)
-	a.GET("/users/:handle", h.handleGetUser)
+	a.GET("/users/:id", h.handleGetUser)
 	a.POST("/users/:id/follow", h.handleFollowUser)
 	a.PUT("/users", h.handleUpdateUser)
 	a.GET("/opportunities", h.handleListOpportunities)

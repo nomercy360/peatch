@@ -3,12 +3,12 @@
  * Do not edit manually.
  */
 
-import type { Opportunity } from './Opportunity.ts'
+import type { OpportunityResponse } from './OpportunityResponse.ts'
 
 /**
  * @description OK
  */
-export type GetApiOpportunities200 = Opportunity[]
+export type GetApiOpportunities200 = OpportunityResponse[]
 
 export type GetApiOpportunitiesQueryResponse = GetApiOpportunities200
 

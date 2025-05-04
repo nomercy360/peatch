@@ -15,58 +15,6 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/auth/telegram": {
-            "get": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Telegram auth",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Query ID",
-                        "name": "query_id",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "User",
-                        "name": "user",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Auth date",
-                        "name": "auth_date",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Hash",
-                        "name": "hash",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/UserWithToken"
-                        }
-                    }
-                }
-            }
-        },
         "/api/badges": {
             "get": {
                 "consumes": [
@@ -85,7 +33,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/Badge"
+                                "$ref": "#/definitions/BadgeResponse"
                             }
                         }
                     }
@@ -117,7 +65,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/Badge"
+                            "$ref": "#/definitions/BadgeResponse"
                         }
                     }
                 }
@@ -161,7 +109,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/Collaboration"
+                                "$ref": "#/definitions/CollaborationResponse"
                             }
                         }
                     }
@@ -193,7 +141,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/Collaboration"
+                            "$ref": "#/definitions/CollaborationResponse"
                         }
                     }
                 }
@@ -224,7 +172,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/Collaboration"
+                            "$ref": "#/definitions/CollaborationResponse"
                         }
                     }
                 }
@@ -247,7 +195,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/Collaboration"
+                            "$ref": "#/definitions/CreateCollaboration"
                         }
                     }
                 ],
@@ -255,14 +203,14 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/Collaboration"
+                            "$ref": "#/definitions/CollaborationResponse"
                         }
                     }
                 }
             }
         },
-        "/api/collaborations/{id}/publish": {
-            "put": {
+        "/api/locations": {
+            "get": {
                 "consumes": [
                     "application/json"
                 ],
@@ -270,21 +218,18 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "collaborations"
+                    "cities"
                 ],
-                "summary": "Publish collaboration",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Collaboration ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
+                "summary": "List cities",
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/CityResponse"
+                            }
+                        }
                     }
                 }
             }
@@ -307,39 +252,8 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/Opportunity"
+                                "$ref": "#/definitions/OpportunityResponse"
                             }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/posts/{id}": {
-            "get": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "posts"
-                ],
-                "summary": "Find post by id",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Post ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/Post"
                         }
                     }
                 }
@@ -395,7 +309,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/User"
+                                "$ref": "#/definitions/UserProfileResponse"
                             }
                         }
                     }
@@ -427,7 +341,79 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/User"
+                            "$ref": "#/definitions/UserResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/users/avatar": {
+            "post": {
+                "description": "Upload a photo for the authenticated user to S3 and store record in database",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "photos"
+                ],
+                "summary": "Upload user photo",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Photo file to upload",
+                        "name": "photo",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/StatusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/users/me": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Get current user",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/UserResponse"
                         }
                     }
                 }
@@ -458,33 +444,48 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/User"
+                            "$ref": "#/definitions/UserProfileResponse"
                         }
                     }
                 }
             }
         },
-        "/api/users/{user_id}/publish": {
+        "/auth/telegram": {
             "post": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
+                "description": "Authenticate user via Telegram using init data",
                 "tags": [
-                    "users"
+                    "auth"
                 ],
-                "summary": "Publish user",
+                "summary": "Telegram Auth",
+                "parameters": [
+                    {
+                        "description": "Telegram Auth Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/AuthTelegramRequest"
+                        }
+                    }
+                ],
                 "responses": {
-                    "204": {
-                        "description": "No Content"
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
                     }
                 }
             }
         },
         "/users/{id}/follow": {
-            "get": {
+            "post": {
                 "consumes": [
                     "application/json"
                 ],
@@ -510,74 +511,62 @@ const docTemplate = `{
                     }
                 }
             }
-        },
-        "/users/{id}/unfollow": {
-            "get": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "Unfollow user",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Following User ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content"
-                    }
-                }
-            }
         }
     },
     "definitions": {
-        "Badge": {
+        "AuthTelegramRequest": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string"
+                }
+            }
+        },
+        "BadgeResponse": {
             "type": "object",
             "properties": {
                 "color": {
-                    "type": "string"
-                },
-                "created_at": {
                     "type": "string"
                 },
                 "icon": {
                     "type": "string"
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "text": {
                     "type": "string"
                 }
             }
         },
-        "Collaboration": {
+        "CityResponse": {
+            "type": "object",
+            "properties": {
+                "country_code": {
+                    "type": "string"
+                },
+                "country_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "location": {
+                    "$ref": "#/definitions/Location"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "CollaborationResponse": {
             "type": "object",
             "properties": {
                 "badges": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/Badge"
+                        "$ref": "#/definitions/BadgeResponse"
                     }
-                },
-                "city": {
-                    "type": "string"
-                },
-                "country": {
-                    "type": "string"
-                },
-                "country_code": {
-                    "type": "string"
                 },
                 "created_at": {
                     "type": "string"
@@ -585,128 +574,17 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
-                "hidden_at": {
-                    "type": "string"
-                },
                 "id": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "is_payable": {
                     "type": "boolean"
+                },
+                "location": {
+                    "$ref": "#/definitions/CityResponse"
                 },
                 "opportunity": {
-                    "$ref": "#/definitions/Opportunity"
-                },
-                "opportunity_id": {
-                    "type": "integer"
-                },
-                "published_at": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "user": {
-                    "$ref": "#/definitions/UserProfile"
-                },
-                "user_id": {
-                    "type": "integer"
-                }
-            }
-        },
-        "CreateCollaboration": {
-            "type": "object",
-            "required": [
-                "badge_ids",
-                "country",
-                "country_code",
-                "description",
-                "opportunity_id",
-                "title"
-            ],
-            "properties": {
-                "badge_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "city": {
-                    "type": "string"
-                },
-                "country": {
-                    "type": "string",
-                    "maxLength": 255
-                },
-                "country_code": {
-                    "type": "string",
-                    "maxLength": 2
-                },
-                "description": {
-                    "type": "string",
-                    "maxLength": 1000
-                },
-                "is_payable": {
-                    "type": "boolean"
-                },
-                "opportunity_id": {
-                    "type": "integer"
-                },
-                "title": {
-                    "type": "string",
-                    "maxLength": 255
-                }
-            }
-        },
-        "Opportunity": {
-            "type": "object",
-            "properties": {
-                "color": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "icon": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "text": {
-                    "type": "string"
-                }
-            }
-        },
-        "Post": {
-            "type": "object",
-            "properties": {
-                "city": {
-                    "type": "string"
-                },
-                "country": {
-                    "type": "string"
-                },
-                "country_code": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "hidden_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "image_url": {
-                    "type": "string"
+                    "$ref": "#/definitions/OpportunityResponse"
                 },
                 "title": {
                     "type": "string"
@@ -715,70 +593,119 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "user": {
-                    "$ref": "#/definitions/UserProfile"
+                    "$ref": "#/definitions/UserProfileResponse"
                 },
                 "user_id": {
-                    "type": "integer"
+                    "type": "string"
+                }
+            }
+        },
+        "CreateCollaboration": {
+            "type": "object",
+            "properties": {
+                "badge_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "is_payable": {
+                    "type": "boolean"
+                },
+                "location_id": {
+                    "type": "string"
+                },
+                "opportunity_id": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "Location": {
+            "type": "object",
+            "properties": {
+                "latitude": {
+                    "type": "number"
+                },
+                "longitude": {
+                    "type": "number"
+                }
+            }
+        },
+        "OpportunityResponse": {
+            "type": "object",
+            "properties": {
+                "color": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "text": {
+                    "type": "string"
+                }
+            }
+        },
+        "StatusResponse": {
+            "type": "object",
+            "properties": {
+                "success": {
+                    "type": "boolean"
                 }
             }
         },
         "UpdateUserRequest": {
             "type": "object",
-            "required": [
-                "avatar_url",
-                "badge_ids",
-                "country",
-                "country_code",
-                "description",
-                "first_name",
-                "last_name",
-                "opportunity_ids",
-                "title"
-            ],
             "properties": {
-                "avatar_url": {
-                    "type": "string"
-                },
                 "badge_ids": {
                     "type": "array",
                     "items": {
-                        "type": "integer"
+                        "type": "string"
                     }
                 },
-                "city": {
-                    "type": "string"
-                },
-                "country": {
-                    "type": "string",
-                    "maxLength": 255
-                },
-                "country_code": {
-                    "type": "string",
-                    "maxLength": 2
-                },
                 "description": {
-                    "type": "string",
-                    "maxLength": 1000
+                    "type": "string"
                 },
                 "first_name": {
                     "type": "string"
                 },
                 "last_name": {
+                    "type": "string"
+                },
+                "location_id": {
                     "type": "string"
                 },
                 "opportunity_ids": {
                     "type": "array",
                     "items": {
-                        "type": "integer"
+                        "type": "string"
                     }
                 },
                 "title": {
-                    "type": "string",
-                    "maxLength": 255
+                    "type": "string"
                 }
             }
         },
-        "User": {
+        "UserProfileResponse": {
             "type": "object",
             "properties": {
                 "avatar_url": {
@@ -787,86 +714,56 @@ const docTemplate = `{
                 "badges": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/Badge"
+                        "$ref": "#/definitions/BadgeResponse"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "first_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_following": {
+                    "type": "boolean"
+                },
+                "last_active_at": {
+                    "type": "string"
+                },
+                "last_name": {
+                    "type": "string"
+                },
+                "location": {
+                    "$ref": "#/definitions/CityResponse"
+                },
+                "opportunities": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/OpportunityResponse"
+                    }
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "UserResponse": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
+                "badges": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/BadgeResponse"
                     }
                 },
                 "chat_id": {
                     "type": "integer"
                 },
-                "city": {
-                    "type": "string"
-                },
-                "country": {
-                    "type": "string"
-                },
-                "country_code": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "first_name": {
-                    "type": "string"
-                },
-                "hidden_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "is_following": {
-                    "type": "boolean"
-                },
-                "last_check_in": {
-                    "type": "string"
-                },
-                "last_name": {
-                    "type": "string"
-                },
-                "opportunities": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/Opportunity"
-                    }
-                },
-                "published_at": {
-                    "type": "string"
-                },
-                "rating": {
-                    "type": "integer"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
-                }
-            }
-        },
-        "UserProfile": {
-            "type": "object",
-            "properties": {
-                "avatar_url": {
-                    "type": "string"
-                },
-                "badges": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/Badge"
-                    }
-                },
-                "city": {
-                    "type": "string"
-                },
-                "country": {
-                    "type": "string"
-                },
-                "country_code": {
-                    "type": "string"
-                },
                 "created_at": {
                     "type": "string"
                 },
@@ -877,38 +774,53 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "string"
                 },
-                "is_following": {
-                    "type": "boolean"
+                "last_active_at": {
+                    "type": "string"
                 },
                 "last_name": {
                     "type": "string"
                 },
+                "location": {
+                    "$ref": "#/definitions/CityResponse"
+                },
                 "opportunities": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/Opportunity"
+                        "$ref": "#/definitions/OpportunityResponse"
                     }
                 },
                 "title": {
                     "type": "string"
                 },
+                "updated_at": {
+                    "type": "string"
+                },
                 "username": {
                     "type": "string"
+                },
+                "verification_status": {
+                    "$ref": "#/definitions/VerificationStatus"
                 }
             }
         },
-        "UserWithToken": {
-            "type": "object",
-            "properties": {
-                "token": {
-                    "type": "string"
-                },
-                "user": {
-                    "$ref": "#/definitions/User"
-                }
-            }
+        "VerificationStatus": {
+            "type": "string",
+            "enum": [
+                "pending",
+                "verified",
+                "denied",
+                "blocked",
+                "unverified"
+            ],
+            "x-enum-varnames": [
+                "VerificationStatusPending",
+                "VerificationStatusVerified",
+                "VerificationStatusDenied",
+                "VerificationStatusBlocked",
+                "VerificationStatusUnverified"
+            ]
         }
     }
 }`
@@ -916,11 +828,11 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "localhost:8080",
-	BasePath:         "/",
-	Schemes:          []string{},
+	Host:             "api.peatch.io",
+	BasePath:         "",
+	Schemes:          []string{"https"},
 	Title:            "Peatch API",
-	Description:      "This is a sample server ClanPlatform server.",
+	Description:      "API Documentation for the Api Dating Project",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

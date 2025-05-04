@@ -1,30 +1,29 @@
 import { Link } from '~/components/link'
+import { useTranslations } from '~/lib/locale-context'
 
 export default function FillProfilePopup(props: { onClose: () => void }) {
+	const { t } = useTranslations()
+
 	return (
-		<div class="relative w-full rounded-xl bg-secondary p-3 text-center">
+		<div class="relative rounded-lg bg-secondary p-2 text-center">
 			<button
-				class="absolute right-4 top-4 flex size-6 items-center justify-center rounded-full bg-background"
-				onClick={props.onClose}
+				class="absolute right-2 top-2 size-5 rounded-full bg-background"
+				onClick={() => props.onClose()}
 			>
-				<span class="material-symbols-rounded text-[20px] text-secondary-foreground">
-					close
-				</span>
+				<span class="material-symbols-rounded text-secondary-foreground">close</span>
 			</button>
-			<div class="text-green flex items-center justify-center gap-1 text-2xl font-extrabold">
-				<span class="material-symbols-rounded text-[36px] text-blue-400">
-					people
-				</span>
-				Set up your profile
+			<div class="text-green flex items-center justify-center gap-1 text-xl font-bold">
+				<span class="material-symbols-rounded text-blue-400">people</span>
+				{t('pages.users.fillProfilePopup.title')}
 			</div>
-			<p class="mt-2 text-base font-normal text-secondary-foreground">
-				Complete your profile in just 5 minutes to enhance your networking and be able to collaborate with others.
+			<p class="mt-1 text-sm text-secondary-foreground">
+				{t('pages.users.fillProfilePopup.description')}
 			</p>
 			<Link
-				class="mt-4 flex h-10 w-full items-center justify-center rounded-xl bg-primary text-sm font-semibold"
+				class="mt-2 flex h-8 w-full items-center justify-center rounded-lg bg-primary text-sm font-semibold"
 				href="/users/edit"
 			>
-				Set up profile
+				{t('pages.users.fillProfilePopup.action')}
 			</Link>
 		</div>
 	)

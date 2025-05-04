@@ -18,7 +18,7 @@ type UserFollower struct {
 	FolloweeID string    `bson:"followee_id"`
 	ExpiresAt  time.Time `bson:"expires_at"`
 }
-type LanguageCode string
+type LanguageCode string // @Name LanguageCode
 
 var (
 	LanguageEN LanguageCode = "en"
@@ -32,13 +32,14 @@ type LoginMeta struct {
 	City      string `bson:"city,omitempty" json:"city,omitempty"`
 }
 
-type VerificationStatus string
+type VerificationStatus string // @Name VerificationStatus
 
 const (
-	VerificationStatusPending  VerificationStatus = "pending"
-	VerificationStatusVerified VerificationStatus = "verified"
-	VerificationStatusDeclined VerificationStatus = "declined"
-	VerificationStatusBlocked  VerificationStatus = "blocked"
+	VerificationStatusPending    VerificationStatus = "pending"
+	VerificationStatusVerified   VerificationStatus = "verified"
+	VerificationStatusDenied     VerificationStatus = "denied"
+	VerificationStatusBlocked    VerificationStatus = "blocked"
+	VerificationStatusUnverified VerificationStatus = "unverified"
 )
 
 type User struct {
@@ -60,7 +61,27 @@ type User struct {
 	Badges                 []Badge            `bson:"badges,omitempty" json:"badges"`
 	Opportunities          []Opportunity      `bson:"opportunities,omitempty" json:"opportunities"`
 	LoginMeta              *LoginMeta         `bson:"login_meta,omitempty" json:"login_meta"`
+	LastActiveAt           time.Time          `bson:"last_active_at,omitempty" json:"last_active_at"`
 	VerificationStatus     VerificationStatus `bson:"verification_status,omitempty" json:"verification_status"`
+}
+
+func (u *User) IsProfileComplete() bool {
+	if u.FirstName == nil || u.LastName == nil || u.Title == nil || u.Description == nil {
+		return false
+	}
+	if u.Location == nil || u.Location.ID == "" {
+		return false
+	}
+	if u.Badges == nil || len(u.Badges) == 0 {
+		return false
+	}
+	if u.Opportunities == nil || len(u.Opportunities) == 0 {
+		return false
+	}
+	if u.AvatarURL == nil || *u.AvatarURL == "" {
+		return false
+	}
+	return true
 }
 
 type UserQuery struct {
@@ -153,6 +174,8 @@ func (s *Storage) CreateUser(ctx context.Context, user User) error {
 	now := time.Now()
 	user.CreatedAt = now
 	user.UpdatedAt = now
+	user.LastActiveAt = now
+	user.VerificationStatus = VerificationStatusPending
 
 	if _, err := collection.InsertOne(ctx, user); err != nil {
 		return nil
@@ -169,8 +192,10 @@ func (s *Storage) UpdateUser(ctx context.Context, user User, badgeIDs, oppIDs []
 
 	badgeFilter := bson.M{"_id": bson.M{"$in": badgeIDs}}
 	badgeCursor, err := badgeCollection.Find(ctx, badgeFilter)
-	if err != nil {
-		return fmt.Errorf("failed to fetch badges: %w", err)
+	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
+		return ErrNotFound
+	} else if err != nil {
+		return nil
 	}
 
 	var badges []Badge
@@ -181,9 +206,13 @@ func (s *Storage) UpdateUser(ctx context.Context, user User, badgeIDs, oppIDs []
 	var opps []Opportunity
 	oppFilter := bson.M{"_id": bson.M{"$in": oppIDs}}
 	oppCursor, err := oppCollection.Find(ctx, oppFilter)
-	if err != nil {
-		return fmt.Errorf("failed to fetch opportunities: %w", err)
+
+	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
+		return ErrNotFound
+	} else if err != nil {
+		return nil
 	}
+
 	if err := oppCursor.All(ctx, &opps); err != nil {
 		return fmt.Errorf("failed to decode opportunities: %w", err)
 	}
@@ -191,6 +220,10 @@ func (s *Storage) UpdateUser(ctx context.Context, user User, badgeIDs, oppIDs []
 	var locationData City
 	locationFilter := bson.M{"_id": locationID}
 	if err := locationCollection.FindOne(ctx, locationFilter).Decode(&locationData); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return ErrNotFound
+		}
+
 		return fmt.Errorf("failed to fetch location: %w", err)
 	}
 
@@ -221,14 +254,14 @@ func (s *Storage) UpdateUser(ctx context.Context, user User, badgeIDs, oppIDs []
 	return nil
 }
 
-func (s *Storage) GetUserProfile(ctx context.Context, viewerID string, username string) (User, error) {
+func (s *Storage) GetUserProfile(ctx context.Context, viewerID string, id string) (User, error) {
 	usersCollection := s.db.Collection("users")
 	followersCollection := s.db.Collection("user_followers")
 
 	var user User
 
 	filter := bson.M{
-		"username": username,
+		"_id": id,
 		"$or": []bson.M{
 			{"_id": viewerID},
 			{

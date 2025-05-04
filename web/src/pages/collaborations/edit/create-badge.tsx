@@ -1,7 +1,7 @@
 import { FormLayout } from '~/components/edit/layout'
 import { useMainButton } from '~/lib/useMainButton'
 import { useNavigate, useParams, useSearchParams } from '@solidjs/router'
-import { createEffect, onCleanup } from 'solid-js'
+import { createEffect, onCleanup, onMount } from 'solid-js'
 import { editCollaboration, setEditCollaboration } from '~/store'
 import { postBadge } from '~/lib/api'
 import { createStore } from 'solid-js/store'
@@ -44,14 +44,16 @@ export default function SelectBadges() {
 		})
 	}
 
-	mainButton.onClick(onCreateBadgeButtonClick)
-
 	createEffect(() => {
 		if (createBadge.icon && createBadge.color && createBadge.text) {
 			mainButton.enable('Create ' + createBadge.text)
 		} else {
 			mainButton.disable('Create ' + createBadge.text)
 		}
+	})
+
+	onMount(() => {
+		mainButton.onClick(onCreateBadgeButtonClick)
 	})
 
 	onCleanup(() => {

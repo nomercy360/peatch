@@ -11,27 +11,26 @@ import (
 )
 
 type Collaboration struct {
-	ID          string      `bson:"_id,omitempty" json:"id"`
-	UserID      string      `bson:"user_id" json:"user_id"`
-	Title       string      `bson:"title" json:"title"`
-	Description string      `bson:"description" json:"description"`
-	IsPayable   bool        `bson:"is_payable" json:"is_payable"`
-	CreatedAt   time.Time   `bson:"created_at" json:"created_at"`
-	UpdatedAt   time.Time   `bson:"updated_at" json:"-"`
-	HiddenAt    *time.Time  `bson:"hidden_at,omitempty" json:"hidden_at"`
-	Badges      []Badge     `bson:"badges,omitempty" json:"badges"`
-	Opportunity Opportunity `bson:"opportunity,omitempty" json:"opportunity"`
-	Location    City        `bson:"location,omitempty" json:"location"`
-	User        User        `bson:"user,omitempty" json:"user"`
+	ID                 string             `bson:"_id,omitempty" json:"id"`
+	UserID             string             `bson:"user_id" json:"user_id"`
+	Title              string             `bson:"title" json:"title"`
+	Description        string             `bson:"description" json:"description"`
+	IsPayable          bool               `bson:"is_payable" json:"is_payable"`
+	CreatedAt          time.Time          `bson:"created_at" json:"created_at"`
+	UpdatedAt          time.Time          `bson:"updated_at" json:"-"`
+	HiddenAt           *time.Time         `bson:"hidden_at,omitempty" json:"hidden_at"`
+	Badges             []Badge            `bson:"badges,omitempty" json:"badges"`
+	Opportunity        Opportunity        `bson:"opportunity,omitempty" json:"opportunity"`
+	Location           City               `bson:"location,omitempty" json:"location"`
+	User               User               `bson:"user,omitempty" json:"user"`
+	VerificationStatus VerificationStatus `bson:"verification_status,omitempty" json:"verification_status"`
 }
 
 type CollaborationQuery struct {
-	Page    int
-	Limit   int
-	Search  string
-	From    *time.Time
-	UserID  string
-	Visible bool
+	Page     int
+	Limit    int
+	Search   string
+	ViewerID string
 }
 
 func (s *Storage) ListCollaborations(ctx context.Context, params CollaborationQuery) ([]Collaboration, error) {
@@ -41,10 +40,6 @@ func (s *Storage) ListCollaborations(ctx context.Context, params CollaborationQu
 	pipeline := mongo.Pipeline{}
 
 	matchStage := bson.D{}
-	if params.Visible {
-		matchStage = append(matchStage, bson.E{Key: "published_at", Value: bson.M{"$ne": nil}})
-		matchStage = append(matchStage, bson.E{Key: "hidden_at", Value: nil})
-	}
 
 	if params.Search != "" {
 		searchRegex := primitive.Regex{Pattern: params.Search, Options: "i"}
@@ -56,13 +51,21 @@ func (s *Storage) ListCollaborations(ctx context.Context, params CollaborationQu
 		})
 	}
 
-	if params.From != nil {
-		matchStage = append(matchStage, bson.E{Key: "created_at", Value: bson.M{"$gte": *params.From}})
+	if len(matchStage) == 0 {
+		matchStage = bson.D{}
 	}
 
-	if len(matchStage) > 0 {
-		pipeline = append(pipeline, bson.D{{Key: "$match", Value: matchStage}})
-	}
+	matchStage = append(matchStage, bson.E{
+		Key: "$or", Value: []bson.M{
+			{"user_id": params.ViewerID},
+			{
+				"verification_status": VerificationStatusVerified,
+				"hidden_at":           nil,
+			},
+		},
+	})
+
+	pipeline = append(pipeline, bson.D{{Key: "$match", Value: matchStage}})
 
 	sortStage := bson.D{{Key: "$sort", Value: bson.D{{"created_at", -1}}}}
 	pipeline = append(pipeline, sortStage)
@@ -78,14 +81,29 @@ func (s *Storage) ListCollaborations(ctx context.Context, params CollaborationQu
 		pipeline = append(pipeline, limitStage)
 	}
 
-	lookupUserStage := bson.D{{Key: "$lookup", Value: bson.M{
-		"from":         "users",
-		"localField":   "user_id",
-		"foreignField": "_id",
-		"as":           "user",
-	}}}
+	lookupUserStage := bson.D{
+		{
+			Key: "$lookup",
+			Value: bson.M{
+				"from":         "users",
+				"localField":   "user_id",
+				"foreignField": "_id",
+				"as":           "user",
+			},
+		},
+	}
 
-	pipeline = append(pipeline, lookupUserStage)
+	unwindUserStage := bson.D{
+		{
+			Key: "$unwind",
+			Value: bson.M{
+				"path":                       "$user",
+				"preserveNullAndEmptyArrays": true,
+			},
+		},
+	}
+
+	pipeline = append(pipeline, lookupUserStage, unwindUserStage)
 
 	cursor, err := collabCollection.Aggregate(ctx, pipeline)
 	if err != nil {
@@ -104,7 +122,7 @@ func (s *Storage) ListCollaborations(ctx context.Context, params CollaborationQu
 	return results, nil
 }
 
-func (s *Storage) GetCollaborationByID(ctx context.Context, userID string, collabID string) (Collaboration, error) {
+func (s *Storage) GetCollaborationByID(ctx context.Context, viewerID string, collabID string) (Collaboration, error) {
 	collabCollection := s.db.Collection("collaborations")
 	var result Collaboration
 
@@ -113,20 +131,39 @@ func (s *Storage) GetCollaborationByID(ctx context.Context, userID string, colla
 	matchCriteria := bson.M{"_id": collabID}
 
 	matchCriteria["$or"] = []bson.M{
-		{"user_id": userID},
+		{"user_id": viewerID},
 		{
-			"published_at": bson.M{"$ne": nil},
-			"hidden_at":    nil,
+			"verification_status": VerificationStatusVerified,
+			"hidden_at":           nil,
 		},
 	}
 
 	matchStage := bson.D{{Key: "$match", Value: matchCriteria}}
 	pipeline = append(pipeline, matchStage)
 
-	lookupOpportunityStage := bson.D{{Key: "$lookup", Value: bson.M{"from": "opportunities", "localField": "opportunity_id", "foreignField": "_id", "as": "opportunity"}}}
-	lookupUserStage := bson.D{{Key: "$lookup", Value: bson.M{"from": "users", "localField": "user_id", "foreignField": "_id", "as": "fetched_user"}}}
-	lookupBadgesStage := bson.D{{Key: "$lookup", Value: bson.M{"from": "badges", "localField": "badge_ids", "foreignField": "_id", "as": "fetched_badges"}}}
-	pipeline = append(pipeline, lookupOpportunityStage, lookupUserStage, lookupBadgesStage)
+	lookupUserStage := bson.D{
+		{
+			Key: "$lookup",
+			Value: bson.M{
+				"from":         "users",
+				"localField":   "user_id",
+				"foreignField": "_id",
+				"as":           "user",
+			},
+		},
+	}
+
+	unwindUserStage := bson.D{
+		{
+			Key: "$unwind",
+			Value: bson.M{
+				"path":                       "$user",
+				"preserveNullAndEmptyArrays": true,
+			},
+		},
+	}
+
+	pipeline = append(pipeline, lookupUserStage, unwindUserStage)
 
 	cursor, err := collabCollection.Aggregate(ctx, pipeline)
 	if err != nil {

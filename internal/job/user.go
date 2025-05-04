@@ -357,7 +357,7 @@ func (j *notifyJob) NotifyMatchedCollaboration() error {
 //	for _, collaboration := range newCollaborations {
 //		// check if  user already received exact same notification
 //		q := db.NotificationQuery{
-//			UserID:           &collaboration.UserID,
+//			ViewerID:           &collaboration.ViewerID,
 //			NotificationType: db.NotificationTypeUserCollaboration,
 //			EntityType:       "user_collaboration_requests",
 //			EntityID:         collaboration.ID,
@@ -367,13 +367,13 @@ func (j *notifyJob) NotifyMatchedCollaboration() error {
 //
 //		if err != nil && errors.Is(err, db.ErrNotFound) {
 //
-//			requester, err := j.storage.GetUserProfile(db.GetUsersParams{UserID: collaboration.RequesterID})
+//			requester, err := j.storage.GetUserProfile(db.GetUsersParams{ViewerID: collaboration.RequesterID})
 //
 //			if err != nil {
 //				return err
 //			}
 //
-//			receiver, err := j.storage.GetUserProfile(db.GetUsersParams{UserID: collaboration.UserID})
+//			receiver, err := j.storage.GetUserProfile(db.GetUsersParams{ViewerID: collaboration.ViewerID})
 //
 //			if err != nil {
 //				return err
@@ -386,7 +386,7 @@ func (j *notifyJob) NotifyMatchedCollaboration() error {
 //			}
 //
 //			ntf := &db.Notification{
-//				UserID:           collaboration.UserID,
+//				ViewerID:           collaboration.ViewerID,
 //				NotificationType: db.NotificationTypeUserCollaboration,
 //				EntityType:       "user_collaboration_requests",
 //				EntityID:         collaboration.ID,
@@ -416,7 +416,7 @@ func (j *notifyJob) NotifyMatchedCollaboration() error {
 //			}
 //
 //			if err = j.notifier.SendPhotoNotification(params); err != nil {
-//				log.Printf("Failed to send notification to user %d", collaboration.UserID)
+//				log.Printf("Failed to send notification to user %d", collaboration.ViewerID)
 //				return err
 //			}
 //
@@ -451,7 +451,7 @@ func (j *notifyJob) NotifyMatchedCollaboration() error {
 //
 //		// check if  user already received exact same notification
 //		q := db.NotificationQuery{
-//			UserID:           &creator.ID,
+//			ViewerID:           &creator.ID,
 //			NotificationType: db.NotificationTypeCollaborationRequest,
 //			EntityType:       "collaboration_requests",
 //			EntityID:         request.ID,
@@ -459,7 +459,7 @@ func (j *notifyJob) NotifyMatchedCollaboration() error {
 //
 //		if _, err := j.storage.SearchNotification(q); err != nil && errors.Is(err, db.ErrNotFound) {
 //			// get the one who created the request
-//			requester, err := j.storage.GetUserProfile(db.GetUsersParams{UserID: request.UserID})
+//			requester, err := j.storage.GetUserProfile(db.GetUsersParams{ViewerID: request.ViewerID})
 //
 //			if err != nil {
 //				return err
@@ -472,7 +472,7 @@ func (j *notifyJob) NotifyMatchedCollaboration() error {
 //			}
 //
 //			ntf := &db.Notification{
-//				UserID:           creator.ID,
+//				ViewerID:           creator.ID,
 //				NotificationType: db.NotificationTypeCollaborationRequest,
 //				EntityType:       "collaboration_requests",
 //				EntityID:         request.ID,

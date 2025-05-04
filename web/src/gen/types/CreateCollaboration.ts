@@ -5,39 +5,27 @@
 
 export type CreateCollaboration = {
   /**
-   * @type array
+   * @type array | undefined
    */
-  badge_ids: number[]
+  badge_ids?: string[]
   /**
    * @type string | undefined
    */
-  city?: string
-  /**
-   * @maxLength 255
-   * @type string
-   */
-  country: string
-  /**
-   * @maxLength 2
-   * @type string
-   */
-  country_code: string
-  /**
-   * @maxLength 1000
-   * @type string
-   */
-  description: string
+  description?: string
   /**
    * @type boolean | undefined
    */
   is_payable?: boolean
   /**
-   * @type integer
+   * @type string | undefined
    */
-  opportunity_id: number
+  location_id?: string
   /**
-   * @maxLength 255
-   * @type string
+   * @type string | undefined
    */
-  title: string
+  opportunity_id?: string
+  /**
+   * @type string | undefined
+   */
+  title?: string
 }

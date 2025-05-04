@@ -9,12 +9,10 @@ export default function EditCollaboration(props: RouteSectionProps) {
 	if (!params.id) {
 		setEditCollaboration({
 			badge_ids: [],
-			city: '',
-			country: '',
-			country_code: '',
+			location: {},
 			description: '',
 			is_payable: false,
-			opportunity_id: 0,
+			opportunity_id: '',
 			title: '',
 		})
 
@@ -23,7 +21,7 @@ export default function EditCollaboration(props: RouteSectionProps) {
 		return <div>{props.children}</div>
 	} else {
 		const [collaboration, _] = createResource(async () => {
-			return await fetchCollaboration(Number(params.id))
+			return await fetchCollaboration(params.id)
 		})
 
 		createEffect(() => {
@@ -32,15 +30,12 @@ export default function EditCollaboration(props: RouteSectionProps) {
 					badge_ids: collaboration().badges.map(
 						(badge: { id: number }) => badge.id,
 					),
-					city: collaboration().city,
-					country: collaboration().country,
-					country_code: collaboration().country_code,
+					location: collaboration().location,
 					description: collaboration().description,
 					is_payable: collaboration().is_payable,
 					opportunity_id: collaboration().opportunity.id,
 					title: collaboration().title,
 				})
-
 				setEditCollaborationId(collaboration().id)
 			}
 		})

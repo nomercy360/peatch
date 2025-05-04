@@ -7,7 +7,6 @@ import (
 	"github.com/peatch-io/peatch/internal/db"
 	"github.com/peatch-io/peatch/internal/nanoid"
 	"net/http"
-	"strconv"
 	"time"
 )
 
@@ -19,19 +18,19 @@ import (
 // @Param page query int false "Page"
 // @Param limit query int false "Limit"
 // @Param order query string false "Order by"
-// @Success 200 {array} Collaboration
+// @Success 200 {array} contract.CollaborationResponse
 // @Router /api/collaborations [get]
 func (h *handler) handleListCollaborations(c echo.Context) error {
-	page, _ := strconv.Atoi(c.QueryParam("page"))
-	limit, _ := strconv.Atoi(c.QueryParam("limit"))
+	page := parseIntQuery(c, "page", 1)
+	limit := parseIntQuery(c, "limit", 10)
 	search := c.QueryParam("search")
 	uid := getUserID(c)
 
 	query := db.CollaborationQuery{
-		Page:   page,
-		Limit:  limit,
-		Search: search,
-		UserID: uid,
+		Page:     page,
+		Limit:    limit,
+		Search:   search,
+		ViewerID: uid,
 	}
 
 	collaborations, err := h.storage.ListCollaborations(c.Request().Context(), query)
@@ -40,7 +39,12 @@ func (h *handler) handleListCollaborations(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get collaborations").WithInternal(err)
 	}
 
-	return c.JSON(http.StatusOK, collaborations)
+	resp := make([]contract.CollaborationResponse, len(collaborations))
+	for i, collaboration := range collaborations {
+		resp[i] = contract.ToCollaborationResponse(collaboration)
+	}
+
+	return c.JSON(http.StatusOK, resp)
 }
 
 // handleGetCollaboration godoc
@@ -49,7 +53,7 @@ func (h *handler) handleListCollaborations(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param id path int true "Collaboration ID"
-// @Success 200 {object} Collaboration
+// @Success 200 {object} contract.CollaborationResponse
 // @Router /api/collaborations/{id} [get]
 func (h *handler) handleGetCollaboration(c echo.Context) error {
 	id := c.Param("id")
@@ -63,7 +67,7 @@ func (h *handler) handleGetCollaboration(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get collaboration").WithInternal(err)
 	}
 
-	return c.JSON(http.StatusOK, collaboration)
+	return c.JSON(http.StatusOK, contract.ToCollaborationResponse(collaboration))
 }
 
 // handleCreateCollaboration godoc
@@ -71,8 +75,8 @@ func (h *handler) handleGetCollaboration(c echo.Context) error {
 // @Tags collaborations
 // @Accept  json
 // @Produce  json
-// @Param collaboration body CreateCollaboration true "Collaboration data"
-// @Success 201 {object} Collaboration
+// @Param collaboration body contract.CreateCollaboration true "Collaboration data"
+// @Success 201 {object} contract.CollaborationResponse
 // @Router /api/collaborations [post]
 func (h *handler) handleCreateCollaboration(c echo.Context) error {
 	var req contract.CreateCollaboration
@@ -107,7 +111,12 @@ func (h *handler) handleCreateCollaboration(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "create failed").WithInternal(err)
 	}
 
-	return c.JSON(http.StatusCreated, collaboration)
+	res, err := h.storage.GetCollaborationByID(c.Request().Context(), uid, collaboration.ID)
+	if err != nil && errors.Is(err, db.ErrNotFound) {
+		return echo.NewHTTPError(http.StatusNotFound, "collaboration not found")
+	}
+
+	return c.JSON(http.StatusCreated, contract.ToCollaborationResponse(res))
 }
 
 // handleUpdateCollaboration godoc
@@ -115,8 +124,8 @@ func (h *handler) handleCreateCollaboration(c echo.Context) error {
 // @Tags collaborations
 // @Accept  json
 // @Produce  json
-// @Param collaboration body Collaboration true "Collaboration data"
-// @Success 200 {object} Collaboration
+// @Param collaboration body contract.CreateCollaboration true "Collaboration data"
+// @Success 200 {object} contract.CollaborationResponse
 // @Router /api/collaborations/{id} [put]
 func (h *handler) handleUpdateCollaboration(c echo.Context) error {
 	cid := c.Param("id")
@@ -149,5 +158,12 @@ func (h *handler) handleUpdateCollaboration(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "update failed").WithInternal(err)
 	}
 
-	return c.NoContent(http.StatusNoContent)
+	collaboration, err := h.storage.GetCollaborationByID(c.Request().Context(), uid, cid)
+	if err != nil && errors.Is(err, db.ErrNotFound) {
+		return echo.NewHTTPError(http.StatusNotFound, "collaboration not found")
+	} else if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get collaboration").WithInternal(err)
+	}
+
+	return c.JSON(http.StatusOK, contract.ToCollaborationResponse(collaboration))
 }

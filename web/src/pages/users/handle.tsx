@@ -16,40 +16,37 @@ import {
 import {
 	fetchProfile,
 	followUser,
-	publishProfile,
-	unfollowUser,
 } from '~/lib/api'
 import { setUser, store } from '~/store'
 import { useMainButton } from '~/lib/useMainButton'
 import { queryClient } from '~/App'
-import { UserProfile } from '~/gen'
+import { UserProfileResponse, verificationStatus } from '~/gen'
 import { useTranslations } from '~/lib/locale-context'
 import { useMutation, useQuery } from '@tanstack/solid-query'
 
 export default function UserProfilePage() {
 	const mainButton = useMainButton()
-	const [published, setPublished] = createSignal(false)
 
 	const navigate = useNavigate()
 
 	const params = useParams()
 	const [searchParams] = useSearchParams()
 
-	const username = params.handle
+	const id = params.handle
 
 	const { t } = useTranslations()
 
 	const query = useQuery(() => ({
-		queryKey: ['profiles', username],
-		queryFn: () => fetchProfile(username),
+		queryKey: ['profiles', id],
+		queryFn: () => fetchProfile(id),
 		retry: 1,
 	}))
 
 	const followMutate = useMutation(() => ({
-		mutationFn: (id: number) => followUser(id),
-		onMutate: async (id: number) => {
-			await queryClient.cancelQueries({ queryKey: ['profiles', username] })
-			queryClient.setQueryData(['profiles', username], (old: UserProfile) => {
+		mutationFn: (id: string) => followUser(id),
+		onMutate: async (id: string) => {
+			await queryClient.cancelQueries({ queryKey: ['profiles', id] })
+			queryClient.setQueryData(['profiles', id], (old: UserProfileResponse) => {
 				if (old) {
 					return {
 						...old,
@@ -58,28 +55,10 @@ export default function UserProfilePage() {
 				}
 				return old
 			})
-			queryClient.invalidateQueries({ queryKey: ['followers', id.toString()] })
 		},
 	}))
 
-	const unfollowMutate = useMutation(() => ({
-		mutationFn: (id: number) => unfollowUser(id),
-		onMutate: async (id: number) => {
-			await queryClient.cancelQueries({ queryKey: ['profiles', username] })
-			queryClient.setQueryData(['profiles', username], (old: UserProfile) => {
-				if (old) {
-					return {
-						...old,
-						is_following: false,
-					}
-				}
-				return old
-			})
-			queryClient.invalidateQueries({ queryKey: ['followers', id.toString()] })
-		},
-	}))
-
-	const isCurrentUserProfile = store.user.username === username
+	const isCurrentUserProfile = store.user.id === id
 
 	const navigateToEdit = () => {
 		navigate('/users/edit', { state: { back: true } })
@@ -94,46 +73,20 @@ export default function UserProfilePage() {
 		}
 	})
 
-	const closePopup = () => {
-		setPublished(false)
-	}
-
-	const publish = async () => {
-		setUser({
-			...store.user,
-			published_at: new Date().toISOString(),
-		})
-		await publishProfile()
-		setPublished(true)
-	}
-
 	const follow = async () => {
 		if (!query.data) return
 		followMutate.mutate(query.data.id)
 		window.Telegram.WebApp.HapticFeedback.impactOccurred('light')
 	}
 
-	const unfollow = async () => {
-		if (!query.data) return
-		unfollowMutate.mutate(query.data.id)
-		window.Telegram.WebApp.HapticFeedback.impactOccurred('light')
-	}
-
 	createEffect(() => {
 		if (isCurrentUserProfile) {
-			if (!store.user.published_at) {
-				mainButton.enable(t('common.buttons.publish'))
-				mainButton.onClick(publish)
-			} else {
-				mainButton.enable(t('common.buttons.edit'))
-				mainButton.onClick(navigateToEdit)
-			}
+			mainButton.enable(t('common.buttons.edit'))
+			mainButton.onClick(navigateToEdit)
 		}
 	})
 
 	onCleanup(() => {
-		mainButton.offClick(publish)
-		mainButton.offClick(closePopup)
 		mainButton.offClick(navigateToEdit)
 	})
 
@@ -146,9 +99,9 @@ export default function UserProfilePage() {
 		const url =
 			'https://t.me/share/url?' +
 			new URLSearchParams({
-				url: 'https://t.me/peatch_bot/app?startapp=t-users-' + username,
-			}).toString() +
-			`&text=Check out ${query.data.first_name} ${query.data.last_name}'s profile on Peatch! 🌟`
+				url: 'https://t.me/peatch_bot/app?startapp=u' + id,
+			}).toString() + '&text=' +
+			t('pages.users.shareURLText', { first_name: query.data.first_name, last_name: query.data.last_name })
 
 		window.Telegram.WebApp.openTelegramLink(url)
 	}
@@ -159,7 +112,7 @@ export default function UserProfilePage() {
 
 	const showInfoPopup = () => {
 		window.Telegram.WebApp.showAlert(
-			'Your profile was hidden by our moderators. Try to make it more genuine.',
+			t('pages.users.verificationStatusDenied'),
 		)
 	}
 
@@ -174,7 +127,8 @@ export default function UserProfilePage() {
 				</Match>
 				<Match when={query.isSuccess}>
 					<div class="flex h-fit min-h-screen flex-col items-center p-2 text-center">
-						<Show when={isCurrentUserProfile && store.user.hidden_at}>
+						<Show
+							when={isCurrentUserProfile && store.user.verification_status === verificationStatus.VerificationStatusDenied}>
 							<button
 								onClick={showInfoPopup}
 								class="absolute left-4 top-4 flex size-7 items-center justify-center rounded-lg bg-secondary"
@@ -191,14 +145,29 @@ export default function UserProfilePage() {
 						/>
 						<Show when={!isCurrentUserProfile}>
 							<button
-								class="mt-4 flex h-8 flex-row items-center space-x-1 rounded-2xl border bg-primary px-3 text-primary-foreground"
-								onClick={() => shareURL()}
+								onClick={shareURL}
+								class="absolute right-3 top-3 flex size-8 flex-row items-center justify-center rounded-lg border bg-secondary px-3 text-accent-foreground transition-all duration-300"
 							>
 								<span class="material-symbols-rounded text-[16px]">
-									waving_hand
+									ios_share
+								</span>
+							</button>
+						</Show>
+						<Show when={!isCurrentUserProfile}>
+							<button
+								class={`mt-4 flex h-8 flex-row items-center space-x-1 rounded-2xl border px-3 transition-all duration-300 ${
+									query.data.is_following
+										? 'border-secondary bg-secondary text-secondary-foreground'
+										: 'border-primary bg-primary text-primary-foreground'
+								}`}
+								onClick={() => follow()}
+								disabled={query.data.is_following}
+							>
+								<span class="material-symbols-rounded text-[16px]">
+									{query.data.is_following ? 'check' : 'waving_hand'}
 								</span>
 								<span class="text-sm">
-									{t('pages.users.sayHi')}
+									{query.data.is_following ? t('pages.users.saidHi') : t('pages.users.sayHi')}
 								</span>
 							</button>
 						</Show>

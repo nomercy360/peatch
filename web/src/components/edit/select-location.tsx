@@ -3,12 +3,7 @@ import countryFlags from '../../assets/countries.json'
 import useDebounce from '../../lib/useDebounce'
 import { searchLocations } from '~/lib/api'
 import { useQuery } from '@tanstack/solid-query'
-
-type Location = {
-	country: string
-	country_code: string
-	city: string
-}
+import { CityResponse } from '~/gen'
 
 export type CountryFlag = {
 	flag: string
@@ -17,12 +12,8 @@ export type CountryFlag = {
 }
 
 export default function SelectLocation(props: {
-	country: string
-	setCountry: (country: string) => void
-	city?: string
-	setCity: (city: string) => void
-	countryCode: string
-	setCountryCode: (countryCode: string) => void
+	setLocation: (city: CityResponse) => void
+	initialLocation?: CityResponse
 }) {
 	const [search, setSearch] = createSignal('')
 
@@ -33,16 +24,13 @@ export default function SelectLocation(props: {
 
 	const updateSearch = useDebounce(setSearch, 400)
 
-	const onLocationClick = (location: Location) => {
-		props.setCountry(location.country)
-		props.setCity(location.city)
-		props.setCountryCode(location.country_code)
+	const onLocationClick = (location: CityResponse) => {
+		props.setLocation(location)
 	}
 
 	const clearLocation = () => {
-		props.setCountry('')
-		props.setCity('')
-		props.setCountryCode('')
+		props.setLocation({} as CityResponse)
+		setSearch('')
 	}
 
 	return (
@@ -65,27 +53,19 @@ export default function SelectLocation(props: {
 				</Show>
 			</div>
 			<div class="mt-2.5 flex w-full flex-row flex-wrap items-center justify-start gap-1">
-				<Show when={!search() && props.country && props.countryCode}>
+				<Show when={!search() && props.initialLocation}>
 					<LocationButton
 						onClick={() => clearLocation()}
 						isActive={true}
-						location={{
-							country: props.country,
-							city: props.city || '',
-							country_code: props.countryCode,
-						}}
+						location={props.initialLocation!}
 					/>
 				</Show>
-				<Show when={search() || (!props.country && !props.city)}>
+				<Show when={search() || !props.initialLocation}>
 					<Suspense fallback={<div class="text-hint text-sm">Loading...</div>}>
 						<For each={query.data!}>
 							{location => (
 								<LocationButton
-									isActive={
-										location.country === props.country &&
-										location.city === props.city &&
-										location.country_code === props.countryCode
-									}
+									isActive={props.initialLocation?.id === location.id}
 									onClick={() => onLocationClick(location)}
 									location={location}
 								/>
@@ -99,7 +79,7 @@ export default function SelectLocation(props: {
 }
 
 function LocationButton(props: {
-	location: Location
+	location: CityResponse
 	onClick: () => void
 	isActive: boolean
 }) {
@@ -125,13 +105,9 @@ function LocationButton(props: {
 				/>
 			</Show>
 			<div class="flex flex-col justify-start text-start">
-				<Show when={props.location.city}>
-					<p class="text-sm">
-						{props.location.city}
-					</p>
-				</Show>
+				<p class="text-sm">{props.location.name}</p>
 				<p class="text-xs text-secondary-foreground">
-					{props.location.country}
+					{props.location.country_name}
 				</p>
 			</div>
 		</button>

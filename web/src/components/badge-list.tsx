@@ -1,9 +1,9 @@
 import { For, Show } from 'solid-js'
 import Badge from '~/components/badge'
-import { Badge as UserBadge } from '../../gen'
+import { BadgeResponse } from '~/gen'
 
 export default function BadgeList(props: {
-	badges: UserBadge[]
+	badges: BadgeResponse[]
 	position: 'center' | 'start'
 	children?: any
 }) {

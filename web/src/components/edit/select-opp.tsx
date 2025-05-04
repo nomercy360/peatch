@@ -1,19 +1,20 @@
 import { createEffect, createSignal, For, onMount, Show } from 'solid-js'
-import { Opportunity } from '~/gen'
 import { useTranslations } from '~/lib/locale-context'
 import { cn } from '~/lib/utils'
+import { OpportunityResponse } from '~/gen'
 
 export function SelectOpportunity(props: {
-	selected: number[] | number
-	setSelected: (selected: number[] | number) => void
-	opportunities: Opportunity[]
+	selected: string[] | string
+	setSelected: (selected: string[] | string) => void
+	opportunities: OpportunityResponse[]
 	loading: boolean
 }) {
-	const [filtered, setFiltered] = createSignal<Opportunity[]>([])
+	const [filtered, setFiltered] = createSignal<OpportunityResponse[]>([])
 	const [search, setSearch] = createSignal('')
 	const { t } = useTranslations()
 
-	const onClick = (oppId: number) => {
+	const onClick = (oppId?: string) => {
+		if (!oppId) return
 		if (Array.isArray(props.selected)) {
 			if (props.selected.includes(oppId)) {
 				props.setSelected(props.selected.filter(b => b !== oppId))
@@ -37,7 +38,7 @@ export function SelectOpportunity(props: {
 		}
 	})
 
-	const includes = (oppId?: number) => {
+	const includes = (oppId?: string) => {
 		if (!oppId) return false
 		if (Array.isArray(props.selected)) {
 			return props.selected.includes(oppId)
@@ -83,9 +84,9 @@ export function SelectOpportunity(props: {
 					<For each={filtered()}>
 						{op => (
 							<button
-								onClick={() => onClick(op.id!)}
+								onClick={() => onClick(op.id)}
 								class={'flex h-[60px] w-full flex-row items-center justify-start gap-2.5 rounded-2xl px-2.5'}
-								style={{ 'background-color': includes(op.id!) ? `#${op.color}` : 'var(--secondary)' }}
+								style={{ 'background-color': includes(op.id) ? `#${op.color}` : 'var(--secondary)' }}
 							>
 								<div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-border">
 									<span class="material-symbols-rounded shrink-0">

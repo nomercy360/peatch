@@ -1,7 +1,9 @@
-export type { Badge } from './Badge.ts'
-export type { Collaboration } from './Collaboration.ts'
+export type { AuthTelegramRequest } from './AuthTelegramRequest.ts'
+export type { BadgeResponse } from './BadgeResponse.ts'
+export type { CityResponse } from './CityResponse.ts'
+export type { CollaborationResponse } from './CollaborationResponse.ts'
 export type { CreateCollaboration } from './CreateCollaboration.ts'
-export type { GetApiAuthTelegramQueryParams, GetApiAuthTelegram200, GetApiAuthTelegramQueryResponse, GetApiAuthTelegramQuery } from './GetApiAuthTelegram.ts'
+export type { ErrorResponse } from './ErrorResponse.ts'
 export type { GetApiBadges200, GetApiBadgesQueryResponse, GetApiBadgesQuery } from './GetApiBadges.ts'
 export type { GetApiBadgesIdPathParams, GetApiBadgesId200, GetApiBadgesIdQueryResponse, GetApiBadgesIdQuery } from './GetApiBadgesId.ts'
 export type {
@@ -16,35 +18,46 @@ export type {
   GetApiCollaborationsIdQueryResponse,
   GetApiCollaborationsIdQuery,
 } from './GetApiCollaborationsId.ts'
+export type { GetApiLocations200, GetApiLocationsQueryResponse, GetApiLocationsQuery } from './GetApiLocations.ts'
 export type { GetApiOpportunities200, GetApiOpportunitiesQueryResponse, GetApiOpportunitiesQuery } from './GetApiOpportunities.ts'
-export type { GetApiPostsIdPathParams, GetApiPostsId200, GetApiPostsIdQueryResponse, GetApiPostsIdQuery } from './GetApiPostsId.ts'
 export type { GetApiUsersQueryParams, GetApiUsers200, GetApiUsersQueryResponse, GetApiUsersQuery } from './GetApiUsers.ts'
 export type { GetApiUsersIdPathParams, GetApiUsersId200, GetApiUsersIdQueryResponse, GetApiUsersIdQuery } from './GetApiUsersId.ts'
-export type { GetUsersIdFollowPathParams, GetUsersIdFollow204, GetUsersIdFollowQueryResponse, GetUsersIdFollowQuery } from './GetUsersIdFollow.ts'
-export type { GetUsersIdUnfollowPathParams, GetUsersIdUnfollow204, GetUsersIdUnfollowQueryResponse, GetUsersIdUnfollowQuery } from './GetUsersIdUnfollow.ts'
-export type { Opportunity } from './Opportunity.ts'
-export type { Post } from './Post.ts'
+export type { GetApiUsersMe200, GetApiUsersMeQueryResponse, GetApiUsersMeQuery } from './GetApiUsersMe.ts'
+export type { Location } from './Location.ts'
+export type { OpportunityResponse } from './OpportunityResponse.ts'
 export type {
   PostApiCollaborations201,
   PostApiCollaborationsMutationRequest,
   PostApiCollaborationsMutationResponse,
   PostApiCollaborationsMutation,
 } from './PostApiCollaborations.ts'
-export type { PostApiUsersUserIdPublish204, PostApiUsersUserIdPublishMutationResponse, PostApiUsersUserIdPublishMutation } from './PostApiUsersUserIdPublish.ts'
+export type {
+  PostAuthTelegram400,
+  PostAuthTelegram500,
+  PostAuthTelegramMutationRequest,
+  PostAuthTelegramMutationResponse,
+  PostAuthTelegramMutation,
+} from './PostAuthTelegram.ts'
+export type { PostUsersIdFollowPathParams, PostUsersIdFollow204, PostUsersIdFollowMutationResponse, PostUsersIdFollowMutation } from './PostUsersIdFollow.ts'
+export type {
+  PostV1UsersAvatar200,
+  PostV1UsersAvatar400,
+  PostV1UsersAvatar401,
+  PostV1UsersAvatar500,
+  PostV1UsersAvatarMutationRequest,
+  PostV1UsersAvatarMutationResponse,
+  PostV1UsersAvatarMutation,
+} from './PostV1UsersAvatar.ts'
 export type {
   PutApiCollaborationsId200,
   PutApiCollaborationsIdMutationRequest,
   PutApiCollaborationsIdMutationResponse,
   PutApiCollaborationsIdMutation,
 } from './PutApiCollaborationsId.ts'
-export type {
-  PutApiCollaborationsIdPublishPathParams,
-  PutApiCollaborationsIdPublish200,
-  PutApiCollaborationsIdPublishMutationResponse,
-  PutApiCollaborationsIdPublishMutation,
-} from './PutApiCollaborationsIdPublish.ts'
 export type { PutApiUsers200, PutApiUsersMutationRequest, PutApiUsersMutationResponse, PutApiUsersMutation } from './PutApiUsers.ts'
+export type { StatusResponse } from './StatusResponse.ts'
 export type { UpdateUserRequest } from './UpdateUserRequest.ts'
-export type { User } from './User.ts'
-export type { UserProfile } from './UserProfile.ts'
-export type { UserWithToken } from './UserWithToken.ts'
+export type { UserProfileResponse } from './UserProfileResponse.ts'
+export type { UserResponse } from './UserResponse.ts'
+export type { VerificationStatusEnum, VerificationStatus } from './VerificationStatus.ts'
+export { verificationStatus } from './VerificationStatus.ts'

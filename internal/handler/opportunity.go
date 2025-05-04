@@ -3,7 +3,6 @@ package handler
 import (
 	"github.com/labstack/echo/v4"
 	"github.com/peatch-io/peatch/internal/contract"
-	"github.com/peatch-io/peatch/internal/db"
 	"net/http"
 )
 
@@ -23,22 +22,5 @@ func (h *handler) handleListOpportunities(c echo.Context) error {
 
 	lang := getUserLang(c)
 
-	resp := make([]contract.OpportunityResponse, len(res))
-
-	for i := range res {
-		resp[i] = contract.OpportunityResponse{
-			ID:    res[i].ID,
-			Color: res[i].Color,
-			Icon:  res[i].Icon,
-		}
-
-		if lang == db.LanguageRU {
-			resp[i].Text = res[i].TextRU
-			resp[i].Description = res[i].DescriptionRU
-		} else {
-			resp[i].Text = res[i].Text
-			resp[i].Description = res[i].Description
-		}
-	}
-	return c.JSON(http.StatusOK, resp)
+	return c.JSON(http.StatusOK, contract.ToOpportunityResponseList(res, lang))
 }

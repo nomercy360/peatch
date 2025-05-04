@@ -1,9 +1,10 @@
 import { createStore } from 'solid-js/store'
 import { createSignal } from 'solid-js'
-import { CreateCollaboration, UpdateUserRequest } from '~/gen'
+import { CityResponse } from '~/gen'
+import { UserResponse } from '~/gen'
 
 export const [store, setStore] = createStore<{
-	user: User
+	user: UserResponse
 	token: string
 	following: number[]
 }>({
@@ -12,32 +13,42 @@ export const [store, setStore] = createStore<{
 	following: [],
 })
 
-export const setUser = (user: User) => setStore('user', user)
+export const setUser = (user: UserResponse) => setStore('user', user)
 
 export const setToken = (token: string) => setStore('token', token)
 
-export const [editUser, setEditUser] = createStore<UpdateUserRequest>({
+export const [editUser, setEditUser] = createStore<{
+	first_name: string,
+	last_name: string,
+	title: string,
+	description: string,
+	location: CityResponse
+	badge_ids: string[]
+	opportunity_ids: string[]
+}>({
 	first_name: '',
 	last_name: '',
 	title: '',
 	description: '',
-	avatar_url: '',
-	city: '',
-	country: '',
-	country_code: '',
+	location: {},
 	badge_ids: [],
 	opportunity_ids: [],
 })
 
 export const [editCollaboration, setEditCollaboration] =
-	createStore<CreateCollaboration>({
+	createStore<{
+		badge_ids: string[]
+		location: CityResponse
+		description: string
+		is_payable: boolean
+		opportunity_id: string
+		title: string
+	}>({
 		badge_ids: [],
-		city: '',
-		country: '',
-		country_code: '',
+		location: {},
 		description: '',
 		is_payable: false,
-		opportunity_id: 0,
+		opportunity_id: '',
 		title: '',
 	})
 

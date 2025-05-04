@@ -3,7 +3,7 @@
  * Do not edit manually.
  */
 
-import type { User } from './User.ts'
+import type { UserProfileResponse } from './UserProfileResponse.ts'
 
 export type GetApiUsersIdPathParams = {
   /**
@@ -16,7 +16,7 @@ export type GetApiUsersIdPathParams = {
 /**
  * @description OK
  */
-export type GetApiUsersId200 = User
+export type GetApiUsersId200 = UserProfileResponse
 
 export type GetApiUsersIdQueryResponse = GetApiUsersId200
 

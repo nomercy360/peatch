@@ -3,7 +3,7 @@
  * Do not edit manually.
  */
 
-import type { User } from './User.ts'
+import type { UserProfileResponse } from './UserProfileResponse.ts'
 
 export type GetApiUsersQueryParams = {
   /**
@@ -36,7 +36,7 @@ export type GetApiUsersQueryParams = {
 /**
  * @description OK
  */
-export type GetApiUsers200 = User[]
+export type GetApiUsers200 = UserProfileResponse[]
 
 export type GetApiUsersQueryResponse = GetApiUsers200
 

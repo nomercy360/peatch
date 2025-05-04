@@ -7,7 +7,6 @@ import (
 	"github.com/peatch-io/peatch/internal/contract"
 	"github.com/peatch-io/peatch/internal/db"
 	"net/http"
-	"strconv"
 	"time"
 )
 
@@ -21,11 +20,11 @@ import (
 // @Param order query string false "Order by"
 // @Param search query string false "Search"
 // @Param find_similar query bool false "Find similar"
-// @Success 200 {array} User
+// @Success 200 {array} contract.UserProfileResponse
 // @Router /api/users [get]
 func (h *handler) handleListUsers(c echo.Context) error {
-	page, _ := strconv.Atoi(c.QueryParam("page"))
-	limit, _ := strconv.Atoi(c.QueryParam("limit"))
+	page := parseIntQuery(c, "page", 1)
+	limit := parseIntQuery(c, "limit", 10)
 	search := c.QueryParam("search")
 
 	query := db.UserQuery{
@@ -40,6 +39,11 @@ func (h *handler) handleListUsers(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get users").WithInternal(err)
 	}
 
+	resp := make([]contract.UserProfileResponse, len(users))
+	for i, u := range users {
+		resp[i] = contract.ToUserProfile(u)
+	}
+
 	return c.JSON(http.StatusOK, users)
 }
 
@@ -49,13 +53,13 @@ func (h *handler) handleListUsers(c echo.Context) error {
 // @Accept  json
 // @Produce  json
 // @Param id path int true "User ID"
-// @Success 200 {object} User
-// @Router /api/users/{username} [get]
+// @Success 200 {object} contract.UserProfileResponse
+// @Router /api/users/{id} [get]
 func (h *handler) handleGetUser(c echo.Context) error {
-	username := c.Param("handle")
+	id := c.Param("id")
 	uid := getUserID(c)
 
-	user, err := h.storage.GetUserProfile(c.Request().Context(), uid, username)
+	user, err := h.storage.GetUserProfile(c.Request().Context(), uid, id)
 
 	if err != nil && errors.Is(err, db.ErrNotFound) {
 		return echo.NewHTTPError(http.StatusNotFound, "User not found").WithInternal(err)
@@ -63,7 +67,7 @@ func (h *handler) handleGetUser(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get user").WithInternal(err)
 	}
 
-	return c.JSON(http.StatusOK, user)
+	return c.JSON(http.StatusOK, contract.ToUserProfile(user))
 }
 
 func getUserID(c echo.Context) string {
@@ -83,8 +87,8 @@ func getUserLang(c echo.Context) db.LanguageCode {
 // @Tags users
 // @Accept  json
 // @Produce  json
-// @Param user body UpdateUserRequest true "User data"
-// @Success 200 {object} User
+// @Param user body contract.UpdateUserRequest true "User data"
+// @Success 200 {object} contract.UserResponse
 // @Router /api/users [put]
 func (h *handler) handleUpdateUser(c echo.Context) error {
 	uid := getUserID(c)
@@ -112,11 +116,41 @@ func (h *handler) handleUpdateUser(c echo.Context) error {
 		req.BadgeIDs,
 		req.OpportunityIDs,
 		req.LocationID,
-	); err != nil {
+	); err != nil && errors.Is(err, db.ErrNotFound) {
+		return echo.NewHTTPError(http.StatusNotFound, "not found").WithInternal(err)
+	} else if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to update user").WithInternal(err)
 	}
 
-	return c.NoContent(http.StatusNoContent)
+	resp, err := h.storage.GetUserByID(c.Request().Context(), uid)
+	if err != nil && errors.Is(err, db.ErrNotFound) {
+		return echo.NewHTTPError(http.StatusNotFound, "user not found").WithInternal(err)
+	} else if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get user").WithInternal(err)
+	}
+
+	var newStatus db.VerificationStatus
+	needUpdate := false
+
+	if resp.VerificationStatus == db.VerificationStatusDenied && resp.IsProfileComplete() {
+		newStatus = db.VerificationStatusPending
+		needUpdate = true
+	} else if resp.VerificationStatus == db.VerificationStatusUnverified && resp.IsProfileComplete() {
+		newStatus = db.VerificationStatusPending
+		needUpdate = true
+	}
+
+	if needUpdate {
+		if err := h.storage.UpdateUserVerificationStatus(
+			c.Request().Context(),
+			uid,
+			newStatus,
+		); err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to update user verification status").WithInternal(err)
+		}
+	}
+
+	return c.JSON(http.StatusOK, contract.ToUserResponse(resp))
 }
 
 // handleDeleteUser godoc
@@ -128,8 +162,8 @@ func (h *handler) handleUpdateUser(c echo.Context) error {
 // @Success 204
 // @Router /users/{id}/follow [post]
 func (h *handler) handleFollowUser(c echo.Context) error {
-	userID := getUserID(c)
-	followeeID := c.Param("id")
+	userID := c.Param("id")
+	followeeID := getUserID(c)
 
 	if followeeID == "" {
 		return echo.NewHTTPError(http.StatusBadRequest, "user id is required")
@@ -154,7 +188,7 @@ func (h *handler) handleFollowUser(c echo.Context) error {
 // @Tags users
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} User
+// @Success 200 {object} contract.UserResponse
 // @Router /api/users/me [get]
 func (h *handler) handleGetMe(c echo.Context) error {
 	uid := getUserID(c)
@@ -166,5 +200,5 @@ func (h *handler) handleGetMe(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get user").WithInternal(err)
 	}
 
-	return c.JSON(http.StatusOK, user)
+	return c.JSON(http.StatusOK, contract.ToUserResponse(user))
 }

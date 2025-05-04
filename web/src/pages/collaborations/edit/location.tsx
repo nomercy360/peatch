@@ -38,7 +38,7 @@ export default function SelectBadges() {
 	mainButton.onClick(createOrEditCollab)
 
 	createEffect(() => {
-		if (editCollaboration.country && editCollaboration.country_code) {
+		if (editCollaboration.location.id) {
 			mainButton.enable(t('common.buttons.chooseAndSave'))
 		} else {
 			mainButton.disable(t('common.buttons.chooseAndSave'))
@@ -57,12 +57,8 @@ export default function SelectBadges() {
 			totalScreens={6}
 		>
 			<SelectLocation
-				city={editCollaboration.city}
-				setCity={c => setEditCollaboration('city', c)}
-				country={editCollaboration.country}
-				setCountry={c => setEditCollaboration('country', c)}
-				countryCode={editCollaboration.country_code}
-				setCountryCode={c => setEditCollaboration('country_code', c)}
+				initialLocation={editCollaboration.location}
+				setLocation={b => setEditCollaboration('location', b)}
 			/>
 		</FormLayout>
 	)
