@@ -3,6 +3,9 @@ package middleware
 import (
 	"context"
 	"errors"
+	"github.com/golang-jwt/jwt/v5"
+	echojwt "github.com/labstack/echo-jwt/v4"
+	"github.com/peatch-io/peatch/internal/contract"
 	"log"
 	"log/slog"
 	"net/http"
@@ -10,6 +13,10 @@ import (
 
 	"github.com/labstack/echo/v4"
 	echoMiddleware "github.com/labstack/echo/v4/middleware"
+)
+
+const (
+	ErrAuthInvalid = "invalid auth token"
 )
 
 func CustomHTTPErrorHandler(logger *slog.Logger) echo.HTTPErrorHandler {
@@ -96,4 +103,33 @@ func Setup(e *echo.Echo, logger *slog.Logger) {
 	e.Use(echoMiddleware.TimeoutWithConfig(echoMiddleware.TimeoutConfig{
 		Timeout: 20 * time.Second,
 	}))
+}
+
+func GetUserAuthConfig(secret string) echojwt.Config {
+	return echojwt.Config{
+		NewClaimsFunc: func(_ echo.Context) jwt.Claims {
+			return new(contract.JWTClaims)
+		},
+		SigningKey:             []byte(secret),
+		ContinueOnIgnoredError: true,
+		ErrorHandler: func(c echo.Context, err error) error {
+
+			var extErr *echojwt.TokenExtractionError
+			if !errors.As(err, &extErr) {
+				return echo.NewHTTPError(http.StatusUnauthorized, ErrAuthInvalid)
+			}
+
+			claims := &contract.JWTClaims{}
+
+			token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+			c.Set("user", token)
+
+			if claims.UID == "" {
+				return echo.NewHTTPError(http.StatusUnauthorized, ErrAuthInvalid)
+			}
+
+			return nil
+		},
+	}
 }

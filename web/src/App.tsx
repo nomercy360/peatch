@@ -21,19 +21,16 @@ export const queryClient = new QueryClient({
 })
 
 function transformStartParam(startParam?: string): string | null {
-	if (!startParam) return null
+	if (!startParam) return null;
 
-	// Check if the parameter starts with "redirect-to-"
-	if (startParam.startsWith('t-')) {
-		const path = startParam.slice('t-'.length)
-
-		return '/' + path.replace(/-/g, '/')
-	} else if (startParam.startsWith('redirect-to=')) {
-		const path = startParam.slice('redirect-to='.length)
-
-		return '/' + path.replace(/-/g, '/')
+	if (startParam.startsWith('u_')) {
+		const id = startParam.slice('u_'.length);
+		return `/users/${id}`;
+	} else if (startParam.startsWith('c_')) {
+		const id = startParam.slice('c_'.length);
+		return `/collaborations/${id}`;
 	} else {
-		return null
+		return null;
 	}
 }
 

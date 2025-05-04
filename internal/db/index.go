@@ -83,6 +83,15 @@ func createIndexes(ctx context.Context, db *mongo.Database) error {
 				},
 			},
 		},
+		{
+			Name: "admins",
+			Indexes: []mongo.IndexModel{
+				{
+					Keys:    bson.D{{"username", 1}},
+					Options: options.Index().SetUnique(true).SetName("admins_username"),
+				},
+			},
+		},
 	}
 
 	for _, coll := range collections {

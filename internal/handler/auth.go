@@ -19,7 +19,6 @@ import (
 const (
 	ErrInvalidInitData = "invalid init data from telegram"
 	ErrInvalidRequest  = "failed to validate request"
-	ErrAuthInvalid     = "auth is invalid"
 )
 
 // TelegramAuth godoc

@@ -9,7 +9,9 @@ import (
 	"github.com/peatch-io/peatch/internal/config"
 	"github.com/peatch-io/peatch/internal/db"
 	"github.com/peatch-io/peatch/internal/handler"
+	"github.com/peatch-io/peatch/internal/job"
 	"github.com/peatch-io/peatch/internal/middleware"
+	"github.com/peatch-io/peatch/internal/notification"
 	"github.com/peatch-io/peatch/internal/s3"
 	echoSwagger "github.com/swaggo/echo-swagger"
 	"log"
@@ -70,8 +72,12 @@ func main() {
 
 	hConfig := handler.Config{
 		JWTSecret:        cfg.JWTSecret,
-		TelegramBotToken: cfg.TelegramBotToken,
+		WebhookURL:       cfg.Telegram.WebhookURL,
+		TelegramBotToken: cfg.Telegram.BotToken,
 		AssetsURL:        cfg.AssetsURL,
+		AdminChatID:      cfg.Telegram.AdminChatID,
+		WebAppURL:        cfg.Telegram.WebAppURL,
+		BotWebApp:        cfg.Telegram.BotWebApp,
 	}
 
 	s3Client, err := s3.NewClient(
@@ -81,13 +87,41 @@ func main() {
 		cfg.AWSConfig.Bucket,
 	)
 
-	h := handler.New(storage, hConfig, s3Client, logr)
+	h, err := handler.New(storage, hConfig, s3Client, logr)
+	if err != nil {
+		log.Fatalf("failed to create handler: %v", err)
+	}
 
 	h.SetupRoutes(e)
 
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
 	go gracefulShutdown(e, logr)
+
+	notifier, err := notification.NewNotifier(
+		cfg.Telegram.BotToken,
+		cfg.Telegram.AdminChatID,
+		cfg.Telegram.WebAppURL,
+		cfg.Telegram.BotWebApp,
+	)
+
+	if err := job.Run(context.Background(), storage, notifier); err != nil {
+		logr.Error("job run error", "error", err)
+	}
+
+	if err != nil {
+		log.Fatalf("failed to create notifier: %v", err)
+	}
+	go func() {
+		ticker := time.NewTicker(5 * time.Minute)
+		defer ticker.Stop()
+		for {
+			<-ticker.C
+			if err := job.Run(context.Background(), storage, notifier); err != nil {
+				logr.Error("job run error", "error", err)
+			}
+		}
+	}()
 
 	address := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
 	logr.Info("Starting server", "address", address)

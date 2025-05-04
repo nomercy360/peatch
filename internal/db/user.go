@@ -63,6 +63,7 @@ type User struct {
 	LoginMeta              *LoginMeta         `bson:"login_meta,omitempty" json:"login_meta"`
 	LastActiveAt           time.Time          `bson:"last_active_at,omitempty" json:"last_active_at"`
 	VerificationStatus     VerificationStatus `bson:"verification_status,omitempty" json:"verification_status"`
+	VerifiedAt             *time.Time         `bson:"verified_at,omitempty" json:"verified_at"`
 }
 
 func (u *User) IsProfileComplete() bool {
@@ -254,6 +255,41 @@ func (s *Storage) UpdateUser(ctx context.Context, user User, badgeIDs, oppIDs []
 	return nil
 }
 
+// GetUsersByVerificationStatus returns a list of users matching the given verification status with pagination.
+func (s *Storage) GetUsersByVerificationStatus(ctx context.Context, status VerificationStatus, page, perPage int) ([]User, int64, error) {
+	collection := s.db.Collection("users")
+
+	filter := bson.M{"verification_status": status}
+
+	// Calculate skip value for pagination
+	skip := (page - 1) * perPage
+
+	// Get the total count of matching documents
+	total, err := collection.CountDocuments(ctx, filter)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to count users by verification status: %w", err)
+	}
+
+	// Define options for pagination and sort by creation date (newest first)
+	findOptions := options.Find().
+		SetLimit(int64(perPage)).
+		SetSkip(int64(skip)).
+		SetSort(bson.M{"created_at": -1})
+
+	cursor, err := collection.Find(ctx, filter, findOptions)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to find users by verification status: %w", err)
+	}
+	defer cursor.Close(ctx)
+
+	var users []User
+	if err := cursor.All(ctx, &users); err != nil {
+		return nil, 0, fmt.Errorf("failed to decode users: %w", err)
+	}
+
+	return users, total, nil
+}
+
 func (s *Storage) GetUserProfile(ctx context.Context, viewerID string, id string) (User, error) {
 	usersCollection := s.db.Collection("users")
 	followersCollection := s.db.Collection("user_followers")
@@ -385,7 +421,13 @@ func (s *Storage) UpdateUserVerificationStatus(ctx context.Context, userID strin
 	}
 
 	if status == VerificationStatusVerified {
-		update["$set"].(bson.M)["verified_at"] = now
+		update = bson.M{
+			"$set": bson.M{
+				"verification_status": status,
+				"verified_at":         time.Now(),
+				"updated_at":          time.Now(),
+			},
+		}
 	}
 
 	res, err := collection.UpdateOne(ctx, bson.M{"_id": userID}, update)
