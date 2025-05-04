@@ -1,0 +1,1 @@
+{"enum":["pending","verified","declined","blocked"],"type":"string","x-enum-varnames":["VerificationStatusPending","VerificationStatusVerified","VerificationStatusDeclined","VerificationStatusBlocked"],"x-readme-ref-name":"github_com_peatch-io_peatch_internal_db.VerificationStatus"}

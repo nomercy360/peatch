@@ -5,9 +5,9 @@ import { useNavigate, useSearchParams } from '@solidjs/router'
 import { createEffect, createSignal, onCleanup } from 'solid-js'
 import { editUser, setEditUser } from '~/store'
 import { fetchBadges } from '~/lib/api'
-import { Badge } from '~/gen'
 import { useTranslations } from '~/lib/locale-context'
 import { useQuery } from '@tanstack/solid-query'
+import { BadgeResponse } from '~/gen'
 
 export default function SelectBadges() {
 	const mainButton = useMainButton()
@@ -35,8 +35,8 @@ export default function SelectBadges() {
 			fetchBadges().then(badges => {
 				const selected = editUser.badge_ids
 				return [
-					...selected.map((id: number) => badges.find((b: Badge) => b.id === id)),
-					...badges.filter((b: Badge) => !selected.includes(b.id!)),
+					...selected.map((id: string) => badges.find((b: BadgeResponse) => b.id === id)),
+					...badges.filter((b: BadgeResponse) => !selected.includes(b.id!)),
 				]
 			}),
 	}))

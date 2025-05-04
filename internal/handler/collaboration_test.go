@@ -56,6 +56,10 @@ func setupTestRecords(t *testing.T) ([]db.Badge, []db.Opportunity, db.City) {
 		Name:        "Test City",
 		CountryName: "Test Country",
 		CountryCode: "TC",
+		Geo: db.GeoPoint{
+			Type:        "Point",
+			Coordinates: []float64{12.34, 56.78},
+		},
 	}
 
 	if _, err := dbStorage.Database().Collection(CitiesCollection).InsertOne(context.Background(), location); err != nil {

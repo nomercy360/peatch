@@ -1,0 +1,1 @@
+{"properties":{"color":{"type":"string"},"created_at":{"type":"string"},"description":{"type":"string"},"description_ru":{"type":"string"},"icon":{"type":"string"},"id":{"type":"string"},"text":{"type":"string"},"text_ru":{"type":"string"}},"type":"object","x-readme-ref-name":"github_com_peatch-io_peatch_internal_db.Opportunity"}

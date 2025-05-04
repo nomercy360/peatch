@@ -10,19 +10,12 @@ spec:
   selector:
     matchLabels:
       service: peatch
-  strategy: {}
+  strategy: { }
   template:
     metadata:
       labels:
         service: peatch
     spec:
-      initContainers:
-        - name: db-migrations
-          image: maksim1111/peatch:latest
-          command: [ "/app/migrate", "-path", "/app/migrations", "-database", "$(DATABASE_URL)", "up" ]
-          envFrom:
-            - secretRef:
-                name: peatch-secrets
       containers:
         - image: maksim1111/peatch:latest
           name: peatch
@@ -43,82 +36,6 @@ spec:
                 name: peatch-secrets
       restartPolicy: Always
 ---
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  labels:
-    service: peatch-bot
-  name: peatch-bot
-  namespace: default
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      service: peatch-bot
-  strategy: {}
-  template:
-    metadata:
-      labels:
-        service: peatch-bot
-    spec:
-      containers:
-        - image: maksim1111/peatch:latest
-          name: peatch-bot
-          imagePullPolicy: Always
-          command: [ "/app/bot" ]
-          ports:
-            - containerPort: 8080
-              name: http
-              protocol: TCP
-          envFrom:
-            - secretRef:
-                name: peatch-secrets
-          resources:
-            requests:
-              memory: "128Mi"
-              cpu: "50m"
-            limits:
-              memory: "512Mi"
-      restartPolicy: Always
----
-#apiVersion: apps/v1
-#kind: Deployment
-#metadata:
-#  labels:
-#    service: peatch-job
-#  name: peatch-job
-#  namespace: default
-#spec:
-#  replicas: 1
-#  selector:
-#    matchLabels:
-#      service: peatch-job
-#  strategy: {}
-#  template:
-#    metadata:
-#      labels:
-#        service: peatch-job
-#    spec:
-#      containers:
-#        - image: maksim1111/peatch:latest
-#          name: peatch-job
-#          imagePullPolicy: Always
-#          command: [ "/app/job" ]
-#          ports:
-#            - containerPort: 8080
-#              name: http
-#              protocol: TCP
-#          envFrom:
-#            - secretRef:
-#                name: peatch-secrets
-#          resources:
-#            requests:
-#              memory: "128Mi"
-#              cpu: "50m"
-#            limits:
-#              memory: "512Mi"
-#      restartPolicy: Always
-#---
 apiVersion: v1
 kind: Service
 metadata:
@@ -133,21 +50,6 @@ spec:
       targetPort: 8080
   selector:
     service: peatch
----
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    service: peatch-bot
-  name: peatch-bot
-  namespace: default
-spec:
-  type: ClusterIP
-  ports:
-    - port: 8080
-      targetPort: 8080
-  selector:
-    service: peatch-bot
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -165,15 +67,5 @@ spec:
             backend:
               service:
                 name: peatch
-                port:
-                  number: 8080
-    - host: bot.peatch.io
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: peatch-bot
                 port:
                   number: 8080

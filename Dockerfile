@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM golang:1.22 AS build-stage
+FROM golang:1.23 AS build-stage
 
 WORKDIR /app
 
@@ -11,7 +11,6 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o /api ./cmd/api/main.go
-RUN CGO_ENABLED=0 GOOS=linux go build -o /bot ./cmd/bot/main.go
 
 FROM alpine:3.19 AS build-release-stage
 
@@ -20,13 +19,6 @@ RUN apk --no-cache add ca-certificates bash curl
 WORKDIR /app
 
 COPY --from=build-stage /api /app/api
-COPY --from=build-stage /bot /app/bot
-
-COPY /scripts/migrations /app/migrations
-
-RUN curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.1/migrate.linux-amd64.tar.gz | tar xvz && \
-    mv migrate /app/migrate \
-    && chmod +x /app/migrate
 
 EXPOSE 8080
 

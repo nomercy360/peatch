@@ -185,6 +185,7 @@ type UserResponse struct {
 	Username           string                `json:"username"`
 	FirstName          *string               `json:"first_name"`
 	LastName           *string               `json:"last_name"`
+	LanguageCode       db.LanguageCode       `json:"language_code"`
 	AvatarURL          *string               `json:"avatar_url"`
 	Title              *string               `json:"title"`
 	Description        *string               `json:"description"`
@@ -212,16 +213,16 @@ func ToUserResponse(user db.User) UserResponse {
 		}
 	}
 	return UserResponse{
-		ID:          user.ID,
-		ChatID:      user.ChatID,
-		Username:    user.Username,
-		FirstName:   user.FirstName,
-		LastName:    user.LastName,
-		AvatarURL:   user.AvatarURL,
-		Title:       user.Title,
-		Description: user.Description,
-		Location:    location,
-
+		ID:                 user.ID,
+		ChatID:             user.ChatID,
+		Username:           user.Username,
+		FirstName:          user.FirstName,
+		LastName:           user.LastName,
+		LanguageCode:       user.LanguageCode,
+		AvatarURL:          user.AvatarURL,
+		Title:              user.Title,
+		Description:        user.Description,
+		Location:           location,
 		LastActiveAt:       user.LastActiveAt,
 		Badges:             ToBadgeResponseList(user.Badges),
 		Opportunities:      ToOpportunityResponseList(user.Opportunities, user.LanguageCode),
