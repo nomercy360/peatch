@@ -10,7 +10,8 @@ spec:
   selector:
     matchLabels:
       service: peatch
-  strategy: { }
+  strategy:
+    type: RollingUpdate
   template:
     metadata:
       labels:
@@ -19,7 +20,7 @@ spec:
       containers:
         - image: maksim1111/peatch:latest
           name: peatch
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           command: [ "/app/api" ]
           ports:
             - containerPort: 8080
@@ -31,10 +32,14 @@ spec:
               cpu: "50m"
             limits:
               memory: "512Mi"
-          envFrom:
-            - secretRef:
-                name: peatch-secrets
-      restartPolicy: Always
+          volumeMounts:
+            - mountPath: /app/config.yml
+              name: peatch-config
+              subPath: config.yml
+      volumes:
+        - name: peatch-config
+          secret:
+            secretName: peatch-secrets
 ---
 apiVersion: v1
 kind: Service
@@ -56,6 +61,8 @@ kind: Ingress
 metadata:
   name: peatch
   namespace: default
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
 spec:
   ingressClassName: nginx
   rules:
