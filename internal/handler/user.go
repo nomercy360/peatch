@@ -1,12 +1,14 @@
 package handler
 
 import (
+	"errors"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
+	"github.com/peatch-io/peatch/internal/contract"
 	"github.com/peatch-io/peatch/internal/db"
-	svc "github.com/peatch-io/peatch/internal/service"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 // handleListUsers godoc
@@ -33,9 +35,9 @@ func (h *handler) handleListUsers(c echo.Context) error {
 		UserID: getUserID(c),
 	}
 
-	users, err := h.svc.ListUserProfiles(query)
+	users, err := h.storage.ListUsers(c.Request().Context(), query)
 	if err != nil {
-		return err
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get users").WithInternal(err)
 	}
 
 	return c.JSON(http.StatusOK, users)
@@ -48,29 +50,32 @@ func (h *handler) handleListUsers(c echo.Context) error {
 // @Produce  json
 // @Param id path int true "User ID"
 // @Success 200 {object} User
-// @Router /api/users/{id} [get]
+// @Router /api/users/{username} [get]
 func (h *handler) handleGetUser(c echo.Context) error {
 	username := c.Param("handle")
 	uid := getUserID(c)
 
-	user, err := h.svc.GetUserProfile(uid, username)
-	if err != nil {
-		return err
+	user, err := h.storage.GetUserProfile(c.Request().Context(), uid, username)
+
+	if err != nil && errors.Is(err, db.ErrNotFound) {
+		return echo.NewHTTPError(http.StatusNotFound, "User not found").WithInternal(err)
+	} else if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get user").WithInternal(err)
 	}
 
 	return c.JSON(http.StatusOK, user)
 }
 
-func getUserID(c echo.Context) int64 {
+func getUserID(c echo.Context) string {
 	user := c.Get("user").(*jwt.Token)
-	claims := user.Claims.(*svc.JWTClaims)
+	claims := user.Claims.(*contract.JWTClaims)
 	return claims.UID
 }
 
-func getUserLang(c echo.Context) string {
+func getUserLang(c echo.Context) db.LanguageCode {
 	user := c.Get("user").(*jwt.Token)
-	claims := user.Claims.(*svc.JWTClaims)
-	return claims.Lang
+	claims := user.Claims.(*contract.JWTClaims)
+	return db.LanguageCode(claims.Lang)
 }
 
 // handleUpdateUser godoc
@@ -84,18 +89,31 @@ func getUserLang(c echo.Context) string {
 func (h *handler) handleUpdateUser(c echo.Context) error {
 	uid := getUserID(c)
 
-	var user svc.UpdateUserRequest
-	if err := c.Bind(&user); err != nil {
-		return err
+	var req contract.UpdateUserRequest
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, ErrInvalidRequest).WithInternal(err)
 	}
 
-	if err := c.Validate(user); err != nil {
-		return err
+	if err := req.Validate(); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, ErrInvalidRequest).WithInternal(err)
 	}
 
-	err := h.svc.UpdateUser(uid, user)
-	if err != nil {
-		return err
+	user := db.User{
+		ID:          uid,
+		FirstName:   &req.FirstName,
+		LastName:    &req.LastName,
+		Title:       &req.Title,
+		Description: &req.Description,
+	}
+
+	if err := h.storage.UpdateUser(
+		c.Request().Context(),
+		user,
+		req.BadgeIDs,
+		req.OpportunityIDs,
+		req.LocationID,
+	); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to update user").WithInternal(err)
 	}
 
 	return c.NoContent(http.StatusNoContent)
@@ -108,53 +126,45 @@ func (h *handler) handleUpdateUser(c echo.Context) error {
 // @Produce  json
 // @Param id path int true "Following User ID"
 // @Success 204
-// @Router /users/{id}/follow [get]
+// @Router /users/{id}/follow [post]
 func (h *handler) handleFollowUser(c echo.Context) error {
-	followerID := getUserID(c)
-	userID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-
-	err := h.svc.FollowUser(userID, followerID)
-	if err != nil {
-		return err
-	}
-
-	return c.NoContent(http.StatusNoContent)
-}
-
-// handleUnfollowUser godoc
-// @Summary Unfollow user
-// @Tags users
-// @Accept  json
-// @Produce  json
-// @Param id path int true "Following User ID"
-// @Success 204
-// @Router /users/{id}/unfollow [get]
-func (h *handler) handleUnfollowUser(c echo.Context) error {
-	followerID := getUserID(c)
-	userID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-
-	err := h.svc.UnfollowUser(userID, followerID)
-	if err != nil {
-		return err
-	}
-
-	return c.NoContent(http.StatusNoContent)
-}
-
-// handlePublishUser godoc
-// @Summary Publish user
-// @Tags users
-// @Accept  json
-// @Produce  json
-// @Success 204
-// @Router /api/users/{user_id}/publish [post]
-func (h *handler) handlePublishUser(c echo.Context) error {
 	userID := getUserID(c)
+	followeeID := c.Param("id")
 
-	err := h.svc.PublishUser(userID)
-	if err != nil {
-		return err
+	if followeeID == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "user id is required")
+	}
+
+	expirationTime, _ := time.ParseDuration("7d")
+
+	if err := h.storage.FollowUser(
+		c.Request().Context(),
+		userID,
+		followeeID,
+		expirationTime,
+	); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to follow user").WithInternal(err)
 	}
 
 	return c.NoContent(http.StatusNoContent)
+}
+
+// handleGetMe godoc
+// @Summary Get current user
+// @Tags users
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} User
+// @Router /api/users/me [get]
+func (h *handler) handleGetMe(c echo.Context) error {
+	uid := getUserID(c)
+
+	user, err := h.storage.GetUserByID(c.Request().Context(), uid)
+	if err != nil && errors.Is(err, db.ErrNotFound) {
+		return echo.NewHTTPError(http.StatusNotFound, "User not found").WithInternal(err)
+	} else if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get user").WithInternal(err)
+	}
+
+	return c.JSON(http.StatusOK, user)
 }

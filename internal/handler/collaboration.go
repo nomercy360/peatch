@@ -1,11 +1,14 @@
 package handler
 
 import (
+	"errors"
 	"github.com/labstack/echo/v4"
+	"github.com/peatch-io/peatch/internal/contract"
 	"github.com/peatch-io/peatch/internal/db"
-	svc "github.com/peatch-io/peatch/internal/service"
+	"github.com/peatch-io/peatch/internal/nanoid"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 // handleListCollaborations godoc
@@ -31,10 +34,10 @@ func (h *handler) handleListCollaborations(c echo.Context) error {
 		UserID: uid,
 	}
 
-	collaborations, err := h.svc.ListCollaborations(query)
+	collaborations, err := h.storage.ListCollaborations(c.Request().Context(), query)
 
 	if err != nil {
-		return err
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get collaborations").WithInternal(err)
 	}
 
 	return c.JSON(http.StatusOK, collaborations)
@@ -49,14 +52,15 @@ func (h *handler) handleListCollaborations(c echo.Context) error {
 // @Success 200 {object} Collaboration
 // @Router /api/collaborations/{id} [get]
 func (h *handler) handleGetCollaboration(c echo.Context) error {
-	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-
+	id := c.Param("id")
 	uid := getUserID(c)
 
-	collaboration, err := h.svc.GetCollaborationByID(uid, id)
+	collaboration, err := h.storage.GetCollaborationByID(c.Request().Context(), uid, id)
 
-	if err != nil {
-		return err
+	if err != nil && errors.Is(err, db.ErrNotFound) {
+		return echo.NewHTTPError(http.StatusNotFound, "collaboration not found")
+	} else if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get collaboration").WithInternal(err)
 	}
 
 	return c.JSON(http.StatusOK, collaboration)
@@ -71,23 +75,39 @@ func (h *handler) handleGetCollaboration(c echo.Context) error {
 // @Success 201 {object} Collaboration
 // @Router /api/collaborations [post]
 func (h *handler) handleCreateCollaboration(c echo.Context) error {
-	var collaboration svc.CreateCollaboration
-	if err := c.Bind(&collaboration); err != nil {
-		return err
+	var req contract.CreateCollaboration
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, ErrInvalidRequest).WithInternal(err)
 	}
 
-	if err := c.Validate(collaboration); err != nil {
-		return err
+	if err := c.Validate(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, ErrInvalidRequest).WithInternal(err)
 	}
 
 	uid := getUserID(c)
+	now := time.Now()
 
-	res, err := h.svc.CreateCollaboration(uid, collaboration)
-	if err != nil {
-		return err
+	collaboration := db.Collaboration{
+		ID:          nanoid.Must(),
+		UserID:      uid,
+		Title:       req.Title,
+		Description: req.Description,
+		IsPayable:   req.IsPayable,
+		CreatedAt:   now,
+		UpdatedAt:   now,
 	}
 
-	return c.JSON(http.StatusCreated, res)
+	if err := h.storage.CreateCollaboration(
+		c.Request().Context(),
+		collaboration,
+		req.BadgeIDs,
+		req.OpportunityID,
+		req.LocationID,
+	); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "create failed").WithInternal(err)
+	}
+
+	return c.JSON(http.StatusCreated, collaboration)
 }
 
 // handleUpdateCollaboration godoc
@@ -99,42 +119,34 @@ func (h *handler) handleCreateCollaboration(c echo.Context) error {
 // @Success 200 {object} Collaboration
 // @Router /api/collaborations/{id} [put]
 func (h *handler) handleUpdateCollaboration(c echo.Context) error {
-	cid, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-
-	var collaboration svc.CreateCollaboration
-	if err := c.Bind(&collaboration); err != nil {
-		return err
-	}
-
-	if err := c.Validate(collaboration); err != nil {
-		return err
-	}
-
+	cid := c.Param("id")
 	uid := getUserID(c)
 
-	if err := h.svc.UpdateCollaboration(uid, cid, collaboration); err != nil {
-		return err
+	var req contract.CreateCollaboration
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, ErrInvalidRequest).WithInternal(err)
 	}
 
-	return c.NoContent(http.StatusNoContent)
-}
+	if err := c.Validate(req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, ErrInvalidRequest).WithInternal(err)
+	}
 
-// handlePublishCollaboration godoc
-// @Summary Publish collaboration
-// @Tags collaborations
-// @Accept  json
-// @Produce  json
-// @Param id path int true "Collaboration ID"
-// @Success 200
-// @Router /api/collaborations/{id}/publish [put]
-func (h *handler) handlePublishCollaboration(c echo.Context) error {
-	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	collab := db.Collaboration{
+		ID:          cid,
+		UserID:      uid,
+		Title:       req.Title,
+		Description: req.Description,
+		IsPayable:   req.IsPayable,
+	}
 
-	uid := getUserID(c)
-
-	err := h.svc.PublishCollaboration(uid, id)
-	if err != nil {
-		return err
+	if err := h.storage.UpdateCollaboration(
+		c.Request().Context(),
+		collab,
+		req.BadgeIDs,
+		req.OpportunityID,
+		req.LocationID,
+	); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "update failed").WithInternal(err)
 	}
 
 	return c.NoContent(http.StatusNoContent)

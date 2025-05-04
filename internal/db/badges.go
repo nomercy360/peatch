@@ -1,56 +1,67 @@
 package db
 
 import (
+	"context"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Badge struct {
-	ID        int64     `json:"id" db:"id"`
-	Text      string    `json:"text" db:"text"`
-	Icon      string    `json:"icon" db:"icon"`
-	Color     string    `json:"color" db:"color"`
-	CreatedAt time.Time `json:"created_at" db:"created_at"`
-} // @Name Badge
+	ID        string    `bson:"_id" json:"id"`
+	Text      string    `bson:"text" json:"text"`
+	Icon      string    `bson:"icon" json:"icon"`
+	Color     string    `bson:"color" json:"color"`
+	CreatedAt time.Time `bson:"created_at" json:"created_at"`
+}
 
-func (s *storage) ListBadges(search string) ([]Badge, error) {
+func (s *Storage) ListBadges(ctx context.Context, search string) ([]Badge, error) {
+	collection := s.db.Collection("badges")
 	badges := make([]Badge, 0)
 
-	query := `
-        SELECT id, text, icon, color, created_at
-        FROM badges
-        ORDER BY created_at DESC
-    `
-
+	filter := bson.M{}
 	if search != "" {
-		query += " WHERE text ILIKE $1"
-		search = "%" + search + "%"
+
+		filter["text"] = bson.M{"$regex": primitive.Regex{Pattern: search, Options: "i"}}
 	}
 
-	var err error
-	if search == "" {
-		err = s.pg.Select(&badges, query)
-	} else {
-		err = s.pg.Select(&badges, query, search)
-	}
+	findOptions := options.Find().SetSort(bson.D{{"created_at", -1}})
 
+	cursor, err := collection.Find(ctx, filter, findOptions)
 	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	if err = cursor.All(ctx, &badges); err != nil {
+		return nil, err
+	}
+
+	if err := cursor.Err(); err != nil {
 		return nil, err
 	}
 
 	return badges, nil
 }
 
-func (s *storage) CreateBadge(badge Badge) (*Badge, error) {
-	query := `
-		INSERT INTO badges (text, icon, color)
-		VALUES ($1, $2, $3)
-		RETURNING id, created_at
-	`
+func (s *Storage) CreateBadge(ctx context.Context, badgeInput Badge) error {
+	collection := s.db.Collection("badges")
 
-	err := s.pg.QueryRowx(query, badge.Text, badge.Icon, badge.Color).StructScan(&badge)
-	if err != nil {
-		return nil, err
+	badgeToInsert := Badge{
+		ID:        badgeInput.ID,
+		Text:      badgeInput.Text,
+		Icon:      badgeInput.Icon,
+		Color:     badgeInput.Color,
+		CreatedAt: time.Now(),
 	}
 
-	return &badge, nil
+	_, err := collection.InsertOne(ctx, badgeToInsert)
+	if err != nil {
+
+		return err
+	}
+
+	return nil
 }

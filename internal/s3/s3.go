@@ -1,23 +1,23 @@
-package storage
+package s3
 
 import (
-	"bytes"
 	"context"
+	"fmt"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
-	"time"
-
-	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"io"
 )
 
-type S3Client struct {
-	S3Client *s3.Client
-	Bucket   string
+type Client struct {
+	s3Client   *s3.Client
+	s3Uploader *manager.Uploader
+	bucketName string
 }
 
-// NewS3Client initializes a new AWS S3 client
-func NewS3Client(accessKeyId, accessKeySecret, endpoint, bucket string) (*S3Client, error) {
+func NewClient(accessKeyId, accessKeySecret, endpoint string, bucket string) (*Client, error) {
 	r2Resolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
 		return aws.Endpoint{
 			URL: endpoint,
@@ -34,41 +34,29 @@ func NewS3Client(accessKeyId, accessKeySecret, endpoint, bucket string) (*S3Clie
 		return nil, err
 	}
 
-	client := s3.NewFromConfig(cfg)
+	s3Client := s3.NewFromConfig(cfg)
 
-	return &S3Client{
-		Bucket:   bucket,
-		S3Client: client,
+	uploader := manager.NewUploader(s3Client)
+
+	return &Client{
+		s3Client:   s3Client,
+		s3Uploader: uploader,
+		bucketName: bucket,
 	}, nil
 }
 
-func (s *S3Client) GetPresignedURL(objectKey string, duration time.Duration) (string, error) {
-	signer := s3.NewPresignClient(s.S3Client)
-
-	request, err := signer.PresignPutObject(context.TODO(), &s3.PutObjectInput{
-		Bucket: aws.String(s.Bucket),
-		Key:    aws.String(objectKey),
-	}, func(opts *s3.PresignOptions) {
-		opts.Expires = duration
-	})
-
-	if err != nil {
-		return "", err
+func (c *Client) UploadFile(ctx context.Context, key string, body io.Reader, contentType string) error {
+	uploadInput := &s3.PutObjectInput{
+		Bucket:      aws.String(c.bucketName),
+		Key:         aws.String(key),
+		Body:        body,
+		ContentType: aws.String(contentType),
 	}
 
-	return request.URL, err
-}
-
-func (s *S3Client) UploadFile(file []byte, fileName string) (string, error) {
-	_, err := s.S3Client.PutObject(context.TODO(), &s3.PutObjectInput{
-		Bucket: aws.String(s.Bucket),
-		Key:    aws.String(fileName),
-		Body:   bytes.NewReader(file),
-	})
-
+	_, err := c.s3Uploader.Upload(ctx, uploadInput)
 	if err != nil {
-		return "", err
+		return fmt.Errorf("failed to upload to S3: %w", err)
 	}
 
-	return s.GetPresignedURL(fileName, time.Hour)
+	return nil
 }

@@ -1,61 +1,49 @@
 package db
 
 import (
-	"database/sql"
+	"context"
 	"errors"
 	"fmt"
+	"github.com/peatch-io/peatch/internal/nanoid"
+	"log"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Notification struct {
-	ID               int64            `json:"id" db:"id"`
-	UserID           int64            `json:"user_id" db:"user_id"`
-	MessageID        *string          `json:"message_id" db:"message_id"`
-	ChatID           int64            `json:"chat_id" db:"chat_id"`
-	SentAt           *time.Time       `json:"sent_at" db:"sent_at"`
-	CreatedAt        time.Time        `json:"created_at" db:"created_at"`
-	NotificationType NotificationType `json:"notification_type" db:"notification_type"`
-	EntityType       string           `json:"entity_type" db:"entity_type"`
-	EntityID         int64            `json:"entity_id" db:"entity_id"`
+	ID               string           `bson:"_id,omitempty" json:"-"`
+	UserID           int64            `bson:"user_id,omitempty" json:"user_id"`
+	MessageID        *string          `bson:"message_id,omitempty" json:"message_id"`
+	ChatID           int64            `bson:"chat_id,omitempty" json:"chat_id"`
+	SentAt           *time.Time       `bson:"sent_at,omitempty" json:"sent_at"`
+	CreatedAt        time.Time        `bson:"created_at,omitempty" json:"created_at"`
+	NotificationType NotificationType `bson:"notification_type,omitempty" json:"notification_type"`
+	EntityType       string           `bson:"entity_type,omitempty" json:"entity_type"`
+	EntityID         int64            `bson:"entity_id,omitempty" json:"entity_id"`
 }
 
 type NotificationType string
 
 const (
-	// NotificationTypeUserPublished send this when user published profile
-	NotificationTypeUserPublished = "user_published"
-	// NotificationTypeCollaborationPublished send this when user published collaboration
-	NotificationTypeCollaborationPublished = "collaboration_published"
-	// NotificationTypeCollaborationRequest send this when user received collaboration request on his collaboration
-	NotificationTypeCollaborationRequest = "collaboration_request"
-	// NotificationTypeUserCollaboration send this when user received collaboration request on his profile
-	NotificationTypeUserCollaboration = "user_collaboration"
+	NotificationTypeUserPublished          NotificationType = "user_published"
+	NotificationTypeCollaborationPublished NotificationType = "collaboration_published"
+	NotificationTypeCollaborationRequest   NotificationType = "collaboration_request"
+	NotificationTypeUserCollaboration      NotificationType = "user_collaboration"
 )
 
-func (s *storage) CreateNotification(notification Notification) (*Notification, error) {
-	query := `
-		INSERT INTO notifications (user_id, message_id, chat_id, sent_at, notification_type, entity_type, entity_id)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
-		RETURNING id, user_id, message_id, chat_id, sent_at, notification_type, created_at, entity_type, entity_id
-	`
+func (s *Storage) CreateNotification(ctx context.Context, notification Notification) (*Notification, error) {
+	now := time.Now()
+	notification.CreatedAt = now
+	notification.ID = nanoid.Must()
 
-	row := s.pg.QueryRow(
-		query, notification.UserID, notification.MessageID, notification.ChatID,
-		notification.SentAt, notification.NotificationType, notification.EntityType,
-		notification.EntityID,
-	)
-
-	var request Notification
-	err := row.Scan(
-		&request.ID, &request.UserID, &request.MessageID, &request.ChatID,
-		&request.SentAt, &request.NotificationType, &request.CreatedAt, &request.EntityType, &request.EntityID,
-	)
-
-	if err != nil {
-		return nil, err
+	if _, err := s.db.Collection("notifications").InsertOne(ctx, notification); err != nil {
+		return nil, fmt.Errorf("failed to create notification: %w", err)
 	}
 
-	return &request, nil
+	return &notification, nil
 }
 
 type NotificationQuery struct {
@@ -66,54 +54,61 @@ type NotificationQuery struct {
 	ChatID           *int64
 }
 
-func (s *storage) SearchNotification(params NotificationQuery) (*Notification, error) {
-	query := `
-		SELECT id, user_id, message_id, chat_id, sent_at, created_at, notification_type, entity_type, entity_id
-		FROM notifications
-		WHERE 1=1
-	`
+func (s *Storage) SearchNotification(ctx context.Context, params NotificationQuery) (*Notification, error) {
+	collection := s.db.Collection("notifications")
+	notification := new(Notification)
 
-	var queryArgs []interface{}
+	filter := bson.M{
+		"notification_type": params.NotificationType,
+		"entity_type":       params.EntityType,
+		"entity_id":         params.EntityID,
+	}
 
-	if params.UserID != nil {
-		query += " AND user_id = $1"
-		queryArgs = append(queryArgs, *params.UserID)
+	if params.UserID != nil && params.ChatID != nil {
+
+		filter["$or"] = []bson.M{
+			{"user_id": *params.UserID},
+			{"chat_id": *params.ChatID},
+		}
+		log.Println("Warning: Both UserID and ChatID provided for SearchNotification. Using OR condition.")
+	} else if params.UserID != nil {
+		filter["user_id"] = *params.UserID
 	} else if params.ChatID != nil {
-		query += " AND chat_id = $1"
-		queryArgs = append(queryArgs, *params.ChatID)
+		filter["chat_id"] = *params.ChatID
 	} else {
 		return nil, errors.New("either user_id or chat_id must be provided")
 	}
 
-	query += fmt.Sprintf(" AND notification_type = $2 AND entity_type = $3 AND entity_id = $4 ORDER BY created_at DESC LIMIT 1")
-	queryArgs = append(queryArgs, params.NotificationType, params.EntityType, params.EntityID)
+	findOneOptions := options.FindOne()
+	findOneOptions.SetSort(bson.D{{Key: "created_at", Value: -1}})
 
-	row := s.pg.QueryRow(query, queryArgs...)
+	err := collection.FindOne(ctx, filter, findOneOptions).Decode(notification)
 
-	var notification Notification
-
-	err := row.Scan(
-		&notification.ID, &notification.UserID, &notification.MessageID, &notification.ChatID,
-		&notification.SentAt, &notification.CreatedAt, &notification.NotificationType, &notification.EntityType, &notification.EntityID,
-	)
-
-	if err != nil && errors.Is(err, sql.ErrNoRows) {
-		return nil, ErrNotFound
-	} else if err != nil {
-		return nil, err
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, ErrNotFound
+		}
+		return nil, fmt.Errorf("failed to search notification: %w", err)
 	}
 
-	return &notification, nil
+	return notification, nil
 }
 
-func (s *storage) UpdateNotificationSentAt(notificationID int64) error {
-	query := `
-		UPDATE notifications
-		SET sent_at = NOW()
-		WHERE id = $1
-	`
+func (s *Storage) UpdateNotificationSentAt(ctx context.Context, notificationID string) error {
+	collection := s.db.Collection("notifications")
 
-	_, err := s.pg.Exec(query, notificationID)
+	filter := bson.M{"_id": notificationID}
+	update := bson.M{"$set": bson.M{"sent_at": time.Now()}}
 
-	return err
+	res, err := collection.UpdateOne(ctx, filter, update)
+
+	if err != nil {
+		return fmt.Errorf("failed to update notification sent_at: %w", err)
+	}
+
+	if res.MatchedCount == 0 {
+		return ErrNotFound
+	}
+
+	return nil
 }

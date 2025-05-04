@@ -2,7 +2,9 @@ package handler
 
 import (
 	"github.com/labstack/echo/v4"
-	svc "github.com/peatch-io/peatch/internal/service"
+	"github.com/peatch-io/peatch/internal/contract"
+	"github.com/peatch-io/peatch/internal/db"
+	"github.com/peatch-io/peatch/internal/nanoid"
 	"net/http"
 )
 
@@ -16,9 +18,9 @@ import (
 func (h *handler) handleListBadges(c echo.Context) error {
 	query := c.QueryParam("search")
 
-	badges, err := h.svc.ListBadges(query)
+	badges, err := h.storage.ListBadges(c.Request().Context(), query)
 	if err != nil {
-		return err
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get badges").WithInternal(err)
 	}
 
 	return c.JSON(http.StatusOK, badges)
@@ -33,19 +35,25 @@ func (h *handler) handleListBadges(c echo.Context) error {
 // @Success 200 {object} Badge
 // @Router /api/badges/{id} [get]
 func (h *handler) handleCreateBadge(c echo.Context) error {
-	var badge svc.CreateBadgeRequest
-	if err := c.Bind(&badge); err != nil {
-		return err
+	var req contract.CreateBadgeRequest
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, ErrInvalidRequest).WithInternal(err)
 	}
 
-	if err := c.Validate(badge); err != nil {
-		return err
+	if err := req.Validate(); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, ErrInvalidRequest).WithInternal(err)
 	}
 
-	createdBadge, err := h.svc.CreateBadge(badge)
-	if err != nil {
-		return err
+	badge := db.Badge{
+		ID:    nanoid.Must(),
+		Text:  req.Text,
+		Icon:  req.Icon,
+		Color: req.Color,
 	}
 
-	return c.JSON(http.StatusCreated, createdBadge)
+	if err := h.storage.CreateBadge(c.Request().Context(), badge); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to create badge").WithInternal(err)
+	}
+
+	return c.JSON(http.StatusCreated, badge)
 }

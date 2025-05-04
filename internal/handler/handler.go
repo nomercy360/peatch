@@ -1,108 +1,125 @@
 package handler
 
 import (
+	"context"
+	"errors"
 	"fmt"
-	"github.com/go-playground/validator"
 	"github.com/golang-jwt/jwt/v5"
 	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
+	"github.com/peatch-io/peatch/internal/contract"
 	"github.com/peatch-io/peatch/internal/db"
-	svc "github.com/peatch-io/peatch/internal/service"
 	"io"
+	"log/slog"
 	"math/rand"
 	"net/http"
 	"time"
 )
 
 type handler struct {
-	svc service
+	storage  storager
+	config   Config
+	s3Client s3Client
+	logger   *slog.Logger
 }
 
-type service interface {
-	ListUserProfiles(userQuery db.UserQuery) ([]db.UserProfile, error)
-	TelegramAuth(query string) (*svc.UserWithToken, error)
-	GetUserByChatID(chatID int64) (*db.User, error)
-	CreateUser(user db.User) (*db.User, error)
-	GetUserProfile(userID int64, username string) (*db.UserProfile, error)
-	UpdateUser(userID int64, updateRequest svc.UpdateUserRequest) error
-	ListOpportunities(lang string) ([]db.LOpportunity, error)
-	ListBadges(search string) ([]db.Badge, error)
-	CreateBadge(badge svc.CreateBadgeRequest) (*db.Badge, error)
-	FollowUser(userID, followerID int64) error
-	UnfollowUser(userID, followerID int64) error
-	PublishUser(userID int64) error
-	ListCollaborations(query db.CollaborationQuery) ([]db.Collaboration, error)
-	GetCollaborationByID(userID, id int64) (*db.Collaboration, error)
-	CreateCollaboration(userID int64, create svc.CreateCollaboration) (*db.Collaboration, error)
-	UpdateCollaboration(userID, collabID int64, update svc.CreateCollaboration) error
-	PublishCollaboration(userID int64, collaborationID int64) error
-	GetPresignedURL(userID int64, objectKey string) (*svc.PresignedURL, error)
-	SearchLocations(query string) ([]db.Location, error)
+type s3Client interface {
+	UploadFile(ctx context.Context, key string, body io.Reader, contentType string) error
 }
 
-type CustomValidator struct {
-	validator *validator.Validate
+type Config struct {
+	TelegramBotToken string
+	JWTSecret        string
+	AssetsURL        string
 }
 
-func (cv *CustomValidator) Validate(i interface{}) error {
-	if err := cv.validator.Struct(i); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+type storager interface {
+	ListUsers(ctx context.Context, query db.UserQuery) ([]db.User, error)
+	GetUserByChatID(ctx context.Context, chatID int64) (db.User, error)
+	GetUserByID(ctx context.Context, ID string) (db.User, error)
+	CreateUser(ctx context.Context, user db.User) error
+	Health() (db.HealthStats, error)
+	GetUserProfile(ctx context.Context, viewerID string, username string) (db.User, error)
+	UpdateUser(ctx context.Context, user db.User, badges, opportunities []string, locationID string) error
+	ListOpportunities(ctx context.Context) ([]db.Opportunity, error)
+	ListBadges(ctx context.Context, search string) ([]db.Badge, error)
+	CreateBadge(ctx context.Context, badge db.Badge) error
+	FollowUser(ctx context.Context, userID, followeeID string, ttlDuration time.Duration) error
+	ListCollaborations(ctx context.Context, query db.CollaborationQuery) ([]db.Collaboration, error)
+	GetCollaborationByID(ctx context.Context, userID, id string) (db.Collaboration, error)
+	CreateCollaboration(ctx context.Context, collaboration db.Collaboration, badges []string, opportunityID string, location string) error
+	UpdateCollaboration(ctx context.Context, collaboration db.Collaboration, badges []string, opportunityID string, location string) error
+	SearchCities(ctx context.Context, query string, limit, skip int) ([]db.City, error)
+	UpdateUserLoginMetadata(ctx context.Context, userID string, metadata db.LoginMeta) error
+	UpdateUserAvatarURL(ctx context.Context, userID, avatarURL string) error
+	UpdateUserVerificationStatus(ctx context.Context, userID string, status db.VerificationStatus) error
+}
+
+func New(storage storager, config Config, s3Client s3Client, logger *slog.Logger) *handler {
+	return &handler{
+		storage:  storage,
+		config:   config,
+		s3Client: s3Client,
+		logger:   logger,
 	}
-	return nil
 }
 
-func New(svc service) *handler {
-	return &handler{svc: svc}
+func getAuthConfig(secret string) echojwt.Config {
+	return echojwt.Config{
+		NewClaimsFunc: func(_ echo.Context) jwt.Claims {
+			return new(contract.JWTClaims)
+		},
+		SigningKey:             []byte(secret),
+		ContinueOnIgnoredError: true,
+		ErrorHandler: func(c echo.Context, err error) error {
+			var extErr *echojwt.TokenExtractionError
+			if !errors.As(err, &extErr) {
+				return echo.NewHTTPError(http.StatusUnauthorized, ErrAuthInvalid)
+			}
+
+			claims := &contract.JWTClaims{}
+
+			token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+			c.Set("user", token)
+
+			if claims.UID == "" {
+				return echo.NewHTTPError(http.StatusUnauthorized, ErrAuthInvalid)
+			}
+
+			return nil
+		},
+	}
 }
 
-func (h *handler) RegisterRoutes(e *echo.Echo) {
-	e.Validator = &CustomValidator{validator: validator.New()}
+func (h *handler) SetupRoutes(e *echo.Echo) {
+	e.POST("/auth-telegram", h.TelegramAuth)
 
 	e.GET("/", h.handleIndex)
-	e.POST("/auth/telegram", h.handleTelegramAuth)
 
 	e.GET("/avatar", h.getRandomAvatar)
 	a := e.Group("/api")
 
-	config := echojwt.Config{
-		NewClaimsFunc: func(c echo.Context) jwt.Claims {
-			return new(svc.JWTClaims)
-		},
-		SigningKey: []byte("secret"),
-	}
-
-	a.Use(echojwt.WithConfig(config))
+	a.Use(echojwt.WithConfig(getAuthConfig(h.config.JWTSecret)))
 
 	a.GET("/users", h.handleListUsers)
+	a.GET("/users/me", h.handleGetMe)
+	a.POST("/users/avatar", h.handleUserAvatar)
 	a.GET("/users/:handle", h.handleGetUser)
+	a.POST("/users/:id/follow", h.handleFollowUser)
 	a.PUT("/users", h.handleUpdateUser)
 	a.GET("/opportunities", h.handleListOpportunities)
 	a.GET("/badges", h.handleListBadges)
 	a.POST("/badges", h.handleCreateBadge)
-	a.POST("/users/publish", h.handlePublishUser)
 	a.GET("/collaborations", h.handleListCollaborations)
 	a.GET("/collaborations/:id", h.handleGetCollaboration)
 	a.POST("/collaborations", h.handleCreateCollaboration)
 	a.PUT("/collaborations/:id", h.handleUpdateCollaboration)
-	a.POST("/collaborations/:id/publish", h.handlePublishCollaboration)
-	a.GET("/presigned-url", h.handleGetPresignedURL)
 	a.GET("/locations", h.handleSearchLocations)
 }
 
 func (h *handler) handleIndex(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{"message": "Hello, world!"})
-}
-
-func (h *handler) handleGetPresignedURL(c echo.Context) error {
-	objectKey := c.QueryParam("filename")
-	uid := getUserID(c)
-
-	res, err := h.svc.GetPresignedURL(uid, objectKey)
-	if err != nil {
-		return err
-	}
-
-	return c.JSON(http.StatusOK, res)
 }
 
 func (h *handler) getRandomAvatar(c echo.Context) error {

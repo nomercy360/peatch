@@ -3,168 +3,95 @@ package main
 import (
 	"context"
 	"errors"
-	"github.com/caarlos0/env/v11"
+	"fmt"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 	_ "github.com/peatch-io/peatch/docs"
+	"github.com/peatch-io/peatch/internal/config"
 	"github.com/peatch-io/peatch/internal/db"
 	"github.com/peatch-io/peatch/internal/handler"
-	storage "github.com/peatch-io/peatch/internal/s3"
-	"github.com/peatch-io/peatch/internal/service"
-	"github.com/peatch-io/peatch/internal/terrors"
+	"github.com/peatch-io/peatch/internal/middleware"
+	"github.com/peatch-io/peatch/internal/s3"
+	echoSwagger "github.com/swaggo/echo-swagger"
 	"log"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
+	"syscall"
 	"time"
 )
 
-type config struct {
-	DatabaseURL string `env:"DATABASE_URL,required"`
-	Server      ServerConfig
-	BotID       string `env:"BOT_ID,required"`
-	CdnURL      string `env:"CDN_URL,required"`
-	AWS         AWSConfig
+func gracefulShutdown(e *echo.Echo, logr *slog.Logger) {
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	logr.Info("Shutting down server...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := e.Shutdown(ctx); err != nil {
+		logr.Error("Error during server shutdown", "error", err)
+	}
+	logr.Info("Server gracefully stopped")
 }
 
-type ServerConfig struct {
-	Port string `env:"SERVER_PORT" envDefault:"8080"`
-	Host string `env:"SERVER_HOST" envDefault:"localhost"`
-}
-
-type AWSConfig struct {
-	AccessKey string `env:"AWS_ACCESS_KEY_ID,required"`
-	SecretKey string `env:"AWS_SECRET_ACCESS_KEY,required"`
-	Bucket    string `env:"AWS_BUCKET,required"`
-	Endpoint  string `env:"AWS_ENDPOINT,required"`
-}
-
-// @title Peatch API
+// @title Loook API
 // @version 1.0
-// @description This is a sample server ClanPlatform server.
+// @description API Documentation for the Loook Dating Project
 
-// @host localhost:8080
-// @BasePath /
+// @host loook-api.mxksimdev.com
+// @schemes https
 func main() {
-	cfg := config{}
-	if err := env.Parse(&cfg); err != nil {
-		log.Fatalf("Failed to parse config: %v\n", err)
-	}
-
-	pg, err := db.New(cfg.DatabaseURL)
-
+	cfg, err := config.LoadConfig()
 	if err != nil {
-		log.Fatalf("Failed to initialize database: %v\n", err)
+		log.Fatalf("Error loading config: %v", err)
 	}
 
-	defer pg.Close()
+	storage, err := db.ConnectDB(cfg.DBURL, cfg.DBName)
+	if err != nil {
+		log.Fatalf("failed to connect to db: %v", err)
+	}
+
+	logr := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 	e := echo.New()
 
-	e.Use(middleware.Recover())
-
-	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"*"},
-		AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
-		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
-	}))
-
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-
-	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
-		LogStatus:   true,
-		LogURI:      true,
-		LogError:    true,
-		HandleError: true,
-		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
-			if v.Error == nil {
-				logger.LogAttrs(context.Background(), slog.LevelInfo, "REQUEST",
-					slog.String("uri", v.URI),
-					slog.Int("status", v.Status),
-				)
-			} else {
-				logger.LogAttrs(context.Background(), slog.LevelError, "REQUEST_ERROR",
-					slog.String("uri", v.URI),
-					slog.Int("status", v.Status),
-					slog.String("err", v.Error.Error()),
-				)
-			}
-			return nil
-		},
-	}))
-
-	e.HTTPErrorHandler = func(err error, c echo.Context) {
-		var (
-			code = http.StatusInternalServerError
-			msg  interface{}
-		)
-
-		var he *echo.HTTPError
-		var terror *terrors.Error
-		if errors.As(err, &he) {
-			code = he.Code
-			msg = he.Message
-		} else if errors.As(err, &terror) {
-			code = terror.Code
-			msg = terror.Message
-		} else {
-			msg = err.Error()
+	e.HideBanner = true
+	e.HidePort = true
+	e.IPExtractor = func(req *http.Request) string {
+		if cfIP := req.Header.Get("CF-Connecting-IP"); cfIP != "" {
+			return cfIP
 		}
-
-		if _, ok := msg.(string); ok {
-			msg = map[string]interface{}{"error": msg}
-		}
-
-		if !c.Response().Committed {
-			if c.Request().Method == http.MethodHead {
-				err = c.NoContent(code)
-			} else {
-				err = c.JSON(code, msg)
-			}
-
-			if err != nil {
-				e.Logger.Error(err)
-			}
-		}
+		return echo.ExtractIPFromXFFHeader()(req)
 	}
 
-	s3Client, err := storage.NewS3Client(
-		cfg.AWS.AccessKey, cfg.AWS.SecretKey, cfg.AWS.Endpoint, cfg.AWS.Bucket)
+	middleware.Setup(e, logr)
 
-	if err != nil {
-		log.Fatalf("Failed to initialize AWS S3 client: %v\n", err)
+	hConfig := handler.Config{
+		JWTSecret:        cfg.JWTSecret,
+		TelegramBotToken: cfg.TelegramBotToken,
+		AssetsURL:        cfg.AssetsURL,
 	}
 
-	botID, err := strconv.ParseInt(cfg.BotID, 10, 64)
-	if err != nil {
-		log.Fatalf("Failed to parse bot id: %v", err)
-	}
+	s3Client, err := s3.NewClient(
+		cfg.AWSConfig.AccessKey,
+		cfg.AWSConfig.SecretKey,
+		cfg.AWSConfig.Endpoint,
+		cfg.AWSConfig.Bucket,
+	)
 
-	svcConfig := service.Config{BotID: botID, CdnURL: cfg.CdnURL}
+	h := handler.New(storage, hConfig, s3Client, logr)
 
-	svc := service.New(pg, s3Client, svcConfig)
+	h.SetupRoutes(e)
 
-	h := handler.New(svc)
+	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
-	h.RegisterRoutes(e)
+	go gracefulShutdown(e, logr)
 
-	//e.GET("/swagger/*", echoSwagger.WrapHandler)
-
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer stop()
-	// Start server
-	go func() {
-		if err := e.Start(cfg.Server.Host + ":" + cfg.Server.Port); err != nil {
-			e.Logger.Fatalf("shutting down the server, here is why: %v", err)
-		}
-	}()
-
-	<-ctx.Done()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	if err := e.Shutdown(ctx); err != nil {
-		e.Logger.Fatal(err)
+	address := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
+	logr.Info("Starting server", "address", address)
+	if err := e.Start(address); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		logr.Error("Error starting server", "error", err)
 	}
 }

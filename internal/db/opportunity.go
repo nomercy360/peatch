@@ -1,64 +1,37 @@
 package db
 
 import (
-	"encoding/json"
+	"context"
 	"fmt"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type Opportunity struct {
-	ID          int64     `json:"id" db:"id"`
-	Text        string    `json:"text" db:"text"`
-	Description string    `json:"description" db:"description"`
-	Icon        string    `json:"icon" db:"icon"`
-	Color       string    `json:"color" db:"color"`
-	CreatedAt   time.Time `json:"created_at" db:"created_at"`
-} // @Name Opportunity
-
-type LOpportunity struct {
-	ID          int64     `json:"id" db:"id"`
-	Text        string    `json:"text" db:"text"`
-	Description string    `json:"description" db:"description"`
-	Icon        string    `json:"icon" db:"icon"`
-	Color       string    `json:"color" db:"color"`
-	CreatedAt   time.Time `json:"created_at" db:"created_at"`
+	ID            string    `bson:"_id,omitempty" json:"id,omitempty"`
+	Text          string    `bson:"text,omitempty" json:"text"`
+	Description   string    `bson:"description,omitempty" json:"description"`
+	TextRU        string    `bson:"text_ru,omitempty" json:"text_ru,omitempty"`
+	DescriptionRU string    `bson:"description_ru,omitempty" json:"description_ru,omitempty"`
+	Icon          string    `bson:"icon,omitempty" json:"icon"`
+	Color         string    `bson:"color,omitempty" json:"color"`
+	CreatedAt     time.Time `bson:"created_at,omitempty" json:"created_at"`
 }
 
-func (o *Opportunity) Scan(src interface{}) error {
-	var source []byte
-	switch src := src.(type) {
-	case []byte:
-		source = src
-	case string:
-		source = []byte(src)
-	default:
-		return fmt.Errorf("unsupported type: %T", src)
+func (s *Storage) ListOpportunities(ctx context.Context) ([]Opportunity, error) {
+	collection := s.db.Collection("opportunities")
+
+	opportunities := make([]Opportunity, 0)
+
+	cursor, err := collection.Find(ctx, bson.M{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to find opportunities: %w", err)
 	}
+	defer cursor.Close(ctx)
 
-	if err := json.Unmarshal(source, o); err != nil {
-		return fmt.Errorf("failed to unmarshal JSON into Opportunity: %v", err)
-	}
-	return nil
-}
-
-func (s *storage) ListOpportunities(lang string) ([]LOpportunity, error) {
-	opportunities := make([]LOpportunity, 0)
-
-	var query string
-	if lang == "ru" {
-		query = `
-			SELECT id, text_ru AS text, description_ru AS description, icon, color, created_at
-			FROM opportunities
-		`
-	} else {
-		query = `
-			SELECT id, text, description, icon, color, created_at
-			FROM opportunities
-		`
-	}
-
-	if err := s.pg.Select(&opportunities, query); err != nil {
-		return nil, err
+	if err := cursor.All(ctx, &opportunities); err != nil {
+		return nil, fmt.Errorf("failed to decode opportunities: %w", err)
 	}
 
 	return opportunities, nil
