@@ -176,7 +176,7 @@ func (s *Storage) CreateUser(ctx context.Context, user User) error {
 	user.CreatedAt = now
 	user.UpdatedAt = now
 	user.LastActiveAt = now
-	user.VerificationStatus = VerificationStatusPending
+	user.VerificationStatus = VerificationStatusUnverified
 
 	if _, err := collection.InsertOne(ctx, user); err != nil {
 		return nil
