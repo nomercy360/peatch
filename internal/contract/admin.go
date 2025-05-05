@@ -7,7 +7,6 @@ import (
 	"time"
 )
 
-// AdminLoginRequest is the request model for admin login
 type AdminLoginRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
@@ -23,7 +22,17 @@ func (r AdminLoginRequest) Validate() error {
 	return nil
 }
 
-// AdminResponse is the response model for admin information
+type AdminTelegramAuthRequest struct {
+	Query string `json:"query"` // Telegram init data
+} // @Name AdminTelegramAuthRequest
+
+func (r AdminTelegramAuthRequest) Validate() error {
+	if r.Query == "" {
+		return fmt.Errorf("query is required")
+	}
+	return nil
+}
+
 type AdminResponse struct {
 	ID        string    `json:"id"`
 	Username  string    `json:"username"`
@@ -31,7 +40,6 @@ type AdminResponse struct {
 	UpdatedAt time.Time `json:"updated_at"`
 } // @Name AdminResponse
 
-// AdminAuthResponse contains the token and admin info
 type AdminAuthResponse struct {
 	Token string        `json:"token"`
 	Admin AdminResponse `json:"admin"`
@@ -52,7 +60,6 @@ type AdminJWTClaims struct {
 	AdminID string `json:"admin_id"`
 }
 
-// VerificationUpdateRequest is the request model for updating verification status
 type VerificationUpdateRequest struct {
 	Status db.VerificationStatus `json:"status"`
 } // @Name VerificationUpdateRequest
@@ -72,23 +79,3 @@ func (r VerificationUpdateRequest) Validate() error {
 
 	return nil
 }
-
-// PaginationResponse adds pagination metadata to responses
-type PaginationResponse struct {
-	Total       int64 `json:"total"`
-	Page        int   `json:"page"`
-	PerPage     int   `json:"per_page"`
-	TotalPages  int   `json:"total_pages"`
-	HasNextPage bool  `json:"has_next_page"`
-	HasPrevPage bool  `json:"has_prev_page"`
-} // @Name PaginationResponse
-
-type UserListResponse struct {
-	Users      []UserResponse     `json:"users"`
-	Pagination PaginationResponse `json:"pagination"`
-} // @Name UserListResponse
-
-type CollaborationListResponse struct {
-	Collaborations []CollaborationResponse `json:"collaborations"`
-	Pagination     PaginationResponse      `json:"pagination"`
-} // @Name CollaborationListResponse

@@ -331,31 +331,33 @@ func ToOpportunityResponseList(opportunities []db.Opportunity, lang db.LanguageC
 }
 
 type CollaborationResponse struct {
-	ID          string              `json:"id"`
-	UserID      string              `json:"user_id"`
-	Title       string              `json:"title"`
-	Description string              `json:"description"`
-	IsPayable   bool                `json:"is_payable"`
-	Badges      []BadgeResponse     `json:"badges"`
-	Opportunity OpportunityResponse `json:"opportunity"`
-	Location    CityResponse        `json:"location"`
-	CreatedAt   time.Time           `json:"created_at"`
-	UpdatedAt   time.Time           `json:"updated_at"`
-	User        UserProfileResponse `json:"user"`
+	ID                 string                `json:"id"`
+	UserID             string                `json:"user_id"`
+	Title              string                `json:"title"`
+	Description        string                `json:"description"`
+	IsPayable          bool                  `json:"is_payable"`
+	Badges             []BadgeResponse       `json:"badges"`
+	Opportunity        OpportunityResponse   `json:"opportunity"`
+	Location           CityResponse          `json:"location"`
+	CreatedAt          time.Time             `json:"created_at"`
+	UpdatedAt          time.Time             `json:"updated_at"`
+	User               UserProfileResponse   `json:"user"`
+	VerificationStatus db.VerificationStatus `json:"verification_status"`
 } // @Name CollaborationResponse
 
 func ToCollaborationResponse(collab db.Collaboration) CollaborationResponse {
 	return CollaborationResponse{
-		ID:          collab.ID,
-		UserID:      collab.UserID,
-		Title:       collab.Title,
-		Description: collab.Description,
-		IsPayable:   collab.IsPayable,
-		Badges:      ToBadgeResponseList(collab.Badges),
-		Opportunity: ToOpportunityResponseList([]db.Opportunity{collab.Opportunity}, db.LanguageEN)[0],
-		Location:    ToCityResponse(collab.Location),
-		CreatedAt:   collab.CreatedAt,
-		UpdatedAt:   collab.UpdatedAt,
-		User:        ToUserProfile(collab.User),
+		ID:                 collab.ID,
+		UserID:             collab.UserID,
+		Title:              collab.Title,
+		Description:        collab.Description,
+		IsPayable:          collab.IsPayable,
+		Badges:             ToBadgeResponseList(collab.Badges),
+		Opportunity:        ToOpportunityResponseList([]db.Opportunity{collab.Opportunity}, db.LanguageEN)[0],
+		Location:           ToCityResponse(collab.Location),
+		CreatedAt:          collab.CreatedAt,
+		UpdatedAt:          collab.UpdatedAt,
+		User:               ToUserProfile(collab.User),
+		VerificationStatus: collab.VerificationStatus,
 	}
 }

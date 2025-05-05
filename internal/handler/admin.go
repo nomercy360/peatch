@@ -2,7 +2,9 @@ package handler
 
 import (
 	"errors"
+	"fmt"
 	"github.com/peatch-io/peatch/internal/nanoid"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -10,10 +12,11 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/peatch-io/peatch/internal/contract"
 	"github.com/peatch-io/peatch/internal/db"
+	initdata "github.com/telegram-mini-apps/init-data-golang"
 )
 
-// @Summary Admin login
-// @Description Login as admin
+// @Summary Admin login via password
+// @Description Login as admin using username and password
 // @ID admin-login
 // @Tags admin
 // @Accept json
@@ -37,8 +40,75 @@ func (h *handler) handleAdminLogin(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnauthorized, "invalid credentials").WithInternal(err)
 	}
 
+	token, err := generateAdminJWT(admin.ID, h.config.JWTSecret)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to sign token").WithInternal(err)
+	}
+
+	return c.JSON(http.StatusOK, contract.AdminAuthResponse{
+		Token: token,
+		Admin: contract.ToAdminResponse(admin),
+	})
+}
+
+// @Summary Admin Telegram Auth
+// @Description Authenticate admin via Telegram using init data
+// @ID admin-telegram-auth
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param request body contract.AdminTelegramAuthRequest true "Telegram Auth Request"
+// @Success 200 {object} contract.AdminAuthResponse
+// @Failure 400 {object} contract.ErrorResponse
+// @Failure 401 {object} contract.ErrorResponse
+// @Failure 500 {object} contract.ErrorResponse
+// @Router /admin/auth/telegram [post]
+func (h *handler) handleAdminTelegramAuth(c echo.Context) error {
+	var req contract.AdminTelegramAuthRequest
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid request").WithInternal(err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid request").WithInternal(err)
+	}
+
+	h.logger.Info("admin telegram auth request", slog.String("request", fmt.Sprintf("%+v", req.Query)))
+
+	// Use the same expiry time as user auth
+	expIn := 24 * time.Hour
+	botToken := h.config.TelegramBotToken
+
+	if err := initdata.Validate(req.Query, botToken, expIn); err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, "invalid init data from telegram").WithInternal(err)
+	}
+
+	data, err := initdata.Parse(req.Query)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, "invalid init data from telegram").WithInternal(err)
+	}
+
+	// Get admin by Telegram chat ID
+	admin, err := h.storage.GetAdminByChatID(c.Request().Context(), data.User.ID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, "unauthorized: not registered as admin").WithInternal(err)
+	}
+
+	// Generate JWT token
+	token, err := generateAdminJWT(admin.ID, h.config.JWTSecret)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "jwt library error").WithInternal(err)
+	}
+
+	return c.JSON(http.StatusOK, contract.AdminAuthResponse{
+		Token: token,
+		Admin: contract.ToAdminResponse(admin),
+	})
+}
+
+func generateAdminJWT(adminID string, secretKey string) (string, error) {
 	claims := &contract.AdminJWTClaims{
-		AdminID: admin.ID,
+		AdminID: adminID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 7)), // 7 days
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -46,15 +116,12 @@ func (h *handler) handleAdminLogin(c echo.Context) error {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	signedToken, err := token.SignedString([]byte(h.config.JWTSecret))
+	signedToken, err := token.SignedString([]byte(secretKey))
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to sign token").WithInternal(err)
+		return "", err
 	}
 
-	return c.JSON(http.StatusOK, contract.AdminAuthResponse{
-		Token: signedToken,
-		Admin: contract.ToAdminResponse(admin),
-	})
+	return signedToken, nil
 }
 
 // @Summary List users by verification status
@@ -66,7 +133,7 @@ func (h *handler) handleAdminLogin(c echo.Context) error {
 // @Param status query string false "Verification status (pending, verified, denied, blocked)"
 // @Param page query int false "Page number (default: 1)"
 // @Param per_page query int false "Items per page (default: 20, max: 100)"
-// @Success 200 {object} contract.UserListResponse
+// @Success 200 {object} contract.UserResponse
 // @Failure 400 {object} contract.ErrorResponse
 // @Failure 401 {object} contract.ErrorResponse
 // @Security ApiKeyAuth
@@ -84,7 +151,7 @@ func (h *handler) handleAdminListUsers(c echo.Context) error {
 		perPage = 100
 	}
 
-	users, total, err := h.storage.GetUsersByVerificationStatus(c.Request().Context(),
+	users, err := h.storage.GetUsersByVerificationStatus(c.Request().Context(),
 		db.VerificationStatus(status), page, perPage)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get users").WithInternal(err)
@@ -95,21 +162,7 @@ func (h *handler) handleAdminListUsers(c echo.Context) error {
 		userResponses[i] = contract.ToUserResponse(user)
 	}
 
-	totalPages := (int(total) + perPage - 1) / perPage
-	hasNextPage := page < totalPages
-	hasPrevPage := page > 1
-
-	return c.JSON(http.StatusOK, contract.UserListResponse{
-		Users: userResponses,
-		Pagination: contract.PaginationResponse{
-			Total:       total,
-			Page:        page,
-			PerPage:     perPage,
-			TotalPages:  totalPages,
-			HasNextPage: hasNextPage,
-			HasPrevPage: hasPrevPage,
-		},
-	})
+	return c.JSON(http.StatusOK, userResponses)
 }
 
 // @Summary List collaborations by verification status
@@ -121,7 +174,7 @@ func (h *handler) handleAdminListUsers(c echo.Context) error {
 // @Param status query string false "Verification status (pending, verified, denied, blocked)"
 // @Param page query int false "Page number (default: 1)"
 // @Param per_page query int false "Items per page (default: 20, max: 100)"
-// @Success 200 {object} contract.CollaborationListResponse
+// @Success 200 {object} contract.CollaborationResponse
 // @Failure 400 {object} contract.ErrorResponse
 // @Failure 401 {object} contract.ErrorResponse
 // @Security ApiKeyAuth
@@ -139,7 +192,7 @@ func (h *handler) handleAdminListCollaborations(c echo.Context) error {
 		perPage = 100
 	}
 
-	collaborations, total, err := h.storage.GetCollaborationsByVerificationStatus(c.Request().Context(),
+	collaborations, err := h.storage.GetCollaborationsByVerificationStatus(c.Request().Context(),
 		db.VerificationStatus(status), page, perPage)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get collaborations").WithInternal(err)
@@ -150,21 +203,7 @@ func (h *handler) handleAdminListCollaborations(c echo.Context) error {
 		collabResponses[i] = contract.ToCollaborationResponse(collab)
 	}
 
-	totalPages := (int(total) + perPage - 1) / perPage
-	hasNextPage := page < totalPages
-	hasPrevPage := page > 1
-
-	return c.JSON(http.StatusOK, contract.CollaborationListResponse{
-		Collaborations: collabResponses,
-		Pagination: contract.PaginationResponse{
-			Total:       total,
-			Page:        page,
-			PerPage:     perPage,
-			TotalPages:  totalPages,
-			HasNextPage: hasNextPage,
-			HasPrevPage: hasPrevPage,
-		},
-	})
+	return c.JSON(http.StatusOK, collabResponses)
 }
 
 // @Summary Update user verification status

@@ -55,6 +55,22 @@ func (s *Storage) GetAdminByUsername(ctx context.Context, username string) (Admi
 	return admin, nil
 }
 
+func (s *Storage) GetAdminByChatID(ctx context.Context, chatID int64) (Admin, error) {
+	collection := s.db.Collection("admins")
+	filter := bson.M{"chat_id": chatID}
+
+	var admin Admin
+	err := collection.FindOne(ctx, filter).Decode(&admin)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return Admin{}, ErrNotFound
+		}
+		return Admin{}, err
+	}
+
+	return admin, nil
+}
+
 func hashPassword(password string) (string, error) {
 	hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {

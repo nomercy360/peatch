@@ -1,0 +1,37 @@
+{
+  "name": "vite-template-solid",
+  "version": "0.0.0",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "start": "vite",
+    "dev": "vite",
+    "build": "vite build",
+    "generate": "kubb generate --config kubb.config.ts",
+    "serve": "vite preview"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@kubb/cli": "^3.10.5",
+    "@kubb/core": "^3.10.5",
+    "@kubb/plugin-oas": "^3.10.5",
+    "@kubb/plugin-solid-query": "^3.10.5",
+    "@kubb/plugin-ts": "^3.10.5",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.4",
+    "vite-plugin-solid": "^2.11.6"
+  },
+  "dependencies": {
+    "@solidjs/router": "^0.15.3",
+    "@tanstack/solid-query": "^5.75.0",
+    "axios": "^1.9.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "solid-js": "^1.9.6",
+    "solid-transition-group": "^0.3.0",
+    "tailwind-merge": "^2.6.0"
+  }
+}

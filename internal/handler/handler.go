@@ -53,7 +53,7 @@ type storager interface {
 	UpdateUserAvatarURL(ctx context.Context, userID, avatarURL string) error
 	UpdateUserVerificationStatus(ctx context.Context, userID string, status db.VerificationStatus) error
 	FollowUser(ctx context.Context, userID, followeeID string, ttlDuration time.Duration) error
-	GetUsersByVerificationStatus(ctx context.Context, status db.VerificationStatus, page, perPage int) ([]db.User, int64, error)
+	GetUsersByVerificationStatus(ctx context.Context, status db.VerificationStatus, page, perPage int) ([]db.User, error)
 
 	// Collaboration-related operations
 	ListCollaborations(ctx context.Context, query db.CollaborationQuery) ([]db.Collaboration, error)
@@ -61,11 +61,12 @@ type storager interface {
 	CreateCollaboration(ctx context.Context, collaboration db.Collaboration, badges []string, opportunityID string, location string) error
 	UpdateCollaboration(ctx context.Context, collaboration db.Collaboration, badges []string, opportunityID string, location string) error
 	UpdateCollaborationVerificationStatus(ctx context.Context, collaborationID string, status db.VerificationStatus) error
-	GetCollaborationsByVerificationStatus(ctx context.Context, status db.VerificationStatus, page, perPage int) ([]db.Collaboration, int64, error)
+	GetCollaborationsByVerificationStatus(ctx context.Context, status db.VerificationStatus, page, perPage int) ([]db.Collaboration, error)
 
 	// Admin-related operations
 	CreateAdmin(ctx context.Context, admin db.Admin) (db.Admin, error)
 	GetAdminByUsername(ctx context.Context, username string) (db.Admin, error)
+	GetAdminByChatID(ctx context.Context, chatID int64) (db.Admin, error)
 	ValidateAdminCredentials(ctx context.Context, username, password string) (db.Admin, error)
 
 	// Miscellaneous operations
@@ -129,8 +130,9 @@ func (h *handler) SetupRoutes(e *echo.Echo) {
 	e.GET("/", h.handleIndex)
 	e.GET("/avatar", h.getRandomAvatar)
 
-	// Admin login (public)
+	// Admin login routes (public)
 	e.POST("/admin/login", h.handleAdminLogin)
+	e.POST("/admin/auth/telegram", h.handleAdminTelegramAuth)
 
 	// Regular API routes (require JWT auth)
 	api := e.Group("/api")

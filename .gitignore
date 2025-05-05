@@ -3,3 +3,5 @@
 .env.*
 config.yml
 production.config.yml
+
+**/.claude/settings.local.json

@@ -1,4 +1,35 @@
 definitions:
+  AdminAuthResponse:
+    properties:
+      admin:
+        $ref: '#/definitions/AdminResponse'
+      token:
+        type: string
+    type: object
+  AdminLoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  AdminResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      updated_at:
+        type: string
+      username:
+        type: string
+    type: object
+  AdminTelegramAuthRequest:
+    properties:
+      query:
+        description: Telegram init data
+        type: string
+    type: object
   AuthTelegramRequest:
     properties:
       query:
@@ -54,6 +85,8 @@ definitions:
         $ref: '#/definitions/UserProfileResponse'
       user_id:
         type: string
+      verification_status:
+        $ref: '#/definitions/VerificationStatus'
     type: object
   CreateCollaboration:
     properties:
@@ -170,6 +203,8 @@ definitions:
         type: string
       id:
         type: string
+      language_code:
+        type: string
       last_active_at:
         type: string
       last_name:
@@ -203,6 +238,11 @@ definitions:
     - VerificationStatusDenied
     - VerificationStatusBlocked
     - VerificationStatusUnverified
+  VerificationUpdateRequest:
+    properties:
+      status:
+        $ref: '#/definitions/VerificationStatus'
+    type: object
 host: api.peatch.io
 info:
   contact: {}
@@ -210,6 +250,264 @@ info:
   title: Peatch API
   version: "1.0"
 paths:
+  /admin/auth/telegram:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate admin via Telegram using init data
+      operationId: admin-telegram-auth
+      parameters:
+      - description: Telegram Auth Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/AdminTelegramAuthRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/AdminAuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Admin Telegram Auth
+      tags:
+      - admin
+  /admin/collaborations:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of collaborations filtered by verification status
+      operationId: admin-list-collaborations
+      parameters:
+      - description: Verification status (pending, verified, denied, blocked)
+        in: query
+        name: status
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 20, max: 100)'
+        in: query
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/CollaborationResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: List collaborations by verification status
+      tags:
+      - admin
+  /admin/create:
+    post:
+      consumes:
+      - application/json
+      description: Create a new admin account (protected, only existing admins can
+        create new admins)
+      operationId: admin-create
+      parameters:
+      - description: Admin credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/AdminLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/AdminResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create admin account
+      tags:
+      - admin
+  /admin/login:
+    post:
+      consumes:
+      - application/json
+      description: Login as admin using username and password
+      operationId: admin-login
+      parameters:
+      - description: Admin login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/AdminLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/AdminAuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Admin login via password
+      tags:
+      - admin
+  /admin/users:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of users filtered by verification status
+      operationId: admin-list-users
+      parameters:
+      - description: Verification status (pending, verified, denied, blocked)
+        in: query
+        name: status
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 20, max: 100)'
+        in: query
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: List users by verification status
+      tags:
+      - admin
+  /admin/users/{id}/verify:
+    put:
+      consumes:
+      - application/json
+      description: Change the verification status of a user
+      operationId: admin-update-user-verification
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: New verification status
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/VerificationUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/StatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update user verification status
+      tags:
+      - admin
+  /admin/users/{user_id}/collaborations/{collab_id}/verify:
+    put:
+      consumes:
+      - application/json
+      description: Change the verification status of a collaboration
+      operationId: admin-update-collaboration-verification
+      parameters:
+      - description: Collaboration ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: New verification status
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/VerificationUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/StatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update collaboration verification status
+      tags:
+      - admin
   /api/badges:
     get:
       consumes:

@@ -8,7 +8,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Collaboration struct {
@@ -239,40 +238,48 @@ func (s *Storage) CreateCollaboration(
 	return nil
 }
 
-func (s *Storage) GetCollaborationsByVerificationStatus(ctx context.Context, status VerificationStatus, page, perPage int) ([]Collaboration, int64, error) {
+func (s *Storage) GetCollaborationsByVerificationStatus(ctx context.Context, status VerificationStatus, page, perPage int) ([]Collaboration, error) {
 	collection := s.db.Collection("collaborations")
 
-	filter := bson.M{"verification_status": status}
-
-	total, err := collection.CountDocuments(ctx, filter)
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to count collaborations by verification status: %w", err)
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: bson.M{"verification_status": status}}},
+		{{Key: "$sort", Value: bson.D{{"created_at", -1}}}},
 	}
-
-	findOptions := options.Find()
-	findOptions.SetSort(bson.D{{"created_at", -1}})
 
 	if page > 0 && perPage > 0 {
 		skip := (page - 1) * perPage
-		findOptions.SetSkip(int64(skip))
+		pipeline = append(pipeline, bson.D{{Key: "$skip", Value: int64(skip)}})
 	}
 
 	if perPage > 0 {
-		findOptions.SetLimit(int64(perPage))
+		pipeline = append(pipeline, bson.D{{Key: "$limit", Value: int64(perPage)}})
 	}
 
-	cursor, err := collection.Find(ctx, filter, findOptions)
+	pipeline = append(pipeline,
+		bson.D{{Key: "$lookup", Value: bson.M{
+			"from":         "users",
+			"localField":   "user_id",
+			"foreignField": "_id",
+			"as":           "user",
+		}}},
+		bson.D{{Key: "$unwind", Value: bson.M{
+			"path":                       "$user",
+			"preserveNullAndEmptyArrays": true,
+		}}},
+	)
+
+	cursor, err := collection.Aggregate(ctx, pipeline)
 	if err != nil {
-		return nil, 0, fmt.Errorf("failed to find collaborations by verification status: %w", err)
+		return nil, fmt.Errorf("aggregation failed: %w", err)
 	}
 	defer cursor.Close(ctx)
 
 	var collabs []Collaboration
 	if err := cursor.All(ctx, &collabs); err != nil {
-		return nil, 0, fmt.Errorf("failed to decode collaborations: %w", err)
+		return nil, fmt.Errorf("failed to decode collaborations: %w", err)
 	}
 
-	return collabs, total, nil
+	return collabs, nil
 }
 
 func (s *Storage) UpdateCollaborationVerificationStatus(ctx context.Context, id string, status VerificationStatus) error {
