@@ -24,6 +24,7 @@ type Collaboration struct {
 	Location           City               `bson:"location,omitempty" json:"location"`
 	User               User               `bson:"user,omitempty" json:"user"`
 	VerificationStatus VerificationStatus `bson:"verification_status,omitempty" json:"verification_status"`
+	VerifiedAt         *time.Time         `bson:"verified_at,omitempty" json:"verified_at"`
 }
 
 type CollaborationQuery struct {
@@ -289,6 +290,7 @@ func (s *Storage) UpdateCollaborationVerificationStatus(ctx context.Context, id 
 		"$set": bson.M{
 			"verification_status": status,
 			"updated_at":          now,
+			"verified_at":         now,
 		},
 	}
 	result, err := collection.UpdateOne(ctx, bson.M{"_id": id}, update)

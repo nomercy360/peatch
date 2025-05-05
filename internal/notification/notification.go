@@ -68,13 +68,18 @@ type Tag struct {
 func (n *Notifier) NotifyUserVerified(user db.User) error {
 	var msgText string
 	if user.LanguageCode == db.LanguageRU {
-		msgText = fmt.Sprintf("🎉 Поздравляем! Ваш профиль был подтверждён.\nТеперь вы можете пользоваться всеми функциями и быть видимы другим пользователям.\n\nПроверьте свой профиль")
+		msgText = fmt.Sprintf("🎉 Поздравляем! Ваш профиль был подтверждён.\nТеперь вы можете пользоваться всеми функциями и быть видимы другим пользователям.")
 	} else {
-		msgText = fmt.Sprintf("🎉 Congratulations! Your profile has been verified.\nYou can now access all features and be visible to other users.\n\nCheck your profile")
+		msgText = fmt.Sprintf("🎉 Congratulations! Your profile has been verified.\nYou can now access all features and be visible to other users.")
+	}
+
+	btnText := "View Profile"
+	if user.LanguageCode == db.LanguageRU {
+		btnText = "Посмотреть профиль"
 	}
 
 	button := models.InlineKeyboardButton{
-		Text: "View Profile",
+		Text: btnText,
 		URL:  fmt.Sprintf("%s?startapp=u_%s", n.botWebApp, user.ID),
 	}
 
@@ -220,14 +225,31 @@ func (n *Notifier) generateProfileImage(req ImageRequest) ([]byte, error) {
 func (n *Notifier) NotifyCollaborationVerified(collab db.Collaboration) error {
 	var msgText string
 	if collab.User.LanguageCode == db.LanguageRU {
-		msgText = fmt.Sprintf("🎉 Поздравляем! Ваша коллаборация \"%s\" была подтверждена.\nТеперь она доступна всем пользователям Peatch.\n\nПосмотреть коллаборацию: %s/collaborations/%s", collab.Title, n.webappURL, collab.ID)
+		msgText = fmt.Sprintf("🎉 Поздравляем! Ваша коллаборация \"%s\" была подтверждена.\nТеперь она доступна всем пользователям Peatch.", collab.Title)
 	} else {
-		msgText = fmt.Sprintf("🎉 Congratulations! Your collaboration \"%s\" has been verified.\nIt is now visible to all Peatch users.\n\nView collaboration: %s/collaborations/%s", collab.Title, n.webappURL, collab.ID)
+		msgText = fmt.Sprintf("🎉 Congratulations! Your collaboration \"%s\" has been verified.\nIt is now visible to all Peatch users.", collab.Title)
+	}
+
+	btnText := "View Collaboration"
+	if collab.User.LanguageCode == db.LanguageRU {
+		btnText = "Посмотреть коллаборацию"
+	}
+
+	button := models.InlineKeyboardButton{
+		Text: btnText,
+		URL:  fmt.Sprintf("%s?startapp=c_%s", n.botWebApp, collab.ID),
+	}
+
+	keyboard := models.InlineKeyboardMarkup{
+		InlineKeyboard: [][]models.InlineKeyboardButton{
+			{button},
+		},
 	}
 
 	_, err := n.bot.SendMessage(context.Background(), &telegram.SendMessageParams{
-		ChatID: fmt.Sprintf("%d", collab.User.ChatID),
-		Text:   msgText,
+		ChatID:      fmt.Sprintf("%d", collab.User.ChatID),
+		Text:        msgText,
+		ReplyMarkup: &keyboard,
 	})
 
 	return err
@@ -243,10 +265,25 @@ func (n *Notifier) NotifyNewPendingUser(user db.User) error {
 		lastName = *user.LastName
 	}
 
-	msgText := fmt.Sprintf("🔔 New user pending verification:\nName: %s %s\nUsername: @%s\n\nVerify them in the admin panel: %s/admin/users",
-		firstName, lastName, user.Username, n.adminWebApp)
+	btn := models.InlineKeyboardButton{
+		Text: "View Profile",
+		URL:  n.adminWebApp,
+	}
 
-	params := &telegram.SendMessageParams{ChatID: fmt.Sprintf("%d", n.adminChatID), Text: msgText}
+	keyboard := models.InlineKeyboardMarkup{
+		InlineKeyboard: [][]models.InlineKeyboardButton{
+			{btn},
+		},
+	}
+
+	msgText := fmt.Sprintf("🔔 New user pending verification:\nName: %s %s\nUsername: @%s",
+		firstName, lastName, user.Username)
+
+	params := &telegram.SendMessageParams{
+		ChatID:      fmt.Sprintf("%d", n.adminChatID),
+		Text:        msgText,
+		ReplyMarkup: &keyboard,
+	}
 
 	_, err := n.bot.SendMessage(context.Background(), params)
 
@@ -263,15 +300,60 @@ func (n *Notifier) NotifyNewPendingCollaboration(user db.User, collab db.Collabo
 		lastName = *user.LastName
 	}
 
-	msgText := fmt.Sprintf("🔔 New collaboration pending verification:\nTitle: %s\nBy: %s %s (@%s)\n\nVerify it in the admin panel: %s/admin/collaborations",
-		collab.Title, firstName, lastName, user.Username, n.adminWebApp)
+	btn := models.InlineKeyboardButton{
+		Text: "View Collaboration",
+		URL:  n.adminWebApp,
+	}
+
+	keyboard := models.InlineKeyboardMarkup{
+		InlineKeyboard: [][]models.InlineKeyboardButton{
+			{btn},
+		},
+	}
+
+	msgText := fmt.Sprintf("🔔 New collaboration pending verification:\nTitle: %s\nBy: %s %s (@%s)",
+		collab.Title, firstName, lastName, user.Username)
 
 	params := &telegram.SendMessageParams{
-		ChatID: fmt.Sprintf("%d", n.adminChatID),
-		Text:   msgText,
+		ChatID:      fmt.Sprintf("%d", n.adminChatID),
+		Text:        msgText,
+		ReplyMarkup: &keyboard,
 	}
 
 	_, err := n.bot.SendMessage(context.Background(), params)
+
+	return err
+}
+
+func (n *Notifier) NotifyUserVerificationDenied(user db.User) error {
+	var msgText string
+	if user.LanguageCode == db.LanguageRU {
+		msgText = fmt.Sprintf("⚠️ Ваш профиль не прошел верификацию.\nПожалуйста, обновите свой профиль, сделав его более подробным и искренним, и отправьте на повторную проверку.")
+	} else {
+		msgText = fmt.Sprintf("⚠️ Your profile verification was denied.\nPlease update your profile to make it more detailed and genuine, then submit it for review again.")
+	}
+
+	btnText := "Update Profile"
+	if user.LanguageCode == db.LanguageRU {
+		btnText = "Обновить профиль"
+	}
+
+	button := models.InlineKeyboardButton{
+		Text:   btnText,
+		WebApp: &models.WebAppInfo{URL: fmt.Sprintf("%s/users/edit", n.webappURL)},
+	}
+
+	keyboard := models.InlineKeyboardMarkup{
+		InlineKeyboard: [][]models.InlineKeyboardButton{
+			{button},
+		},
+	}
+
+	_, err := n.bot.SendMessage(context.Background(), &telegram.SendMessageParams{
+		ChatID:      fmt.Sprintf("%d", user.ChatID),
+		Text:        msgText,
+		ReplyMarkup: &keyboard,
+	})
 
 	return err
 }

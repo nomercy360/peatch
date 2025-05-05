@@ -238,6 +238,8 @@ func (h *handler) handleAdminUpdateUserVerification(c echo.Context) error {
 		needNotify = false // already notified
 	}
 
+	previousStatus := user.VerificationStatus
+
 	var req contract.VerificationUpdateRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid request").WithInternal(err)
@@ -257,6 +259,10 @@ func (h *handler) handleAdminUpdateUserVerification(c echo.Context) error {
 	if req.Status == db.VerificationStatusVerified && needNotify {
 		go func() {
 			_ = h.notificationService.NotifyUserVerified(user)
+		}()
+	} else if req.Status == db.VerificationStatusDenied && previousStatus != db.VerificationStatusDenied {
+		go func() {
+			_ = h.notificationService.NotifyUserVerificationDenied(user)
 		}()
 	}
 
@@ -288,6 +294,20 @@ func (h *handler) handleAdminUpdateCollaborationVerification(c echo.Context) err
 		return echo.NewHTTPError(http.StatusBadRequest, "user ID is required")
 	}
 
+	collab, err := h.storage.GetCollaborationByID(c.Request().Context(), userID, collabID)
+	if err != nil && errors.Is(err, db.ErrNotFound) {
+		return echo.NewHTTPError(http.StatusNotFound, "collaboration not found").WithInternal(err)
+	} else if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get collaboration").WithInternal(err)
+	}
+
+	needNotify := true
+	if collab.VerifiedAt != nil {
+		needNotify = false // already notified
+	}
+
+	previousStatus := collab.VerificationStatus
+
 	var req contract.VerificationUpdateRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid request").WithInternal(err)
@@ -304,13 +324,14 @@ func (h *handler) handleAdminUpdateCollaborationVerification(c echo.Context) err
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to update collaboration verification status").WithInternal(err)
 	}
 
-	if req.Status == db.VerificationStatusVerified {
-		collab, err := h.storage.GetCollaborationByID(c.Request().Context(), userID, collabID)
-		if err == nil {
-			go func() {
-				_ = h.notificationService.NotifyCollaborationVerified(collab)
-			}()
-		}
+	if req.Status == db.VerificationStatusVerified && needNotify {
+		go func() {
+			_ = h.notificationService.NotifyCollaborationVerified(collab)
+		}()
+	} else if req.Status == db.VerificationStatusDenied && previousStatus != db.VerificationStatusDenied {
+		go func() {
+			_ = h.notificationService.NotifyCollaborationVerificationDenied(collab)
+		}()
 	}
 
 	return c.JSON(http.StatusOK, contract.StatusResponse{Success: true})
