@@ -43,7 +43,7 @@ func (h *handler) TelegramAuth(c echo.Context) error {
 	h.logger.Info("telegram auth request", slog.String("request", fmt.Sprintf("%+v", req.Query)))
 
 	expIn := 24 * time.Hour
-	botToken := h.config.AdminBotToken
+	botToken := h.config.TelegramBotToken
 
 	if err := initdata.Validate(req.Query, botToken, expIn); err != nil {
 		return echo.NewHTTPError(http.StatusUnauthorized, ErrInvalidInitData).WithInternal(err)

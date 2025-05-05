@@ -105,7 +105,6 @@ func New(storage storager, config Config, s3Client s3Client, logger *slog.Logger
 
 	logger.Info("telegram webhook set successfully", slog.String("url", webhookURL))
 
-	// Create notification service
 	notifierConfig := notification.NotifierConfig{
 		BotToken:        config.TelegramBotToken,
 		AdminChatID:     config.AdminChatID,
@@ -115,6 +114,7 @@ func New(storage storager, config Config, s3Client s3Client, logger *slog.Logger
 		AdminWebApp:     config.WebAppURL,
 		ImageServiceURL: config.ImageServiceURL,
 	}
+
 	notifier, err := notification.NewNotifier(notifierConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create notification service: %w", err)
