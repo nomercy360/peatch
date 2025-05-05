@@ -59,6 +59,19 @@ type ImageRequest struct {
 	Tags     []Tag  `json:"tags"`
 }
 
+type CollaborationImageRequest struct {
+	Title    string   `json:"title"`
+	Subtitle string   `json:"subtitle"`
+	Tags     []Tag    `json:"tags"`
+	User     UserInfo `json:"user"`
+}
+
+type UserInfo struct {
+	Avatar string `json:"avatar"`
+	Name   string `json:"name"`
+	Role   string `json:"role"`
+}
+
 type Tag struct {
 	Text  string `json:"text"`
 	Color string `json:"color"`
@@ -190,13 +203,13 @@ func (n *Notifier) NotifyUserVerified(user db.User) error {
 	return err
 }
 
-func (n *Notifier) generateProfileImage(req ImageRequest) ([]byte, error) {
-	jsonData, err := json.Marshal(req)
+func (n *Notifier) generateImage(endpoint string, request interface{}) ([]byte, error) {
+	jsonData, err := json.Marshal(request)
 	if err != nil {
-		return nil, fmt.Errorf("error marshaling image request: %w", err)
+		return nil, fmt.Errorf("error marshaling request: %w", err)
 	}
 
-	httpReq, err := http.NewRequest("POST", n.imageServiceURL+"/api/image", bytes.NewBuffer(jsonData))
+	httpReq, err := http.NewRequest("POST", n.imageServiceURL+endpoint, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, fmt.Errorf("error creating HTTP request: %w", err)
 	}
@@ -220,6 +233,14 @@ func (n *Notifier) generateProfileImage(req ImageRequest) ([]byte, error) {
 	}
 
 	return imageBytes, nil
+}
+
+func (n *Notifier) generateProfileImage(req ImageRequest) ([]byte, error) {
+	return n.generateImage("/api/image", req)
+}
+
+func (n *Notifier) generateCollaborationImage(req CollaborationImageRequest) ([]byte, error) {
+	return n.generateImage("/api/collaboration", req)
 }
 
 func (n *Notifier) NotifyCollaborationVerified(collab db.Collaboration) error {
@@ -247,12 +268,124 @@ func (n *Notifier) NotifyCollaborationVerified(collab db.Collaboration) error {
 	}
 
 	_, err := n.bot.SendMessage(context.Background(), &telegram.SendMessageParams{
-		ChatID:      fmt.Sprintf("%d", collab.User.ChatID),
+		// ChatID:      fmt.Sprintf("%d", collab.User.ChatID),
+		ChatID:      n.adminChatID,
 		Text:        msgText,
 		ReplyMarkup: &keyboard,
 	})
 
-	return err
+	if err != nil {
+		return err
+	}
+
+	return n.SendCollaborationToCommunityChatWithImage(collab)
+}
+
+func (n *Notifier) SendCollaborationToCommunityChatWithImage(collab db.Collaboration) error {
+	firstName := ""
+	if collab.User.FirstName != nil {
+		firstName = *collab.User.FirstName
+	}
+	lastName := ""
+	if collab.User.LastName != nil {
+		lastName = *collab.User.LastName
+	}
+
+	fullName := fmt.Sprintf("%s %s", firstName, lastName)
+	if firstName == "" && lastName == "" {
+		fullName = collab.User.Username
+	}
+
+	button := models.InlineKeyboardButton{
+		Text: "View Collaboration",
+		URL:  fmt.Sprintf("%s?startapp=c_%s", n.botWebApp, collab.ID),
+	}
+
+	keyboard := models.InlineKeyboardMarkup{
+		InlineKeyboard: [][]models.InlineKeyboardButton{
+			{button},
+		},
+	}
+
+	tags := make([]Tag, 0, 5)
+	if collab.Badges != nil && len(collab.Badges) > 0 {
+		for i, badge := range collab.Badges {
+			if i >= 5 {
+				break
+			}
+
+			tag := Tag{
+				Text:  badge.Text,
+				Color: badge.Color,
+				Icon:  badge.Icon,
+			}
+
+			tags = append(tags, tag)
+		}
+	}
+
+	userRole := "Member"
+	if collab.User.Title != nil {
+		userRole = *collab.User.Title
+	}
+
+	userAvatarURL := ""
+	if collab.User.AvatarURL != nil {
+		userAvatarURL = fmt.Sprintf("https://assets.peatch.io/%s", *collab.User.AvatarURL)
+	}
+
+	imageReq := CollaborationImageRequest{
+		Title:    collab.Title,
+		Subtitle: collab.Opportunity.Text,
+		Tags:     tags,
+		User: UserInfo{
+			Avatar: userAvatarURL,
+			Name:   fullName,
+			Role:   userRole,
+		},
+	}
+
+	var imageBytes []byte
+	var err error
+	if n.imageServiceURL != "" {
+		imageBytes, err = n.generateCollaborationImage(imageReq)
+		if err != nil {
+			fmt.Printf("Error generating collaboration image: %v\n", err)
+		}
+	}
+
+	communityMsg := fmt.Sprintf("🌟 New collaboration opportunity!\n\"%s\" by %s\n\nCheck it out",
+		collab.Title, fullName)
+
+	if imageBytes != nil && len(imageBytes) > 0 {
+		photoData := &models.InputFileUpload{
+			Filename: fmt.Sprintf("collab_%s.png", collab.ID),
+			Data:     bytes.NewReader(imageBytes),
+		}
+
+		if _, err := n.bot.SendPhoto(context.Background(), &telegram.SendPhotoParams{
+			ChatID:      fmt.Sprintf("%d", n.communityChatID),
+			Caption:     communityMsg,
+			Photo:       photoData,
+			ReplyMarkup: &keyboard,
+		}); err != nil {
+			fmt.Printf("Error sending photo: %v\n", err)
+			return err
+		}
+	} else {
+		params := &telegram.SendMessageParams{
+			ChatID:      fmt.Sprintf("%d", n.communityChatID),
+			Text:        communityMsg,
+			ReplyMarkup: &keyboard,
+		}
+
+		if _, err := n.bot.SendMessage(context.Background(), params); err != nil {
+			fmt.Printf("Error sending message: %v\n", err)
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (n *Notifier) NotifyNewPendingUser(user db.User) error {
@@ -351,6 +484,39 @@ func (n *Notifier) NotifyUserVerificationDenied(user db.User) error {
 
 	_, err := n.bot.SendMessage(context.Background(), &telegram.SendMessageParams{
 		ChatID:      fmt.Sprintf("%d", user.ChatID),
+		Text:        msgText,
+		ReplyMarkup: &keyboard,
+	})
+
+	return err
+}
+
+func (n *Notifier) NotifyCollaborationVerificationDenied(collab db.Collaboration) error {
+	var msgText string
+	if collab.User.LanguageCode == db.LanguageRU {
+		msgText = fmt.Sprintf("⚠️ Ваша коллаборация \"%s\" не прошла верификацию.\nПожалуйста, обновите описание, сделав его более подробным и конкретным, и отправьте на повторную проверку.", collab.Title)
+	} else {
+		msgText = fmt.Sprintf("⚠️ Your collaboration \"%s\" verification was denied.\nPlease update its description to make it more detailed and specific, then submit it for review again.", collab.Title)
+	}
+
+	btnText := "Update Collaboration"
+	if collab.User.LanguageCode == db.LanguageRU {
+		btnText = "Обновить коллаборацию"
+	}
+
+	button := models.InlineKeyboardButton{
+		Text:   btnText,
+		WebApp: &models.WebAppInfo{URL: fmt.Sprintf("%s/collaborations/edit", n.webappURL)},
+	}
+
+	keyboard := models.InlineKeyboardMarkup{
+		InlineKeyboard: [][]models.InlineKeyboardButton{
+			{button},
+		},
+	}
+
+	_, err := n.bot.SendMessage(context.Background(), &telegram.SendMessageParams{
+		ChatID:      fmt.Sprintf("%d", collab.User.ChatID),
 		Text:        msgText,
 		ReplyMarkup: &keyboard,
 	})

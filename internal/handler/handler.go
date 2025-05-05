@@ -177,7 +177,7 @@ func (h *handler) SetupRoutes(e *echo.Echo) {
 
 	// Collaboration verification endpoints
 	admin.GET("/collaborations", h.handleAdminListCollaborations)
-	admin.PUT("/user/:uid/collaborations/:cid/verify", h.handleAdminUpdateCollaborationVerification)
+	admin.PUT("/users/:uid/collaborations/:cid/verify", h.handleAdminUpdateCollaborationVerification)
 }
 
 func (h *handler) handleIndex(c echo.Context) error {
