@@ -226,6 +226,18 @@ func (h *handler) handleAdminUpdateUserVerification(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "user ID is required")
 	}
 
+	user, err := h.storage.GetUserByID(c.Request().Context(), userID)
+	if err != nil && errors.Is(err, db.ErrNotFound) {
+		return echo.NewHTTPError(http.StatusNotFound, "user not found").WithInternal(err)
+	} else if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get user").WithInternal(err)
+	}
+
+	needNotify := true
+	if user.VerifiedAt != nil {
+		needNotify = false // already notified
+	}
+
 	var req contract.VerificationUpdateRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid request").WithInternal(err)
@@ -242,13 +254,10 @@ func (h *handler) handleAdminUpdateUserVerification(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to update user verification status").WithInternal(err)
 	}
 
-	if req.Status == db.VerificationStatusVerified {
-		user, err := h.storage.GetUserByID(c.Request().Context(), userID)
-		if err == nil {
-			go func() {
-				_ = h.notificationService.NotifyUserVerified(user)
-			}()
-		}
+	if req.Status == db.VerificationStatusVerified && needNotify {
+		go func() {
+			_ = h.notificationService.NotifyUserVerified(user)
+		}()
 	}
 
 	return c.JSON(http.StatusOK, contract.StatusResponse{Success: true})

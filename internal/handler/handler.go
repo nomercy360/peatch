@@ -38,7 +38,9 @@ type Config struct {
 	WebhookURL       string
 	WebAppURL        string
 	AdminChatID      int64
+	CommunityChatID  int64
 	BotWebApp        string
+	ImageServiceURL  string
 }
 
 type storager interface {
@@ -103,12 +105,16 @@ func New(storage storager, config Config, s3Client s3Client, logger *slog.Logger
 	logger.Info("telegram webhook set successfully", slog.String("url", webhookURL))
 
 	// Create notification service
-	notifier, err := notification.NewNotifier(
-		config.TelegramBotToken,
-		config.AdminChatID,
-		config.BotWebApp,
-		config.WebAppURL,
-	)
+	notifierConfig := notification.NotifierConfig{
+		BotToken:        config.TelegramBotToken,
+		AdminChatID:     config.AdminChatID,
+		CommunityChatID: config.CommunityChatID,
+		BotWebApp:       config.BotWebApp,
+		WebAppURL:       config.WebAppURL,
+		AdminWebApp:     config.WebAppURL,
+		ImageServiceURL: config.ImageServiceURL,
+	}
+	notifier, err := notification.NewNotifier(notifierConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create notification service: %w", err)
 	}

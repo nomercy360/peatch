@@ -76,8 +76,10 @@ func main() {
 		TelegramBotToken: cfg.Telegram.BotToken,
 		AssetsURL:        cfg.AssetsURL,
 		AdminChatID:      cfg.Telegram.AdminChatID,
+		CommunityChatID:  cfg.Telegram.CommunityChatID,
 		WebAppURL:        cfg.Telegram.WebAppURL,
 		BotWebApp:        cfg.Telegram.BotWebApp,
+		ImageServiceURL:  cfg.ImageServiceURL,
 	}
 
 	s3Client, err := s3.NewClient(
@@ -98,12 +100,16 @@ func main() {
 
 	go gracefulShutdown(e, logr)
 
-	notifier, err := notification.NewNotifier(
-		cfg.Telegram.BotToken,
-		cfg.Telegram.AdminChatID,
-		cfg.Telegram.WebAppURL,
-		cfg.Telegram.BotWebApp,
-	)
+	notifierConfig := notification.NotifierConfig{
+		BotToken:        cfg.Telegram.BotToken,
+		AdminChatID:     cfg.Telegram.AdminChatID,
+		CommunityChatID: cfg.Telegram.CommunityChatID,
+		BotWebApp:       cfg.Telegram.BotWebApp,
+		WebAppURL:       cfg.Telegram.WebAppURL,
+		AdminWebApp:     cfg.Telegram.WebAppURL,
+		ImageServiceURL: cfg.ImageServiceURL,
+	}
+	notifier, err := notification.NewNotifier(notifierConfig)
 
 	if err := job.Run(context.Background(), storage, notifier); err != nil {
 		logr.Error("job run error", "error", err)

@@ -8,15 +8,16 @@ import (
 )
 
 type Config struct {
-	Host      string         `yaml:"host" validate:"required"`
-	Port      int            `yaml:"port" validate:"required,gt=0"`
-	DBURL     string         `yaml:"mongo_uri" validate:"required"`
-	DBName    string         `yaml:"mongo_db" validate:"required"`
-	JWTSecret string         `yaml:"jwt_secret" validate:"required"`
-	Telegram  TelegramConfig `yaml:"telegram" validate:"required"`
-	LogLevel  string         `yaml:"log_level" validate:"required,oneof=debug info warn error"`
-	AWSConfig AWSConfig      `yaml:"aws" validate:"required"`
-	AssetsURL string         `yaml:"assets_url" validate:"required,url"`
+	Host            string         `yaml:"host" validate:"required"`
+	Port            int            `yaml:"port" validate:"required,gt=0"`
+	DBURL           string         `yaml:"mongo_uri" validate:"required"`
+	DBName          string         `yaml:"mongo_db" validate:"required"`
+	JWTSecret       string         `yaml:"jwt_secret" validate:"required"`
+	Telegram        TelegramConfig `yaml:"telegram" validate:"required"`
+	LogLevel        string         `yaml:"log_level" validate:"required,oneof=debug info warn error"`
+	AWSConfig       AWSConfig      `yaml:"aws" validate:"required"`
+	AssetsURL       string         `yaml:"assets_url" validate:"required,url"`
+	ImageServiceURL string         `yaml:"image_service_url" validate:"required,url"`
 }
 
 type AWSConfig struct {
@@ -27,11 +28,12 @@ type AWSConfig struct {
 }
 
 type TelegramConfig struct {
-	BotToken    string `yaml:"bot_token" validate:"required"`
-	AdminChatID int64  `yaml:"admin_chat_id" validate:"required"`
-	WebAppURL   string `yaml:"webapp_url" validate:"required,url"`
-	BotWebApp   string `yaml:"bot_webapp" validate:"required"`
-	WebhookURL  string `yaml:"webhook_url" validate:"required,url"`
+	BotToken        string `yaml:"bot_token" validate:"required"`
+	AdminChatID     int64  `yaml:"admin_chat_id" validate:"required"`
+	CommunityChatID int64  `yaml:"community_chat_id" validate:"required"`
+	WebAppURL       string `yaml:"webapp_url" validate:"required,url"`
+	BotWebApp       string `yaml:"bot_webapp" validate:"required"`
+	WebhookURL      string `yaml:"webhook_url" validate:"required,url"`
 }
 
 func LoadConfig() (*Config, error) {
