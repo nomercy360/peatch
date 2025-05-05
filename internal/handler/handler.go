@@ -33,6 +33,7 @@ type s3Client interface {
 
 type Config struct {
 	TelegramBotToken string
+	AdminBotToken    string
 	JWTSecret        string
 	AssetsURL        string
 	WebhookURL       string

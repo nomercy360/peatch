@@ -29,6 +29,7 @@ type AWSConfig struct {
 
 type TelegramConfig struct {
 	BotToken        string `yaml:"bot_token" validate:"required"`
+	AdminBotToken   string `yaml:"admin_bot_token" validate:"required"`
 	AdminChatID     int64  `yaml:"admin_chat_id" validate:"required"`
 	CommunityChatID int64  `yaml:"community_chat_id" validate:"required"`
 	WebAppURL       string `yaml:"webapp_url" validate:"required,url"`

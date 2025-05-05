@@ -74,6 +74,7 @@ func main() {
 		JWTSecret:        cfg.JWTSecret,
 		WebhookURL:       cfg.Telegram.WebhookURL,
 		TelegramBotToken: cfg.Telegram.BotToken,
+		AdminBotToken:    cfg.Telegram.AdminBotToken,
 		AssetsURL:        cfg.AssetsURL,
 		AdminChatID:      cfg.Telegram.AdminChatID,
 		CommunityChatID:  cfg.Telegram.CommunityChatID,

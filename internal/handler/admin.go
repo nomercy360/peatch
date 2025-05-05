@@ -77,7 +77,7 @@ func (h *handler) handleAdminTelegramAuth(c echo.Context) error {
 
 	// Use the same expiry time as user auth
 	expIn := 24 * time.Hour
-	botToken := h.config.TelegramBotToken
+	botToken := h.config.AdminBotToken
 
 	if err := initdata.Validate(req.Query, botToken, expIn); err != nil {
 		return echo.NewHTTPError(http.StatusUnauthorized, "invalid init data from telegram").WithInternal(err)
