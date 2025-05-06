@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/peatch-io/peatch/internal/middleware"
 	"io"
 	"log/slog"
 	"math/rand"
@@ -15,7 +14,8 @@ import (
 	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
 	"github.com/peatch-io/peatch/internal/db"
-	"github.com/peatch-io/peatch/internal/notification"
+	"github.com/peatch-io/peatch/internal/interfaces"
+	"github.com/peatch-io/peatch/internal/middleware"
 )
 
 type handler struct {
@@ -24,7 +24,7 @@ type handler struct {
 	s3Client            s3Client
 	logger              *slog.Logger
 	bot                 *telegram.Bot
-	notificationService *notification.Notifier
+	notificationService interfaces.NotificationService
 }
 
 type s3Client interface {
@@ -81,54 +81,41 @@ type storager interface {
 	Health() (db.HealthStats, error)
 }
 
-func New(storage storager, config Config, s3Client s3Client, logger *slog.Logger) (*handler, error) {
-	bot, err := telegram.New(config.TelegramBotToken)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create telegram bot: %w", err)
-	}
-
-	webhookURL := fmt.Sprintf("%s/tg/webhook", config.WebhookURL)
-
-	whParams := telegram.SetWebhookParams{
-		DropPendingUpdates: true,
-		URL:                webhookURL,
-	}
-
-	ok, err := bot.SetWebhook(context.Background(), &whParams)
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to set webhook: %w", err)
-	}
-
-	if !ok {
-		return nil, errors.New("webhook registration returned false")
-	}
-
-	logger.Info("telegram webhook set successfully", slog.String("url", webhookURL))
-
-	notifierConfig := notification.NotifierConfig{
-		BotToken:        config.TelegramBotToken,
-		AdminChatID:     config.AdminChatID,
-		CommunityChatID: config.CommunityChatID,
-		BotWebApp:       config.BotWebApp,
-		WebAppURL:       config.WebAppURL,
-		AdminWebApp:     config.WebAppURL,
-		ImageServiceURL: config.ImageServiceURL,
-	}
-
-	notifier, err := notification.NewNotifier(notifierConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create notification service: %w", err)
-	}
-
+func New(storage storager, config Config, s3Client s3Client, logger *slog.Logger, bot *telegram.Bot, n interfaces.NotificationService) *handler {
 	return &handler{
 		storage:             storage,
 		config:              config,
 		s3Client:            s3Client,
 		logger:              logger,
 		bot:                 bot,
-		notificationService: notifier,
-	}, nil
+		notificationService: n,
+	}
+}
+
+func (h *handler) SetupWebhook(ctx context.Context) error {
+	if h.bot == nil {
+		return errors.New("bot is not initialized")
+	}
+
+	webhookURL := fmt.Sprintf("%s/tg/webhook", h.config.WebhookURL)
+
+	whParams := telegram.SetWebhookParams{
+		DropPendingUpdates: true,
+		URL:                webhookURL,
+	}
+
+	ok, err := h.bot.SetWebhook(ctx, &whParams)
+
+	if err != nil {
+		return fmt.Errorf("failed to set webhook: %w", err)
+	}
+
+	if !ok {
+		return errors.New("webhook registration returned false")
+	}
+
+	h.logger.Info("telegram webhook set successfully", slog.String("url", webhookURL))
+	return nil
 }
 
 func (h *handler) SetupRoutes(e *echo.Echo) {

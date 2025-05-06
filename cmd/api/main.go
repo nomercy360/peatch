@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	telegram "github.com/go-telegram/bot"
 	"github.com/labstack/echo/v4"
 	_ "github.com/peatch-io/peatch/docs"
 	"github.com/peatch-io/peatch/internal/config"
@@ -90,16 +91,10 @@ func main() {
 		cfg.AWSConfig.Bucket,
 	)
 
-	h, err := handler.New(storage, hConfig, s3Client, logr)
+	bot, err := telegram.New(cfg.Telegram.BotToken)
 	if err != nil {
-		log.Fatalf("failed to create handler: %v", err)
+		log.Fatalf("failed to create telegram bot: %v", err)
 	}
-
-	h.SetupRoutes(e)
-
-	e.GET("/swagger/*", echoSwagger.WrapHandler)
-
-	go gracefulShutdown(e, logr)
 
 	notifierConfig := notification.NotifierConfig{
 		BotToken:        cfg.Telegram.BotToken,
@@ -110,15 +105,24 @@ func main() {
 		AdminWebApp:     cfg.Telegram.WebAppURL,
 		ImageServiceURL: cfg.ImageServiceURL,
 	}
-	notifier, err := notification.NewNotifier(notifierConfig)
 
+	notifier := notification.NewNotifier(notifierConfig, bot)
+
+	h := handler.New(storage, hConfig, s3Client, logr, bot, notifier)
+
+	if err := h.SetupWebhook(context.Background()); err != nil {
+		log.Fatalf("failed to setup webhook: %v", err)
+	}
+
+	h.SetupRoutes(e)
+
+	e.GET("/swagger/*", echoSwagger.WrapHandler)
+
+	go gracefulShutdown(e, logr)
 	if err := job.Run(context.Background(), storage, notifier); err != nil {
 		logr.Error("job run error", "error", err)
 	}
 
-	if err != nil {
-		log.Fatalf("failed to create notifier: %v", err)
-	}
 	go func() {
 		ticker := time.NewTicker(5 * time.Minute)
 		defer ticker.Stop()

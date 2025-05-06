@@ -318,8 +318,8 @@ func (s *Storage) GetUserProfile(ctx context.Context, viewerID string, id string
 	}
 
 	followerFilter := bson.M{
-		"user_id":     user.ID,
-		"followee_id": viewerID,
+		"user_id":     viewerID,
+		"followee_id": user.ID,
 	}
 
 	count, err := followersCollection.CountDocuments(ctx, followerFilter)

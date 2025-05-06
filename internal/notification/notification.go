@@ -37,12 +37,7 @@ type Notifier struct {
 	imageServiceURL string
 }
 
-func NewNotifier(config NotifierConfig) (*Notifier, error) {
-	bot, err := telegram.New(config.BotToken)
-	if err != nil {
-		return nil, err
-	}
-
+func NewNotifier(config NotifierConfig, bot *telegram.Bot) *Notifier {
 	return &Notifier{
 		bot:             bot,
 		adminChatID:     config.AdminChatID,
@@ -51,7 +46,7 @@ func NewNotifier(config NotifierConfig) (*Notifier, error) {
 		webappURL:       config.WebAppURL,
 		adminWebApp:     config.AdminWebApp,
 		imageServiceURL: config.ImageServiceURL,
-	}, nil
+	}
 }
 
 type ImageRequest struct {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/peatch-io/peatch/internal/contract"
+	"github.com/peatch-io/peatch/internal/testutils"
 	"net/http"
 	"testing"
 	"time"
@@ -12,9 +13,9 @@ import (
 )
 
 func TestListOpportunities_Success(t *testing.T) {
-	e := setupDependencies(t)
+	e := testutils.SetupHandlerDependencies(t)
 
-	authResp, err := authHelper(t, e, 927635965, "mkkksim", "Maksim")
+	authResp, err := testutils.AuthHelper(t, e, 927635965, "mkkksim", "Maksim")
 	if err != nil {
 		t.Fatalf("Failed to authenticate: %v", err)
 	}
@@ -44,12 +45,12 @@ func TestListOpportunities_Success(t *testing.T) {
 	}
 
 	for _, opp := range opps {
-		if _, err := dbStorage.Database().Collection(OpportunitiesCollection).InsertOne(context.Background(), opp); err != nil {
+		if _, err := testutils.GetTestDBStorage().Database().Collection(testutils.OpportunitiesCollection).InsertOne(context.Background(), opp); err != nil {
 			t.Fatalf("failed to insert opportunity: %v", err)
 		}
 	}
 
-	rec := performRequest(t, e, http.MethodGet, "/api/opportunities", "", token, http.StatusOK)
+	rec := testutils.PerformRequest(t, e, http.MethodGet, "/api/opportunities", "", token, http.StatusOK)
 	var respOpps []contract.OpportunityResponse
 	if err := json.Unmarshal(rec.Body.Bytes(), &respOpps); err != nil {
 		t.Fatalf("failed to parse response: %v", err)

@@ -175,7 +175,7 @@ func (h *handler) handleFollowUser(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "cannot follow yourself")
 	}
 
-	if exist, err := h.storage.IsUserFollowing(c.Request().Context(), userIDToFollow, followerID); err != nil || exist {
+	if exist, err := h.storage.IsUserFollowing(c.Request().Context(), followerID, userIDToFollow); err != nil || exist {
 		return echo.NewHTTPError(http.StatusBadRequest, "already exists").WithInternal(err)
 	}
 
@@ -185,22 +185,22 @@ func (h *handler) handleFollowUser(c echo.Context) error {
 	follower, err := h.storage.GetUserByID(c.Request().Context(), followerID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get follower user").WithInternal(err)
-	} else {
-		followee, err := h.storage.GetUserByID(c.Request().Context(), userIDToFollow)
-		if err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, "failed to get followee user").WithInternal(err)
-		} else {
-			if !followee.IsGeneratedUsername() {
-				followeeUsername = followee.Username
-			}
+	}
 
-			if err := h.notificationService.NotifyUserFollow(follower, followee); err != nil {
-				h.logger.Error("failed to send follow notification", "error", err)
+	followee, err := h.storage.GetUserByID(c.Request().Context(), userIDToFollow)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get followee user").WithInternal(err)
+	}
 
-				if errors.Is(err, notification.ErrUserBlockedBot) {
-					botBlockedError = true
-				}
-			}
+	if !followee.IsGeneratedUsername() {
+		followeeUsername = followee.Username
+	}
+
+	if err := h.notificationService.NotifyUserFollow(follower, followee); err != nil {
+		h.logger.Error("failed to send follow notification", "error", err)
+
+		if errors.Is(err, notification.ErrUserBlockedBot) {
+			botBlockedError = true
 		}
 	}
 
@@ -218,8 +218,8 @@ func (h *handler) handleFollowUser(c echo.Context) error {
 
 	if err := h.storage.FollowUser(
 		c.Request().Context(),
-		userIDToFollow,
 		followerID,
+		userIDToFollow,
 		expirationDuration,
 	); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to follow user").WithInternal(err)

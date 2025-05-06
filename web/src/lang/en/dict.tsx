@@ -1,16 +1,15 @@
 export const dict = {
 	common: {
+		tabs: {
+			network: 'People',
+			collaborations: 'New project',
+			posts: 'Feed',
+		},
 		search: {
 			posts: 'Enter title or description',
 			people: 'Enter name, job title or description',
 			noMoreResults: 'No more results',
 			noResults: 'Nothing found',
-		},
-		tabs: {
-			posts: 'Top',
-			network: 'People',
-			collaborations: 'Create',
-			profile: 'Profile',
 		},
 		buttons: {
 			generateRandomAvatar: 'Generate random avatar',

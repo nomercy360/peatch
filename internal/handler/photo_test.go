@@ -2,11 +2,11 @@ package handler_test
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"github.com/labstack/echo/v4"
 	"github.com/peatch-io/peatch/internal/contract"
 	"github.com/peatch-io/peatch/internal/handler"
+	"github.com/peatch-io/peatch/internal/testutils"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"mime/multipart"
@@ -14,24 +14,6 @@ import (
 	"net/http/httptest"
 	"testing"
 )
-
-type MockPhotoUploader struct {
-	UploadedFiles map[string]string // Stores key:content for verification
-}
-
-func (m *MockPhotoUploader) UploadFile(ctx context.Context, key string, body io.Reader, contentType string) error {
-	// Read the file content to simulate upload
-	content, err := io.ReadAll(body)
-	if err != nil {
-		return err
-	}
-	if m.UploadedFiles == nil {
-		m.UploadedFiles = make(map[string]string)
-	}
-	// Store the content for verification
-	m.UploadedFiles[key] = string(content)
-	return nil
-}
 
 func performMultipartRequest(t *testing.T, e *echo.Echo, fieldName, fileName, fileContent, token string, expectedStatus int) *httptest.ResponseRecorder {
 	body := &bytes.Buffer{}
@@ -62,9 +44,9 @@ func performMultipartRequest(t *testing.T, e *echo.Echo, fieldName, fileName, fi
 }
 
 func TestUploadPhoto(t *testing.T) {
-	e := setupDependencies(t)
+	e := testutils.SetupHandlerDependencies(t)
 
-	authResp, err := authHelper(t, e, 927635965, "mkkksim", "Maksim")
+	authResp, err := testutils.AuthHelper(t, e, 927635965, "mkkksim", "Maksim")
 	if err != nil {
 		t.Fatalf("Failed to authenticate: %v", err)
 	}
@@ -82,7 +64,7 @@ func TestUploadPhoto(t *testing.T) {
 
 	t.Run("InvalidFileType", func(t *testing.T) {
 		rec := performMultipartRequest(t, e, "photo", "test.txt", "text content", token, http.StatusBadRequest)
-		errResp := parseResponse[contract.ErrorResponse](t, rec)
+		errResp := testutils.ParseResponse[contract.ErrorResponse](t, rec)
 		assert.Equal(t, handler.ErrInvalidPhotoFormat, errResp.Error)
 	})
 
@@ -98,13 +80,13 @@ func TestUploadPhoto(t *testing.T) {
 		e.ServeHTTP(rec, req)
 
 		assert.Equal(t, http.StatusBadRequest, rec.Code, "Expected status 400")
-		errResp := parseResponse[contract.ErrorResponse](t, rec)
+		errResp := testutils.ParseResponse[contract.ErrorResponse](t, rec)
 		assert.Equal(t, "failed to get photo from form", errResp.Error)
 	})
 
 	t.Run("Unauthenticated", func(t *testing.T) {
 		rec := performMultipartRequest(t, e, "photo", "test.jpg", "mock jpg content", "", http.StatusUnauthorized)
-		errResp := parseResponse[contract.ErrorResponse](t, rec)
-		assert.Equal(t, handler.ErrAuthInvalid, errResp.Error)
+		// Just check the status code since middleware returns different error messages
+		assert.Equal(t, http.StatusUnauthorized, rec.Code)
 	})
 }

@@ -3,9 +3,9 @@ package handler_test
 import (
 	"context"
 	"encoding/json"
-	"github.com/go-playground/validator"
 	"github.com/peatch-io/peatch/internal/contract"
 	"github.com/peatch-io/peatch/internal/db"
+	"github.com/peatch-io/peatch/internal/testutils"
 	"net/http"
 	"testing"
 )
@@ -25,7 +25,7 @@ func setupTestRecords(t *testing.T) ([]db.Badge, []db.Opportunity, db.City) {
 	}
 
 	for _, badge := range badges {
-		if err := dbStorage.CreateBadge(context.Background(), badge); err != nil {
+		if err := testutils.GetTestDBStorage().CreateBadge(context.Background(), badge); err != nil {
 			t.Fatalf("failed to create badge: %v", err)
 		}
 	}
@@ -46,7 +46,7 @@ func setupTestRecords(t *testing.T) ([]db.Badge, []db.Opportunity, db.City) {
 	}
 
 	for _, opp := range opportunities {
-		if _, err := dbStorage.Database().Collection(OpportunitiesCollection).InsertOne(context.Background(), opp); err != nil {
+		if _, err := testutils.GetTestDBStorage().Database().Collection(testutils.OpportunitiesCollection).InsertOne(context.Background(), opp); err != nil {
 			t.Fatalf("failed to insert opportunity: %v", err)
 		}
 	}
@@ -62,7 +62,7 @@ func setupTestRecords(t *testing.T) ([]db.Badge, []db.Opportunity, db.City) {
 		},
 	}
 
-	if _, err := dbStorage.Database().Collection(CitiesCollection).InsertOne(context.Background(), location); err != nil {
+	if _, err := testutils.GetTestDBStorage().Database().Collection(testutils.CitiesCollection).InsertOne(context.Background(), location); err != nil {
 		t.Fatalf("failed to insert location: %v", err)
 	}
 
@@ -70,10 +70,9 @@ func setupTestRecords(t *testing.T) ([]db.Badge, []db.Opportunity, db.City) {
 }
 
 func TestCreateCollaboration_Success(t *testing.T) {
-	e := setupDependencies(t)
-	e.Validator = &DefaultValidator{validator: validator.New()}
+	e := testutils.SetupHandlerDependencies(t)
 
-	authResp, err := authHelper(t, e, TelegramTestUserID, "user1", "First")
+	authResp, err := testutils.AuthHelper(t, e, testutils.TelegramTestUserID, "user1", "First")
 	if err != nil {
 		t.Fatalf("failed to authenticate: %v", err)
 	}
@@ -91,7 +90,7 @@ func TestCreateCollaboration_Success(t *testing.T) {
 	}
 	bodyBytes, _ := json.Marshal(reqBody)
 
-	rec := performRequest(t, e, http.MethodPost, "/api/collaborations", string(bodyBytes), token, http.StatusCreated)
+	rec := testutils.PerformRequest(t, e, http.MethodPost, "/api/collaborations", string(bodyBytes), token, http.StatusCreated)
 
 	var resp db.Collaboration
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
@@ -116,14 +115,14 @@ func TestCreateCollaboration_Success(t *testing.T) {
 }
 
 func TestCreateCollaboration_InvalidJSON(t *testing.T) {
-	e := setupDependencies(t)
-	authResp, err := authHelper(t, e, TelegramTestUserID, "user1", "First")
+	e := testutils.SetupHandlerDependencies(t)
+	authResp, err := testutils.AuthHelper(t, e, testutils.TelegramTestUserID, "user1", "First")
 	if err != nil {
 		t.Fatalf("failed to authenticate: %v", err)
 	}
 	token := authResp.Token
 
-	rec := performRequest(t, e, http.MethodPost, "/api/collaborations", "{invalid-json", token, http.StatusBadRequest)
+	rec := testutils.PerformRequest(t, e, http.MethodPost, "/api/collaborations", "{invalid-json", token, http.StatusBadRequest)
 	var errResp contract.ErrorResponse
 	if err := json.Unmarshal(rec.Body.Bytes(), &errResp); err != nil {
 		t.Fatalf("failed to parse error response: %v", err)
@@ -134,13 +133,12 @@ func TestCreateCollaboration_InvalidJSON(t *testing.T) {
 }
 
 func TestCreateCollaboration_Unauthorized(t *testing.T) {
-	e := setupDependencies(t)
-	e.Validator = &DefaultValidator{validator: validator.New()}
+	e := testutils.SetupHandlerDependencies(t)
 
 	reqBody := contract.CreateCollaboration{OpportunityID: "any"}
 	bodyBytes, _ := json.Marshal(reqBody)
 
-	rec := performRequest(t, e, http.MethodPost, "/api/collaborations", string(bodyBytes), "", http.StatusUnauthorized)
+	rec := testutils.PerformRequest(t, e, http.MethodPost, "/api/collaborations", string(bodyBytes), "", http.StatusUnauthorized)
 	var errResp contract.ErrorResponse
 	if err := json.Unmarshal(rec.Body.Bytes(), &errResp); err != nil {
 		t.Fatalf("failed to parse error response: %v", err)

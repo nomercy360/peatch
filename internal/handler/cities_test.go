@@ -3,6 +3,7 @@ package handler_test
 import (
 	"context"
 	"github.com/peatch-io/peatch/internal/contract"
+	"github.com/peatch-io/peatch/internal/testutils"
 	"go.mongodb.org/mongo-driver/bson"
 	"net/http"
 	"testing"
@@ -12,7 +13,7 @@ import (
 
 func insertTestLocations(t *testing.T) {
 	ctx := context.Background()
-	coll := dbStorage.Database().Collection("cities")
+	coll := testutils.GetTestDBStorage().Database().Collection("cities")
 	if _, err := coll.DeleteMany(ctx, bson.M{}); err != nil {
 		t.Fatalf("Failed to clear cities collection: %v", err)
 	}
@@ -29,23 +30,23 @@ func insertTestLocations(t *testing.T) {
 }
 
 func TestSearchCities(t *testing.T) {
-	e := setupDependencies(t)
+	e := testutils.SetupHandlerDependencies(t)
 
-	auth, err := authHelper(t, e, TelegramTestUserID, "tester", "Tester")
+	auth, err := testutils.AuthHelper(t, e, testutils.TelegramTestUserID, "tester", "Tester")
 	if err != nil {
 		t.Fatalf("Failed to authenticate: %v", err)
 	}
 
 	insertTestLocations(t)
 
-	rec := performRequest(t, e, http.MethodGet, "/api/locations?limit=2&page=2", "", auth.Token, http.StatusOK)
-	resp := parseResponse[[]contract.CityResponse](t, rec)
+	rec := testutils.PerformRequest(t, e, http.MethodGet, "/api/locations?limit=2&page=2", "", auth.Token, http.StatusOK)
+	resp := testutils.ParseResponse[[]contract.CityResponse](t, rec)
 	assert.Len(t, resp, 1, "expected one city on second page with limit=2")
 	assert.Equal(t, "3", resp[0].ID)
 	assert.Equal(t, "CityC", resp[0].Name)
 
-	rec = performRequest(t, e, http.MethodGet, "/api/locations?search=cityb", "", auth.Token, http.StatusOK)
-	resp = parseResponse[[]contract.CityResponse](t, rec)
+	rec = testutils.PerformRequest(t, e, http.MethodGet, "/api/locations?search=cityb", "", auth.Token, http.StatusOK)
+	resp = testutils.ParseResponse[[]contract.CityResponse](t, rec)
 	assert.Len(t, resp, 1, "expected one city matching 'cityb'")
 	assert.Equal(t, "2", resp[0].ID)
 	assert.Equal(t, "CityB", resp[0].Name)
