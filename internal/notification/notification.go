@@ -157,7 +157,7 @@ func (n *Notifier) NotifyUserVerified(user db.User) error {
 	}
 
 	if user.AvatarURL != nil {
-		imageReq.Avatar = fmt.Sprintf("https://assets.peatch.io/%s", *user.AvatarURL)
+		imageReq.Avatar = fmt.Sprintf("https://assets.peatch.io/cdn-cgi/image/width=400/%s", *user.AvatarURL)
 	}
 
 	var imageBytes []byte
@@ -330,7 +330,7 @@ func (n *Notifier) SendCollaborationToCommunityChatWithImage(collab db.Collabora
 
 	userAvatarURL := ""
 	if collab.User.AvatarURL != nil {
-		userAvatarURL = fmt.Sprintf("https://assets.peatch.io/%s", *collab.User.AvatarURL)
+		userAvatarURL = fmt.Sprintf("https://assets.peatch.io/cdn-cgi/image/width=400/%s", *collab.User.AvatarURL)
 	}
 
 	imageReq := CollaborationImageRequest{
