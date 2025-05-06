@@ -482,9 +482,9 @@ func (n *Notifier) NotifyUserFollow(follower db.User, followee db.User) error {
 	var msgText string
 	if follower.IsGeneratedUsername() {
 		if followee.LanguageCode == db.LanguageRU {
-			msgText = fmt.Sprintf("👋 %s заметил ваш профиль, смотри в приложении!", followerName)
+			msgText = fmt.Sprintf("👋 %s заметил ваш профиль, смотри в приложении\\!", telegram.EscapeMarkdown(followerName))
 		} else {
-			msgText = fmt.Sprintf("👋 %s noticed your profile, check in the app!", followerName)
+			msgText = fmt.Sprintf("👋 %s noticed your profile, check in the app\\!", telegram.EscapeMarkdown(followerName))
 		}
 	} else {
 		if followee.LanguageCode == db.LanguageRU {
@@ -621,9 +621,9 @@ func (n *Notifier) NotifyCollabInterest(user db.User, collab db.Collaboration) e
 	var msgText string
 	if user.IsGeneratedUsername() {
 		if collab.User.LanguageCode == db.LanguageRU {
-			msgText = fmt.Sprintf("🔔 %s проявил интерес к вашему проекту \"%s\", смотри в приложении!", userName, collab.Title)
+			msgText = fmt.Sprintf("🔔 %s проявил интерес к вашему проекту \"%s\", смотри в приложении\\!", telegram.EscapeMarkdown(userName), telegram.EscapeMarkdown(collab.Title))
 		} else {
-			msgText = fmt.Sprintf("🔔 %s expressed interest in your project \"%s\", check in the app!", userName, collab.Title)
+			msgText = fmt.Sprintf("🔔 %s expressed interest in your project \"%s\", check in the app\\!", telegram.EscapeMarkdown(userName), telegram.EscapeMarkdown(collab.Title))
 		}
 	} else {
 		if collab.User.LanguageCode == db.LanguageRU {
