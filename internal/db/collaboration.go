@@ -221,15 +221,19 @@ func (s *Storage) CreateCollaboration(
 		return fmt.Errorf("failed to fetch location: %w", err)
 	}
 
+	now := time.Now()
 	docToInsert := Collaboration{
-		UserID:      collabInput.UserID,
-		Title:       collabInput.Title,
-		Description: collabInput.Description,
-		IsPayable:   collabInput.IsPayable,
-		CreatedAt:   time.Now(),
-		Badges:      badges,
-		Opportunity: opportunity,
-		Location:    locationData,
+		ID:                 collabInput.ID,
+		UserID:             collabInput.UserID,
+		Title:              collabInput.Title,
+		Description:        collabInput.Description,
+		IsPayable:          collabInput.IsPayable,
+		CreatedAt:          now,
+		UpdatedAt:          now,
+		Badges:             badges,
+		Opportunity:        opportunity,
+		Location:           locationData,
+		VerificationStatus: VerificationStatusPending,
 	}
 
 	if _, err := collabCollection.InsertOne(ctx, docToInsert); err != nil {

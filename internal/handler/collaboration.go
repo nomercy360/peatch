@@ -84,7 +84,7 @@ func (h *handler) handleCreateCollaboration(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, ErrInvalidRequest).WithInternal(err)
 	}
 
-	if err := c.Validate(req); err != nil {
+	if err := req.Validate(); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, ErrInvalidRequest).WithInternal(err)
 	}
 
@@ -136,7 +136,7 @@ func (h *handler) handleUpdateCollaboration(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, ErrInvalidRequest).WithInternal(err)
 	}
 
-	if err := c.Validate(req); err != nil {
+	if err := req.Validate(); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, ErrInvalidRequest).WithInternal(err)
 	}
 
