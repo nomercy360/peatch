@@ -60,9 +60,7 @@ func (h *handler) handleUserAvatar(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to upload photo to S3").WithInternal(err)
 	}
 
-	photoURL := fmt.Sprintf("%s/%s", h.config.AssetsURL, filename)
-
-	err = h.storage.UpdateUserAvatarURL(c.Request().Context(), userID, photoURL)
+	err = h.storage.UpdateUserAvatarURL(c.Request().Context(), userID, filename)
 
 	return c.JSON(http.StatusOK, contract.StatusResponse{Success: true})
 }
