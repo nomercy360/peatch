@@ -100,8 +100,8 @@ func (n *Notifier) NotifyUserVerified(user db.User) error {
 	}
 
 	_, err := n.bot.SendMessage(context.Background(), &telegram.SendMessageParams{
-		//ChatID: fmt.Sprintf("%d", user.ChatID),
-		ChatID:      n.adminChatID,
+		ChatID: fmt.Sprintf("%d", user.ChatID),
+		// ChatID:      n.adminChatID,
 		Text:        msgText,
 		ReplyMarkup: &keyboard,
 	})
@@ -178,8 +178,8 @@ func (n *Notifier) NotifyUserVerified(user db.User) error {
 		}
 
 		if _, err := n.bot.SendPhoto(context.Background(), &telegram.SendPhotoParams{
-			// ChatID:      fmt.Sprintf("%d", n.communityChatID),
-			ChatID:      n.adminChatID,
+			ChatID: fmt.Sprintf("%d", n.communityChatID),
+			// ChatID:      n.adminChatID,
 			Caption:     communityMsg,
 			Photo:       photoData,
 			ReplyMarkup: &keyboard,
@@ -188,8 +188,8 @@ func (n *Notifier) NotifyUserVerified(user db.User) error {
 		}
 	} else {
 		params := &telegram.SendMessageParams{
-			//ChatID:      fmt.Sprintf("%d", n.communityChatID),
-			ChatID:      n.adminChatID,
+			ChatID: fmt.Sprintf("%d", n.communityChatID),
+			// ChatID:      n.adminChatID,
 			Text:        communityMsg,
 			ReplyMarkup: &keyboard,
 		}
@@ -267,7 +267,6 @@ func (n *Notifier) NotifyCollaborationVerified(collab db.Collaboration) error {
 	}
 
 	_, err := n.bot.SendMessage(context.Background(), &telegram.SendMessageParams{
-
 		ChatID:      n.adminChatID,
 		Text:        msgText,
 		ReplyMarkup: &keyboard,
@@ -363,8 +362,8 @@ func (n *Notifier) SendCollaborationToCommunityChatWithImage(collab db.Collabora
 		}
 
 		if _, err := n.bot.SendPhoto(context.Background(), &telegram.SendPhotoParams{
-			// ChatID:      fmt.Sprintf("%d", n.communityChatID),
-			ChatID:      n.adminChatID,
+			ChatID: fmt.Sprintf("%d", n.communityChatID),
+			//ChatID:      n.adminChatID,
 			Caption:     communityMsg,
 			Photo:       photoData,
 			ReplyMarkup: &keyboard,
@@ -374,8 +373,8 @@ func (n *Notifier) SendCollaborationToCommunityChatWithImage(collab db.Collabora
 		}
 	} else {
 		params := &telegram.SendMessageParams{
-			//ChatID:      fmt.Sprintf("%d", n.communityChatID),
-			ChatID:      n.adminChatID,
+			ChatID: fmt.Sprintf("%d", n.communityChatID),
+			// ChatID:      n.adminChatID,
 			Text:        communityMsg,
 			ReplyMarkup: &keyboard,
 		}
@@ -514,8 +513,8 @@ func (n *Notifier) NotifyUserFollow(follower db.User, followee db.User) error {
 	disabled := true
 
 	_, err := n.bot.SendMessage(context.Background(), &telegram.SendMessageParams{
-		//ChatID:      fmt.Sprintf("%d", followee.ChatID),
-		ChatID: n.adminChatID,
+		ChatID: fmt.Sprintf("%d", followee.ChatID),
+		// ChatID: n.adminChatID,
 		LinkPreviewOptions: &models.LinkPreviewOptions{
 			IsDisabled: &disabled,
 		},
@@ -536,9 +535,9 @@ func (n *Notifier) NotifyUserFollow(follower db.User, followee db.User) error {
 func (n *Notifier) NotifyUserVerificationDenied(user db.User) error {
 	var msgText string
 	if user.LanguageCode == db.LanguageRU {
-		msgText = fmt.Sprintf("⚠️ Ваш профиль не прошел верификацию.\nПожалуйста, обновите свой профиль, сделав его более подробным и искренним, и отправьте на повторную проверку.")
+		msgText = fmt.Sprintf("⚠️ Твой профиль не прошел проверку.\n\nПохоже, он слишком пустой или похож на спам. Добавь больше деталей и искренности, и попробуй снова!")
 	} else {
-		msgText = fmt.Sprintf("⚠️ Your profile verification was denied.\nPlease update your profile to make it more detailed and genuine, then submit it for review again.")
+		msgText = fmt.Sprintf("⚠️ Your profile didn’t pass verification.\nIt seems too empty or spammy. Add more details and sincerity, and try again!")
 	}
 
 	btnText := "Update Profile"
@@ -558,8 +557,8 @@ func (n *Notifier) NotifyUserVerificationDenied(user db.User) error {
 	}
 
 	_, err := n.bot.SendMessage(context.Background(), &telegram.SendMessageParams{
-		// ChatID:      fmt.Sprintf("%d", user.ChatID),
-		ChatID:      n.adminChatID,
+		ChatID: fmt.Sprintf("%d", user.ChatID),
+		//ChatID:      n.adminChatID,
 		Text:        msgText,
 		ReplyMarkup: &keyboard,
 	})
@@ -570,9 +569,9 @@ func (n *Notifier) NotifyUserVerificationDenied(user db.User) error {
 func (n *Notifier) NotifyCollaborationVerificationDenied(collab db.Collaboration) error {
 	var msgText string
 	if collab.User.LanguageCode == db.LanguageRU {
-		msgText = fmt.Sprintf("⚠️ Ваша коллаборация \"%s\" не прошла верификацию.\nПожалуйста, обновите описание, сделав его более подробным и конкретным, и отправьте на повторную проверку.", collab.Title)
+		msgText = fmt.Sprintf("⚠️ Ваша коллаборация \"%s\" не прошла проверку.\nПохоже, описание слишком общее или неубедительное. Добавьте больше деталей и конкретики, и попробуйте снова!", collab.Title)
 	} else {
-		msgText = fmt.Sprintf("⚠️ Your collaboration \"%s\" verification was denied.\nPlease update its description to make it more detailed and specific, then submit it for review again.", collab.Title)
+		msgText = fmt.Sprintf("⚠️ Your collaboration \"%s\" didn’t pass verification.\nThe description seems too vague or unconvincing. Add more details and specifics, and try again!", collab.Title)
 	}
 
 	btnText := "Update Collaboration"
@@ -592,8 +591,8 @@ func (n *Notifier) NotifyCollaborationVerificationDenied(collab db.Collaboration
 	}
 
 	_, err := n.bot.SendMessage(context.Background(), &telegram.SendMessageParams{
-		// ChatID:      fmt.Sprintf("%d", collab.User.ChatID),
-		ChatID:      n.adminChatID,
+		ChatID: fmt.Sprintf("%d", collab.User.ChatID),
+		// ChatID:      n.adminChatID,
 		Text:        msgText,
 		ReplyMarkup: &keyboard,
 	})
@@ -622,15 +621,15 @@ func (n *Notifier) NotifyCollabInterest(user db.User, collab db.Collaboration) e
 	var msgText string
 	if user.IsGeneratedUsername() {
 		if collab.User.LanguageCode == db.LanguageRU {
-			msgText = fmt.Sprintf("🔔 %s проявил интерес к вашей коллаборации \"%s\", смотри в приложении!", userName, collab.Title)
+			msgText = fmt.Sprintf("🔔 %s проявил интерес к вашему проекту \"%s\", смотри в приложении!", userName, collab.Title)
 		} else {
-			msgText = fmt.Sprintf("🔔 %s expressed interest in your collaboration \"%s\", check in the app!", userName, collab.Title)
+			msgText = fmt.Sprintf("🔔 %s expressed interest in your project \"%s\", check in the app!", userName, collab.Title)
 		}
 	} else {
 		if collab.User.LanguageCode == db.LanguageRU {
-			msgText = fmt.Sprintf("🔔 [%s](https://t.me/%s) проявил интерес к вашей коллаборации \"%s\", напишите ему в Telegram\\!", telegram.EscapeMarkdown(userName), user.Username, collab.Title)
+			msgText = fmt.Sprintf("🔔 [%s](https://t.me/%s) проявил интерес к вашему проекту \"%s\", напишите ему в Telegram\\!", telegram.EscapeMarkdown(userName), user.Username, collab.Title)
 		} else {
-			msgText = fmt.Sprintf("🔔 [%s](https://t.me/%s) expressed interest in your collaboration \"%s\", write to them in Telegram\\!", telegram.EscapeMarkdown(userName), user.Username, collab.Title)
+			msgText = fmt.Sprintf("🔔 [%s](https://t.me/%s) expressed interest in your project \"%s\", write to them in Telegram\\!", telegram.EscapeMarkdown(userName), user.Username, collab.Title)
 		}
 	}
 
@@ -653,8 +652,8 @@ func (n *Notifier) NotifyCollabInterest(user db.User, collab db.Collaboration) e
 	disabled := true
 
 	_, err := n.bot.SendMessage(context.Background(), &telegram.SendMessageParams{
-		// ChatID:      fmt.Sprintf("%d", collab.User.ChatID),
-		ChatID: n.adminChatID,
+		ChatID: fmt.Sprintf("%d", collab.User.ChatID),
+		// ChatID: n.adminChatID,
 		LinkPreviewOptions: &models.LinkPreviewOptions{
 			IsDisabled: &disabled,
 		},
