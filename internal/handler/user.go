@@ -204,7 +204,7 @@ func (h *handler) handleFollowUser(c echo.Context) error {
 		}
 	}
 
-	if !botBlockedError && followeeUsername != "" {
+	if botBlockedError && followeeUsername != "" {
 		resp := contract.BotBlockedResponse{
 			Status:   "bot_blocked",
 			Username: followeeUsername,
