@@ -388,12 +388,11 @@ func (s *Storage) UpdateCollaboration(
 	return nil
 }
 
-func (s *Storage) ExpressInterest(ctx context.Context, userID string, collabID string, ttlDuration time.Duration) error {
+func (s *Storage) ExpressInterest(ctx context.Context, collabID string, userID string, ttlDuration time.Duration) error {
 	usersCollection := s.db.Collection("users")
 	collabsCollection := s.db.Collection("collaborations")
 	interestsCollection := s.db.Collection("collab_interests")
 
-	// Verify user exists and is verified
 	userFilter := bson.M{
 		"_id":                 userID,
 		"hidden_at":           nil,
@@ -409,7 +408,6 @@ func (s *Storage) ExpressInterest(ctx context.Context, userID string, collabID s
 		return ErrNotFound
 	}
 
-	// Verify collaboration exists and is verified
 	collabFilter := bson.M{
 		"_id":                 collabID,
 		"verification_status": VerificationStatusVerified,

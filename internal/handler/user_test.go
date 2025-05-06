@@ -318,23 +318,22 @@ func TestFollowUser_Success(t *testing.T) {
 	testutils.PerformRequest(t, e, http.MethodPost, fmt.Sprintf("/api/users/%s/follow", userID2), "", token1, http.StatusOK)
 
 	var follow struct {
+		FollowerID string `bson:"follower_id"`
 		UserID     string `bson:"user_id"`
-		FolloweeID string `bson:"followee_id"`
 	}
 
 	err = testutils.GetTestDBStorage().Database().Collection(testutils.UserFollowersCollection).FindOne(context.Background(), bson.M{
-		"user_id":     userID1,
-		"followee_id": userID2,
+		"user_id":     userID2,
+		"follower_id": userID1,
 	}).Decode(&follow)
 	if err != nil {
 		t.Fatalf("failed to find follow relationship: %v", err)
 	}
 
-	if follow.UserID != userID1 || follow.FolloweeID != userID2 {
+	if follow.UserID != userID2 || follow.FollowerID != userID1 {
 		t.Errorf("follow relationship not created correctly")
 	}
 
-	// Get user by ID instead of username
 	rec := testutils.PerformRequest(t, e, http.MethodGet, fmt.Sprintf("/api/users/%s", userID2), "", token1, http.StatusOK)
 	var respUser db.User
 	if err := json.Unmarshal(rec.Body.Bytes(), &respUser); err != nil {
@@ -349,15 +348,14 @@ func TestFollowUser_Success(t *testing.T) {
 		t.Errorf("expected is_following true, got '%v'", respUser.IsFollowing)
 	}
 
-	// Check if notification was called with correct parameters
 	if !testutils.MockNotifier.UserFollowRecord.Called {
 		t.Errorf("user follow notification was not called")
 	}
-	if testutils.MockNotifier.UserFollowRecord.UserID != userID1 {
-		t.Errorf("expected follower ID %s, got %s", userID1, testutils.MockNotifier.UserFollowRecord.UserID)
+	if testutils.MockNotifier.UserFollowRecord.FollowerID != userID1 {
+		t.Errorf("expected follower ID %s, got %s", userID1, testutils.MockNotifier.UserFollowRecord.FollowerID)
 	}
-	if testutils.MockNotifier.UserFollowRecord.CollabID != userID2 {
-		t.Errorf("expected followee ID %s, got %s", userID2, testutils.MockNotifier.UserFollowRecord.CollabID)
+	if testutils.MockNotifier.UserFollowRecord.ToFollowID != userID2 {
+		t.Errorf("expected to follow ID %s, got %s", userID2, testutils.MockNotifier.UserFollowRecord.ToFollowID)
 	}
 }
 

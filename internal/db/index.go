@@ -21,7 +21,7 @@ func createIndexes(ctx context.Context, db *mongo.Database) error {
 					Options: options.Index().SetExpireAfterSeconds(0).SetName("user_followers_expires_at"),
 				},
 				{
-					Keys:    bson.D{{"user_id", 1}, {"followee_id", 1}},
+					Keys:    bson.D{{"user_id", 1}, {"follower_id", 1}},
 					Options: options.Index().SetUnique(true).SetName("user_followers_user_id_follower_id"),
 				},
 			},

@@ -55,8 +55,8 @@ type storager interface {
 	UpdateUserLoginMetadata(ctx context.Context, userID string, metadata db.LoginMeta) error
 	UpdateUserAvatarURL(ctx context.Context, userID, avatarURL string) error
 	UpdateUserVerificationStatus(ctx context.Context, userID string, status db.VerificationStatus) error
-	FollowUser(ctx context.Context, userID, followeeID string, ttlDuration time.Duration) error
-	IsUserFollowing(ctx context.Context, userID, followeeID string) (bool, error)
+	FollowUser(ctx context.Context, userID, followerID string, ttlDuration time.Duration) error
+	IsUserFollowing(ctx context.Context, userID, followerID string) (bool, error)
 	GetUsersByVerificationStatus(ctx context.Context, status db.VerificationStatus, page, perPage int) ([]db.User, error)
 
 	// Collaboration-related operations

@@ -460,10 +460,10 @@ func (n *Notifier) NotifyNewPendingCollaboration(user db.User, collab db.Collabo
 
 var ErrUserBlockedBot = errors.New("user has blocked the bot")
 
-func (n *Notifier) NotifyUserFollow(follower db.User, followee db.User) error {
+func (n *Notifier) NotifyUserFollow(userToFollow db.User, follower db.User) error {
 
-	if followee.ChatID == 0 {
-		return fmt.Errorf("followee %s has no chat ID", followee.ID)
+	if userToFollow.ChatID == 0 {
+		return fmt.Errorf("user to follow %s has no chat ID", userToFollow.ID)
 	}
 
 	followerName := follower.Username
@@ -481,13 +481,13 @@ func (n *Notifier) NotifyUserFollow(follower db.User, followee db.User) error {
 
 	var msgText string
 	if follower.IsGeneratedUsername() {
-		if followee.LanguageCode == db.LanguageRU {
+		if userToFollow.LanguageCode == db.LanguageRU {
 			msgText = fmt.Sprintf("👋 %s заметил ваш профиль, смотри в приложении\\!", telegram.EscapeMarkdown(followerName))
 		} else {
 			msgText = fmt.Sprintf("👋 %s noticed your profile, check in the app\\!", telegram.EscapeMarkdown(followerName))
 		}
 	} else {
-		if followee.LanguageCode == db.LanguageRU {
+		if userToFollow.LanguageCode == db.LanguageRU {
 			msgText = fmt.Sprintf("👋 [%s](https://t.me/%s) заметил ваш профиль, напишите ему в Telegram\\!", telegram.EscapeMarkdown(followerName), follower.Username)
 		} else {
 			msgText = fmt.Sprintf("👋 [%s](https://t.me/%s) noticed your profile, write to him in Telegram\\!", telegram.EscapeMarkdown(followerName), follower.Username)
@@ -495,7 +495,7 @@ func (n *Notifier) NotifyUserFollow(follower db.User, followee db.User) error {
 	}
 
 	btnText := "View Profile"
-	if followee.LanguageCode == db.LanguageRU {
+	if userToFollow.LanguageCode == db.LanguageRU {
 		btnText = "Посмотреть профиль"
 	}
 
@@ -513,7 +513,7 @@ func (n *Notifier) NotifyUserFollow(follower db.User, followee db.User) error {
 	disabled := true
 
 	_, err := n.bot.SendMessage(context.Background(), &telegram.SendMessageParams{
-		ChatID: fmt.Sprintf("%d", followee.ChatID),
+		ChatID: fmt.Sprintf("%d", userToFollow.ChatID),
 		// ChatID: n.adminChatID,
 		LinkPreviewOptions: &models.LinkPreviewOptions{
 			IsDisabled: &disabled,
@@ -600,7 +600,7 @@ func (n *Notifier) NotifyCollaborationVerificationDenied(collab db.Collaboration
 	return err
 }
 
-func (n *Notifier) NotifyCollabInterest(user db.User, collab db.Collaboration) error {
+func (n *Notifier) NotifyCollabInterest(collab db.Collaboration, user db.User) error {
 	if collab.User.ChatID == 0 {
 		return fmt.Errorf("collaboration owner %s has no chat ID", collab.User.ID)
 	}

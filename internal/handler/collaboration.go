@@ -186,7 +186,6 @@ func (h *handler) handleExpressInterest(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "user id is required")
 	}
 
-	// Check if user has already expressed interest
 	if exist, err := h.storage.HasExpressedInterest(c.Request().Context(), userID, collabID); err != nil || exist {
 		return echo.NewHTTPError(http.StatusBadRequest, "already expressed interest").WithInternal(err)
 	}
@@ -194,13 +193,11 @@ func (h *handler) handleExpressInterest(c echo.Context) error {
 	var botBlockedError bool
 	var collaborationOwnerUsername string
 
-	// Get the user who is expressing interest
 	user, err := h.storage.GetUserByID(c.Request().Context(), userID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get user").WithInternal(err)
 	}
 
-	// Get the collaboration with its owner info
 	collab, err := h.storage.GetCollaborationByID(c.Request().Context(), userID, collabID)
 	if err != nil && errors.Is(err, db.ErrNotFound) {
 		return echo.NewHTTPError(http.StatusNotFound, "collaboration not found").WithInternal(err)
@@ -208,18 +205,15 @@ func (h *handler) handleExpressInterest(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get collaboration").WithInternal(err)
 	}
 
-	// Check if the user is the owner of the collaboration
 	if collab.UserID == userID {
 		return echo.NewHTTPError(http.StatusBadRequest, "cannot express interest in your own collaboration")
 	}
 
-	// Get the collaboration owner's username for bot blocked scenario
 	if !collab.User.IsGeneratedUsername() {
 		collaborationOwnerUsername = collab.User.Username
 	}
 
-	// Send notification to the collaboration owner
-	if err := h.notificationService.NotifyCollabInterest(user, collab); err != nil {
+	if err := h.notificationService.NotifyCollabInterest(collab, user); err != nil {
 		h.logger.Error("failed to send collaboration interest notification", "error", err)
 
 		if errors.Is(err, notification.ErrUserBlockedBot) {
@@ -227,7 +221,6 @@ func (h *handler) handleExpressInterest(c echo.Context) error {
 		}
 	}
 
-	// If the bot is blocked, return instructions to contact directly
 	if botBlockedError && collaborationOwnerUsername != "" {
 		resp := contract.BotBlockedResponse{
 			Status:   "bot_blocked",
@@ -237,12 +230,11 @@ func (h *handler) handleExpressInterest(c echo.Context) error {
 		return c.JSON(http.StatusOK, resp)
 	}
 
-	// Save the interest record
-	expirationDuration := 7 * 24 * time.Hour // 1 week expiration same as follow
+	expirationDuration := 7 * 24 * time.Hour // 1 week expiration
 	if err := h.storage.ExpressInterest(
 		c.Request().Context(),
-		userID,
 		collabID,
+		userID,
 		expirationDuration,
 	); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to express interest").WithInternal(err)

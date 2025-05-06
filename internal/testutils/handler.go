@@ -27,11 +27,10 @@ import (
 	"time"
 )
 
-// TestCallRecord tracks calls to notification methods
 type TestCallRecord struct {
-	Called   bool
-	UserID   string
-	CollabID string
+	Called     bool
+	ToFollowID string
+	FollowerID string
 }
 
 type MockNotificationService struct {
@@ -42,7 +41,7 @@ type MockNotificationService struct {
 	CollaborationVerificationDeniedFunc func(collab db.Collaboration) error
 	NewPendingUserFunc                  func(user db.User) error
 	NewPendingCollaborationFunc         func(user db.User, collab db.Collaboration) error
-	UserFollowFunc                      func(follower db.User, followee db.User) error
+	UserFollowFunc                      func(user db.User, follower db.User) error
 	CollabInterestFunc                  func(user db.User, collab db.Collaboration) error
 	SendCollaborationToCommunityFunc    func(collab db.Collaboration) error
 
@@ -93,23 +92,21 @@ func (m *MockNotificationService) NotifyNewPendingCollaboration(user db.User, co
 	return nil
 }
 
-func (m *MockNotificationService) NotifyUserFollow(follower db.User, followee db.User) error {
-	// Record this call for testing purposes
+func (m *MockNotificationService) NotifyUserFollow(userID db.User, follower db.User) error {
 	m.UserFollowRecord.Called = true
-	m.UserFollowRecord.UserID = follower.ID   // Follower's ID
-	m.UserFollowRecord.CollabID = followee.ID // We'll use CollabID field to store followee's ID
+	m.UserFollowRecord.FollowerID = follower.ID
+	m.UserFollowRecord.ToFollowID = userID.ID
 
 	if m.UserFollowFunc != nil {
-		return m.UserFollowFunc(follower, followee)
+		return m.UserFollowFunc(userID, follower)
 	}
 	return nil
 }
 
-func (m *MockNotificationService) NotifyCollabInterest(user db.User, collab db.Collaboration) error {
-	// Record this call for testing purposes
+func (m *MockNotificationService) NotifyCollabInterest(collab db.Collaboration, user db.User) error {
 	m.CollabInterestRecord.Called = true
-	m.CollabInterestRecord.UserID = user.ID
-	m.CollabInterestRecord.CollabID = collab.ID
+	m.CollabInterestRecord.FollowerID = user.ID
+	m.CollabInterestRecord.ToFollowID = collab.ID
 
 	if m.CollabInterestFunc != nil {
 		return m.CollabInterestFunc(user, collab)
@@ -129,10 +126,9 @@ type MockPhotoUploader struct {
 }
 
 var (
-	dbStorage *db.Storage
-	cleanupDB func()
-	s3Client  *MockPhotoUploader
-	// Make mock notifier available globally for testing
+	dbStorage    *db.Storage
+	cleanupDB    func()
+	s3Client     *MockPhotoUploader
 	MockNotifier *MockNotificationService
 )
 

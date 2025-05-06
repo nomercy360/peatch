@@ -175,28 +175,28 @@ func (h *handler) handleFollowUser(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "cannot follow yourself")
 	}
 
-	if exist, err := h.storage.IsUserFollowing(c.Request().Context(), followerID, userIDToFollow); err != nil || exist {
+	if exist, err := h.storage.IsUserFollowing(c.Request().Context(), userIDToFollow, followerID); err != nil || exist {
 		return echo.NewHTTPError(http.StatusBadRequest, "already exists").WithInternal(err)
 	}
 
 	var botBlockedError bool
-	var followeeUsername string
+	var userToFollowUsername string
 
 	follower, err := h.storage.GetUserByID(c.Request().Context(), followerID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get follower user").WithInternal(err)
 	}
 
-	followee, err := h.storage.GetUserByID(c.Request().Context(), userIDToFollow)
+	userToFollow, err := h.storage.GetUserByID(c.Request().Context(), userIDToFollow)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get followee user").WithInternal(err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get user to follow").WithInternal(err)
 	}
 
-	if !followee.IsGeneratedUsername() {
-		followeeUsername = followee.Username
+	if !userToFollow.IsGeneratedUsername() {
+		userToFollowUsername = userToFollow.Username
 	}
 
-	if err := h.notificationService.NotifyUserFollow(follower, followee); err != nil {
+	if err := h.notificationService.NotifyUserFollow(userToFollow, follower); err != nil {
 		h.logger.Error("failed to send follow notification", "error", err)
 
 		if errors.Is(err, notification.ErrUserBlockedBot) {
@@ -204,10 +204,10 @@ func (h *handler) handleFollowUser(c echo.Context) error {
 		}
 	}
 
-	if botBlockedError && followeeUsername != "" {
+	if botBlockedError && userToFollowUsername != "" {
 		resp := contract.BotBlockedResponse{
 			Status:   "bot_blocked",
-			Username: followeeUsername,
+			Username: userToFollowUsername,
 			Message:  "User has blocked the bot, direct Telegram contact required",
 		}
 
@@ -218,8 +218,8 @@ func (h *handler) handleFollowUser(c echo.Context) error {
 
 	if err := h.storage.FollowUser(
 		c.Request().Context(),
-		followerID,
 		userIDToFollow,
+		followerID,
 		expirationDuration,
 	); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to follow user").WithInternal(err)

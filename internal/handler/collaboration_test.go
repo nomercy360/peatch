@@ -230,13 +230,13 @@ func TestExpressInterest_Success(t *testing.T) {
 	if !testutils.MockNotifier.CollabInterestRecord.Called {
 		t.Errorf("notification was not called")
 	}
-	if testutils.MockNotifier.CollabInterestRecord.UserID != interestedAuthResp.User.ID {
+	if testutils.MockNotifier.CollabInterestRecord.FollowerID != interestedAuthResp.User.ID {
 		t.Errorf("expected interested user ID %s, got %s", interestedAuthResp.User.ID,
-			testutils.MockNotifier.CollabInterestRecord.UserID)
+			testutils.MockNotifier.CollabInterestRecord.FollowerID)
 	}
-	if testutils.MockNotifier.CollabInterestRecord.CollabID != collab.ID {
+	if testutils.MockNotifier.CollabInterestRecord.ToFollowID != collab.ID {
 		t.Errorf("expected collaboration ID %s, got %s", collab.ID,
-			testutils.MockNotifier.CollabInterestRecord.CollabID)
+			testutils.MockNotifier.CollabInterestRecord.ToFollowID)
 	}
 }
 

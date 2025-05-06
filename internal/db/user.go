@@ -16,7 +16,7 @@ import (
 type UserFollower struct {
 	ID         string    `bson:"_id,omitempty"`
 	UserID     string    `bson:"user_id"`
-	FolloweeID string    `bson:"followee_id"`
+	FollowerID string    `bson:"follower_id"`
 	ExpiresAt  time.Time `bson:"expires_at"`
 }
 type LanguageCode string // @Name LanguageCode
@@ -318,8 +318,8 @@ func (s *Storage) GetUserProfile(ctx context.Context, viewerID string, id string
 	}
 
 	followerFilter := bson.M{
-		"user_id":     viewerID,
-		"followee_id": user.ID,
+		"user_id":     user.ID,
+		"follower_id": viewerID,
 	}
 
 	count, err := followersCollection.CountDocuments(ctx, followerFilter)
@@ -332,7 +332,7 @@ func (s *Storage) GetUserProfile(ctx context.Context, viewerID string, id string
 	return user, nil
 }
 
-func (s *Storage) FollowUser(ctx context.Context, userID string, followeeID string, ttlDuration time.Duration) error {
+func (s *Storage) FollowUser(ctx context.Context, userID string, followerID string, ttlDuration time.Duration) error {
 	usersCollection := s.db.Collection("users")
 	followersCollection := s.db.Collection("user_followers")
 
@@ -355,7 +355,7 @@ func (s *Storage) FollowUser(ctx context.Context, userID string, followeeID stri
 
 	followDoc := UserFollower{
 		UserID:     userID,
-		FolloweeID: followeeID,
+		FollowerID: followerID,
 		ExpiresAt:  expiresAt,
 	}
 
@@ -370,12 +370,12 @@ func (s *Storage) FollowUser(ctx context.Context, userID string, followeeID stri
 	return nil
 }
 
-func (s *Storage) IsUserFollowing(ctx context.Context, userID string, followeeID string) (bool, error) {
+func (s *Storage) IsUserFollowing(ctx context.Context, userID string, followerID string) (bool, error) {
 	followersCollection := s.db.Collection("user_followers")
 
 	filter := bson.M{
+		"follower_id": followerID,
 		"user_id":     userID,
-		"followee_id": followeeID,
 		"expires_at":  bson.M{"$gt": time.Now()},
 	}
 
