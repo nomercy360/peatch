@@ -27,7 +27,15 @@ import (
 	"time"
 )
 
+// TestCallRecord tracks calls to notification methods
+type TestCallRecord struct {
+	Called   bool
+	UserID   string
+	CollabID string
+}
+
 type MockNotificationService struct {
+	// Function implementations
 	UserVerifiedFunc                    func(user db.User) error
 	CollaborationVerifiedFunc           func(collab db.Collaboration) error
 	UserVerificationDeniedFunc          func(user db.User) error
@@ -35,7 +43,12 @@ type MockNotificationService struct {
 	NewPendingUserFunc                  func(user db.User) error
 	NewPendingCollaborationFunc         func(user db.User, collab db.Collaboration) error
 	UserFollowFunc                      func(follower db.User, followee db.User) error
+	CollabInterestFunc                  func(user db.User, collab db.Collaboration) error
 	SendCollaborationToCommunityFunc    func(collab db.Collaboration) error
+
+	// Call tracking for testing
+	CollabInterestRecord TestCallRecord
+	UserFollowRecord     TestCallRecord // For tracking user follow notifications
 }
 
 func (m *MockNotificationService) NotifyUserVerified(user db.User) error {
@@ -81,8 +94,25 @@ func (m *MockNotificationService) NotifyNewPendingCollaboration(user db.User, co
 }
 
 func (m *MockNotificationService) NotifyUserFollow(follower db.User, followee db.User) error {
+	// Record this call for testing purposes
+	m.UserFollowRecord.Called = true
+	m.UserFollowRecord.UserID = follower.ID   // Follower's ID
+	m.UserFollowRecord.CollabID = followee.ID // We'll use CollabID field to store followee's ID
+
 	if m.UserFollowFunc != nil {
 		return m.UserFollowFunc(follower, followee)
+	}
+	return nil
+}
+
+func (m *MockNotificationService) NotifyCollabInterest(user db.User, collab db.Collaboration) error {
+	// Record this call for testing purposes
+	m.CollabInterestRecord.Called = true
+	m.CollabInterestRecord.UserID = user.ID
+	m.CollabInterestRecord.CollabID = collab.ID
+
+	if m.CollabInterestFunc != nil {
+		return m.CollabInterestFunc(user, collab)
 	}
 	return nil
 }
@@ -102,6 +132,8 @@ var (
 	dbStorage *db.Storage
 	cleanupDB func()
 	s3Client  *MockPhotoUploader
+	// Make mock notifier available globally for testing
+	MockNotifier *MockNotificationService
 )
 
 const (
@@ -244,9 +276,10 @@ func SetupHandlerDependencies(t *testing.T) *echo.Echo {
 
 	var bot *telegram.Bot
 
-	mockNotifier := &MockNotificationService{}
+	// Create a new mock notifier and store it globally for test access
+	MockNotifier = &MockNotificationService{}
 
-	h := handler.New(dbStorage, hConfig, s3Client, logr, bot, mockNotifier)
+	h := handler.New(dbStorage, hConfig, s3Client, logr, bot, MockNotifier)
 
 	e := echo.New()
 

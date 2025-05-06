@@ -312,6 +312,9 @@ func TestFollowUser_Success(t *testing.T) {
 		return
 	}
 
+	// Reset notification record before the test
+	testutils.MockNotifier.UserFollowRecord = testutils.TestCallRecord{}
+
 	testutils.PerformRequest(t, e, http.MethodPost, fmt.Sprintf("/api/users/%s/follow", userID2), "", token1, http.StatusOK)
 
 	var follow struct {
@@ -344,6 +347,17 @@ func TestFollowUser_Success(t *testing.T) {
 
 	if respUser.IsFollowing != true {
 		t.Errorf("expected is_following true, got '%v'", respUser.IsFollowing)
+	}
+
+	// Check if notification was called with correct parameters
+	if !testutils.MockNotifier.UserFollowRecord.Called {
+		t.Errorf("user follow notification was not called")
+	}
+	if testutils.MockNotifier.UserFollowRecord.UserID != userID1 {
+		t.Errorf("expected follower ID %s, got %s", userID1, testutils.MockNotifier.UserFollowRecord.UserID)
+	}
+	if testutils.MockNotifier.UserFollowRecord.CollabID != userID2 {
+		t.Errorf("expected followee ID %s, got %s", userID2, testutils.MockNotifier.UserFollowRecord.CollabID)
 	}
 }
 

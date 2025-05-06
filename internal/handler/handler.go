@@ -66,6 +66,8 @@ type storager interface {
 	UpdateCollaboration(ctx context.Context, collaboration db.Collaboration, badges []string, opportunityID string, location string) error
 	UpdateCollaborationVerificationStatus(ctx context.Context, collaborationID string, status db.VerificationStatus) error
 	GetCollaborationsByVerificationStatus(ctx context.Context, status db.VerificationStatus, page, perPage int) ([]db.Collaboration, error)
+	ExpressInterest(ctx context.Context, userID string, collabID string, ttlDuration time.Duration) error
+	HasExpressedInterest(ctx context.Context, userID string, collabID string) (bool, error)
 
 	// Admin-related operations
 	CreateAdmin(ctx context.Context, admin db.Admin) (db.Admin, error)
@@ -148,6 +150,7 @@ func (h *handler) SetupRoutes(e *echo.Echo) {
 	api.GET("/collaborations/:id", h.handleGetCollaboration)
 	api.POST("/collaborations", h.handleCreateCollaboration)
 	api.PUT("/collaborations/:id", h.handleUpdateCollaboration)
+	api.POST("/collaborations/:id/interest", h.handleExpressInterest)
 
 	api.GET("/locations", h.handleSearchLocations)
 

@@ -596,3 +596,74 @@ func (n *Notifier) NotifyCollaborationVerificationDenied(collab db.Collaboration
 
 	return err
 }
+
+func (n *Notifier) NotifyCollabInterest(user db.User, collab db.Collaboration) error {
+	if collab.User.ChatID == 0 {
+		return fmt.Errorf("collaboration owner %s has no chat ID", collab.User.ID)
+	}
+
+	userName := user.Username
+	if user.FirstName != nil || user.LastName != nil {
+		firstName := ""
+		if user.FirstName != nil {
+			firstName = *user.FirstName
+		}
+		lastName := ""
+		if user.LastName != nil {
+			lastName = *user.LastName
+		}
+		userName = fmt.Sprintf("%s %s", firstName, lastName)
+	}
+
+	var msgText string
+	if user.IsGeneratedUsername() {
+		if collab.User.LanguageCode == db.LanguageRU {
+			msgText = fmt.Sprintf("🔔 %s проявил интерес к вашей коллаборации \"%s\", смотри в приложении!", userName, collab.Title)
+		} else {
+			msgText = fmt.Sprintf("🔔 %s expressed interest in your collaboration \"%s\", check in the app!", userName, collab.Title)
+		}
+	} else {
+		if collab.User.LanguageCode == db.LanguageRU {
+			msgText = fmt.Sprintf("🔔 [%s](https://t.me/%s) проявил интерес к вашей коллаборации \"%s\", напишите ему в Telegram\\!", telegram.EscapeMarkdown(userName), user.Username, collab.Title)
+		} else {
+			msgText = fmt.Sprintf("🔔 [%s](https://t.me/%s) expressed interest in your collaboration \"%s\", write to them in Telegram\\!", telegram.EscapeMarkdown(userName), user.Username, collab.Title)
+		}
+	}
+
+	btnText := "View Profile"
+	if collab.User.LanguageCode == db.LanguageRU {
+		btnText = "Посмотреть профиль"
+	}
+
+	button := models.InlineKeyboardButton{
+		Text: btnText,
+		URL:  fmt.Sprintf("%s?startapp=u_%s", n.botWebApp, user.ID),
+	}
+
+	keyboard := models.InlineKeyboardMarkup{
+		InlineKeyboard: [][]models.InlineKeyboardButton{
+			{button},
+		},
+	}
+
+	disabled := true
+
+	_, err := n.bot.SendMessage(context.Background(), &telegram.SendMessageParams{
+		// ChatID:      fmt.Sprintf("%d", collab.User.ChatID),
+		ChatID: n.adminChatID,
+		LinkPreviewOptions: &models.LinkPreviewOptions{
+			IsDisabled: &disabled,
+		},
+		Text:        msgText,
+		ReplyMarkup: &keyboard,
+		ParseMode:   models.ParseModeMarkdown,
+	})
+
+	if err != nil && strings.Contains(err.Error(), "Forbidden") &&
+		(strings.Contains(err.Error(), "bot was blocked by the user") ||
+			strings.Contains(err.Error(), "user is deactivated")) {
+		return ErrUserBlockedBot
+	}
+
+	return err
+}

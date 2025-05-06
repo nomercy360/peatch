@@ -10,6 +10,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+type CollabInterest struct {
+	ID        string    `bson:"_id,omitempty"`
+	UserID    string    `bson:"user_id"`
+	CollabID  string    `bson:"collab_id"`
+	ExpiresAt time.Time `bson:"expires_at"`
+}
+
 type Collaboration struct {
 	ID                 string             `bson:"_id,omitempty" json:"id"`
 	UserID             string             `bson:"user_id" json:"user_id"`
@@ -25,6 +32,7 @@ type Collaboration struct {
 	User               User               `bson:"user,omitempty" json:"user"`
 	VerificationStatus VerificationStatus `bson:"verification_status,omitempty" json:"verification_status"`
 	VerifiedAt         *time.Time         `bson:"verified_at,omitempty" json:"verified_at"`
+	HasInterest        bool               `bson:"has_interest,omitempty" json:"has_interest"`
 }
 
 type CollaborationQuery struct {
@@ -182,6 +190,14 @@ func (s *Storage) GetCollaborationByID(ctx context.Context, viewerID string, col
 
 	if err := cursor.Err(); err != nil {
 		return result, fmt.Errorf("cursor error: %w", err)
+	}
+
+	// Check if the viewer has expressed interest in this collaboration
+	if viewerID != "" && result.UserID != viewerID {
+		hasInterest, err := s.HasExpressedInterest(ctx, viewerID, collabID)
+		if err == nil {
+			result.HasInterest = hasInterest
+		}
 	}
 
 	return result, nil
@@ -370,4 +386,77 @@ func (s *Storage) UpdateCollaboration(
 	}
 
 	return nil
+}
+
+func (s *Storage) ExpressInterest(ctx context.Context, userID string, collabID string, ttlDuration time.Duration) error {
+	usersCollection := s.db.Collection("users")
+	collabsCollection := s.db.Collection("collaborations")
+	interestsCollection := s.db.Collection("collab_interests")
+
+	// Verify user exists and is verified
+	userFilter := bson.M{
+		"_id":                 userID,
+		"hidden_at":           nil,
+		"verification_status": VerificationStatusVerified,
+	}
+
+	count, err := usersCollection.CountDocuments(ctx, userFilter)
+	if err != nil {
+		return fmt.Errorf("failed to check user existence: %w", err)
+	}
+
+	if count == 0 {
+		return ErrNotFound
+	}
+
+	// Verify collaboration exists and is verified
+	collabFilter := bson.M{
+		"_id":                 collabID,
+		"verification_status": VerificationStatusVerified,
+		"hidden_at":           nil,
+	}
+
+	count, err = collabsCollection.CountDocuments(ctx, collabFilter)
+	if err != nil {
+		return fmt.Errorf("failed to check collaboration existence: %w", err)
+	}
+
+	if count == 0 {
+		return ErrNotFound
+	}
+
+	expiresAt := time.Now().Add(ttlDuration)
+
+	interest := CollabInterest{
+		UserID:    userID,
+		CollabID:  collabID,
+		ExpiresAt: expiresAt,
+	}
+
+	_, err = interestsCollection.InsertOne(ctx, interest)
+	if err != nil {
+		if mongo.IsDuplicateKeyError(err) {
+			return nil
+		}
+		return fmt.Errorf("failed to express interest: %w", err)
+	}
+
+	return nil
+}
+
+func (s *Storage) HasExpressedInterest(ctx context.Context, userID string, collabID string) (bool, error) {
+	interestsCollection := s.db.Collection("collab_interests")
+
+	filter := bson.M{
+		"user_id":    userID,
+		"collab_id":  collabID,
+		"expires_at": bson.M{"$gt": time.Now()},
+	}
+
+	count, err := interestsCollection.CountDocuments(ctx, filter)
+	if err != nil {
+		return false, fmt.Errorf("failed to check interest status: %w", err)
+	}
+
+	return count > 0, nil
 }

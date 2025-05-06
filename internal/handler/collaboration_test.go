@@ -3,6 +3,7 @@ package handler_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/peatch-io/peatch/internal/contract"
 	"github.com/peatch-io/peatch/internal/db"
 	"github.com/peatch-io/peatch/internal/testutils"
@@ -145,5 +146,155 @@ func TestCreateCollaboration_Unauthorized(t *testing.T) {
 	}
 	if errResp.Error == "" {
 		t.Errorf("expected unauthorized error message, got empty")
+	}
+}
+
+func TestExpressInterest_Success(t *testing.T) {
+	e := testutils.SetupHandlerDependencies(t)
+
+	creatorAuthResp, err := testutils.AuthHelper(t, e, testutils.TelegramTestUserID, "creator", "Creator")
+	if err != nil {
+		t.Fatalf("failed to authenticate creator: %v", err)
+	}
+	creatorToken := creatorAuthResp.Token
+
+	interestedAuthResp, err := testutils.AuthHelper(t, e, testutils.TelegramTestUserID+1, "interested", "Interested")
+	if err != nil {
+		t.Fatalf("failed to authenticate interested user: %v", err)
+	}
+	interestedToken := interestedAuthResp.Token
+
+	badges, opportunities, location := setupTestRecords(t)
+
+	testutils.PerformRequest(t, e, http.MethodPut,
+		"/api/users", `{"first_name": "creator", "last_name": "creator", "title": "creator", "description": "creator description", "location_id": "location1", "badge_ids": ["badge1"], "opportunity_ids": ["opp1"]}`,
+		creatorAuthResp.Token, http.StatusOK)
+
+	if err := testutils.GetTestDBStorage().UpdateUserVerificationStatus(context.Background(), creatorAuthResp.User.ID, db.VerificationStatusVerified); err != nil {
+		return
+	}
+
+	testutils.PerformRequest(t, e, http.MethodPut,
+		"/api/users", `{"first_name": "interested", "last_name": "interested", "title": "interested", "description": "interested description", "location_id": "location1", "badge_ids": ["badge1"], "opportunity_ids": ["opp1"]}`,
+		interestedAuthResp.Token, http.StatusOK)
+	if err := testutils.GetTestDBStorage().UpdateUserVerificationStatus(context.Background(), interestedAuthResp.User.ID, db.VerificationStatusVerified); err != nil {
+		return
+	}
+
+	// Create a collaboration
+	createReqBody := contract.CreateCollaboration{
+		OpportunityID: opportunities[0].ID,
+		Title:         "Test Collaboration",
+		Description:   "Test description",
+		IsPayable:     true,
+		LocationID:    location.ID,
+		BadgeIDs:      []string{badges[0].ID},
+	}
+	bodyBytes, _ := json.Marshal(createReqBody)
+
+	createRec := testutils.PerformRequest(t, e, http.MethodPost, "/api/collaborations", string(bodyBytes), creatorToken, http.StatusCreated)
+
+	var collab contract.CollaborationResponse
+	if err := json.Unmarshal(createRec.Body.Bytes(), &collab); err != nil {
+		t.Fatalf("failed to parse collaboration response: %v", err)
+	}
+
+	storage := testutils.GetTestDBStorage()
+	err = storage.UpdateCollaborationVerificationStatus(context.Background(), collab.ID, db.VerificationStatusVerified)
+	if err != nil {
+		t.Fatalf("failed to update collaboration verification status: %v", err)
+	}
+
+	// Reset notification record before the test
+	testutils.MockNotifier.CollabInterestRecord = testutils.TestCallRecord{}
+
+	expressInterestPath := fmt.Sprintf("/api/collaborations/%s/interest", collab.ID)
+	rec := testutils.PerformRequest(t, e, http.MethodPost, expressInterestPath, "", interestedToken, http.StatusOK)
+
+	var statusResp contract.StatusResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &statusResp); err != nil {
+		t.Fatalf("failed to parse status response: %v", err)
+	}
+	if !statusResp.Success {
+		t.Errorf("expected success status, got failure")
+	}
+
+	hasInterest, err := storage.HasExpressedInterest(context.Background(), interestedAuthResp.User.ID, collab.ID)
+	if err != nil {
+		t.Fatalf("failed to check interest status: %v", err)
+	}
+	if !hasInterest {
+		t.Errorf("expected user to have expressed interest, but didn't")
+	}
+
+	if !testutils.MockNotifier.CollabInterestRecord.Called {
+		t.Errorf("notification was not called")
+	}
+	if testutils.MockNotifier.CollabInterestRecord.UserID != interestedAuthResp.User.ID {
+		t.Errorf("expected interested user ID %s, got %s", interestedAuthResp.User.ID,
+			testutils.MockNotifier.CollabInterestRecord.UserID)
+	}
+	if testutils.MockNotifier.CollabInterestRecord.CollabID != collab.ID {
+		t.Errorf("expected collaboration ID %s, got %s", collab.ID,
+			testutils.MockNotifier.CollabInterestRecord.CollabID)
+	}
+}
+
+func TestExpressInterest_Unauthorized(t *testing.T) {
+	e := testutils.SetupHandlerDependencies(t)
+
+	expressInterestPath := "/api/collaborations/some-id/interest"
+	rec := testutils.PerformRequest(t, e, http.MethodPost, expressInterestPath, "", "", http.StatusUnauthorized)
+
+	var errResp contract.ErrorResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &errResp); err != nil {
+		t.Fatalf("failed to parse error response: %v", err)
+	}
+	if errResp.Error == "" {
+		t.Errorf("expected unauthorized error message, got empty")
+	}
+}
+
+func TestExpressInterest_OwnCollaboration(t *testing.T) {
+	e := testutils.SetupHandlerDependencies(t)
+
+	// Create a user for the collaboration
+	authResp, err := testutils.AuthHelper(t, e, testutils.TelegramTestUserID, "creator", "Creator")
+	if err != nil {
+		t.Fatalf("failed to authenticate: %v", err)
+	}
+	token := authResp.Token
+
+	// Set up required test records
+	badges, opportunities, location := setupTestRecords(t)
+
+	// Create a collaboration
+	createReqBody := contract.CreateCollaboration{
+		OpportunityID: opportunities[0].ID,
+		Title:         "Test Collaboration",
+		Description:   "Test description",
+		IsPayable:     true,
+		LocationID:    location.ID,
+		BadgeIDs:      []string{badges[0].ID},
+	}
+	bodyBytes, _ := json.Marshal(createReqBody)
+
+	createRec := testutils.PerformRequest(t, e, http.MethodPost, "/api/collaborations", string(bodyBytes), token, http.StatusCreated)
+
+	var collab contract.CollaborationResponse
+	if err := json.Unmarshal(createRec.Body.Bytes(), &collab); err != nil {
+		t.Fatalf("failed to parse collaboration response: %v", err)
+	}
+
+	// Try to express interest in own collaboration (should fail)
+	expressInterestPath := fmt.Sprintf("/api/collaborations/%s/interest", collab.ID)
+	rec := testutils.PerformRequest(t, e, http.MethodPost, expressInterestPath, "", token, http.StatusBadRequest)
+
+	var errResp contract.ErrorResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &errResp); err != nil {
+		t.Fatalf("failed to parse error response: %v", err)
+	}
+	if errResp.Error == "" {
+		t.Errorf("expected error message, got empty")
 	}
 }
