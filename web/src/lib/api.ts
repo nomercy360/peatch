@@ -95,11 +95,20 @@ export const fetchProfile = async (id: string) => {
 
 
 export const followUser = async (userID: string) => {
-	return await apiFetch({
+	const resp = await apiFetch({
 		endpoint: `/users/${userID}/follow`,
 		method: 'POST',
 		showProgress: false,
 	})
+
+	if (resp?.status && resp.status.includes('bot_blocked')) {
+		throw {
+			botBlocked: true,
+			username: resp.username,
+		}
+	}
+
+	return resp
 }
 
 export const createCollaboration = async (collaboration: any) => {

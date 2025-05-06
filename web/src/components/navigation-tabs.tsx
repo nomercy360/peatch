@@ -3,7 +3,7 @@ import { useLocation } from '@solidjs/router'
 import { Link } from '~/components/link'
 import { store } from '~/store'
 import { useMainButton } from '~/lib/useMainButton'
-import { onMount } from 'solid-js'
+import { createMemo, onMount } from 'solid-js'
 import { useTranslations } from '~/lib/locale-context'
 
 export default function NavigationTabs(props: any) {
@@ -11,7 +11,7 @@ export default function NavigationTabs(props: any) {
 	const mainButton = useMainButton()
 	const { t } = useTranslations()
 
-	const tabs = [
+	const tabs = createMemo(() => [
 		{
 			href: '/posts',
 			icon: 'local_fire_department',
@@ -27,7 +27,7 @@ export default function NavigationTabs(props: any) {
 			icon: 'edit_note',
 			name: t('common.tabs.collaborations'),
 		},
-	]
+	])
 
 	onMount(() => {
 		mainButton.hide()
@@ -55,7 +55,7 @@ export default function NavigationTabs(props: any) {
 					</Link>
 				</div>
 				<div class="flex flex-1 justify-evenly">
-					{tabs.map((props) => (
+					{tabs().map((props) => (
 						<Link
 							href={props.href}
 							state={{ from: location.pathname }}

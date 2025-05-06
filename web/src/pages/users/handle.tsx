@@ -17,6 +17,7 @@ import {
 	fetchProfile,
 	followUser,
 } from '~/lib/api'
+import { addToast } from '~/components/toast'
 import { setUser, store } from '~/store'
 import { useMainButton } from '~/lib/useMainButton'
 import { queryClient } from '~/App'
@@ -44,8 +45,12 @@ export default function UserProfilePage() {
 
 	const followMutate = useMutation(() => ({
 		mutationFn: (id: string) => followUser(id),
+		retry: 0,
 		onMutate: async (id: string) => {
 			await queryClient.cancelQueries({ queryKey: ['profiles', id] })
+
+			const previousProfile = queryClient.getQueryData(['profiles', id]) as UserProfileResponse
+
 			queryClient.setQueryData(['profiles', id], (old: UserProfileResponse) => {
 				if (old) {
 					return {
@@ -55,6 +60,36 @@ export default function UserProfilePage() {
 				}
 				return old
 			})
+
+			return { previousProfile }
+		},
+		onSuccess: () => {
+			addToast(t('pages.users.followSuccess'), 'success')
+		},
+		onError: (error: any, _id: string, context?: { previousProfile?: UserProfileResponse }) => {
+			if (context?.previousProfile) {
+				queryClient.setQueryData(['profiles', context.previousProfile.id], context.previousProfile)
+			}
+
+			if (error.botBlocked) {
+				const username = error.username
+				if (username) {
+					addToast(
+						t('pages.users.botBlocked'),
+						'warning',
+						{
+							text: t('pages.users.messageUser'),
+							onClick: () => {
+								window.Telegram.WebApp.openTelegramLink(`https://t.me/${username}`)
+							},
+						},
+					)
+				} else {
+					addToast(t('pages.users.botBlocked'), 'warning')
+				}
+			} else {
+				addToast(t('pages.users.followError'), 'error')
+			}
 		},
 	}))
 

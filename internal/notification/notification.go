@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	telegram "github.com/go-telegram/bot"
@@ -268,7 +270,7 @@ func (n *Notifier) NotifyCollaborationVerified(collab db.Collaboration) error {
 	}
 
 	_, err := n.bot.SendMessage(context.Background(), &telegram.SendMessageParams{
-		// ChatID:      fmt.Sprintf("%d", collab.User.ChatID),
+
 		ChatID:      n.adminChatID,
 		Text:        msgText,
 		ReplyMarkup: &keyboard,
@@ -458,6 +460,80 @@ func (n *Notifier) NotifyNewPendingCollaboration(user db.User, collab db.Collabo
 	return err
 }
 
+var ErrUserBlockedBot = errors.New("user has blocked the bot")
+
+func (n *Notifier) NotifyUserFollow(follower db.User, followee db.User) error {
+
+	if followee.ChatID == 0 {
+		return fmt.Errorf("followee %s has no chat ID", followee.ID)
+	}
+
+	followerName := follower.Username
+	if follower.FirstName != nil || follower.LastName != nil {
+		firstName := ""
+		if follower.FirstName != nil {
+			firstName = *follower.FirstName
+		}
+		lastName := ""
+		if follower.LastName != nil {
+			lastName = *follower.LastName
+		}
+		followerName = fmt.Sprintf("%s %s", firstName, lastName)
+	}
+
+	var msgText string
+	if follower.IsGeneratedUsername() {
+		if followee.LanguageCode == db.LanguageRU {
+			msgText = fmt.Sprintf("👋 %s заметил ваш профиль, смотри в приложении!", followerName)
+		} else {
+			msgText = fmt.Sprintf("👋 %s noticed your profile, check in the app!", followerName)
+		}
+	} else {
+		if followee.LanguageCode == db.LanguageRU {
+			msgText = fmt.Sprintf("👋 [%s](https://t.me/%s) заметил ваш профиль, напишите ему в Telegram\\!", telegram.EscapeMarkdown(followerName), follower.Username)
+		} else {
+			msgText = fmt.Sprintf("👋 [%s](https://t.me/%s) noticed your profile, write to him in Telegram\\!", telegram.EscapeMarkdown(followerName), follower.Username)
+		}
+	}
+
+	btnText := "View Profile"
+	if followee.LanguageCode == db.LanguageRU {
+		btnText = "Посмотреть профиль"
+	}
+
+	button := models.InlineKeyboardButton{
+		Text: btnText,
+		URL:  fmt.Sprintf("%s?startapp=u_%s", n.botWebApp, follower.ID),
+	}
+
+	keyboard := models.InlineKeyboardMarkup{
+		InlineKeyboard: [][]models.InlineKeyboardButton{
+			{button},
+		},
+	}
+
+	disabled := true
+
+	_, err := n.bot.SendMessage(context.Background(), &telegram.SendMessageParams{
+		//ChatID:      fmt.Sprintf("%d", followee.ChatID),
+		ChatID: n.adminChatID,
+		LinkPreviewOptions: &models.LinkPreviewOptions{
+			IsDisabled: &disabled,
+		},
+		Text:        msgText,
+		ReplyMarkup: &keyboard,
+		ParseMode:   models.ParseModeMarkdown,
+	})
+
+	if err != nil && strings.Contains(err.Error(), "Forbidden") &&
+		(strings.Contains(err.Error(), "bot was blocked by the user") ||
+			strings.Contains(err.Error(), "user is deactivated")) {
+		return ErrUserBlockedBot
+	}
+
+	return err
+}
+
 func (n *Notifier) NotifyUserVerificationDenied(user db.User) error {
 	var msgText string
 	if user.LanguageCode == db.LanguageRU {
@@ -483,7 +559,8 @@ func (n *Notifier) NotifyUserVerificationDenied(user db.User) error {
 	}
 
 	_, err := n.bot.SendMessage(context.Background(), &telegram.SendMessageParams{
-		ChatID:      fmt.Sprintf("%d", user.ChatID),
+		// ChatID:      fmt.Sprintf("%d", user.ChatID),
+		ChatID:      n.adminChatID,
 		Text:        msgText,
 		ReplyMarkup: &keyboard,
 	})
@@ -516,7 +593,8 @@ func (n *Notifier) NotifyCollaborationVerificationDenied(collab db.Collaboration
 	}
 
 	_, err := n.bot.SendMessage(context.Background(), &telegram.SendMessageParams{
-		ChatID:      fmt.Sprintf("%d", collab.User.ChatID),
+		// ChatID:      fmt.Sprintf("%d", collab.User.ChatID),
+		ChatID:      n.adminChatID,
 		Text:        msgText,
 		ReplyMarkup: &keyboard,
 	})

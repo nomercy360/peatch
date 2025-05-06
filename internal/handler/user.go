@@ -6,6 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/peatch-io/peatch/internal/contract"
 	"github.com/peatch-io/peatch/internal/db"
+	"github.com/peatch-io/peatch/internal/notification"
 	"net/http"
 	"time"
 )
@@ -153,34 +154,78 @@ func (h *handler) handleUpdateUser(c echo.Context) error {
 	return c.JSON(http.StatusOK, contract.ToUserResponse(resp))
 }
 
-// handleDeleteUser godoc
-// @Summary Delete user
+// handleFollowUser godoc
+// @Summary Follow user
 // @Tags users
 // @Accept  json
 // @Produce  json
-// @Param id path int true "Following User ID"
+// @Param id path string true "User ID to follow"
 // @Success 204
-// @Router /users/{id}/follow [post]
+// @Success 200 {object} contract.BotBlockedResponse "When user has blocked the bot, returns username for direct Telegram navigation"
+// @Router /api/users/{id}/follow [post]
 func (h *handler) handleFollowUser(c echo.Context) error {
-	userID := c.Param("id")
-	followeeID := getUserID(c)
+	userIDToFollow := c.Param("id")
+	followerID := getUserID(c)
 
-	if followeeID == "" {
+	if followerID == "" {
 		return echo.NewHTTPError(http.StatusBadRequest, "user id is required")
 	}
 
-	expirationTime, _ := time.ParseDuration("7d")
+	if userIDToFollow == followerID {
+		return echo.NewHTTPError(http.StatusBadRequest, "cannot follow yourself")
+	}
+
+	if exist, err := h.storage.IsUserFollowing(c.Request().Context(), userIDToFollow, followerID); err != nil || exist {
+		return echo.NewHTTPError(http.StatusBadRequest, "already exists").WithInternal(err)
+	}
+
+	var botBlockedError bool
+	var followeeUsername string
+
+	follower, err := h.storage.GetUserByID(c.Request().Context(), followerID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get follower user").WithInternal(err)
+	} else {
+		followee, err := h.storage.GetUserByID(c.Request().Context(), userIDToFollow)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to get followee user").WithInternal(err)
+		} else {
+			if !followee.IsGeneratedUsername() {
+				followeeUsername = followee.Username
+			}
+
+			if err := h.notificationService.NotifyUserFollow(follower, followee); err != nil {
+				h.logger.Error("failed to send follow notification", "error", err)
+
+				if errors.Is(err, notification.ErrUserBlockedBot) {
+					botBlockedError = true
+				}
+			}
+		}
+	}
+
+	if !botBlockedError && followeeUsername != "" {
+		resp := contract.BotBlockedResponse{
+			Status:   "bot_blocked",
+			Username: followeeUsername,
+			Message:  "User has blocked the bot, direct Telegram contact required",
+		}
+
+		return c.JSON(http.StatusOK, resp)
+	}
+
+	expirationDuration := 7 * 24 * time.Hour
 
 	if err := h.storage.FollowUser(
 		c.Request().Context(),
-		userID,
-		followeeID,
-		expirationTime,
+		userIDToFollow,
+		followerID,
+		expirationDuration,
 	); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to follow user").WithInternal(err)
 	}
 
-	return c.NoContent(http.StatusNoContent)
+	return c.JSON(http.StatusOK, contract.StatusResponse{Success: true})
 }
 
 // handleGetMe godoc

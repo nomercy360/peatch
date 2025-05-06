@@ -58,7 +58,7 @@ export const LocaleContextProvider: ParentComponent = (props) => {
 
 	createEffect(() => {
 		if (store.user?.language_code) {
-			setLocale('en' as Locale)
+			setLocale(store.user.language_code as Locale)
 		}
 	})
 

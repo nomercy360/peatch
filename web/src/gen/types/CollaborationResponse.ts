@@ -7,6 +7,7 @@ import type { BadgeResponse } from './BadgeResponse.ts'
 import type { CityResponse } from './CityResponse.ts'
 import type { OpportunityResponse } from './OpportunityResponse.ts'
 import type { UserProfileResponse } from './UserProfileResponse.ts'
+import type { VerificationStatus } from './VerificationStatus.ts'
 
 export type CollaborationResponse = {
   /**
@@ -53,4 +54,8 @@ export type CollaborationResponse = {
    * @type string | undefined
    */
   user_id?: string
+  /**
+   * @type string | undefined
+   */
+  verification_status?: VerificationStatus
 }

@@ -46,6 +46,15 @@ definitions:
       text:
         type: string
     type: object
+  BotBlockedResponse:
+    properties:
+      message:
+        type: string
+      status:
+        type: string
+      username:
+        type: string
+    type: object
   CityResponse:
     properties:
       country_code:
@@ -742,6 +751,29 @@ paths:
       summary: Get user
       tags:
       - users
+  /api/users/{id}/follow:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: User ID to follow
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: When user has blocked the bot, returns username for direct
+            Telegram navigation
+          schema:
+            $ref: '#/definitions/BotBlockedResponse'
+        "204":
+          description: No Content
+      summary: Follow user
+      tags:
+      - users
   /api/users/avatar:
     post:
       consumes:
@@ -812,24 +844,6 @@ paths:
       summary: Telegram Auth
       tags:
       - auth
-  /users/{id}/follow:
-    post:
-      consumes:
-      - application/json
-      parameters:
-      - description: Following User ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: No Content
-      summary: Delete user
-      tags:
-      - users
 schemes:
 - https
 swagger: "2.0"

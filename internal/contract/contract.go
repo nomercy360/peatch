@@ -19,6 +19,12 @@ type StatusResponse struct {
 	Success bool `json:"success"`
 } // @Name StatusResponse
 
+type BotBlockedResponse struct {
+	Status   string `json:"status"`
+	Username string `json:"username"`
+	Message  string `json:"message"`
+} // @Name BotBlockedResponse
+
 type AuthTelegramRequest struct {
 	Query string `json:"query"`
 } // @Name AuthTelegramRequest

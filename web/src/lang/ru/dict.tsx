@@ -1,5 +1,10 @@
 export const dict = {
 	common: {
+		tabs: {
+			network: 'Люди',
+			collaborations: 'Новый проект',
+			posts: 'Лента',
+		},
 		search: {
 			posts: 'Искать посты',
 			people: 'Искать людей',
@@ -69,6 +74,10 @@ export const dict = {
 			sayHi: 'Привет',
 			saidHi: 'Запрос отправлен',
 			shareProfile: 'Поделиться',
+			followSuccess: 'Мы отправили уведомление о том, что вам понравился их профиль',
+			followError: 'Не удалось отправить уведомление',
+			botBlocked: 'Пользователю нельзя отправить уведомление через бота',
+			messageUser: 'Написать в Telegram',
 		},
 		collaborations: {
 			edit: {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -64,6 +65,14 @@ type User struct {
 	LastActiveAt           time.Time          `bson:"last_active_at,omitempty" json:"last_active_at"`
 	VerificationStatus     VerificationStatus `bson:"verification_status,omitempty" json:"verification_status"`
 	VerifiedAt             *time.Time         `bson:"verified_at,omitempty" json:"verified_at"`
+}
+
+func (u *User) IsGeneratedUsername() bool {
+	if strings.HasPrefix(u.Username, "user_") {
+		return true
+	}
+
+	return false
 }
 
 func (u *User) IsProfileComplete() bool {
@@ -309,8 +318,8 @@ func (s *Storage) GetUserProfile(ctx context.Context, viewerID string, id string
 	}
 
 	followerFilter := bson.M{
-		"user_id":     viewerID,
-		"followee_id": user.ID,
+		"user_id":     user.ID,
+		"followee_id": viewerID,
 	}
 
 	count, err := followersCollection.CountDocuments(ctx, followerFilter)
@@ -359,6 +368,23 @@ func (s *Storage) FollowUser(ctx context.Context, userID string, followeeID stri
 	}
 
 	return nil
+}
+
+func (s *Storage) IsUserFollowing(ctx context.Context, userID string, followeeID string) (bool, error) {
+	followersCollection := s.db.Collection("user_followers")
+
+	filter := bson.M{
+		"user_id":     userID,
+		"followee_id": followeeID,
+		"expires_at":  bson.M{"$gt": time.Now()},
+	}
+
+	count, err := followersCollection.CountDocuments(ctx, filter)
+	if err != nil {
+		return false, fmt.Errorf("failed to check following status: %w", err)
+	}
+
+	return count > 0, nil
 }
 
 func (s *Storage) UpdateUserAvatarURL(ctx context.Context, userID string, avatarURL string) error {

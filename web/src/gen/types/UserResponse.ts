@@ -40,6 +40,10 @@ export type UserResponse = {
   /**
    * @type string | undefined
    */
+  language_code?: string
+  /**
+   * @type string | undefined
+   */
   last_active_at?: string
   /**
    * @type string | undefined
