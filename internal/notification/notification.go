@@ -178,7 +178,8 @@ func (n *Notifier) NotifyUserVerified(user db.User) error {
 		}
 
 		if _, err := n.bot.SendPhoto(context.Background(), &telegram.SendPhotoParams{
-			ChatID:      fmt.Sprintf("%d", n.communityChatID),
+			// ChatID:      fmt.Sprintf("%d", n.communityChatID),
+			ChatID:      n.adminChatID,
 			Caption:     communityMsg,
 			Photo:       photoData,
 			ReplyMarkup: &keyboard,
@@ -187,7 +188,8 @@ func (n *Notifier) NotifyUserVerified(user db.User) error {
 		}
 	} else {
 		params := &telegram.SendMessageParams{
-			ChatID:      fmt.Sprintf("%d", n.communityChatID),
+			//ChatID:      fmt.Sprintf("%d", n.communityChatID),
+			ChatID:      n.adminChatID,
 			Text:        communityMsg,
 			ReplyMarkup: &keyboard,
 		}
@@ -361,7 +363,8 @@ func (n *Notifier) SendCollaborationToCommunityChatWithImage(collab db.Collabora
 		}
 
 		if _, err := n.bot.SendPhoto(context.Background(), &telegram.SendPhotoParams{
-			ChatID:      fmt.Sprintf("%d", n.communityChatID),
+			// ChatID:      fmt.Sprintf("%d", n.communityChatID),
+			ChatID:      n.adminChatID,
 			Caption:     communityMsg,
 			Photo:       photoData,
 			ReplyMarkup: &keyboard,
@@ -371,7 +374,8 @@ func (n *Notifier) SendCollaborationToCommunityChatWithImage(collab db.Collabora
 		}
 	} else {
 		params := &telegram.SendMessageParams{
-			ChatID:      fmt.Sprintf("%d", n.communityChatID),
+			//ChatID:      fmt.Sprintf("%d", n.communityChatID),
+			ChatID:      n.adminChatID,
 			Text:        communityMsg,
 			ReplyMarkup: &keyboard,
 		}
