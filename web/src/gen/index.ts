@@ -91,6 +91,13 @@ export type {
   PostApiCollaborationsMutation,
 } from './types/PostApiCollaborations.ts'
 export type {
+  PostApiCollaborationsIdInterestPathParams,
+  PostApiCollaborationsIdInterest200,
+  PostApiCollaborationsIdInterest204,
+  PostApiCollaborationsIdInterestMutationResponse,
+  PostApiCollaborationsIdInterestMutation,
+} from './types/PostApiCollaborationsIdInterest.ts'
+export type {
   PostApiUsersAvatar200,
   PostApiUsersAvatar400,
   PostApiUsersAvatar401,

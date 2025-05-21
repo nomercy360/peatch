@@ -30,7 +30,7 @@ export const [editUser, setEditUser] = createStore<{
 	last_name: '',
 	title: '',
 	description: '',
-	location_id: null,
+	location: {},
 	badge_ids: [],
 	opportunity_ids: [],
 })
@@ -45,7 +45,7 @@ export const [editCollaboration, setEditCollaboration] =
 		title: string
 	}>({
 		badge_ids: [],
-		location_id: null,
+		location: {},
 		description: '',
 		is_payable: false,
 		opportunity_id: '',

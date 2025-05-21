@@ -603,6 +603,40 @@
                 }
             }
         },
+        "/api/collaborations/{id}/interest": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "collaborations"
+                ],
+                "summary": "Express interest in a collaboration",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Collaboration ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "When user has blocked the bot, returns username for direct Telegram navigation",
+                        "schema": {
+                            "$ref": "#/definitions/BotBlockedResponse"
+                        }
+                    },
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
         "/api/locations": {
             "get": {
                 "consumes": [

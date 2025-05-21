@@ -642,6 +642,29 @@ paths:
       summary: Update collaboration
       tags:
       - collaborations
+  /api/collaborations/{id}/interest:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Collaboration ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: When user has blocked the bot, returns username for direct
+            Telegram navigation
+          schema:
+            $ref: '#/definitions/BotBlockedResponse'
+        "204":
+          description: No Content
+      summary: Express interest in a collaboration
+      tags:
+      - collaborations
   /api/locations:
     get:
       consumes:

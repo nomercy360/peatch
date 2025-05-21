@@ -10,6 +10,7 @@ import {
 import SelectLocation from '~/components/edit/select-location'
 import { createCollaboration, updateCollaboration } from '~/lib/api'
 import { useTranslations } from '~/lib/locale-context'
+import { CreateCollaboration } from '~/gen'
 
 export default function SelectBadges() {
 	const mainButton = useMainButton()
@@ -18,18 +19,30 @@ export default function SelectBadges() {
 	const navigate = useNavigate()
 
 	const createCollab = async () => {
-		// If we're skipping location, ensure it's empty
-		if (!editCollaboration.location.id) {
-			setEditCollaboration('location', {} as any)
-		}
-		const created = await createCollaboration(editCollaboration)
+		const req = {
+			opportunity_id: editCollaboration.opportunity_id,
+			title: editCollaboration.title,
+			description: editCollaboration.description,
+			badge_ids: editCollaboration.badge_ids,
+			is_payable: editCollaboration.is_payable,
+			location_id: editCollaboration.location ? editCollaboration.location.id : null,
+		} as CreateCollaboration
+
+		const created = await createCollaboration(req)
 		navigate('/collaborations/' + created.id)
 	}
 
 	const editCollab = async () => {
-		// For editing, we don't allow empty location through the button
-		// because the main button is disabled when no location is selected
-		await updateCollaboration(editCollaborationId(), editCollaboration)
+		const req = {
+			opportunity_id: editCollaboration.opportunity_id,
+			title: editCollaboration.title,
+			description: editCollaboration.description,
+			badge_ids: editCollaboration.badge_ids,
+			is_payable: editCollaboration.is_payable,
+			location_id: editCollaboration.location ? editCollaboration.location.id : null,
+		} as CreateCollaboration
+
+		await updateCollaboration(editCollaborationId(), req)
 		navigate('/collaborations/' + editCollaborationId() + '?refetch=true')
 	}
 
