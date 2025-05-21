@@ -258,7 +258,9 @@ func (h *handler) handleAdminUpdateUserVerification(c echo.Context) error {
 
 	if req.Status == db.VerificationStatusVerified && needNotify {
 		go func() {
-			_ = h.notificationService.NotifyUserVerified(user)
+			if err := h.notificationService.NotifyUserVerified(user); err != nil {
+				h.logger.Error("failed to notify user verified", slog.String("error", err.Error()))
+			}
 		}()
 	} else if req.Status == db.VerificationStatusDenied && previousStatus != db.VerificationStatusDenied {
 		go func() {

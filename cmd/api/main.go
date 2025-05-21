@@ -106,7 +106,7 @@ func main() {
 		ImageServiceURL: cfg.ImageServiceURL,
 	}
 
-	notifier := notification.NewNotifier(notifierConfig, bot, storage)
+	notifier := notification.NewNotifier(notifierConfig, bot)
 
 	h := handler.New(storage, hConfig, s3Client, logr, bot, notifier)
 
