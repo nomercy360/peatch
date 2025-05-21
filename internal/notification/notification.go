@@ -267,7 +267,7 @@ func (n *Notifier) NotifyCollaborationVerified(collab db.Collaboration) error {
 	}
 
 	_, err := n.bot.SendMessage(context.Background(), &telegram.SendMessageParams{
-		ChatID:      n.adminChatID,
+		ChatID:      collab.User.ChatID,
 		Text:        msgText,
 		ReplyMarkup: &keyboard,
 	})
@@ -277,6 +277,189 @@ func (n *Notifier) NotifyCollaborationVerified(collab db.Collaboration) error {
 	}
 
 	return n.SendCollaborationToCommunityChatWithImage(collab)
+}
+
+// NotifyUsersWithMatchingOpportunity sends a notification to all users with a matching opportunity
+// Uses batching and rate limiting to respect Telegram's limit of 30 messages per second
+func (n *Notifier) NotifyUsersWithMatchingOpportunity(collab db.Collaboration, users []db.User) error {
+	if len(users) == 0 {
+		return nil
+	}
+
+	// Create the notification button
+	button := models.InlineKeyboardButton{
+		Text: "View Collaboration",
+		URL:  fmt.Sprintf("%s?startapp=c_%s", n.botWebApp, collab.ID),
+	}
+
+	keyboard := models.InlineKeyboardMarkup{
+		InlineKeyboard: [][]models.InlineKeyboardButton{
+			{button},
+		},
+	}
+
+	// Prepare a batch of users to notify
+	eligibleUsers := make([]db.User, 0, len(users))
+	for _, user := range users {
+		// Skip the collaboration owner
+		if user.ID == collab.UserID {
+			continue
+		}
+
+		// Skip users with notifications disabled
+		if user.NotificationsEnabledAt == nil {
+			continue
+		}
+
+		eligibleUsers = append(eligibleUsers, user)
+	}
+
+	// If no eligible users, return early
+	if len(eligibleUsers) == 0 {
+		return nil
+	}
+
+	// Generate collaboration image once for all notifications if image service is available
+	var imageBytes []byte
+	if n.imageServiceURL != "" {
+		// Prepare image generation request
+		firstName := ""
+		if collab.User.FirstName != nil {
+			firstName = *collab.User.FirstName
+		}
+		lastName := ""
+		if collab.User.LastName != nil {
+			lastName = *collab.User.LastName
+		}
+
+		fullName := fmt.Sprintf("%s %s", firstName, lastName)
+		if firstName == "" && lastName == "" {
+			fullName = collab.User.Username
+		}
+
+		// Extract badges for tags
+		tags := make([]Tag, 0, 5)
+		if collab.Badges != nil && len(collab.Badges) > 0 {
+			for i, badge := range collab.Badges {
+				if i >= 5 {
+					break
+				}
+
+				tag := Tag{
+					Text:  badge.Text,
+					Color: badge.Color,
+					Icon:  badge.Icon,
+				}
+
+				tags = append(tags, tag)
+			}
+		}
+
+		userRole := "Member"
+		if collab.User.Title != nil {
+			userRole = *collab.User.Title
+		}
+
+		userAvatarURL := ""
+		if collab.User.AvatarURL != nil {
+			userAvatarURL = fmt.Sprintf("https://assets.peatch.io/cdn-cgi/image/width=400/%s", *collab.User.AvatarURL)
+		}
+
+		// Create the image request
+		imageReq := CollaborationImageRequest{
+			Title:    collab.Title,
+			Subtitle: collab.Opportunity.Text,
+			Tags:     tags,
+			User: UserInfo{
+				Avatar: userAvatarURL,
+				Name:   fullName,
+				Role:   userRole,
+			},
+		}
+
+		// Generate the image
+		var err error
+		imageBytes, err = n.generateCollaborationImage(imageReq)
+		if err != nil {
+			log.Printf("Error generating collaboration image: %v", err)
+			// Continue with text-only notifications if image generation fails
+		}
+	}
+
+	// Use a channel to control rate limiting
+	// Telegram API limit is approximately 30 messages per second
+	const telegramRateLimit = 30
+	const batchSize = 15
+	const cooldownPeriod = time.Second // 1 second between batches
+
+	// Process users in batches
+	for i := 0; i < len(eligibleUsers); i += batchSize {
+		end := i + batchSize
+		if end > len(eligibleUsers) {
+			end = len(eligibleUsers)
+		}
+
+		batch := eligibleUsers[i:end]
+
+		// Start a goroutine for the entire batch to process in parallel
+		go func(batchUsers []db.User, imageData []byte) {
+			rateLimiter := time.NewTicker(time.Second / telegramRateLimit)
+			defer rateLimiter.Stop()
+
+			for _, user := range batchUsers {
+				<-rateLimiter.C // Wait for rate limiter before sending next message
+
+				var msgText string
+				if user.LanguageCode == db.LanguageRU {
+					msgText = fmt.Sprintf("🔍 Новая коллаборация от %s %s, которая может вас заинтересовать!\n\n\"%s\"\n\nОна соответствует вашему интересу: %s",
+						*collab.User.FirstName,
+						*collab.User.LastName,
+						collab.Title,
+						collab.Opportunity.TextRU)
+				} else {
+					msgText = fmt.Sprintf("🔍 New collaboration from %s %s that might interest you!\n\n\"%s\"\n\nIt matches your interest: %s",
+						*collab.User.FirstName,
+						*collab.User.LastName,
+						collab.Title,
+						collab.Opportunity.Text)
+				}
+
+				var err error
+				// If we have image bytes, send as photo with caption, otherwise send as text message
+				if imageData != nil && len(imageData) > 0 {
+					photoData := &models.InputFileUpload{
+						Filename: fmt.Sprintf("collab_opportunity_%s.png", collab.ID),
+						Data:     bytes.NewReader(imageData),
+					}
+
+					_, err = n.bot.SendPhoto(context.Background(), &telegram.SendPhotoParams{
+						ChatID:      user.ChatID,
+						Caption:     msgText,
+						Photo:       photoData,
+						ReplyMarkup: &keyboard,
+					})
+				} else {
+					// Fall back to text-only message if no image data available
+					_, err = n.bot.SendMessage(context.Background(), &telegram.SendMessageParams{
+						ChatID:      user.ChatID,
+						Text:        msgText,
+						ReplyMarkup: &keyboard,
+					})
+				}
+
+				if err != nil {
+					log.Printf("Failed to send opportunity match notification to user %s: %v", user.ID, err)
+				}
+			}
+		}(batch, imageBytes)
+
+		// Add a cooldown between batches to ensure we don't exceed global rate limits
+		if end < len(eligibleUsers) {
+			time.Sleep(cooldownPeriod)
+		}
+	}
+
+	return nil
 }
 
 func (n *Notifier) SendCollaborationToCommunityChatWithImage(collab db.Collaboration) error {

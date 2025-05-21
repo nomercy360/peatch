@@ -58,7 +58,7 @@ type storager interface {
 	FollowUser(ctx context.Context, userID, followerID string, ttlDuration time.Duration) error
 	IsUserFollowing(ctx context.Context, userID, followerID string) (bool, error)
 	GetUsersByVerificationStatus(ctx context.Context, status db.VerificationStatus, page, perPage int) ([]db.User, error)
-
+	GetUsersWithOpportunity(ctx context.Context, opportunityID string) ([]db.User, error)
 	// Collaboration-related operations
 	ListCollaborations(ctx context.Context, query db.CollaborationQuery) ([]db.Collaboration, error)
 	GetCollaborationByID(ctx context.Context, userID, id string) (db.Collaboration, error)

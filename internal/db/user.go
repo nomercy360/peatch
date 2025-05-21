@@ -458,3 +458,29 @@ func (s *Storage) UpdateUserVerificationStatus(ctx context.Context, userID strin
 
 	return nil
 }
+
+// GetUsersWithOpportunity returns all verified users who have the specified opportunity in their profile
+func (s *Storage) GetUsersWithOpportunity(ctx context.Context, opportunityID string) ([]User, error) {
+	collection := s.db.Collection("users")
+	users := make([]User, 0)
+
+	filter := bson.M{
+		"opportunities": bson.M{
+			"$elemMatch": bson.M{
+				"_id": opportunityID,
+			},
+		},
+	}
+
+	cursor, err := collection.Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find users with opportunity: %w", err)
+	}
+	defer cursor.Close(ctx)
+
+	if err := cursor.All(ctx, &users); err != nil {
+		return nil, fmt.Errorf("failed to decode users with opportunity: %w", err)
+	}
+
+	return users, nil
+}

@@ -326,7 +326,20 @@ func (h *handler) handleAdminUpdateCollaborationVerification(c echo.Context) err
 
 	if req.Status == db.VerificationStatusVerified && needNotify {
 		go func() {
-			_ = h.notificationService.NotifyCollaborationVerified(collab)
+			if err := h.notificationService.NotifyCollaborationVerified(collab); err != nil {
+				h.logger.Error("failed to notify collaboration verified", slog.String("error", err.Error()))
+			}
+
+			if err := h.notificationService.SendCollaborationToCommunityChatWithImage(collab); err != nil {
+				h.logger.Error("failed to send collaboration to community chat", slog.String("error", err.Error()))
+			}
+
+			users, err := h.storage.GetUsersWithOpportunity(c.Request().Context(), collab.UserID)
+			if err != nil {
+				h.logger.Error("failed to get users with opportunity", slog.String("error", err.Error()))
+				return
+			}
+			_ = h.notificationService.NotifyUsersWithMatchingOpportunity(collab, users)
 		}()
 	} else if req.Status == db.VerificationStatusDenied && previousStatus != db.VerificationStatusDenied {
 		go func() {

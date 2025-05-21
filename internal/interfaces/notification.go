@@ -15,4 +15,5 @@ type NotificationService interface {
 	NotifyUserFollow(userID db.User, follower db.User) error
 	NotifyCollabInterest(collab db.Collaboration, user db.User) error
 	SendCollaborationToCommunityChatWithImage(collab db.Collaboration) error
+	NotifyUsersWithMatchingOpportunity(collab db.Collaboration, users []db.User) error
 }
