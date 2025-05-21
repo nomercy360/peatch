@@ -149,6 +149,12 @@ func (h *handler) handleUpdateUser(c echo.Context) error {
 		); err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, "failed to update user verification status").WithInternal(err)
 		}
+
+		go func() {
+			if err := h.notificationService.NotifyNewPendingUser(resp); err != nil {
+				h.logger.Error("failed to send new pending user notification", "error", err)
+			}
+		}()
 	}
 
 	return c.JSON(http.StatusOK, contract.ToUserResponse(resp))
