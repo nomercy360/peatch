@@ -123,7 +123,7 @@ type CreateCollaboration struct {
 	Title         string   `json:"title"`
 	Description   string   `json:"description"`
 	IsPayable     bool     `json:"is_payable"`
-	LocationID    string   `json:"location_id"`
+	LocationID    *string  `json:"location_id"`
 	BadgeIDs      []string `json:"badge_ids"`
 } // @Name CreateCollaboration
 
@@ -143,7 +143,7 @@ func (r CreateCollaboration) Validate() error {
 	if len(r.Description) > 1000 {
 		return fmt.Errorf("description must not exceed 1000 characters")
 	}
-	if r.LocationID == "" {
+	if r.LocationID != nil && *r.LocationID == "" {
 		return fmt.Errorf("location_id is required")
 	}
 	if len(r.BadgeIDs) == 0 {
@@ -344,7 +344,7 @@ type CollaborationResponse struct {
 	IsPayable          bool                  `json:"is_payable"`
 	Badges             []BadgeResponse       `json:"badges"`
 	Opportunity        OpportunityResponse   `json:"opportunity"`
-	Location           CityResponse          `json:"location"`
+	Location           *CityResponse         `json:"location"`
 	CreatedAt          time.Time             `json:"created_at"`
 	UpdatedAt          time.Time             `json:"updated_at"`
 	User               UserProfileResponse   `json:"user"`
@@ -352,7 +352,8 @@ type CollaborationResponse struct {
 } // @Name CollaborationResponse
 
 func ToCollaborationResponse(collab db.Collaboration) CollaborationResponse {
-	return CollaborationResponse{
+	// Create the response without the location first
+	response := CollaborationResponse{
 		ID:                 collab.ID,
 		UserID:             collab.UserID,
 		Title:              collab.Title,
@@ -360,10 +361,16 @@ func ToCollaborationResponse(collab db.Collaboration) CollaborationResponse {
 		IsPayable:          collab.IsPayable,
 		Badges:             ToBadgeResponseList(collab.Badges),
 		Opportunity:        ToOpportunityResponseList([]db.Opportunity{collab.Opportunity}, db.LanguageEN)[0],
-		Location:           ToCityResponse(collab.Location),
 		CreatedAt:          collab.CreatedAt,
 		UpdatedAt:          collab.UpdatedAt,
 		User:               ToUserProfile(collab.User),
 		VerificationStatus: collab.VerificationStatus,
 	}
+
+	if collab.Location != nil {
+		resp := ToCityResponse(*collab.Location)
+		response.Location = &resp
+	}
+
+	return response
 }

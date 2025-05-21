@@ -62,8 +62,8 @@ type storager interface {
 	// Collaboration-related operations
 	ListCollaborations(ctx context.Context, query db.CollaborationQuery) ([]db.Collaboration, error)
 	GetCollaborationByID(ctx context.Context, userID, id string) (db.Collaboration, error)
-	CreateCollaboration(ctx context.Context, collaboration db.Collaboration, badges []string, opportunityID string, location string) error
-	UpdateCollaboration(ctx context.Context, collaboration db.Collaboration, badges []string, opportunityID string, location string) error
+	CreateCollaboration(ctx context.Context, collaboration db.Collaboration, badges []string, opportunityID string, location *string) error
+	UpdateCollaboration(ctx context.Context, collaboration db.Collaboration, badges []string, opportunityID string, location *string) error
 	UpdateCollaborationVerificationStatus(ctx context.Context, collaborationID string, status db.VerificationStatus) error
 	GetCollaborationsByVerificationStatus(ctx context.Context, status db.VerificationStatus, page, perPage int) ([]db.Collaboration, error)
 	ExpressInterest(ctx context.Context, userID string, collabID string, ttlDuration time.Duration) error

@@ -23,6 +23,7 @@ export const dict = {
 			backToProfile: 'Back to profile',
 			clear: 'Clear',
 			save: 'Save',
+			skip: 'Skip',
 		},
 		textarea: {
 			maxLength: 'maximum {{ maxLength }} characters',

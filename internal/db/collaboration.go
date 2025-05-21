@@ -28,7 +28,7 @@ type Collaboration struct {
 	HiddenAt           *time.Time         `bson:"hidden_at,omitempty" json:"hidden_at"`
 	Badges             []Badge            `bson:"badges,omitempty" json:"badges"`
 	Opportunity        Opportunity        `bson:"opportunity,omitempty" json:"opportunity"`
-	Location           City               `bson:"location,omitempty" json:"location"`
+	Location           *City              `bson:"location,omitempty" json:"location"`
 	User               User               `bson:"user,omitempty" json:"user"`
 	VerificationStatus VerificationStatus `bson:"verification_status,omitempty" json:"verification_status"`
 	VerifiedAt         *time.Time         `bson:"verified_at,omitempty" json:"verified_at"`
@@ -208,7 +208,7 @@ func (s *Storage) CreateCollaboration(
 	collabInput Collaboration,
 	badgeIDs []string,
 	oppID string,
-	location string,
+	location *string,
 ) error {
 	collabCollection := s.db.Collection("collaborations")
 	badgeCollection := s.db.Collection("badges")
@@ -231,12 +231,6 @@ func (s *Storage) CreateCollaboration(
 		return fmt.Errorf("failed to fetch opportunity: %w", err)
 	}
 
-	var locationData City
-	locationFilter := bson.M{"_id": location}
-	if err := locationCollection.FindOne(ctx, locationFilter).Decode(&locationData); err != nil {
-		return fmt.Errorf("failed to fetch location: %w", err)
-	}
-
 	now := time.Now()
 	docToInsert := Collaboration{
 		ID:                 collabInput.ID,
@@ -248,8 +242,16 @@ func (s *Storage) CreateCollaboration(
 		UpdatedAt:          now,
 		Badges:             badges,
 		Opportunity:        opportunity,
-		Location:           locationData,
 		VerificationStatus: VerificationStatusPending,
+	}
+
+	if location != nil {
+		var locationData City
+		locationFilter := bson.M{"_id": location}
+		if err := locationCollection.FindOne(ctx, locationFilter).Decode(&locationData); err != nil {
+			return fmt.Errorf("failed to fetch location: %w", err)
+		}
+		docToInsert.Location = &locationData
 	}
 
 	if _, err := collabCollection.InsertOne(ctx, docToInsert); err != nil {
@@ -328,7 +330,7 @@ func (s *Storage) UpdateCollaboration(
 	collabInput Collaboration,
 	badgeIDs []string,
 	oppID string,
-	location string,
+	location *string,
 ) error {
 	collabCollection := s.db.Collection("collaborations")
 	badgeCollection := s.db.Collection("badges")
@@ -357,23 +359,27 @@ func (s *Storage) UpdateCollaboration(
 		return fmt.Errorf("failed to fetch opportunity: %w", err)
 	}
 
-	var locationData City
-	locationFilter := bson.M{"_id": location}
-	if err := locationCollection.FindOne(ctx, locationFilter).Decode(&locationData); err != nil {
-		return fmt.Errorf("failed to fetch location: %w", err)
+	updateFields := bson.M{
+		"title":       collabInput.Title,
+		"description": collabInput.Description,
+		"is_payable":  collabInput.IsPayable,
+		"badge_ids":   badgeIDs,
+		"badges":      badges,
+		"opportunity": opportunity,
+		"updated_at":  collabInput.UpdatedAt,
+	}
+
+	if location != nil {
+		var locationData City
+		locationFilter := bson.M{"_id": location}
+		if err := locationCollection.FindOne(ctx, locationFilter).Decode(&locationData); err != nil {
+			return fmt.Errorf("failed to fetch location: %w", err)
+		}
+		updateFields["location"] = locationData
 	}
 
 	update := bson.M{
-		"$set": bson.M{
-			"title":       collabInput.Title,
-			"description": collabInput.Description,
-			"is_payable":  collabInput.IsPayable,
-			"badge_ids":   badgeIDs,
-			"badges":      badges,
-			"opportunity": opportunity,
-			"updated_at":  collabInput.UpdatedAt,
-			"location":    locationData,
-		},
+		"$set": updateFields,
 	}
 
 	result, err := collabCollection.UpdateOne(ctx, filter, update)

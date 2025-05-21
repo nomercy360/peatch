@@ -22,6 +22,7 @@ export const dict = {
 			edit: 'Редактировать',
 			backToProfile: 'Назад к профилю',
 			clear: 'Очистить',
+			skip: 'Пропустить',
 		},
 		textarea: {
 			maxLength: 'максимум {{ maxLength }} символов',

@@ -18,11 +18,17 @@ export default function SelectBadges() {
 	const navigate = useNavigate()
 
 	const createCollab = async () => {
+		// If we're skipping location, ensure it's empty
+		if (!editCollaboration.location.id) {
+			setEditCollaboration('location', {} as any)
+		}
 		const created = await createCollaboration(editCollaboration)
 		navigate('/collaborations/' + created.id)
 	}
 
 	const editCollab = async () => {
+		// For editing, we don't allow empty location through the button
+		// because the main button is disabled when no location is selected
 		await updateCollaboration(editCollaborationId(), editCollaboration)
 		navigate('/collaborations/' + editCollaborationId() + '?refetch=true')
 	}
@@ -40,7 +46,11 @@ export default function SelectBadges() {
 	createEffect(() => {
 		if (editCollaboration.location.id) {
 			mainButton.enable(t('common.buttons.chooseAndSave'))
+		} else if (!editCollaborationId()) {
+			// For new collaborations, allow skipping
+			mainButton.enable(t('common.buttons.skip'))
 		} else {
+			// For editing existing collaborations
 			mainButton.disable(t('common.buttons.chooseAndSave'))
 		}
 	})
