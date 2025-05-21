@@ -117,6 +117,13 @@ func (h *handler) handleCreateCollaboration(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusNotFound, "collaboration not found")
 	}
 
+	// notify the user about the new collaboration
+	go func() {
+		if err := h.notificationService.NotifyNewPendingCollaboration(res); err != nil {
+			h.logger.Error("failed to send collaboration created notification", "error", err)
+		}
+	}()
+
 	return c.JSON(http.StatusCreated, contract.ToCollaborationResponse(res))
 }
 

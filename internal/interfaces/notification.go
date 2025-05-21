@@ -11,7 +11,7 @@ type NotificationService interface {
 	NotifyUserVerificationDenied(user db.User) error
 	NotifyCollaborationVerificationDenied(collab db.Collaboration) error
 	NotifyNewPendingUser(user db.User) error
-	NotifyNewPendingCollaboration(user db.User, collab db.Collaboration) error
+	NotifyNewPendingCollaboration(collab db.Collaboration) error
 	NotifyUserFollow(userID db.User, follower db.User) error
 	NotifyCollabInterest(collab db.Collaboration, user db.User) error
 	SendCollaborationToCommunityChatWithImage(collab db.Collaboration) error

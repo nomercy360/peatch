@@ -606,7 +606,9 @@ func (n *Notifier) NotifyNewPendingUser(user db.User) error {
 	return err
 }
 
-func (n *Notifier) NotifyNewPendingCollaboration(user db.User, collab db.Collaboration) error {
+func (n *Notifier) NotifyNewPendingCollaboration(collab db.Collaboration) error {
+	user := collab.User
+
 	firstName := ""
 	if user.FirstName != nil {
 		firstName = *user.FirstName

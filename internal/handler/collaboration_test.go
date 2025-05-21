@@ -86,7 +86,7 @@ func TestCreateCollaboration_Success(t *testing.T) {
 		Title:         "Collab Title",
 		Description:   "Some description",
 		IsPayable:     true,
-		LocationID:    "location1",
+		LocationID:    strPtr("location1"),
 		BadgeIDs:      []string{"badge1"},
 	}
 	bodyBytes, _ := json.Marshal(reqBody)
@@ -187,7 +187,7 @@ func TestExpressInterest_Success(t *testing.T) {
 		Title:         "Test Collaboration",
 		Description:   "Test description",
 		IsPayable:     true,
-		LocationID:    location.ID,
+		LocationID:    &location.ID,
 		BadgeIDs:      []string{badges[0].ID},
 	}
 	bodyBytes, _ := json.Marshal(createReqBody)
@@ -274,7 +274,7 @@ func TestExpressInterest_OwnCollaboration(t *testing.T) {
 		Title:         "Test Collaboration",
 		Description:   "Test description",
 		IsPayable:     true,
-		LocationID:    location.ID,
+		LocationID:    &location.ID,
 		BadgeIDs:      []string{badges[0].ID},
 	}
 	bodyBytes, _ := json.Marshal(createReqBody)
