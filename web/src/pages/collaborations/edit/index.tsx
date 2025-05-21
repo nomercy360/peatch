@@ -9,7 +9,7 @@ export default function EditCollaboration(props: RouteSectionProps) {
 	if (!params.id) {
 		setEditCollaboration({
 			badge_ids: [],
-			location: {},
+			location_id: null,
 			description: '',
 			is_payable: false,
 			opportunity_id: '',
