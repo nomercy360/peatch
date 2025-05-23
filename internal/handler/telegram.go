@@ -268,26 +268,29 @@ func (h *handler) setMenuButton(chatID int64, lang db.LanguageCode) {
 
 func (h *handler) createUser(ctx context.Context, update models.Update, lang db.LanguageCode) db.User {
 	chatID := update.Message.Chat.ID
-	var firstName, lastName *string
-
-	if update.Message.Chat.FirstName != "" {
-		firstName = &update.Message.Chat.FirstName
-	}
-
-	if update.Message.Chat.LastName != "" {
-		lastName = &update.Message.Chat.LastName
-	}
 
 	username := update.Message.Chat.Username
 	if username == "" {
 		username = fmt.Sprintf("user_%d", chatID)
 	}
 
+	var name *string
+	nameStr := update.Message.Chat.FirstName
+	if update.Message.Chat.LastName != "" {
+		if nameStr != "" {
+			nameStr = nameStr + " " + update.Message.Chat.LastName
+		} else {
+			nameStr = update.Message.Chat.LastName
+		}
+	}
+	if nameStr != "" {
+		name = &nameStr
+	}
+
 	user := db.User{
 		ID:           nanoid.Must(),
 		ChatID:       chatID,
-		FirstName:    firstName,
-		LastName:     lastName,
+		Name:         name,
 		Username:     username,
 		LanguageCode: lang,
 	}

@@ -1,1 +1,0 @@
-{"properties":{"badge_ids":{"items":{"type":"string"},"type":"array"},"description":{"type":"string"},"is_payable":{"type":"boolean"},"location_id":{"type":"string"},"opportunity_id":{"type":"string"},"title":{"type":"string"}},"type":"object","x-readme-ref-name":"CreateCollaboration"}

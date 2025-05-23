@@ -50,8 +50,7 @@ type JWTClaims struct {
 }
 
 type UpdateUserRequest struct {
-	FirstName      string   `json:"first_name"`
-	LastName       string   `json:"last_name"`
+	Name           string   `json:"name"`
 	Title          string   `json:"title"`
 	Description    string   `json:"description"`
 	LocationID     string   `json:"location_id"`
@@ -88,11 +87,8 @@ func ToCityResponse(city db.City) CityResponse {
 }
 
 func (r UpdateUserRequest) Validate() error {
-	if r.FirstName == "" {
-		return fmt.Errorf("first_name is required")
-	}
-	if r.LastName == "" {
-		return fmt.Errorf("last_name is required")
+	if r.Name == "" {
+		return fmt.Errorf("name is required")
 	}
 	if r.Title == "" {
 		return fmt.Errorf("title is required")
@@ -189,8 +185,7 @@ type UserResponse struct {
 	ID                 string                `json:"id"`
 	ChatID             int64                 `json:"chat_id"`
 	Username           string                `json:"username"`
-	FirstName          *string               `json:"first_name"`
-	LastName           *string               `json:"last_name"`
+	Name               *string               `json:"name"`
 	LanguageCode       db.LanguageCode       `json:"language_code"`
 	AvatarURL          *string               `json:"avatar_url"`
 	Title              *string               `json:"title"`
@@ -222,8 +217,7 @@ func ToUserResponse(user db.User) UserResponse {
 		ID:                 user.ID,
 		ChatID:             user.ChatID,
 		Username:           user.Username,
-		FirstName:          user.FirstName,
-		LastName:           user.LastName,
+		Name:               user.Name,
 		LanguageCode:       user.LanguageCode,
 		AvatarURL:          user.AvatarURL,
 		Title:              user.Title,
@@ -240,8 +234,7 @@ func ToUserResponse(user db.User) UserResponse {
 
 type UserProfileResponse struct {
 	ID            string                `json:"id"`
-	FirstName     string                `json:"first_name"`
-	LastName      string                `json:"last_name"`
+	Name          string                `json:"name"`
 	AvatarURL     string                `json:"avatar_url"`
 	Title         string                `json:"title"`
 	Description   string                `json:"description"`
@@ -253,13 +246,9 @@ type UserProfileResponse struct {
 } // @Name UserProfileResponse
 
 func ToUserProfile(user db.User) UserProfileResponse {
-	firstName := ""
-	if user.FirstName != nil {
-		firstName = *user.FirstName
-	}
-	lastName := ""
-	if user.LastName != nil {
-		lastName = *user.LastName
+	name := ""
+	if user.Name != nil {
+		name = *user.Name
 	}
 	avatarURL := ""
 	if user.AvatarURL != nil {
@@ -279,8 +268,7 @@ func ToUserProfile(user db.User) UserProfileResponse {
 	}
 	return UserProfileResponse{
 		ID:            user.ID,
-		FirstName:     firstName,
-		LastName:      lastName,
+		Name:          name,
 		AvatarURL:     avatarURL,
 		Title:         title,
 		Description:   description,

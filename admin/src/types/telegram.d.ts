@@ -233,8 +233,7 @@ export interface InitDataUnsafe {
 
 export interface User {
 	id: number
-	first_name: string
-	last_name: string
+	name: string
 	username: string
 	language_code: string
 	is_bot: boolean

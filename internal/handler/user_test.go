@@ -32,8 +32,7 @@ func TestListUsers_Success(t *testing.T) {
 			ID:                 "user-1",
 			ChatID:             123456,
 			Username:           "testuser1",
-			FirstName:          strPtr("Test"),
-			LastName:           strPtr("User1"),
+			Name:               strPtr("Test"),
 			AvatarURL:          strPtr("https://example.com/avatar1.jpg"),
 			Title:              strPtr("Developer"),
 			Description:        strPtr("Test user 1 description"),
@@ -46,8 +45,7 @@ func TestListUsers_Success(t *testing.T) {
 			ID:                 "user-2",
 			ChatID:             654321,
 			Username:           "testuser2",
-			FirstName:          strPtr("Another"),
-			LastName:           strPtr("User2"),
+			Name:               strPtr("Another"),
 			AvatarURL:          strPtr("https://example.com/avatar2.jpg"),
 			Title:              strPtr("Designer"),
 			Description:        strPtr("Test user 2 description"),
@@ -112,8 +110,7 @@ func TestGetUser_Success(t *testing.T) {
 		ID:                 "user-test",
 		ChatID:             987654,
 		Username:           "testhandle",
-		FirstName:          strPtr("Test"),
-		LastName:           strPtr("User"),
+		Name:               strPtr("Test"),
 		AvatarURL:          strPtr("https://example.com/avatar.jpg"),
 		Title:              strPtr("Developer"),
 		Description:        strPtr("Test user description"),
@@ -139,8 +136,8 @@ func TestGetUser_Success(t *testing.T) {
 	if respUser.Username != "" { // should be empty, due to privacy
 		t.Errorf("expected username 'testhandle', got '%s'", respUser.Username)
 	}
-	if respUser.FirstName == nil || *respUser.FirstName != "Test" {
-		t.Errorf("expected first name 'Test', got '%v'", respUser.FirstName)
+	if respUser.Name == nil || *respUser.Name != "Test" {
+		t.Errorf("expected first name 'Test', got '%v'", respUser.Name)
 	}
 }
 
@@ -176,8 +173,7 @@ func TestUpdateUser_Success(t *testing.T) {
 	setupTestRecords(t)
 
 	reqBody := contract.UpdateUserRequest{
-		FirstName:      "Updated",
-		LastName:       "Name",
+		Name:           "Updated",
 		Title:          "Senior Developer",
 		Description:    "Updated description",
 		BadgeIDs:       []string{"badge1", "badge2"},
@@ -194,12 +190,8 @@ func TestUpdateUser_Success(t *testing.T) {
 		t.Fatalf("failed to parse response: %v", err)
 	}
 
-	if updatedUser.FirstName == nil || *updatedUser.FirstName != "Updated" {
-		t.Errorf("expected first name 'Updated', got '%v'", updatedUser.FirstName)
-	}
-
-	if updatedUser.LastName == nil || *updatedUser.LastName != "Name" {
-		t.Errorf("expected last name 'Name', got '%v'", updatedUser.LastName)
+	if updatedUser.Name == nil || *updatedUser.Name != "Updated" {
+		t.Errorf("expected first name 'Updated', got '%v'", updatedUser.Name)
 	}
 
 	if updatedUser.Title == nil || *updatedUser.Title != "Senior Developer" {
@@ -242,8 +234,7 @@ func TestUpdateUser_InvalidRequest(t *testing.T) {
 	}
 
 	reqBody := contract.UpdateUserRequest{
-		FirstName:   "",
-		LastName:    "Name",
+		Name:        "",
 		Title:       "Title",
 		Description: "Description",
 	}
@@ -260,8 +251,7 @@ func TestUpdateUser_Unauthorized(t *testing.T) {
 	e := testutils.SetupHandlerDependencies(t)
 
 	reqBody := contract.UpdateUserRequest{
-		FirstName:   "Test",
-		LastName:    "User",
+		Name:        "Test",
 		Title:       "Title",
 		Description: "Description",
 	}
@@ -291,7 +281,7 @@ func TestFollowUser_Success(t *testing.T) {
 	userID1 := user1Auth.User.ID
 
 	testutils.PerformRequest(t, e, http.MethodPut,
-		"/api/users", `{"first_name": "Follower", "last_name": "User", "title": "Follower", "description": "Follower description", "location_id": "location1", "badge_ids": ["badge1"], "opportunity_ids": ["opp1"]}`,
+		"/api/users", `{"name": "Follower", "title": "Follower", "description": "Follower description", "location_id": "location1", "badge_ids": ["badge1"], "opportunity_ids": ["opp1"]}`,
 		token1, http.StatusOK)
 
 	if err := testutils.GetTestDBStorage().UpdateUserVerificationStatus(context.Background(), userID1, db.VerificationStatusVerified); err != nil {
@@ -305,7 +295,7 @@ func TestFollowUser_Success(t *testing.T) {
 	userID2 := user2Auth.User.ID
 
 	testutils.PerformRequest(t, e, http.MethodPut,
-		"/api/users", `{"first_name": "Followed", "last_name": "User", "title": "Followed", "description": "Followed description", "location_id": "location1", "badge_ids": ["badge1"], "opportunity_ids": ["opp1"]}`,
+		"/api/users", `{"name": "Followed", "title": "Followed", "description": "Followed description", "location_id": "location1", "badge_ids": ["badge1"], "opportunity_ids": ["opp1"]}`,
 		user2Auth.Token, http.StatusOK)
 
 	if err := testutils.GetTestDBStorage().UpdateUserVerificationStatus(context.Background(), userID2, db.VerificationStatusVerified); err != nil {

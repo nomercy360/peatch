@@ -136,7 +136,7 @@ export default function UserProfilePage() {
 			new URLSearchParams({
 				url: 'https://t.me/peatch_bot/app?startapp=u' + id,
 			}).toString() + '&text=' +
-			t('pages.users.shareURLText', { first_name: query.data.first_name, last_name: query.data.last_name })
+			t('pages.users.shareURLText', { name: query.data.name })
 
 		window.Telegram.WebApp.openTelegramLink(url)
 	}
@@ -208,7 +208,7 @@ export default function UserProfilePage() {
 						</Show>
 						<div class="w-full px-4 py-2.5">
 							<p class="text-3xl font-semibold capitalize text-primary">
-								{query.data.first_name} {query.data.last_name}:
+								{query.data.name}:
 							</p>
 							<p class="text-3xl capitalize">{query.data.title}</p>
 							<p class="mt-1 text-start text-sm font-normal text-secondary-foreground">

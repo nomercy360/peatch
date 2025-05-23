@@ -61,12 +61,18 @@ func (h *handler) TelegramAuth(c echo.Context) error {
 			username = "u" + fmt.Sprintf("%d", data.User.ID)
 		}
 
-		var first, last *string
-		if data.User.FirstName != "" {
-			first = &data.User.FirstName
-		}
+		// Combine first and last names from Telegram
+		var name *string
+		nameStr := data.User.FirstName
 		if data.User.LastName != "" {
-			last = &data.User.LastName
+			if nameStr != "" {
+				nameStr = nameStr + " " + data.User.LastName
+			} else {
+				nameStr = data.User.LastName
+			}
+		}
+		if nameStr != "" {
+			name = &nameStr
 		}
 
 		lang := db.LanguageRU
@@ -78,8 +84,7 @@ func (h *handler) TelegramAuth(c echo.Context) error {
 			ID:           nanoid.Must(),
 			Username:     username,
 			ChatID:       data.User.ID,
-			FirstName:    first,
-			LastName:     last,
+			Name:         name,
 			LanguageCode: lang,
 		}
 

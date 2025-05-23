@@ -35,13 +35,12 @@ export const dict = {
 		},
 		users: {
 			verificationStatusDenied: 'We have hidden your profile. Try to make it more personal and authentic.',
-			shareURLText: 'Check out {{first_name}} {{last_name}}\'s profile on Peatch! 🌟',
+			shareURLText: 'Check out {{name}}\'s profile on Peatch! 🌟',
 			edit: {
 				general: {
 					title: 'Tell about yourself',
 					description: 'Briefly about yourself, what you do and what interests you.',
-					firstName: 'First name',
-					lastName: 'Last name',
+					firstName: 'Full name',
 					jobTitle: 'Job title',
 				},
 				description: {

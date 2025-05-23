@@ -18,16 +18,14 @@ export const setUser = (user: UserResponse) => setStore('user', user)
 export const setToken = (token: string) => setStore('token', token)
 
 export const [editUser, setEditUser] = createStore<{
-	first_name: string,
-	last_name: string,
+	name: string,
 	title: string,
 	description: string,
 	location: CityResponse
 	badge_ids: string[]
 	opportunity_ids: string[]
 }>({
-	first_name: '',
-	last_name: '',
+	name: '',
 	title: '',
 	description: '',
 	location: {},

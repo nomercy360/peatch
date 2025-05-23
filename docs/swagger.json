@@ -1184,13 +1184,10 @@
                 "description": {
                     "type": "string"
                 },
-                "first_name": {
-                    "type": "string"
-                },
-                "last_name": {
-                    "type": "string"
-                },
                 "location_id": {
+                    "type": "string"
+                },
+                "name": {
                     "type": "string"
                 },
                 "opportunity_ids": {
@@ -1219,9 +1216,6 @@
                 "description": {
                     "type": "string"
                 },
-                "first_name": {
-                    "type": "string"
-                },
                 "id": {
                     "type": "string"
                 },
@@ -1231,11 +1225,11 @@
                 "last_active_at": {
                     "type": "string"
                 },
-                "last_name": {
-                    "type": "string"
-                },
                 "location": {
                     "$ref": "#/definitions/CityResponse"
+                },
+                "name": {
+                    "type": "string"
                 },
                 "opportunities": {
                     "type": "array",
@@ -1269,9 +1263,6 @@
                 "description": {
                     "type": "string"
                 },
-                "first_name": {
-                    "type": "string"
-                },
                 "id": {
                     "type": "string"
                 },
@@ -1281,11 +1272,11 @@
                 "last_active_at": {
                     "type": "string"
                 },
-                "last_name": {
-                    "type": "string"
-                },
                 "location": {
                     "$ref": "#/definitions/CityResponse"
+                },
+                "name": {
+                    "type": "string"
                 },
                 "opportunities": {
                     "type": "array",

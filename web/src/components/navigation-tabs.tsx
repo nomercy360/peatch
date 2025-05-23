@@ -39,7 +39,7 @@ export default function NavigationTabs(props: any) {
 				class="fixed bottom-0 z-50 flex h-[100px] w-full items-center justify-between space-x-10 border border-t bg-background px-5 shadow-sm">
 				<div class="flex items-center">
 					<Link
-						href={store.user.first_name && store.user.description && store.user.location?.id ? `/users/${store.user?.id}` : '/users/edit'}
+						href={store.user.name && store.user.description && store.user.location?.id ? `/users/${store.user?.id}` : '/users/edit'}
 						state={{ from: location.pathname }}
 						class="flex items-center justify-center"
 					>

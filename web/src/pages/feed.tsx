@@ -193,7 +193,7 @@ const UserCard = (props: UserCardProps) => {
 				loading="lazy"
 				alt="User Avatar"
 			/>
-			<p class="mt-3 text-3xl font-semibold capitalize text-primary">{props.user.first_name?.trimEnd()}:</p>
+			<p class="mt-3 text-3xl font-semibold capitalize text-primary">{props.user.name?.trimEnd()}:</p>
 			<p class="text-3xl capitalize">{props.user.title}</p>
 			<p class="mt-2 text-sm text-secondary-foreground">
 				{shortenDescription(props.user.description!)}

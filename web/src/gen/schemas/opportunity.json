@@ -1,1 +1,0 @@
-{"properties":{"color":{"type":"string"},"created_at":{"type":"string"},"description":{"type":"string"},"icon":{"type":"string"},"id":{"type":"integer"},"text":{"type":"string"}},"type":"object","x-readme-ref-name":"Opportunity"}

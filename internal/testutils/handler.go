@@ -40,14 +40,18 @@ type MockNotificationService struct {
 	UserVerificationDeniedFunc          func(user db.User) error
 	CollaborationVerificationDeniedFunc func(collab db.Collaboration) error
 	NewPendingUserFunc                  func(user db.User) error
-	NewPendingCollaborationFunc         func(user db.User, collab db.Collaboration) error
+	NewPendingCollaborationFunc         func(collab db.Collaboration) error
 	UserFollowFunc                      func(user db.User, follower db.User) error
 	CollabInterestFunc                  func(user db.User, collab db.Collaboration) error
 	SendCollaborationToCommunityFunc    func(collab db.Collaboration) error
-
 	// Call tracking for testing
 	CollabInterestRecord TestCallRecord
 	UserFollowRecord     TestCallRecord // For tracking user follow notifications
+}
+
+func (m *MockNotificationService) NotifyUsersWithMatchingOpportunity(collab db.Collaboration, users []db.User) error {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (m *MockNotificationService) NotifyUserVerified(user db.User) error {
@@ -85,9 +89,9 @@ func (m *MockNotificationService) NotifyNewPendingUser(user db.User) error {
 	return nil
 }
 
-func (m *MockNotificationService) NotifyNewPendingCollaboration(user db.User, collab db.Collaboration) error {
+func (m *MockNotificationService) NotifyNewPendingCollaboration(collab db.Collaboration) error {
 	if m.NewPendingCollaborationFunc != nil {
-		return m.NewPendingCollaborationFunc(user, collab)
+		return m.NewPendingCollaborationFunc(collab)
 	}
 	return nil
 }

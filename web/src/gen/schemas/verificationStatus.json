@@ -1,1 +1,0 @@
-{"enum":["pending","verified","denied","blocked","unverified"],"type":"string","x-enum-varnames":["VerificationStatusPending","VerificationStatusVerified","VerificationStatusDenied","VerificationStatusBlocked","VerificationStatusUnverified"],"x-readme-ref-name":"VerificationStatus"}

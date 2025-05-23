@@ -18,16 +18,16 @@ export default function UserCard({ user, updateUserStatus }: UserCardProps) {
 						<img
 							class="h-12 w-12 rounded-full"
 							src={`https://assets.peatch.io/cdn-cgi/image/width=100/${user.avatar_url}`}
-							alt={`${user.first_name} ${user.last_name}`}
+							alt={`${user.name}`}
 						/>
 					) : (
 						<div class="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
-							<span class="text-muted-foreground text-lg">{user.first_name?.[0]}{user.last_name?.[0]}</span>
+							<span class="text-muted-foreground text-lg">{user.name?.[0]}</span>
 						</div>
 					)}
 				</div>
 				<div class="ml-3">
-					<div class="text-base font-medium text-card-foreground">{user.first_name} {user.last_name}</div>
+					<div class="text-base font-medium text-card-foreground">{user.name}</div>
 					<div class="text-sm text-muted-foreground">@{user.username}</div>
 				</div>
 				<div class="ml-auto">

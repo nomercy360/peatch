@@ -36,11 +36,8 @@ func TestTelegramAuth_Success(t *testing.T) {
 	if resp.User.Username != "mkkksim" {
 		t.Errorf("Expected username 'mkkksim', got '%s'", resp.User.Username)
 	}
-	if resp.User.FirstName == nil || *resp.User.FirstName != "Maksim" {
-		t.Errorf("Expected FirstName 'Maksim', got '%v'", resp.User.FirstName)
-	}
-	if resp.User.LastName != nil {
-		t.Errorf("Expected LastName empty, got '%v'", resp.User.LastName)
+	if resp.User.Name == nil || *resp.User.Name != "Maksim" {
+		t.Errorf("Expected Name 'Maksim', got '%v'", resp.User.Name)
 	}
 	if resp.User.LanguageCode != db.LanguageRU {
 		t.Errorf("Expected LanguageCode 'ru', got '%v'", resp.User.LanguageCode)

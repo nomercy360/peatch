@@ -105,8 +105,7 @@ func (h *handler) handleUpdateUser(c echo.Context) error {
 
 	user := db.User{
 		ID:          uid,
-		FirstName:   &req.FirstName,
-		LastName:    &req.LastName,
+		Name:        &req.Name,
 		Title:       &req.Title,
 		Description: &req.Description,
 	}

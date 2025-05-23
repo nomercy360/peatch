@@ -167,7 +167,7 @@ func TestExpressInterest_Success(t *testing.T) {
 	badges, opportunities, location := setupTestRecords(t)
 
 	testutils.PerformRequest(t, e, http.MethodPut,
-		"/api/users", `{"first_name": "creator", "last_name": "creator", "title": "creator", "description": "creator description", "location_id": "location1", "badge_ids": ["badge1"], "opportunity_ids": ["opp1"]}`,
+		"/api/users", `{"name": "creator", "title": "creator", "description": "creator description", "location_id": "location1", "badge_ids": ["badge1"], "opportunity_ids": ["opp1"]}`,
 		creatorAuthResp.Token, http.StatusOK)
 
 	if err := testutils.GetTestDBStorage().UpdateUserVerificationStatus(context.Background(), creatorAuthResp.User.ID, db.VerificationStatusVerified); err != nil {
@@ -175,7 +175,7 @@ func TestExpressInterest_Success(t *testing.T) {
 	}
 
 	testutils.PerformRequest(t, e, http.MethodPut,
-		"/api/users", `{"first_name": "interested", "last_name": "interested", "title": "interested", "description": "interested description", "location_id": "location1", "badge_ids": ["badge1"], "opportunity_ids": ["opp1"]}`,
+		"/api/users", `{"name": "interested", "title": "interested", "description": "interested description", "location_id": "location1", "badge_ids": ["badge1"], "opportunity_ids": ["opp1"]}`,
 		interestedAuthResp.Token, http.StatusOK)
 	if err := testutils.GetTestDBStorage().UpdateUserVerificationStatus(context.Background(), interestedAuthResp.User.ID, db.VerificationStatusVerified); err != nil {
 		return

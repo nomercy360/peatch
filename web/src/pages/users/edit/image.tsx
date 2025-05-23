@@ -74,8 +74,7 @@ export default function ImageUpload() {
 
 			await updateUser({
 				location_id: editUser.location.id,
-				first_name: editUser.first_name,
-				last_name: editUser.last_name,
+				name: editUser.name,
 				title: editUser.title,
 				description: editUser.description,
 				badge_ids: editUser.badge_ids,

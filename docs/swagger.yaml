@@ -152,11 +152,9 @@ definitions:
         type: array
       description:
         type: string
-      first_name:
-        type: string
-      last_name:
-        type: string
       location_id:
+        type: string
+      name:
         type: string
       opportunity_ids:
         items:
@@ -175,18 +173,16 @@ definitions:
         type: array
       description:
         type: string
-      first_name:
-        type: string
       id:
         type: string
       is_following:
         type: boolean
       last_active_at:
         type: string
-      last_name:
-        type: string
       location:
         $ref: '#/definitions/CityResponse'
+      name:
+        type: string
       opportunities:
         items:
           $ref: '#/definitions/OpportunityResponse'
@@ -208,18 +204,16 @@ definitions:
         type: string
       description:
         type: string
-      first_name:
-        type: string
       id:
         type: string
       language_code:
         type: string
       last_active_at:
         type: string
-      last_name:
-        type: string
       location:
         $ref: '#/definitions/CityResponse'
+      name:
+        type: string
       opportunities:
         items:
           $ref: '#/definitions/OpportunityResponse'

@@ -45,8 +45,7 @@ const (
 
 type User struct {
 	ID                     string             `bson:"_id,omitempty" json:"id"`
-	FirstName              *string            `bson:"first_name,omitempty" json:"first_name"`
-	LastName               *string            `bson:"last_name,omitempty" json:"last_name"`
+	Name                   *string            `bson:"name,omitempty" json:"name"`
 	ChatID                 int64              `bson:"chat_id,omitempty" json:"chat_id"`
 	Username               string             `bson:"username,omitempty" json:"username"`
 	CreatedAt              time.Time          `bson:"created_at,omitempty" json:"created_at"`
@@ -76,7 +75,7 @@ func (u *User) IsGeneratedUsername() bool {
 }
 
 func (u *User) IsProfileComplete() bool {
-	if u.FirstName == nil || u.LastName == nil || u.Title == nil || u.Description == nil {
+	if u.Name == nil || u.Title == nil || u.Description == nil {
 		return false
 	}
 	if u.Location == nil || u.Location.ID == "" {
@@ -123,8 +122,7 @@ func (s *Storage) ListUsers(ctx context.Context, params UserQuery) ([]User, erro
 		searchRegex := primitive.Regex{Pattern: params.Search, Options: "i"}
 		conditions = append(conditions, bson.M{
 			"$or": []bson.M{
-				{"first_name": searchRegex},
-				{"last_name": searchRegex},
+				{"name": searchRegex},
 				{"title": searchRegex},
 				{"description": searchRegex},
 			},
@@ -241,8 +239,7 @@ func (s *Storage) UpdateUser(ctx context.Context, user User, badgeIDs, oppIDs []
 
 	update := bson.M{
 		"$set": bson.M{
-			"first_name":    user.FirstName,
-			"last_name":     user.LastName,
+			"name":          user.Name,
 			"updated_at":    time.Now(),
 			"title":         user.Title,
 			"description":   user.Description,

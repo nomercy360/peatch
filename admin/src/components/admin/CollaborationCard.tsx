@@ -34,18 +34,18 @@ export default function CollaborationCard({ collab, updateCollaborationStatus }:
 								<img
 									class="h-8 w-8 rounded-full object-cover"
 									src={`https://assets.peatch.io/cdn-cgi/image/width=100/${collab.user.avatar_url}`}
-									alt={`${collab.user.first_name} ${collab.user.last_name}`}
+									alt={`${collab.user.name}`}
 								/>
 							) : (
 								<div class="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
                   <span
-										class="text-muted-foreground">{collab.user?.first_name?.[0]}{collab.user?.last_name?.[0]}</span>
+										class="text-muted-foreground">{collab.user?.name?.[0]}</span>
 								</div>
 							)}
 						</div>
 						<div class="ml-2">
 							<div class="text-sm font-medium text-card-foreground">
-								{collab.user?.first_name} {collab.user?.last_name}
+								{collab.user?.name}
 							</div>
 						</div>
 					</div>

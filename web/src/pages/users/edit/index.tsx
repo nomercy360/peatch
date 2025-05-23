@@ -5,8 +5,7 @@ export default function EditUser(props: RouteSectionProps) {
 	const navigate = useNavigate()
 
 	setEditUser({
-		first_name: store.user.first_name || '',
-		last_name: store.user.last_name || '',
+		name: store.user.name || '',
 		title: store.user.title || '',
 		description: store.user.description || '',
 		avatar_url: store.user.avatar_url || '',
@@ -18,7 +17,7 @@ export default function EditUser(props: RouteSectionProps) {
 	})
 
 	// if the first name or last name or title is not set, redirect to the first step
-	if (!store.user.first_name || !store.user.last_name || !store.user.title) {
+	if (!store.user.name || !store.user.title) {
 		navigate('/users/edit')
 	}
 

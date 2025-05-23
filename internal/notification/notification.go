@@ -115,17 +115,10 @@ func (n *Notifier) NotifyUserVerified(user db.User) error {
 		return nil
 	}
 
-	firstName := ""
-	if user.FirstName != nil {
-		firstName = *user.FirstName
-	}
-	lastName := ""
-	if user.LastName != nil {
-		lastName = *user.LastName
-	}
-
-	fullName := fmt.Sprintf("%s %s", firstName, lastName)
-	if firstName == "" && lastName == "" {
+	fullName := ""
+	if user.Name != nil {
+		fullName = *user.Name
+	} else {
 		fullName = user.Username
 	}
 
@@ -323,17 +316,10 @@ func (n *Notifier) NotifyUsersWithMatchingOpportunity(collab db.Collaboration, u
 	var imageBytes []byte
 	if n.imageServiceURL != "" {
 		// Prepare image generation request
-		firstName := ""
-		if collab.User.FirstName != nil {
-			firstName = *collab.User.FirstName
-		}
-		lastName := ""
-		if collab.User.LastName != nil {
-			lastName = *collab.User.LastName
-		}
-
-		fullName := fmt.Sprintf("%s %s", firstName, lastName)
-		if firstName == "" && lastName == "" {
+		fullName := ""
+		if collab.User.Name != nil {
+			fullName = *collab.User.Name
+		} else {
 			fullName = collab.User.Username
 		}
 
@@ -411,15 +397,21 @@ func (n *Notifier) NotifyUsersWithMatchingOpportunity(collab db.Collaboration, u
 
 				var msgText string
 				if user.LanguageCode == db.LanguageRU {
-					msgText = fmt.Sprintf("🔍 Новая коллаборация от %s %s, которая может вас заинтересовать!\n\n\"%s\"\n\nОна соответствует вашему интересу: %s",
-						*collab.User.FirstName,
-						*collab.User.LastName,
+					collabUserName := collab.User.Username
+					if collab.User.Name != nil {
+						collabUserName = *collab.User.Name
+					}
+					msgText = fmt.Sprintf("🔍 Новая коллаборация от %s, которая может вас заинтересовать!\n\n\"%s\"\n\nОна соответствует вашему интересу: %s",
+						collabUserName,
 						collab.Title,
 						collab.Opportunity.TextRU)
 				} else {
-					msgText = fmt.Sprintf("🔍 New collaboration from %s %s that might interest you!\n\n\"%s\"\n\nIt matches your interest: %s",
-						*collab.User.FirstName,
-						*collab.User.LastName,
+					collabUserName := collab.User.Username
+					if collab.User.Name != nil {
+						collabUserName = *collab.User.Name
+					}
+					msgText = fmt.Sprintf("🔍 New collaboration from %s that might interest you!\n\n\"%s\"\n\nIt matches your interest: %s",
+						collabUserName,
 						collab.Title,
 						collab.Opportunity.Text)
 				}
@@ -463,17 +455,10 @@ func (n *Notifier) NotifyUsersWithMatchingOpportunity(collab db.Collaboration, u
 }
 
 func (n *Notifier) SendCollaborationToCommunityChatWithImage(collab db.Collaboration) error {
-	firstName := ""
-	if collab.User.FirstName != nil {
-		firstName = *collab.User.FirstName
-	}
-	lastName := ""
-	if collab.User.LastName != nil {
-		lastName = *collab.User.LastName
-	}
-
-	fullName := fmt.Sprintf("%s %s", firstName, lastName)
-	if firstName == "" && lastName == "" {
+	fullName := ""
+	if collab.User.Name != nil {
+		fullName = *collab.User.Name
+	} else {
 		fullName = collab.User.Username
 	}
 
@@ -572,13 +557,11 @@ func (n *Notifier) SendCollaborationToCommunityChatWithImage(collab db.Collabora
 }
 
 func (n *Notifier) NotifyNewPendingUser(user db.User) error {
-	firstName := ""
-	if user.FirstName != nil {
-		firstName = *user.FirstName
-	}
-	lastName := ""
-	if user.LastName != nil {
-		lastName = *user.LastName
+	name := ""
+	if user.Name != nil {
+		name = *user.Name
+	} else {
+		name = user.Username
 	}
 
 	btn := models.InlineKeyboardButton{
@@ -592,8 +575,8 @@ func (n *Notifier) NotifyNewPendingUser(user db.User) error {
 		},
 	}
 
-	msgText := fmt.Sprintf("🔔 New user pending verification:\nName: %s %s\nUsername: @%s",
-		firstName, lastName, user.Username)
+	msgText := fmt.Sprintf("🔔 New user pending verification:\nName: %s\nUsername: @%s",
+		name, user.Username)
 
 	params := &telegram.SendMessageParams{
 		ChatID:      fmt.Sprintf("%d", n.adminChatID),
@@ -609,13 +592,9 @@ func (n *Notifier) NotifyNewPendingUser(user db.User) error {
 func (n *Notifier) NotifyNewPendingCollaboration(collab db.Collaboration) error {
 	user := collab.User
 
-	firstName := ""
-	if user.FirstName != nil {
-		firstName = *user.FirstName
-	}
-	lastName := ""
-	if user.LastName != nil {
-		lastName = *user.LastName
+	name := ""
+	if user.Name != nil {
+		name = *user.Name
 	}
 
 	btn := models.InlineKeyboardButton{
@@ -629,8 +608,8 @@ func (n *Notifier) NotifyNewPendingCollaboration(collab db.Collaboration) error 
 		},
 	}
 
-	msgText := fmt.Sprintf("🔔 New collaboration pending verification:\nTitle: %s\nBy: %s %s (@%s)",
-		collab.Title, firstName, lastName, user.Username)
+	msgText := fmt.Sprintf("🔔 New collaboration pending verification:\nTitle: %s\nBy: %s (@%s)",
+		collab.Title, name, user.Username)
 
 	params := &telegram.SendMessageParams{
 		ChatID:      fmt.Sprintf("%d", n.adminChatID),
@@ -652,16 +631,8 @@ func (n *Notifier) NotifyUserFollow(userToFollow db.User, follower db.User) erro
 	}
 
 	followerName := follower.Username
-	if follower.FirstName != nil || follower.LastName != nil {
-		firstName := ""
-		if follower.FirstName != nil {
-			firstName = *follower.FirstName
-		}
-		lastName := ""
-		if follower.LastName != nil {
-			lastName = *follower.LastName
-		}
-		followerName = fmt.Sprintf("%s %s", firstName, lastName)
+	if follower.Name != nil {
+		followerName = *follower.Name
 	}
 
 	var msgText string
@@ -791,16 +762,8 @@ func (n *Notifier) NotifyCollabInterest(collab db.Collaboration, user db.User) e
 	}
 
 	userName := user.Username
-	if user.FirstName != nil || user.LastName != nil {
-		firstName := ""
-		if user.FirstName != nil {
-			firstName = *user.FirstName
-		}
-		lastName := ""
-		if user.LastName != nil {
-			lastName = *user.LastName
-		}
-		userName = fmt.Sprintf("%s %s", firstName, lastName)
+	if user.Name != nil && *user.Name != "" {
+		userName = *user.Name
 	}
 
 	var msgText string

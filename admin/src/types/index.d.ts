@@ -10,8 +10,7 @@ declare global {
 
 export interface UserResponse {
 	id: string
-	first_name: string
-	last_name: string
+	name: string
 	date_of_birth: string
 	username: string
 	telegram_id: number

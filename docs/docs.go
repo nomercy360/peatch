@@ -1188,13 +1188,10 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
-                "first_name": {
-                    "type": "string"
-                },
-                "last_name": {
-                    "type": "string"
-                },
                 "location_id": {
+                    "type": "string"
+                },
+                "name": {
                     "type": "string"
                 },
                 "opportunity_ids": {
@@ -1223,9 +1220,6 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
-                "first_name": {
-                    "type": "string"
-                },
                 "id": {
                     "type": "string"
                 },
@@ -1235,11 +1229,11 @@ const docTemplate = `{
                 "last_active_at": {
                     "type": "string"
                 },
-                "last_name": {
-                    "type": "string"
-                },
                 "location": {
                     "$ref": "#/definitions/CityResponse"
+                },
+                "name": {
+                    "type": "string"
                 },
                 "opportunities": {
                     "type": "array",
@@ -1273,9 +1267,6 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
-                "first_name": {
-                    "type": "string"
-                },
                 "id": {
                     "type": "string"
                 },
@@ -1285,11 +1276,11 @@ const docTemplate = `{
                 "last_active_at": {
                     "type": "string"
                 },
-                "last_name": {
-                    "type": "string"
-                },
                 "location": {
                     "$ref": "#/definitions/CityResponse"
+                },
+                "name": {
+                    "type": "string"
                 },
                 "opportunities": {
                     "type": "array",

@@ -92,7 +92,7 @@ export default function Collaboration() {
 								/>
 								<div>
 									<p class="text-sm font-bold text-white">
-										{query.data.user?.first_name} {query.data.user?.last_name}:
+										{query.data.user?.name}:
 									</p>
 									<p class="text-sm text-white">{query.data.user?.title}</p>
 								</div>
