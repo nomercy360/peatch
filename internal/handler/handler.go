@@ -51,10 +51,11 @@ type storager interface {
 	GetUserByID(ctx context.Context, ID string) (db.User, error)
 	CreateUser(ctx context.Context, user db.User) error
 	GetUserProfile(ctx context.Context, viewerID string, id string) (db.User, error)
-	UpdateUser(ctx context.Context, user db.User, badges, opportunities []string, locationID string) error
+	UpdateUser(ctx context.Context, user db.User, badges, opportunities []string, locationID string, links []db.Link) error
 	UpdateUserLoginMetadata(ctx context.Context, userID string, metadata db.LoginMeta) error
 	UpdateUserAvatarURL(ctx context.Context, userID, avatarURL string) error
 	UpdateUserVerificationStatus(ctx context.Context, userID string, status db.VerificationStatus) error
+	PublishUserProfile(ctx context.Context, userID string) error
 	FollowUser(ctx context.Context, userID, followerID string, ttlDuration time.Duration) error
 	IsUserFollowing(ctx context.Context, userID, followerID string) (bool, error)
 	GetUsersByVerificationStatus(ctx context.Context, status db.VerificationStatus, page, perPage int) ([]db.User, error)
@@ -138,6 +139,7 @@ func (h *handler) SetupRoutes(e *echo.Echo) {
 	api.GET("/users", h.handleListUsers)
 	api.GET("/users/me", h.handleGetMe)
 	api.POST("/users/avatar", h.handleUserAvatar)
+	api.POST("/users/publish", h.handlePublishProfile)
 	api.GET("/users/:id", h.handleGetUser)
 	api.POST("/users/:id/follow", h.handleFollowUser)
 	api.PUT("/users", h.handleUpdateUser)

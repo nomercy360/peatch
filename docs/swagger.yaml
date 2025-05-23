@@ -119,6 +119,17 @@ definitions:
       error:
         type: string
     type: object
+  Link:
+    properties:
+      label:
+        type: string
+      order:
+        type: integer
+      type:
+        type: string
+      url:
+        type: string
+    type: object
   Location:
     properties:
       latitude:
@@ -152,6 +163,10 @@ definitions:
         type: array
       description:
         type: string
+      links:
+        items:
+          $ref: '#/definitions/Link'
+        type: array
       location_id:
         type: string
       name:
@@ -179,6 +194,10 @@ definitions:
         type: boolean
       last_active_at:
         type: string
+      links:
+        items:
+          $ref: '#/definitions/Link'
+        type: array
       location:
         $ref: '#/definitions/CityResponse'
       name:
@@ -204,12 +223,18 @@ definitions:
         type: string
       description:
         type: string
+      hidden_at:
+        type: string
       id:
         type: string
       language_code:
         type: string
       last_active_at:
         type: string
+      links:
+        items:
+          $ref: '#/definitions/Link'
+        type: array
       location:
         $ref: '#/definitions/CityResponse'
       name:
@@ -753,11 +778,11 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: User ID
+      - description: User ID or username
         in: path
         name: id
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
@@ -837,6 +862,21 @@ paths:
           schema:
             $ref: '#/definitions/UserResponse'
       summary: Get current user
+      tags:
+      - users
+  /api/users/publish:
+    post:
+      consumes:
+      - application/json
+      description: Makes the user profile visible by setting hidden_at to null
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/StatusResponse'
+      summary: Publish user profile
       tags:
       - users
   /auth/telegram:

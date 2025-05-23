@@ -2,6 +2,7 @@ import { createEffect, createSignal, For, onMount, Show } from 'solid-js'
 import { useTranslations } from '~/lib/locale-context'
 import { cn } from '~/lib/utils'
 import { OpportunityResponse } from '~/gen'
+import { Motion, Presence } from 'solid-motionone'
 
 export function SelectOpportunity(props: {
 	selected: string[] | string
@@ -62,61 +63,121 @@ export function SelectOpportunity(props: {
 					onInput={e => setSearch(e.currentTarget.value)}
 					value={search()}
 				/>
-				<Show when={search()}>
-					<button
-						class="text-hint flex h-full items-center justify-center px-2.5 text-sm"
-						onClick={() => setSearch('')}
-					>
-						Clear
-					</button>
-				</Show>
+				<Presence exitBeforeEnter>
+					<Show when={search()}>
+						<Motion.button
+							class="text-hint flex h-full items-center justify-center px-2.5 text-sm"
+							onClick={() => setSearch('')}
+							initial={{ opacity: 0, x: 10 }}
+							animate={{ opacity: 1, x: 0 }}
+							exit={{ opacity: 0, x: 10 }}
+							transition={{ duration: 0.2 }}
+						>
+							Clear
+						</Motion.button>
+					</Show>
+				</Presence>
 			</div>
 			<div class="flex h-11 w-full flex-row items-center justify-between">
 				<div />
-				<div class="text-hint flex h-11 items-center justify-center text-sm">
+				<Motion.div
+					class="text-hint flex h-11 items-center justify-center text-sm"
+					animate={{ scale: [1, 1.1, 1] }}
+					transition={{ duration: 0.3 }}
+				>
 					{Array.isArray(props.selected)
 						? `${props.selected.length} / 10`
 						: 'choose one'}
-				</div>
+				</Motion.div>
 			</div>
-			<div class="flex w-full flex-row flex-wrap items-center justify-start gap-1">
-				<Show when={!props.loading} fallback={<Loader />}>
+			<Motion.div
+				class="flex w-full flex-row flex-wrap items-center justify-start gap-1"
+				initial={{ opacity: 0 }}
+				animate={{ opacity: 1 }}
+				transition={{ duration: 0.3 }}
+			>
+				<Show when={!props.loading} fallback={<AnimatedLoader />}>
 					<For each={filtered()}>
-						{op => (
-							<button
+						{(op, index) => (
+							<Motion.button
 								onClick={() => onClick(op.id)}
-								class={'flex h-[60px] w-full flex-row items-center justify-start gap-2.5 rounded-2xl px-2.5'}
-								style={{ 'background-color': includes(op.id) ? `#${op.color}` : 'var(--secondary)' }}
+								class={'flex h-[60px] w-full flex-row items-center justify-start gap-2.5 overflow-hidden rounded-2xl px-2.5'}
+								initial={{ opacity: 0, x: -20 }}
+								animate={{
+									opacity: 1,
+									x: 0,
+									backgroundColor: includes(op.id) ? `#${op.color}` : 'var(--secondary)',
+								}}
+								transition={{
+									duration: 0.3,
+									delay: index() * 0.03,
+									backgroundColor: { duration: 0.3 },
+								}}
+								press={{ scale: 0.98 }}
 							>
-								<div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-border">
-									<span class="material-symbols-rounded shrink-0">
+								<Motion.div
+									class="flex size-10 shrink-0 items-center justify-center rounded-full bg-border"
+									animate={{
+										scale: includes(op.id) ? [1, 1.2, 1] : 1,
+									}}
+									transition={{
+										duration: 0.5,
+									}}
+								>
+									<Motion.span
+										class="material-symbols-rounded shrink-0"
+										animate={{
+											color: includes(op.id) ? `#${op.color}` : 'var(--foreground)',
+										}}
+										transition={{ duration: 0.3 }}
+									>
 										{String.fromCodePoint(parseInt(op.icon!, 16))}
-									</span>
-								</div>
+									</Motion.span>
+								</Motion.div>
 
 								<div class="text-start">
-									<p class={cn('text-xs font-semibold', includes(op.id!) ? 'text-white' : 'text-secondary-foreground')}>
+									<Motion.p
+										class={cn('text-xs font-semibold')}
+										animate={{
+											color: includes(op.id!) ? 'white' : 'var(--secondary-foreground)',
+										}}
+										transition={{ duration: 0.3 }}
+									>
 										{op.text}
-									</p>
-									<p
-										class={cn('text-xs leading-tight', includes(op.id!) ? 'text-white/80' : 'text-secondary-foreground')}>
+									</Motion.p>
+									<Motion.p
+										class={cn('text-xs leading-tight')}
+										animate={{
+											color: includes(op.id!) ? 'rgba(255, 255, 255, 0.8)' : 'var(--secondary-foreground)',
+										}}
+										transition={{ duration: 0.3 }}
+									>
 										{op.description}
-									</p>
+									</Motion.p>
 								</div>
-							</button>
+							</Motion.button>
 						)}
 					</For>
 				</Show>
-			</div>
+			</Motion.div>
 		</>
 	)
 }
 
-function Loader() {
+function AnimatedLoader() {
 	return (
 		<For each={[1, 2, 3, 4, 5, 6, 7, 8, 9]}>
-			{() => (
-				<div class="bg-main flex h-[60px] w-full flex-row items-center justify-start gap-2.5 rounded-2xl px-2.5" />
+			{(_, index) => (
+				<Motion.div
+					class="bg-main flex h-[60px] w-full flex-row items-center justify-start gap-2.5 rounded-2xl px-2.5"
+					initial={{ opacity: 0 }}
+					animate={{ opacity: [0.3, 0.6, 0.3] }}
+					transition={{
+						duration: 1.5,
+						repeat: Infinity,
+						delay: index() * 0.1,
+					}}
+				/>
 			)}
 		</For>
 	)

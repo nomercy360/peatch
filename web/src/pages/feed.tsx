@@ -17,6 +17,7 @@ import { useInfiniteQuery } from '@tanstack/solid-query'
 import { verificationStatus, UserProfileResponse } from '~/gen'
 import { fetchUsers } from '~/lib/api'
 import { useNavigation } from '~/lib/useNavigation'
+import { Motion, Presence } from 'solid-motionone'
 
 
 export const [search, setSearch] = createSignal('')
@@ -108,15 +109,38 @@ export default function FeedPage() {
 
 	return (
 		<div class="flex h-screen flex-col overflow-hidden">
-			<div class="flex w-full flex-shrink-0 flex-col items-center justify-between space-y-4 border-b p-4">
-				<Show
-					when={store.user.verification_status == verificationStatus.VerificationStatusUnverified && profilePopup()}>
-					<FillProfilePopup onClose={() => closePopup('profilePopup')} />
-				</Show>
-				<Show
-					when={communityPopup() && store.user.verification_status == verificationStatus.VerificationStatusVerified}>
-					<OpenCommunityPopup onClose={() => closePopup('communityPopup')} />
-				</Show>
+			<Motion.div
+				class="flex w-full flex-shrink-0 flex-col items-center justify-between space-y-4 border-b p-4"
+				initial={{ y: -20, opacity: 0 }}
+				animate={{ y: 0, opacity: 1 }}
+				transition={{ duration: 0.3 }}
+			>
+				<Presence exitBeforeEnter>
+					<Show
+						when={store.user.verification_status == verificationStatus.VerificationStatusUnverified && profilePopup()}>
+						<Motion.div
+							initial={{ scale: 0.9, opacity: 0 }}
+							animate={{ scale: 1, opacity: 1 }}
+							exit={{ scale: 0.9, opacity: 0 }}
+							transition={{ duration: 0.3 }}
+						>
+							<FillProfilePopup onClose={() => closePopup('profilePopup')} />
+						</Motion.div>
+					</Show>
+				</Presence>
+				<Presence exitBeforeEnter>
+					<Show
+						when={communityPopup() && store.user.verification_status == verificationStatus.VerificationStatusVerified}>
+						<Motion.div
+							initial={{ scale: 0.9, opacity: 0 }}
+							animate={{ scale: 1, opacity: 1 }}
+							exit={{ scale: 0.9, opacity: 0 }}
+							transition={{ duration: 0.3 }}
+						>
+							<OpenCommunityPopup onClose={() => closePopup('communityPopup')} />
+						</Motion.div>
+					</Show>
+				</Presence>
 				<div class="relative flex h-10 w-full flex-row items-center justify-center rounded-lg bg-secondary">
 					<input
 						class="h-full w-full bg-transparent px-2.5 placeholder:text-secondary-foreground"
@@ -125,45 +149,80 @@ export default function FeedPage() {
 						value={search()}
 						onInput={e => updateSearch(e.currentTarget.value)}
 					/>
-					<Show when={search()}>
-						<button
-							class="absolute right-2.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-secondary"
-							onClick={() => setSearch('')}
-						>
-							<span class="material-symbols-rounded text-[20px] text-secondary">
-								close
-							</span>
-						</button>
-					</Show>
+					<Presence exitBeforeEnter>
+						<Show when={search()}>
+							<Motion.button
+								class="absolute right-2.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-secondary"
+								onClick={() => setSearch('')}
+								initial={{ scale: 0, opacity: 0 }}
+								animate={{ scale: 1, opacity: 1 }}
+								exit={{ scale: 0, opacity: 0 }}
+								transition={{ duration: 0.2 }}
+							>
+								<span class="material-symbols-rounded text-[20px] text-secondary">
+									close
+								</span>
+							</Motion.button>
+						</Show>
+					</Presence>
 				</div>
-			</div>
+			</Motion.div>
 			<div class="flex h-full w-full flex-shrink-0 flex-col overflow-y-auto pb-20" id="feed">
-				<Suspense fallback={<ListPlaceholder />}>
+				<Suspense fallback={<AnimatedListPlaceholder />}>
 					<For each={allUsers()}>
-						{(user, _) => (
-							<div>
-								<UserCard user={user} scroll={scroll()} />
-								<div class="h-px w-full bg-border" />
-							</div>
+						{(user, index) => (
+							<Motion.div
+								initial={{ opacity: 0, y: 20 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{ duration: 0.3, delay: index() * 0.05 }}
+							>
+								<UserCard user={user} scroll={scroll()} index={index()} />
+								<Motion.div
+									class="h-px w-full bg-border"
+									initial={{ scaleX: 0 }}
+									animate={{ scaleX: 1 }}
+									transition={{ duration: 0.3, delay: index() * 0.05 + 0.2 }}
+									style={{ 'transform-origin': 'left center' }}
+								/>
+							</Motion.div>
 						)}
 					</For>
 
 					<Show when={query.isFetchingNextPage}>
-						<div class="flex justify-center p-4">
-							<div class="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-						</div>
+						<Motion.div
+							class="flex justify-center p-4"
+							initial={{ opacity: 0 }}
+							animate={{ opacity: 1 }}
+							transition={{ duration: 0.3 }}
+						>
+							<Motion.div
+								class="h-10 w-10 rounded-full border-4 border-primary border-t-transparent"
+								animate={{ rotate: 360 }}
+								transition={{ duration: 1, repeat: Infinity, easing: 'linear' }}
+							/>
+						</Motion.div>
 					</Show>
 
 					<Show when={!query.hasNextPage && allUsers().length > 0}>
-						<div class="p-4 text-center text-secondary-foreground">
+						<Motion.div
+							class="p-4 text-center text-secondary-foreground"
+							initial={{ opacity: 0 }}
+							animate={{ opacity: 1 }}
+							transition={{ duration: 0.3 }}
+						>
 							{t('common.search.noMoreResults')}
-						</div>
+						</Motion.div>
 					</Show>
 
 					<Show when={allUsers().length === 0 && !query.isLoading}>
-						<div class="p-4 text-center text-secondary-foreground">
+						<Motion.div
+							class="p-4 text-center text-secondary-foreground"
+							initial={{ opacity: 0, scale: 0.9 }}
+							animate={{ opacity: 1, scale: 1 }}
+							transition={{ duration: 0.3 }}
+						>
 							{t('common.search.noResults')}
-						</div>
+						</Motion.div>
 					</Show>
 				</Suspense>
 			</div>
@@ -174,6 +233,7 @@ export default function FeedPage() {
 type UserCardProps = {
 	user: UserProfileResponse
 	scroll: number
+	index: number
 }
 
 const UserCard = (props: UserCardProps) => {
@@ -182,64 +242,148 @@ const UserCard = (props: UserCardProps) => {
 		return description.slice(0, 120) + '...'
 	}
 	return (
-		<Link
-			class="flex flex-col items-start px-4 pb-5 pt-4 text-start"
-			href={`/users/${props.user.id}`}
-			state={{ from: '/' }}
+		<Motion.div
+			transition={{ duration: 0.2 }}
 		>
-			<img
-				class="size-10 rounded-xl object-cover"
-				src={`https://assets.peatch.io/cdn-cgi/image/width=100/${props.user.avatar_url}`}
-				loading="lazy"
-				alt="User Avatar"
-			/>
-			<p class="mt-3 text-3xl font-semibold capitalize text-primary">{props.user.name?.trimEnd()}:</p>
-			<p class="text-3xl capitalize">{props.user.title}</p>
-			<p class="mt-2 text-sm text-secondary-foreground">
-				{shortenDescription(props.user.description!)}
-			</p>
-			<LocationBadge
-				country={props.user.location?.country_name}
-				city={props.user.location?.name}
-				countryCode={props.user.location?.country_code}
-			/>
-			<Show when={props.user.badges && props.user.badges.length > 0}>
-				<BadgeList badges={props.user.badges || []} position="start" />
-			</Show>
-		</Link>
+			<Link
+				class="flex flex-col items-start px-4 pb-5 pt-4 text-start"
+				href={`/users/${props.user.id}`}
+				state={{ from: '/' }}
+			>
+				<Motion.img
+					class="size-10 rounded-xl object-cover"
+					src={`https://assets.peatch.io/cdn-cgi/image/width=100/${props.user.avatar_url}`}
+					loading="lazy"
+					alt="User Avatar"
+					initial={{ scale: 0 }}
+					animate={{ scale: 1 }}
+					transition={{ duration: 0.3, delay: props.index * 0.05 }}
+				/>
+				<Motion.p
+					class="mt-3 text-3xl font-semibold capitalize text-primary"
+					initial={{ opacity: 0, x: -10 }}
+					animate={{ opacity: 1, x: 0 }}
+					transition={{ duration: 0.3, delay: props.index * 0.05 + 0.1 }}
+				>
+					{props.user.name?.trimEnd()}:
+				</Motion.p>
+				<Motion.p
+					class="text-3xl capitalize"
+					initial={{ opacity: 0, x: -10 }}
+					animate={{ opacity: 1, x: 0 }}
+					transition={{ duration: 0.3, delay: props.index * 0.05 + 0.15 }}
+				>
+					{props.user.title}
+				</Motion.p>
+				<Motion.p
+					class="mt-2 text-sm text-secondary-foreground"
+					initial={{ opacity: 0 }}
+					animate={{ opacity: 1 }}
+					transition={{ duration: 0.3, delay: props.index * 0.05 + 0.2 }}
+				>
+					{shortenDescription(props.user.description!)}
+				</Motion.p>
+				<Motion.div
+					initial={{ opacity: 0, y: 5 }}
+					animate={{ opacity: 1, y: 0 }}
+					transition={{ duration: 0.3, delay: props.index * 0.05 + 0.25 }}
+				>
+					<LocationBadge
+						country={props.user.location?.country_name}
+						city={props.user.location?.name}
+						countryCode={props.user.location?.country_code}
+					/>
+				</Motion.div>
+				<Show when={props.user.badges && props.user.badges.length > 0}>
+					<Motion.div
+						initial={{ opacity: 0, y: 5 }}
+						animate={{ opacity: 1, y: 0 }}
+						transition={{ duration: 0.3, delay: props.index * 0.05 + 0.3 }}
+					>
+						<BadgeList badges={props.user.badges || []} position="start" />
+					</Motion.div>
+				</Show>
+			</Link>
+		</Motion.div>
 	)
 }
 
 const OpenCommunityPopup = (props: { onClose: () => void }) => {
 	return (
-		<div class="relative w-full rounded-xl bg-secondary p-3 text-center">
-			<button
+		<Motion.div
+			class="relative w-full rounded-xl bg-secondary p-3 text-center"
+			initial={{ scale: 0.9, opacity: 0 }}
+			animate={{ scale: 1, opacity: 1 }}
+			transition={{ duration: 0.3 }}
+		>
+			<Motion.button
 				class="absolute right-4 top-4 flex size-6 items-center justify-center rounded-full bg-background"
 				onClick={() => props.onClose()}
+				press={{ scale: 0.98 }}
 			>
 					<span class="material-symbols-rounded text-[20px] text-secondary-foreground">
 						close
 					</span>
-			</button>
-			<div class="text-green flex items-center justify-center gap-1 text-2xl font-extrabold">
-					<span class="material-symbols-rounded text-[36px] text-green-400">
-						maps_ugc
-					</span>
+			</Motion.button>
+			<Motion.div
+				class="text-green flex items-center justify-center gap-1 text-2xl font-extrabold"
+				initial={{ y: -10, opacity: 0 }}
+				animate={{ y: 0, opacity: 1 }}
+				transition={{ duration: 0.3, delay: 0.1 }}
+			>
+				<Motion.span
+					class="material-symbols-rounded text-[36px] text-green-400"
+					animate={{ rotate: [0, 5, -5, 0] }}
+					transition={{ duration: 2, repeat: Infinity }}
+				>
+					maps_ugc
+				</Motion.span>
 				Join community
-			</div>
-			<p class="mt-2 text-base font-normal text-secondary-foreground">
+			</Motion.div>
+			<Motion.p
+				class="mt-2 text-base font-normal text-secondary-foreground"
+				initial={{ opacity: 0 }}
+				animate={{ opacity: 1 }}
+				transition={{ duration: 0.3, delay: 0.2 }}
+			>
 				To talk with founders and users. Discuss and solve problems together
-			</p>
-			<button
+			</Motion.p>
+			<Motion.button
 				class="mt-4 flex h-10 w-full items-center justify-center rounded-xl bg-primary text-sm font-semibold"
 				onClick={() =>
 					window.Telegram.WebApp.openTelegramLink(
 						'https://t.me/peatch_community',
 					)
 				}
+				press={{ scale: 0.98 }}
+				initial={{ y: 10, opacity: 0 }}
+				animate={{ y: 0, opacity: 1 }}
+				transition={{ duration: 0.3, delay: 0.3 }}
 			>
 				Open Peatch Community
-			</button>
+			</Motion.button>
+		</Motion.div>
+	)
+}
+
+export const AnimatedListPlaceholder = () => {
+	return (
+		<div class="flex flex-col items-start justify-start gap-4 px-4 py-2.5">
+			<For each={[52, 64, 48, 56]}>
+				{(height, index) => (
+					<Motion.div
+						class="w-full rounded-2xl bg-secondary"
+						style={{ height: `${height * 4}px` }}
+						initial={{ opacity: 0, x: -20 }}
+						animate={{ opacity: [0.3, 0.6, 0.3] }}
+						transition={{
+							duration: 1.5,
+							repeat: Infinity,
+							delay: index() * 0.1,
+						}}
+					/>
+				)}
+			</For>
 		</div>
 	)
 }

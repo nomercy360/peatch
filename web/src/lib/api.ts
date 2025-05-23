@@ -161,3 +161,11 @@ export const uploadUserAvatar = async (file: File) => {
 
 	return await response.json()
 }
+
+export const publishUserProfile = async () => {
+	return await apiFetch({
+		endpoint: '/users/publish',
+		method: 'POST',
+		showProgress: true,
+	})
+}

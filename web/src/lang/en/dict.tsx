@@ -85,6 +85,10 @@ export const dict = {
 			followError: 'Failed to send notification',
 			botBlocked: 'User cannot be notified via bot',
 			messageUser: 'Message in Telegram',
+			publishSuccess: 'Your profile is now visible to others',
+			publishError: 'Failed to publish profile',
+			profileIncomplete: 'Please complete your profile before publishing',
+			profileBlocked: 'Blocked profiles cannot be published',
 		},
 		collaborations: {
 			edit: {

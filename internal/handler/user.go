@@ -53,14 +53,14 @@ func (h *handler) handleListUsers(c echo.Context) error {
 // @Tags users
 // @Accept  json
 // @Produce  json
-// @Param id path int true "User ID"
+// @Param id path string true "User ID or username"
 // @Success 200 {object} contract.UserProfileResponse
 // @Router /api/users/{id} [get]
 func (h *handler) handleGetUser(c echo.Context) error {
-	id := c.Param("id")
+	idOrUsername := c.Param("id")
 	uid := getUserID(c)
 
-	user, err := h.storage.GetUserProfile(c.Request().Context(), uid, id)
+	user, err := h.storage.GetUserProfile(c.Request().Context(), uid, idOrUsername)
 
 	if err != nil && errors.Is(err, db.ErrNotFound) {
 		return echo.NewHTTPError(http.StatusNotFound, "User not found").WithInternal(err)
@@ -110,12 +110,26 @@ func (h *handler) handleUpdateUser(c echo.Context) error {
 		Description: &req.Description,
 	}
 
+	links := make([]db.Link, 0, len(req.Links))
+
+	for _, link := range req.Links {
+		l := db.Link{
+			URL:   link.URL,
+			Label: link.Label,
+			Type:  link.Type,
+			Order: link.Order,
+		}
+
+		links = append(links, l)
+	}
+
 	if err := h.storage.UpdateUser(
 		c.Request().Context(),
 		user,
 		req.BadgeIDs,
 		req.OpportunityIDs,
 		req.LocationID,
+		links,
 	); err != nil && errors.Is(err, db.ErrNotFound) {
 		return echo.NewHTTPError(http.StatusNotFound, "not found").WithInternal(err)
 	} else if err != nil {
@@ -180,10 +194,6 @@ func (h *handler) handleFollowUser(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "cannot follow yourself")
 	}
 
-	if exist, err := h.storage.IsUserFollowing(c.Request().Context(), userIDToFollow, followerID); err != nil || exist {
-		return echo.NewHTTPError(http.StatusBadRequest, "already exists").WithInternal(err)
-	}
-
 	var botBlockedError bool
 	var userToFollowUsername string
 
@@ -192,9 +202,26 @@ func (h *handler) handleFollowUser(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get follower user").WithInternal(err)
 	}
 
+	// Try to get user by ID first, then by username
 	userToFollow, err := h.storage.GetUserByID(c.Request().Context(), userIDToFollow)
-	if err != nil {
+	if err != nil && errors.Is(err, db.ErrNotFound) {
+		// If not found by ID, try by username
+		userToFollow, err = h.storage.GetUserProfile(c.Request().Context(), followerID, userIDToFollow)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusNotFound, "User not found").WithInternal(err)
+		}
+	} else if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get user to follow").WithInternal(err)
+	}
+
+	// Check if user is trying to follow themselves (in case username was used)
+	if userToFollow.ID == followerID {
+		return echo.NewHTTPError(http.StatusBadRequest, "cannot follow yourself")
+	}
+
+	// Check if already following using the actual user ID
+	if exist, err := h.storage.IsUserFollowing(c.Request().Context(), userToFollow.ID, followerID); err != nil || exist {
+		return echo.NewHTTPError(http.StatusBadRequest, "already exists").WithInternal(err)
 	}
 
 	if !userToFollow.IsGeneratedUsername() {
@@ -223,7 +250,7 @@ func (h *handler) handleFollowUser(c echo.Context) error {
 
 	if err := h.storage.FollowUser(
 		c.Request().Context(),
-		userIDToFollow,
+		userToFollow.ID,
 		followerID,
 		expirationDuration,
 	); err != nil {
@@ -251,4 +278,39 @@ func (h *handler) handleGetMe(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, contract.ToUserResponse(user))
+}
+
+// handlePublishProfile godoc
+// @Summary Publish user profile
+// @Description Makes the user profile visible by setting hidden_at to null
+// @Tags users
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} contract.StatusResponse
+// @Router /api/users/publish [post]
+func (h *handler) handlePublishProfile(c echo.Context) error {
+	uid := getUserID(c)
+
+	// Check if user profile is complete before publishing
+	user, err := h.storage.GetUserByID(c.Request().Context(), uid)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get user").WithInternal(err)
+	}
+
+	if !user.IsProfileComplete() {
+		return echo.NewHTTPError(http.StatusBadRequest, "profile must be complete before publishing")
+	}
+
+	if user.VerificationStatus == db.VerificationStatusBlocked {
+		return echo.NewHTTPError(http.StatusForbidden, "blocked users cannot publish their profile")
+	}
+
+	if err := h.storage.PublishUserProfile(c.Request().Context(), uid); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			return echo.NewHTTPError(http.StatusNotFound, "user not found").WithInternal(err)
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to publish profile").WithInternal(err)
+	}
+
+	return c.JSON(http.StatusOK, contract.StatusResponse{Success: true})
 }

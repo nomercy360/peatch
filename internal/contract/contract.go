@@ -49,6 +49,13 @@ type JWTClaims struct {
 	Lang   string `json:"lang"`
 }
 
+type Link struct {
+	URL   string `json:"url"`
+	Label string `json:"label"`
+	Type  string `json:"type"`
+	Order int    `json:"order"`
+} // @Name Link
+
 type UpdateUserRequest struct {
 	Name           string   `json:"name"`
 	Title          string   `json:"title"`
@@ -56,6 +63,7 @@ type UpdateUserRequest struct {
 	LocationID     string   `json:"location_id"`
 	BadgeIDs       []string `json:"badge_ids"`
 	OpportunityIDs []string `json:"opportunity_ids"`
+	Links          []Link   `json:"links"`
 } // @Name UpdateUserRequest
 
 type Location struct {
@@ -111,6 +119,23 @@ func (r UpdateUserRequest) Validate() error {
 	if len(r.OpportunityIDs) == 0 {
 		return fmt.Errorf("opportunity_ids is required")
 	}
+
+	// Validate links
+	for i, link := range r.Links {
+		if link.URL == "" {
+			return fmt.Errorf("link %d: url is required", i+1)
+		}
+		if link.Label == "" {
+			return fmt.Errorf("link %d: label is required", i+1)
+		}
+		if len(link.Label) > 100 {
+			return fmt.Errorf("link %d: label must not exceed 100 characters", i+1)
+		}
+		if link.Type == "" {
+			return fmt.Errorf("link %d: type is required", i+1)
+		}
+	}
+
 	return nil
 }
 
@@ -193,6 +218,8 @@ type UserResponse struct {
 	Location           *CityResponse         `json:"location"`
 	Badges             []BadgeResponse       `json:"badges"`
 	Opportunities      []OpportunityResponse `json:"opportunities"`
+	Links              []Link                `json:"links"`
+	HiddenAt           *time.Time            `json:"hidden_at"`
 	CreatedAt          time.Time             `json:"created_at"`
 	UpdatedAt          time.Time             `json:"updated_at"`
 	LastActiveAt       time.Time             `json:"last_active_at"`
@@ -226,9 +253,11 @@ func ToUserResponse(user db.User) UserResponse {
 		LastActiveAt:       user.LastActiveAt,
 		Badges:             ToBadgeResponseList(user.Badges),
 		Opportunities:      ToOpportunityResponseList(user.Opportunities, user.LanguageCode),
+		Links:              ToLinkResponseList(user.Links),
 		CreatedAt:          user.CreatedAt,
 		UpdatedAt:          user.UpdatedAt,
 		VerificationStatus: user.VerificationStatus,
+		HiddenAt:           user.HiddenAt,
 	}
 }
 
@@ -242,6 +271,7 @@ type UserProfileResponse struct {
 	IsFollowing   bool                  `json:"is_following"`
 	Badges        []BadgeResponse       `json:"badges"`
 	Opportunities []OpportunityResponse `json:"opportunities"`
+	Links         []Link                `json:"links"`
 	LastActiveAt  time.Time             `json:"last_active_at"`
 } // @Name UserProfileResponse
 
@@ -276,6 +306,7 @@ func ToUserProfile(user db.User) UserProfileResponse {
 		IsFollowing:   user.IsFollowing,
 		Badges:        ToBadgeResponseList(user.Badges),
 		Opportunities: ToOpportunityResponseList(user.Opportunities, user.LanguageCode),
+		Links:         ToLinkResponseList(user.Links),
 		LastActiveAt:  user.LastActiveAt,
 	}
 }
@@ -302,6 +333,19 @@ func ToBadgeResponseList(badges []db.Badge) []BadgeResponse {
 		badgeResponses[i] = ToBadgeResponse(badge)
 	}
 	return badgeResponses
+}
+
+func ToLinkResponseList(links []db.Link) []Link {
+	linkResponses := make([]Link, len(links))
+	for i, link := range links {
+		linkResponses[i] = Link{
+			URL:   link.URL,
+			Label: link.Label,
+			Type:  link.Type,
+			Order: link.Order,
+		}
+	}
+	return linkResponses
 }
 
 func ToOpportunityResponseList(opportunities []db.Opportunity, lang db.LanguageCode) []OpportunityResponse {

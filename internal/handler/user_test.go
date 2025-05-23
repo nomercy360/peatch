@@ -160,6 +160,50 @@ func TestGetUser_NotFound(t *testing.T) {
 	}
 }
 
+func TestGetUser_ByUsername(t *testing.T) {
+	e := testutils.SetupHandlerDependencies(t)
+
+	authResp, err := testutils.AuthHelper(t, e, testutils.TelegramTestUserID, "user1", "First")
+	if err != nil {
+		t.Fatalf("failed to authenticate: %v", err)
+	}
+	token := authResp.Token
+
+	badge, opp, loc := setupTestRecords(t)
+
+	testUser := db.User{
+		ID:                 "user-test-username",
+		ChatID:             987654,
+		Username:           "testhandle",
+		Name:               strPtr("Test Username"),
+		AvatarURL:          strPtr("https://example.com/avatar.jpg"),
+		Title:              strPtr("Developer"),
+		Description:        strPtr("Test user description"),
+		Badges:             badge,
+		Opportunities:      opp,
+		Location:           &loc,
+		VerificationStatus: db.VerificationStatusVerified,
+	}
+
+	if _, err := testutils.GetTestDBStorage().Database().Collection(testutils.UsersCollection).InsertOne(context.Background(), testUser); err != nil {
+		t.Fatalf("failed to insert test user: %v", err)
+	}
+
+	// Test getting user by username
+	rec := testutils.PerformRequest(t, e, http.MethodGet, "/api/users/testhandle", "", token, http.StatusOK)
+	var respUser db.User
+	if err := json.Unmarshal(rec.Body.Bytes(), &respUser); err != nil {
+		t.Fatalf("failed to parse response: %v", err)
+	}
+
+	if respUser.ID != "user-test-username" {
+		t.Errorf("expected user ID 'user-test-username', got '%s'", respUser.ID)
+	}
+	if respUser.Name == nil || *respUser.Name != "Test Username" {
+		t.Errorf("expected name 'Test Username', got '%v'", respUser.Name)
+	}
+}
+
 func TestUpdateUser_Success(t *testing.T) {
 	e := testutils.SetupHandlerDependencies(t)
 

@@ -851,6 +851,29 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/users/publish": {
+            "post": {
+                "description": "Makes the user profile visible by setting hidden_at to null",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Publish user profile",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/StatusResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/users/{id}": {
             "get": {
                 "consumes": [
@@ -865,8 +888,8 @@ const docTemplate = `{
                 "summary": "Get user",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "User ID",
+                        "type": "string",
+                        "description": "User ID or username",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1137,6 +1160,23 @@ const docTemplate = `{
                 }
             }
         },
+        "Link": {
+            "type": "object",
+            "properties": {
+                "label": {
+                    "type": "string"
+                },
+                "order": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
         "Location": {
             "type": "object",
             "properties": {
@@ -1188,6 +1228,12 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
+                "links": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Link"
+                    }
+                },
                 "location_id": {
                     "type": "string"
                 },
@@ -1229,6 +1275,12 @@ const docTemplate = `{
                 "last_active_at": {
                     "type": "string"
                 },
+                "links": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Link"
+                    }
+                },
                 "location": {
                     "$ref": "#/definitions/CityResponse"
                 },
@@ -1267,6 +1319,9 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
+                "hidden_at": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -1275,6 +1330,12 @@ const docTemplate = `{
                 },
                 "last_active_at": {
                     "type": "string"
+                },
+                "links": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Link"
+                    }
                 },
                 "location": {
                     "$ref": "#/definitions/CityResponse"

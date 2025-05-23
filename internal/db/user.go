@@ -43,6 +43,13 @@ const (
 	VerificationStatusUnverified VerificationStatus = "unverified"
 )
 
+type Link struct {
+	URL   string `bson:"url" json:"url"`
+	Label string `bson:"label" json:"label"`
+	Type  string `bson:"type" json:"type"` // e.g., "github", "linkedin", "website", "portfolio"
+	Order int    `bson:"order" json:"order"`
+}
+
 type User struct {
 	ID                     string             `bson:"_id,omitempty" json:"id"`
 	Name                   *string            `bson:"name,omitempty" json:"name"`
@@ -60,6 +67,7 @@ type User struct {
 	IsFollowing            bool               `bson:"is_following,omitempty" json:"is_following"`
 	Badges                 []Badge            `bson:"badges,omitempty" json:"badges"`
 	Opportunities          []Opportunity      `bson:"opportunities,omitempty" json:"opportunities"`
+	Links                  []Link             `bson:"links,omitempty" json:"links"`
 	LoginMeta              *LoginMeta         `bson:"login_meta,omitempty" json:"login_meta"`
 	LastActiveAt           time.Time          `bson:"last_active_at,omitempty" json:"last_active_at"`
 	VerificationStatus     VerificationStatus `bson:"verification_status,omitempty" json:"verification_status"`
@@ -192,7 +200,7 @@ func (s *Storage) CreateUser(ctx context.Context, user User) error {
 	return nil
 }
 
-func (s *Storage) UpdateUser(ctx context.Context, user User, badgeIDs, oppIDs []string, locationID string) error {
+func (s *Storage) UpdateUser(ctx context.Context, user User, badgeIDs, oppIDs []string, locationID string, links []Link) error {
 	collection := s.db.Collection("users")
 	badgeCollection := s.db.Collection("badges")
 	oppCollection := s.db.Collection("opportunities")
@@ -246,6 +254,7 @@ func (s *Storage) UpdateUser(ctx context.Context, user User, badgeIDs, oppIDs []
 			"location":      locationData,
 			"badges":        badges,
 			"opportunities": opps,
+			"links":         links,
 		},
 	}
 
@@ -287,20 +296,27 @@ func (s *Storage) GetUsersByVerificationStatus(ctx context.Context, status Verif
 	return users, nil
 }
 
-func (s *Storage) GetUserProfile(ctx context.Context, viewerID string, id string) (User, error) {
+func (s *Storage) GetUserProfile(ctx context.Context, viewerID string, idOrUsername string) (User, error) {
 	usersCollection := s.db.Collection("users")
 	followersCollection := s.db.Collection("user_followers")
 
 	var user User
 
 	filter := bson.M{
-		"_id": id,
 		"$or": []bson.M{
-			{"_id": viewerID},
+			{"_id": idOrUsername},
+			{"username": idOrUsername},
+		},
+		"$and": []bson.M{
 			{
-				"$and": []bson.M{
-					{"verification_status": VerificationStatusVerified},
-					{"hidden_at": nil},
+				"$or": []bson.M{
+					{"_id": viewerID},
+					{
+						"$and": []bson.M{
+							{"verification_status": VerificationStatusVerified},
+							{"hidden_at": nil},
+						},
+					},
 				},
 			},
 		},
@@ -480,4 +496,28 @@ func (s *Storage) GetUsersWithOpportunity(ctx context.Context, opportunityID str
 	}
 
 	return users, nil
+}
+
+// PublishUserProfile sets hidden_at to null to make the profile visible
+func (s *Storage) PublishUserProfile(ctx context.Context, userID string) error {
+	collection := s.db.Collection("users")
+
+	filter := bson.M{"_id": userID}
+	update := bson.M{
+		"$set": bson.M{
+			"hidden_at":  nil,
+			"updated_at": time.Now(),
+		},
+	}
+
+	res, err := collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return fmt.Errorf("failed to publish user profile: %w", err)
+	}
+
+	if res.MatchedCount == 0 {
+		return ErrNotFound
+	}
+
+	return nil
 }

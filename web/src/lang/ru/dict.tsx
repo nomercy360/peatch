@@ -39,7 +39,7 @@ export const dict = {
 				general: {
 					title: 'Расскажите о себе',
 					fullName: 'Ваше полное имя',
-					jobTitle: 'Тайтл работы',
+					jobTitle: 'Профессиональная роль',
 				},
 				description: {
 					title: 'О себе',
@@ -78,6 +78,10 @@ export const dict = {
 			followError: 'Не удалось отправить уведомление',
 			botBlocked: 'Пользователю нельзя отправить уведомление через бота',
 			messageUser: 'Написать в Telegram',
+			publishSuccess: 'Ваш профиль теперь виден другим пользователям',
+			publishError: 'Не удалось опубликовать профиль',
+			profileIncomplete: 'Пожалуйста, заполните профиль перед публикацией',
+			profileBlocked: 'Заблокированные профили не могут быть опубликованы',
 		},
 		collaborations: {
 			edit: {
