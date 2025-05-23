@@ -1,0 +1,1 @@
+{"properties":{"password":{"type":"string"},"username":{"type":"string"}},"type":"object","x-readme-ref-name":"AdminLoginRequest"}

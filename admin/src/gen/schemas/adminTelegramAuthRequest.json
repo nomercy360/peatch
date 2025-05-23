@@ -1,0 +1,1 @@
+{"properties":{"query":{"description":"Telegram init data","type":"string"}},"type":"object","x-readme-ref-name":"AdminTelegramAuthRequest"}
