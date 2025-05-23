@@ -47,18 +47,24 @@ export default function Collaboration() {
 		})
 	}
 
+	const openUserTelegram = () => {
+		window.Telegram.WebApp.openTelegramLink(`https://t.me/${query.data.user.username}`)
+	}
+
 	createEffect(() => {
 		if (isCurrentUserCollab()) {
 			mainButton.enable('Edit')
 			mainButton.onClick(navigateToEdit)
+		} else {
+			mainButton.enable('Contact in Telegram')
+			mainButton.onClick(openUserTelegram)
 		}
-		onCleanup(() => {
-			mainButton.offClick(navigateToEdit)
-		})
 	})
 
 	onCleanup(async () => {
 		mainButton.hide()
+		mainButton.offClick(navigateToEdit)
+		mainButton.offClick(openUserTelegram)
 	})
 
 	return (

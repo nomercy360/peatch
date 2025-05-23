@@ -111,7 +111,7 @@ export default function FeedPage() {
 		<div class="flex h-screen flex-col overflow-hidden">
 			<Motion.div
 				class="flex w-full flex-shrink-0 flex-col items-center justify-between space-y-4 border-b p-4"
-				initial={{ y: -20, opacity: 0 }}
+				initial={{ y: -10, opacity: 0 }}
 				animate={{ y: 0, opacity: 1 }}
 				transition={{ duration: 0.3 }}
 			>
@@ -172,7 +172,7 @@ export default function FeedPage() {
 					<For each={allUsers()}>
 						{(user, index) => (
 							<Motion.div
-								initial={{ opacity: 0, y: 20 }}
+								initial={{ opacity: 0, y: 10 }}
 								animate={{ opacity: 1, y: 0 }}
 								transition={{ duration: 0.3, delay: index() * 0.05 }}
 							>

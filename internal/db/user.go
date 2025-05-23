@@ -147,6 +147,7 @@ func (s *Storage) ListUsers(ctx context.Context, params UserQuery) ([]User, erro
 	findOptions := options.Find()
 	findOptions.SetLimit(int64(params.Limit))
 	findOptions.SetSkip(int64((params.Page - 1) * params.Limit))
+	findOptions.SetSort(bson.D{{"created_at", -1}})
 
 	cursor, err := collection.Find(ctx, filter, findOptions)
 	if err != nil {

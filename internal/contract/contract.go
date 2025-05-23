@@ -265,14 +265,15 @@ type UserProfileResponse struct {
 	ID            string                `json:"id"`
 	Name          string                `json:"name"`
 	AvatarURL     string                `json:"avatar_url"`
-	Title         string                `json:"title"`
-	Description   string                `json:"description"`
-	Location      CityResponse          `json:"location"`
+	Title         string                `json:"title,omitempty"`
+	Description   string                `json:"description,omitempty"`
+	Location      CityResponse          `json:"location,omitempty"`
 	IsFollowing   bool                  `json:"is_following"`
 	Badges        []BadgeResponse       `json:"badges"`
 	Opportunities []OpportunityResponse `json:"opportunities"`
 	Links         []Link                `json:"links"`
 	LastActiveAt  time.Time             `json:"last_active_at"`
+	Username      string                `json:"username"`
 } // @Name UserProfileResponse
 
 func ToUserProfile(user db.User) UserProfileResponse {
@@ -308,6 +309,7 @@ func ToUserProfile(user db.User) UserProfileResponse {
 		Opportunities: ToOpportunityResponseList(user.Opportunities, user.LanguageCode),
 		Links:         ToLinkResponseList(user.Links),
 		LastActiveAt:  user.LastActiveAt,
+		Username:      user.Username,
 	}
 }
 
