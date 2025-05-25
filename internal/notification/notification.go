@@ -78,19 +78,21 @@ type Tag struct {
 func (n *Notifier) NotifyUserVerified(user db.User) error {
 	var msgText string
 	if user.LanguageCode == db.LanguageRU {
-		msgText = fmt.Sprintf("🎉 Поздравляем! Ваш профиль был подтверждён.\nТеперь вы можете пользоваться всеми функциями и быть видимы другим пользователям.")
+		msgText = fmt.Sprintf("🎉 Поздравляем! Ваш профиль был подтверждён. 💡 Следующие шаги:\n• Ищешь кого-то? Запости - и мы сообщим подходящим людям.\n• [Вступай в комьюнити](https://t.me/peatch_community), чтобы быть в курсе событий.")
 	} else {
-		msgText = fmt.Sprintf("🎉 Congratulations! Your profile has been verified.\nYou can now access all features and be visible to other users.")
+		msgText = fmt.Sprintf("🎉 Congratulations! Your profile has been verified.\n• Looking for someone? Post it - we'll notify the right people.\n• [Join the community](https://t.me/peatch_community) to stay updated.")
 	}
 
-	btnText := "View Profile"
+	btnText := "Publish Collaboration"
 	if user.LanguageCode == db.LanguageRU {
-		btnText = "Посмотреть профиль"
+		btnText = "Опубликовать проект"
 	}
 
 	button := models.InlineKeyboardButton{
 		Text: btnText,
-		URL:  fmt.Sprintf("%s?startapp=u_%s", n.botWebApp, user.ID),
+		WebApp: &models.WebAppInfo{
+			URL: fmt.Sprintf("%s/collaborations/edit", n.webappURL),
+		},
 	}
 
 	keyboard := models.InlineKeyboardMarkup{
@@ -101,7 +103,7 @@ func (n *Notifier) NotifyUserVerified(user db.User) error {
 
 	_, err := n.bot.SendMessage(context.Background(), &telegram.SendMessageParams{
 		ChatID: fmt.Sprintf("%d", user.ChatID),
-		// ChatID:      n.adminChatID,
+		//ChatID:      n.adminChatID,
 		Text:        msgText,
 		ReplyMarkup: &keyboard,
 	})
@@ -181,8 +183,8 @@ func (n *Notifier) NotifyUserVerified(user db.User) error {
 		}
 	} else {
 		params := &telegram.SendMessageParams{
-			ChatID: fmt.Sprintf("%d", n.communityChatID),
-			// ChatID:      n.adminChatID,
+			//ChatID: fmt.Sprintf("%d", n.communityChatID),
+			ChatID:      n.adminChatID,
 			Text:        communityMsg,
 			ReplyMarkup: &keyboard,
 		}

@@ -7,6 +7,7 @@ import (
 	"github.com/peatch-io/peatch/internal/contract"
 	"github.com/peatch-io/peatch/internal/db"
 	"github.com/peatch-io/peatch/internal/notification"
+	"log/slog"
 	"net/http"
 	"time"
 )
@@ -297,6 +298,12 @@ func (h *handler) handlePublishProfile(c echo.Context) error {
 		}
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to publish profile").WithInternal(err)
 	}
+
+	go func() {
+		if err := h.notificationService.NotifyUserVerified(user); err != nil {
+			h.logger.Error("failed to notify user verified", slog.String("error", err.Error()))
+		}
+	}()
 
 	return c.JSON(http.StatusOK, contract.StatusResponse{Success: true})
 }
