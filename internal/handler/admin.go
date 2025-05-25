@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/peatch-io/peatch/internal/nanoid"
@@ -333,6 +334,7 @@ func (h *handler) handleAdminUpdateCollaborationVerification(c echo.Context) err
 	} else if req.Status == db.VerificationStatusVerified {
 		if needNotify {
 			go func() {
+				ctx := context.Background()
 				if err := h.notificationService.NotifyCollaborationVerified(collab); err != nil {
 					h.logger.Error("failed to notify collaboration verified", slog.String("error", err.Error()))
 				}
@@ -341,7 +343,7 @@ func (h *handler) handleAdminUpdateCollaborationVerification(c echo.Context) err
 					h.logger.Error("failed to send collaboration to community chat", slog.String("error", err.Error()))
 				}
 
-				users, err := h.storage.GetUsersWithOpportunity(c.Request().Context(), collab.UserID)
+				users, err := h.storage.GetUsersWithOpportunity(ctx, collab.UserID)
 				if err != nil {
 					h.logger.Error("failed to get users with opportunity", slog.String("error", err.Error()))
 					return
