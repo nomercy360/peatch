@@ -1,5 +1,5 @@
 {
-  "useTabs": true,
+  "useTabs": false,
   "tabWidth": 2,
   "semi": false,
   "singleQuote": true,
@@ -18,8 +18,5 @@
   "bracketSpacing": true,
   "jsxBracketSameLine": false,
   "jsxSingleQuote": false,
-  "quoteProps": "as-needed",
-  "plugins": [
-    "prettier-plugin-tailwindcss"
-  ]
+  "quoteProps": "as-needed"
 }

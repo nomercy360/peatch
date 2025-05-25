@@ -38,13 +38,18 @@ export type AdminUpdateCollaborationVerification404 = ErrorResponse
 /**
  * @description New verification status
  */
-export type AdminUpdateCollaborationVerificationMutationRequest = VerificationUpdateRequest
+export type AdminUpdateCollaborationVerificationMutationRequest =
+  VerificationUpdateRequest
 
-export type AdminUpdateCollaborationVerificationMutationResponse = AdminUpdateCollaborationVerification200
+export type AdminUpdateCollaborationVerificationMutationResponse =
+  AdminUpdateCollaborationVerification200
 
 export type AdminUpdateCollaborationVerificationMutation = {
   Response: AdminUpdateCollaborationVerification200
   Request: AdminUpdateCollaborationVerificationMutationRequest
   PathParams: AdminUpdateCollaborationVerificationPathParams
-  Errors: AdminUpdateCollaborationVerification400 | AdminUpdateCollaborationVerification401 | AdminUpdateCollaborationVerification404
+  Errors:
+    | AdminUpdateCollaborationVerification400
+    | AdminUpdateCollaborationVerification401
+    | AdminUpdateCollaborationVerification404
 }

@@ -25,90 +25,90 @@ import NotFoundPage from './pages/404'
 import PostsPage from '~/pages/posts'
 
 export const routes: RouteDefinition[] = [
-	{
-		path: '/',
-		component: NavigationTabs,
-		children: [
-			{
-				path: '/posts',
-				component: PostsPage,
-			},
-			{
-				path: '/',
-				component: FeedPage,
-			},
-		],
-	},
-	{
-		path: '/users/:handle',
-		component: UserProfilePage,
-	},
-	{
-		path: '/users/edit',
-		component: UserEditPage,
-		children: [
-			{
-				path: '/',
-				component: UserEditGeneralPage,
-			},
-			{
-				path: '/badges',
-				component: UserEditBadgesPage,
-			},
-			{
-				path: '/create-badge',
-				component: UserEditCreateBadgePage,
-			},
-			{
-				path: '/location',
-				component: UserEditLocationPage,
-			},
-			{
-				path: '/interests',
-				component: UserEditInterestsPage,
-			},
-			{
-				path: '/description',
-				component: UserEditDescriptionPage,
-			},
-			{
-				path: '/image',
-				component: UserEditImagePage,
-			},
-		],
-	},
-	{
-		path: '/collaborations/:id',
-		component: CollaborationPage,
-	},
-	{
-		path: '/collaborations/edit/:id?',
-		component: CollaborationEditPage,
-		children: [
-			{
-				path: '/',
-				component: CollaborationEditGeneralPage,
-			},
-			{
-				path: '/location',
-				component: CollaborationEditLocationPage,
-			},
-			{
-				path: '/create-badge',
-				component: CollaborationEditCreateBadgePage,
-			},
-			{
-				path: '/badges',
-				component: CollaborationEditBadgesPage,
-			},
-			{
-				path: '/interests',
-				component: CollaborationEditInterestsPage,
-			},
-		],
-	},
-	{
-		path: '**',
-		component: NotFoundPage,
-	},
+  {
+    path: '/',
+    component: NavigationTabs,
+    children: [
+      {
+        path: '/posts',
+        component: PostsPage,
+      },
+      {
+        path: '/',
+        component: FeedPage,
+      },
+    ],
+  },
+  {
+    path: '/users/:handle',
+    component: UserProfilePage,
+  },
+  {
+    path: '/users/edit',
+    component: UserEditPage,
+    children: [
+      {
+        path: '/',
+        component: UserEditGeneralPage,
+      },
+      {
+        path: '/badges',
+        component: UserEditBadgesPage,
+      },
+      {
+        path: '/create-badge',
+        component: UserEditCreateBadgePage,
+      },
+      {
+        path: '/location',
+        component: UserEditLocationPage,
+      },
+      {
+        path: '/interests',
+        component: UserEditInterestsPage,
+      },
+      {
+        path: '/description',
+        component: UserEditDescriptionPage,
+      },
+      {
+        path: '/image',
+        component: UserEditImagePage,
+      },
+    ],
+  },
+  {
+    path: '/collaborations/:id',
+    component: CollaborationPage,
+  },
+  {
+    path: '/collaborations/edit/:id?',
+    component: CollaborationEditPage,
+    children: [
+      {
+        path: '/',
+        component: CollaborationEditGeneralPage,
+      },
+      {
+        path: '/location',
+        component: CollaborationEditLocationPage,
+      },
+      {
+        path: '/create-badge',
+        component: CollaborationEditCreateBadgePage,
+      },
+      {
+        path: '/badges',
+        component: CollaborationEditBadgesPage,
+      },
+      {
+        path: '/interests',
+        component: CollaborationEditInterestsPage,
+      },
+    ],
+  },
+  {
+    path: '**',
+    component: NotFoundPage,
+  },
 ]

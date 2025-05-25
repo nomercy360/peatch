@@ -38,13 +38,18 @@ export type AdminUpdateUserVerification404 = ErrorResponse
 /**
  * @description New verification status
  */
-export type AdminUpdateUserVerificationMutationRequest = VerificationUpdateRequest
+export type AdminUpdateUserVerificationMutationRequest =
+  VerificationUpdateRequest
 
-export type AdminUpdateUserVerificationMutationResponse = AdminUpdateUserVerification200
+export type AdminUpdateUserVerificationMutationResponse =
+  AdminUpdateUserVerification200
 
 export type AdminUpdateUserVerificationMutation = {
   Response: AdminUpdateUserVerification200
   Request: AdminUpdateUserVerificationMutationRequest
   PathParams: AdminUpdateUserVerificationPathParams
-  Errors: AdminUpdateUserVerification400 | AdminUpdateUserVerification401 | AdminUpdateUserVerification404
+  Errors:
+    | AdminUpdateUserVerification400
+    | AdminUpdateUserVerification401
+    | AdminUpdateUserVerification404
 }

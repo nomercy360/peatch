@@ -9,47 +9,47 @@ import { useTranslations } from '~/lib/locale-context'
 import { useQuery } from '@tanstack/solid-query'
 
 export default function SelectOpportunities() {
-	const mainButton = useMainButton()
-	const { t } = useTranslations()
+  const mainButton = useMainButton()
+  const { t } = useTranslations()
 
-	const navigate = useNavigate()
+  const navigate = useNavigate()
 
-	const navigateNext = () => {
-		navigate('/users/edit/location', { state: { back: true } })
-	}
+  const navigateNext = () => {
+    navigate('/users/edit/location', { state: { back: true } })
+  }
 
-	const fetchOpportunityQuery = useQuery(() => ({
-		queryKey: ['opportunities'],
-		queryFn: () => fetchOpportunities(),
-	}))
+  const fetchOpportunityQuery = useQuery(() => ({
+    queryKey: ['opportunities'],
+    queryFn: () => fetchOpportunities(),
+  }))
 
-	mainButton.onClick(navigateNext)
+  mainButton.onClick(navigateNext)
 
-	createEffect(() => {
-		if (editUser.opportunity_ids.length) {
-			mainButton.enable(t('common.buttons.next'))
-		} else {
-			mainButton.disable(t('common.buttons.next'))
-		}
-	})
+  createEffect(() => {
+    if (editUser.opportunity_ids.length) {
+      mainButton.enable(t('common.buttons.next'))
+    } else {
+      mainButton.disable(t('common.buttons.next'))
+    }
+  })
 
-	onCleanup(() => {
-		mainButton.offClick(navigateNext)
-	})
+  onCleanup(() => {
+    mainButton.offClick(navigateNext)
+  })
 
-	return (
-		<FormLayout
-			title={t('pages.users.edit.interests.title')}
-			description={t('pages.users.edit.interests.description')}
-			screen={3}
-			totalScreens={6}
-		>
-			<SelectOpportunity
-				selected={editUser.opportunity_ids}
-				setSelected={b => setEditUser('opportunity_ids', b as any)}
-				opportunities={fetchOpportunityQuery.data}
-				loading={fetchOpportunityQuery.isLoading}
-			/>
-		</FormLayout>
-	)
+  return (
+    <FormLayout
+      title={t('pages.users.edit.interests.title')}
+      description={t('pages.users.edit.interests.description')}
+      screen={3}
+      totalScreens={6}
+    >
+      <SelectOpportunity
+        selected={editUser.opportunity_ids}
+        setSelected={b => setEditUser('opportunity_ids', b as any)}
+        opportunities={fetchOpportunityQuery.data}
+        loading={fetchOpportunityQuery.isLoading}
+      />
+    </FormLayout>
+  )
 }

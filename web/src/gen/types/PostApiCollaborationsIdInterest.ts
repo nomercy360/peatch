@@ -23,10 +23,14 @@ export type PostApiCollaborationsIdInterest200 = BotBlockedResponse
  */
 export type PostApiCollaborationsIdInterest204 = any
 
-export type PostApiCollaborationsIdInterestMutationResponse = PostApiCollaborationsIdInterest200 | PostApiCollaborationsIdInterest204
+export type PostApiCollaborationsIdInterestMutationResponse =
+  | PostApiCollaborationsIdInterest200
+  | PostApiCollaborationsIdInterest204
 
 export type PostApiCollaborationsIdInterestMutation = {
-  Response: PostApiCollaborationsIdInterest200 | PostApiCollaborationsIdInterest204
+  Response:
+    | PostApiCollaborationsIdInterest200
+    | PostApiCollaborationsIdInterest204
   PathParams: PostApiCollaborationsIdInterestPathParams
   Errors: any
 }

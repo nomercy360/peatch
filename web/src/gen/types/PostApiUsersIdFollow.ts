@@ -23,7 +23,9 @@ export type PostApiUsersIdFollow200 = BotBlockedResponse
  */
 export type PostApiUsersIdFollow204 = any
 
-export type PostApiUsersIdFollowMutationResponse = PostApiUsersIdFollow200 | PostApiUsersIdFollow204
+export type PostApiUsersIdFollowMutationResponse =
+  | PostApiUsersIdFollow200
+  | PostApiUsersIdFollow204
 
 export type PostApiUsersIdFollowMutation = {
   Response: PostApiUsersIdFollow200 | PostApiUsersIdFollow204

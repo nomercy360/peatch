@@ -10,62 +10,62 @@ import { useTranslations } from '~/lib/locale-context'
 import { BadgeResponse } from '~/gen'
 
 export default function SelectBadges() {
-	const mainButton = useMainButton()
-	const { t } = useTranslations()
+  const mainButton = useMainButton()
+  const { t } = useTranslations()
 
-	const [searchParams, _] = useSearchParams()
+  const [searchParams, _] = useSearchParams()
 
-	const [createBadge, setCreateBadge] = createStore<BadgeResponse>({
-		text: searchParams.badge_name as string,
-		color: 'EF5DA8',
-		icon: '',
-	})
+  const [createBadge, setCreateBadge] = createStore<BadgeResponse>({
+    text: searchParams.badge_name as string,
+    color: 'EF5DA8',
+    icon: '',
+  })
 
-	const publishBadge = async () => {
-		if (createBadge.text && createBadge.color && createBadge.icon) {
-			const { id } = await postBadge(
-				createBadge.text as string,
-				createBadge.color,
-				createBadge.icon,
-			)
+  const publishBadge = async () => {
+    if (createBadge.text && createBadge.color && createBadge.icon) {
+      const { id } = await postBadge(
+        createBadge.text as string,
+        createBadge.color,
+        createBadge.icon,
+      )
 
-			setEditUser('badge_ids', [...editUser.badge_ids, id])
-		}
-	}
+      setEditUser('badge_ids', [...editUser.badge_ids, id])
+    }
+  }
 
-	const navigate = useNavigate()
+  const navigate = useNavigate()
 
-	const onCreateBadgeButtonClick = async () => {
-		await publishBadge()
-		navigate('/users/edit/badges?refetch=true', {
-			state: { from: '/users/edit' },
-		})
-	}
+  const onCreateBadgeButtonClick = async () => {
+    await publishBadge()
+    navigate('/users/edit/badges?refetch=true', {
+      state: { from: '/users/edit' },
+    })
+  }
 
-	createEffect(() => {
-		if (createBadge.icon && createBadge.color && createBadge.text) {
-			mainButton.enable('Create ' + createBadge.text)
-		} else {
-			mainButton.disable('Create ' + createBadge.text)
-		}
-	})
+  createEffect(() => {
+    if (createBadge.icon && createBadge.color && createBadge.text) {
+      mainButton.enable('Create ' + createBadge.text)
+    } else {
+      mainButton.disable('Create ' + createBadge.text)
+    }
+  })
 
-	onMount(() => {
-		mainButton.onClick(onCreateBadgeButtonClick)
-	})
+  onMount(() => {
+    mainButton.onClick(onCreateBadgeButtonClick)
+  })
 
-	onCleanup(() => {
-		mainButton.offClick(onCreateBadgeButtonClick)
-	})
+  onCleanup(() => {
+    mainButton.offClick(onCreateBadgeButtonClick)
+  })
 
-	return (
-		<FormLayout
-			title={t('pages.collaborations.edit.createBadge.title')}
-			description={t('pages.collaborations.edit.createBadge.description')}
-			screen={2}
-			totalScreens={6}
-		>
-			<CreateBadge createBadge={createBadge} setCreateBadge={setCreateBadge} />
-		</FormLayout>
-	)
+  return (
+    <FormLayout
+      title={t('pages.collaborations.edit.createBadge.title')}
+      description={t('pages.collaborations.edit.createBadge.description')}
+      screen={2}
+      totalScreens={6}
+    >
+      <CreateBadge createBadge={createBadge} setCreateBadge={setCreateBadge} />
+    </FormLayout>
+  )
 }

@@ -139,6 +139,29 @@ func (r UpdateUserRequest) Validate() error {
 	return nil
 }
 
+type UpdateUserLinksRequest struct {
+	Links []Link `json:"links"`
+} // @Name UpdateUserLinksRequest
+
+func (r UpdateUserLinksRequest) Validate() error {
+	// Validate links
+	for i, link := range r.Links {
+		if link.URL == "" {
+			return fmt.Errorf("link %d: url is required", i+1)
+		}
+		if link.Label == "" {
+			return fmt.Errorf("link %d: label is required", i+1)
+		}
+		if len(link.Label) > 100 {
+			return fmt.Errorf("link %d: label must not exceed 100 characters", i+1)
+		}
+		if link.Type == "" {
+			return fmt.Errorf("link %d: type is required", i+1)
+		}
+	}
+	return nil
+}
+
 type CreateCollaboration struct {
 	OpportunityID string   `json:"opportunity_id"`
 	Title         string   `json:"title"`

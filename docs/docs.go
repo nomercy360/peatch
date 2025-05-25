@@ -829,6 +829,39 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/users/links": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Update user links",
+                "parameters": [
+                    {
+                        "description": "User links data",
+                        "name": "links",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/UpdateUserLinksRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/UserResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/users/me": {
             "get": {
                 "consumes": [
@@ -1216,6 +1249,17 @@ const docTemplate = `{
                 }
             }
         },
+        "UpdateUserLinksRequest": {
+            "type": "object",
+            "properties": {
+                "links": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Link"
+                    }
+                }
+            }
+        },
         "UpdateUserRequest": {
             "type": "object",
             "properties": {
@@ -1294,6 +1338,9 @@ const docTemplate = `{
                     }
                 },
                 "title": {
+                    "type": "string"
+                },
+                "username": {
                     "type": "string"
                 }
             }

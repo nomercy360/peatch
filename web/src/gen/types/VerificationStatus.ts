@@ -11,6 +11,7 @@ export const verificationStatus = {
   VerificationStatusUnverified: 'unverified',
 } as const
 
-export type VerificationStatusEnum = (typeof verificationStatus)[keyof typeof verificationStatus]
+export type VerificationStatusEnum =
+  (typeof verificationStatus)[keyof typeof verificationStatus]
 
 export type VerificationStatus = VerificationStatusEnum

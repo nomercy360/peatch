@@ -155,6 +155,13 @@ definitions:
       success:
         type: boolean
     type: object
+  UpdateUserLinksRequest:
+    properties:
+      links:
+        items:
+          $ref: '#/definitions/Link'
+        type: array
+    type: object
   UpdateUserRequest:
     properties:
       badge_ids:
@@ -207,6 +214,8 @@ definitions:
           $ref: '#/definitions/OpportunityResponse'
         type: array
       title:
+        type: string
+      username:
         type: string
     type: object
   UserResponse:
@@ -850,6 +859,27 @@ paths:
       summary: Upload user photo
       tags:
       - photos
+  /api/users/links:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: User links data
+        in: body
+        name: links
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateUserLinksRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/UserResponse'
+      summary: Update user links
+      tags:
+      - users
   /api/users/me:
     get:
       consumes:

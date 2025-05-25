@@ -314,3 +314,52 @@ func (h *handler) handlePublishProfile(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, contract.StatusResponse{Success: true})
 }
+
+// handleUpdateUserLinks godoc
+// @Summary Update user links
+// @Tags users
+// @Accept  json
+// @Produce  json
+// @Param links body contract.UpdateUserLinksRequest true "User links data"
+// @Success 200 {object} contract.UserResponse
+// @Router /api/users/links [put]
+func (h *handler) handleUpdateUserLinks(c echo.Context) error {
+	uid := getUserID(c)
+
+	var req contract.UpdateUserLinksRequest
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, ErrInvalidRequest).WithInternal(err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, ErrInvalidRequest).WithInternal(err)
+	}
+
+	links := make([]db.Link, 0, len(req.Links))
+	for _, link := range req.Links {
+		l := db.Link{
+			URL:   link.URL,
+			Label: link.Label,
+			Type:  link.Type,
+			Order: link.Order,
+		}
+		links = append(links, l)
+	}
+
+	if err := h.storage.UpdateUserLinks(c.Request().Context(), uid, links); err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			return echo.NewHTTPError(http.StatusNotFound, "user not found").WithInternal(err)
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to update user links").WithInternal(err)
+	}
+
+	resp, err := h.storage.GetUserByID(c.Request().Context(), uid)
+	if err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			return echo.NewHTTPError(http.StatusNotFound, "user not found").WithInternal(err)
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get user").WithInternal(err)
+	}
+
+	return c.JSON(http.StatusOK, contract.ToUserResponse(resp))
+}

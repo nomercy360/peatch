@@ -3,7 +3,7 @@ import { Telegram } from './telegram'
 export {}
 
 declare global {
-	interface Window {
-		Telegram: Telegram
-	}
+  interface Window {
+    Telegram: Telegram
+  }
 }

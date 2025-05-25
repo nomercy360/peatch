@@ -1,36 +1,36 @@
-import { FormLayout } from '~/components/edit/layout';
-import { editUser, setEditUser } from '~/store';
-import { useMainButton } from '~/lib/useMainButton';
-import { createEffect, onCleanup, onMount } from 'solid-js';
-import { useNavigate } from '@solidjs/router';
-import { useTranslations } from '~/lib/locale-context';
+import { FormLayout } from '~/components/edit/layout'
+import { editUser, setEditUser } from '~/store'
+import { useMainButton } from '~/lib/useMainButton'
+import { createEffect, onCleanup, onMount } from 'solid-js'
+import { useNavigate } from '@solidjs/router'
+import { useTranslations } from '~/lib/locale-context'
 
 export default function GeneralInfo() {
-  const mainButton = useMainButton();
-  const { t } = useTranslations();
+  const mainButton = useMainButton()
+  const { t } = useTranslations()
 
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
   const navigateNext = () => {
-    navigate('/users/edit/badges', { state: { back: true } });
-  };
+    navigate('/users/edit/badges', { state: { back: true } })
+  }
 
   onMount(() => {
-    mainButton.onClick(navigateNext);
-    window.Telegram.WebApp.enableClosingConfirmation();
-  });
+    mainButton.onClick(navigateNext)
+    window.Telegram.WebApp.enableClosingConfirmation()
+  })
 
   createEffect(() => {
     if (editUser.name && editUser.title) {
-      mainButton.enable(t('common.buttons.next'));
+      mainButton.enable(t('common.buttons.next'))
     } else {
-      mainButton.disable(t('common.buttons.next'));
+      mainButton.disable(t('common.buttons.next'))
     }
-  });
+  })
 
   onCleanup(() => {
-    mainButton.offClick(navigateNext);
-  });
+    mainButton.offClick(navigateNext)
+  })
 
   return (
     <FormLayout
@@ -57,5 +57,5 @@ export default function GeneralInfo() {
         />
       </div>
     </FormLayout>
-  );
+  )
 }

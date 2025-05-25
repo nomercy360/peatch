@@ -522,3 +522,27 @@ func (s *Storage) PublishUserProfile(ctx context.Context, userID string) error {
 
 	return nil
 }
+
+// UpdateUserLinks updates only the links for a user
+func (s *Storage) UpdateUserLinks(ctx context.Context, userID string, links []Link) error {
+	collection := s.db.Collection("users")
+
+	filter := bson.M{"_id": userID}
+	update := bson.M{
+		"$set": bson.M{
+			"links":      links,
+			"updated_at": time.Now(),
+		},
+	}
+
+	res, err := collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return fmt.Errorf("failed to update user links: %w", err)
+	}
+
+	if res.MatchedCount == 0 {
+		return ErrNotFound
+	}
+
+	return nil
+}

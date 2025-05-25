@@ -52,6 +52,7 @@ type storager interface {
 	CreateUser(ctx context.Context, user db.User) error
 	GetUserProfile(ctx context.Context, viewerID string, id string) (db.User, error)
 	UpdateUser(ctx context.Context, user db.User, badges, opportunities []string, locationID string, links []db.Link) error
+	UpdateUserLinks(ctx context.Context, userID string, links []db.Link) error
 	UpdateUserLoginMetadata(ctx context.Context, userID string, metadata db.LoginMeta) error
 	UpdateUserAvatarURL(ctx context.Context, userID, avatarURL string) error
 	UpdateUserVerificationStatus(ctx context.Context, userID string, status db.VerificationStatus) error
@@ -143,6 +144,7 @@ func (h *handler) SetupRoutes(e *echo.Echo) {
 	api.GET("/users/:id", h.handleGetUser)
 	api.POST("/users/:id/follow", h.handleFollowUser)
 	api.PUT("/users", h.handleUpdateUser)
+	api.PUT("/users/links", h.handleUpdateUserLinks)
 
 	api.GET("/opportunities", h.handleListOpportunities)
 	api.GET("/badges", h.handleListBadges)
