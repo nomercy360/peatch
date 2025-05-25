@@ -110,19 +110,6 @@ func (h *handler) handleUpdateUser(c echo.Context) error {
 		Description: &req.Description,
 	}
 
-	links := make([]db.Link, 0, len(req.Links))
-
-	for _, link := range req.Links {
-		l := db.Link{
-			URL:   link.URL,
-			Label: link.Label,
-			Type:  link.Type,
-			Order: link.Order,
-		}
-
-		links = append(links, l)
-	}
-
 	if err := h.storage.UpdateUser(
 		c.Request().Context(),
 		user,
