@@ -129,7 +129,6 @@ func (h *handler) handleUpdateUser(c echo.Context) error {
 		req.BadgeIDs,
 		req.OpportunityIDs,
 		req.LocationID,
-		links,
 	); err != nil && errors.Is(err, db.ErrNotFound) {
 		return echo.NewHTTPError(http.StatusNotFound, "not found").WithInternal(err)
 	} else if err != nil {

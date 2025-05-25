@@ -1,97 +1,102 @@
-import { createSignal, createEffect } from 'solid-js'
+import { createSignal, For, Show } from 'solid-js';
 
 type ToastType = 'success' | 'info' | 'warning' | 'error'
 
 interface ToastAction {
-  text: string
-  onClick: () => void
+  text: string;
+  onClick: () => void;
 }
 
 interface Toast {
-  id: number
-  message: string
-  type: ToastType
-  action?: ToastAction
+  id: number;
+  message: string;
+  type: ToastType;
+  action?: ToastAction;
 }
 
-export const [toasts, setToasts] = createSignal<Toast[]>([])
+export const [toasts, setToasts] = createSignal<Toast[]>([]);
+let toastCounter = 0;
 
 export const addToast = (
   message: string,
   type: ToastType = 'info',
   action?: ToastAction,
 ) => {
-  const id = Date.now()
-  setToasts([...toasts(), { id, message, type, action }])
+  const id = ++toastCounter;
+  setToasts(prev => [...prev, { id, message, type, action }]);
 
   setTimeout(() => {
-    setToasts(toasts().filter(toast => toast.id !== id))
-  }, 5000)
-}
+    setToasts(current => current.filter(toast => toast.id !== id));
+  }, 3000);
+};
 
 const Toast = () => {
-  createEffect(() => {
-    const currentToasts = toasts()
-    if (currentToasts.length > 5) {
-      const newToasts = currentToasts.slice(1)
-      setToasts(newToasts)
-    }
-  })
+  // createEffect(() => {
+  //   const currentToasts = toasts();
+  //   if (currentToasts.length > 5) {
+  //     const newToasts = currentToasts.slice(-5);
+  //     setToasts(newToasts);
+  //   }
+  // });
 
   const getIcon = (type: ToastType): string => {
     switch (type) {
       case 'success':
-        return 'check_circle'
+        return 'check_circle';
       case 'error':
-        return 'error'
+        return 'error';
       case 'warning':
-        return 'warning'
+        return 'warning';
       case 'info':
       default:
-        return 'info'
+        return 'info';
     }
-  }
+  };
 
-  const getBackgroundColor = (type: ToastType): string => {
+  const getIconColor = (type: ToastType): string => {
     switch (type) {
       case 'success':
-        return 'bg-success'
+        return 'text-green-600';
       case 'error':
-        return 'bg-destructive'
+        return 'text-red-600';
       case 'warning':
-        return 'bg-warning'
+        return 'text-yellow-600';
       case 'info':
       default:
-        return 'bg-accent'
+        return 'text-blue-600';
     }
-  }
+  };
 
   return (
-    <div class="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 transform space-y-2">
-      {toasts().map(toast => (
-        <div
-          class={`flex w-[calc(100vw-2rem)] items-center justify-between rounded-lg ${getBackgroundColor(
-            toast.type,
-          )} border border-white border-opacity-20 px-4 py-3 text-sm font-medium shadow-lg animate-in fade-in`}
-        >
-          <div class="flex items-center">
-            <span class="material-symbols-rounded mr-2 text-[20px]">
-              {getIcon(toast.type)}
-            </span>
-            <span class="flex-1">{toast.message}</span>
-          </div>
-          {toast.action && (
-            <button
-              onClick={toast.action.onClick}
-              class="ml-4 rounded-md bg-white bg-opacity-20 px-3 py-1 text-xs transition-colors hover:bg-opacity-30"
+    <div class="fixed top-4 left-0 right-0 z-50 pointer-events-none mx-auto flex flex-col items-center gap-2 px-4">
+      <For each={toasts()}>
+        {(toast) => (
+          <div
+            class="flex w-full max-w-sm items-center gap-3 rounded-2xl bg-background px-4 py-3 shadow-lg border border-secondary pointer-events-auto"
+          >
+              <span
+                class={`material-symbols-rounded text-[24px] ${getIconColor(toast.type)}`}
+              >
+                {getIcon(toast.type)}
+              </span>
+            <span
+              class="flex-1 text-sm font-medium text-foreground"
             >
-              {toast.action.text}
-            </button>
-          )}
-        </div>
-      ))}
+                {toast.message}
+              </span>
+            <Show when={toast.action}>
+              <button
+                onClick={toast.action!.onClick}
+                class="rounded-xl bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground transition-all hover:bg-secondary/80"
+              >
+                {toast.action!.text}
+              </button>
+            </Show>
+          </div>
+        )}
+      </For>
     </div>
-  )
-}
+  );
+};
 
-export default Toast
+export default Toast;

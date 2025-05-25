@@ -201,7 +201,7 @@ func (s *Storage) CreateUser(ctx context.Context, user User) error {
 	return nil
 }
 
-func (s *Storage) UpdateUser(ctx context.Context, user User, badgeIDs, oppIDs []string, locationID string, links []Link) error {
+func (s *Storage) UpdateUser(ctx context.Context, user User, badgeIDs, oppIDs []string, locationID string) error {
 	collection := s.db.Collection("users")
 	badgeCollection := s.db.Collection("badges")
 	oppCollection := s.db.Collection("opportunities")
@@ -255,7 +255,6 @@ func (s *Storage) UpdateUser(ctx context.Context, user User, badgeIDs, oppIDs []
 			"location":      locationData,
 			"badges":        badges,
 			"opportunities": opps,
-			"links":         links,
 		},
 	}
 

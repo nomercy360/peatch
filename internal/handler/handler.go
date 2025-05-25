@@ -51,7 +51,7 @@ type storager interface {
 	GetUserByID(ctx context.Context, ID string) (db.User, error)
 	CreateUser(ctx context.Context, user db.User) error
 	GetUserProfile(ctx context.Context, viewerID string, id string) (db.User, error)
-	UpdateUser(ctx context.Context, user db.User, badges, opportunities []string, locationID string, links []db.Link) error
+	UpdateUser(ctx context.Context, user db.User, badges, opportunities []string, locationID string) error
 	UpdateUserLinks(ctx context.Context, userID string, links []db.Link) error
 	UpdateUserLoginMetadata(ctx context.Context, userID string, metadata db.LoginMeta) error
 	UpdateUserAvatarURL(ctx context.Context, userID, avatarURL string) error

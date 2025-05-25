@@ -63,7 +63,6 @@ type UpdateUserRequest struct {
 	LocationID     string   `json:"location_id"`
 	BadgeIDs       []string `json:"badge_ids"`
 	OpportunityIDs []string `json:"opportunity_ids"`
-	Links          []Link   `json:"links"`
 } // @Name UpdateUserRequest
 
 type Location struct {
@@ -118,22 +117,6 @@ func (r UpdateUserRequest) Validate() error {
 	}
 	if len(r.OpportunityIDs) == 0 {
 		return fmt.Errorf("opportunity_ids is required")
-	}
-
-	// Validate links
-	for i, link := range r.Links {
-		if link.URL == "" {
-			return fmt.Errorf("link %d: url is required", i+1)
-		}
-		if link.Label == "" {
-			return fmt.Errorf("link %d: label is required", i+1)
-		}
-		if len(link.Label) > 100 {
-			return fmt.Errorf("link %d: label must not exceed 100 characters", i+1)
-		}
-		if link.Type == "" {
-			return fmt.Errorf("link %d: type is required", i+1)
-		}
 	}
 
 	return nil

@@ -24,6 +24,7 @@ export default function UserProfilePage() {
   const mainButton = useMainButton()
   const secondaryButton = useSecondaryButton()
   const [badgesExpanded, setBadgesExpanded] = createSignal(false)
+  const [linkDrawerOpen, setLinkDrawerOpen] = createSignal(false)
 
   const [opportunitiesExpanded, setOpportunitiesExpanded] = createSignal(false)
 
@@ -142,7 +143,7 @@ export default function UserProfilePage() {
   }
 
   createEffect(() => {
-    if (isCurrentUserProfile) {
+    if (isCurrentUserProfile && !linkDrawerOpen()) {
       if (isProfileHidden()) {
         mainButton.offClick(navigateToEdit)
         mainButton.enable(t('common.buttons.publish'))
@@ -157,6 +158,10 @@ export default function UserProfilePage() {
         mainButton.enable(t('common.buttons.edit'))
         mainButton.onClick(navigateToEdit)
       }
+    } else if (linkDrawerOpen() && isCurrentUserProfile) {
+      secondaryButton.hide()
+      mainButton.offClick(navigateToEdit)
+      secondaryButton.offClick(navigateToEdit)
     }
   })
 
@@ -419,7 +424,7 @@ export default function UserProfilePage() {
               <LinkEditor
                 links={query.data.links || []}
                 isCurrentUser={isCurrentUserProfile}
-                onUpdate={() => query.refetch()}
+                onDrawerStateChange={setLinkDrawerOpen}
               />
             </div>
           </Motion.div>
