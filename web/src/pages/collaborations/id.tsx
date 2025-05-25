@@ -14,6 +14,8 @@ import { store } from '~/store'
 import { useMainButton } from '~/lib/useMainButton'
 import { useQuery } from '@tanstack/solid-query'
 import { Motion } from 'solid-motionone'
+import { detectLinkType } from '~/lib/utils'
+import { Link as SolidLink } from '~/components/link'
 
 export default function Collaboration() {
   const mainButton = useMainButton()
@@ -76,7 +78,7 @@ export default function Collaboration() {
       <Switch>
         <Match when={!query.isLoading}>
           <Motion.div
-            class="h-fit min-h-screen bg-secondary"
+            class="h-fit min-h-screen bg-background"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3 }}
@@ -199,6 +201,52 @@ export default function Collaboration() {
                       </p>
                     </Motion.div>
                   )}
+                </For>
+              </Motion.div>
+              <Motion.p
+                class="mt-5 text-start text-sm font-normal text-secondary-foreground"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.55 }}
+              >
+                Links
+              </Motion.p>
+              <Motion.div
+                class="mt-2 flex w-full flex-col items-start justify-start gap-2"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.6 }}
+              >
+                <For each={query.data.links}>
+                  {(link, index) => {
+                    const linkInfo = detectLinkType(link.url || '')
+                    return (
+                      <Motion.div
+                        class="flex h-12 w-full flex-row items-center justify-between rounded-xl bg-secondary px-3"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{
+                          duration: 0.3,
+                          delay: 0.1 + index() * 0.05,
+                        }}
+                      >
+                        <SolidLink
+                          href={link.url!}
+                          class="flex flex-1 items-center gap-2 text-secondary-foreground"
+                        >
+                          <span class="material-symbols-rounded text-[20px]">
+                            {linkInfo.icon}
+                          </span>
+                          <span class="truncate text-sm font-medium">
+                            {link.label}
+                          </span>
+                        </SolidLink>
+                        <span class="material-symbols-rounded text-[16px]">
+                          open_in_new
+                        </span>
+                      </Motion.div>
+                    )
+                  }}
                 </For>
               </Motion.div>
             </Motion.div>

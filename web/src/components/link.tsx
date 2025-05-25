@@ -10,15 +10,19 @@ export const Link: Component<AnchorProps> = props => {
       targetUrl.protocol !== currentUrl.protocol ||
       targetUrl.host !== currentUrl.host
 
-    if (isExternal) {
+    const isTelegramLink =
+      targetUrl.protocol === 'https:' &&
+      targetUrl.hostname === 't.me' &&
+      targetUrl.pathname.startsWith('/')
+
+    if (isTelegramLink) {
       e.preventDefault()
-      return window.Telegram.WebApp.openLink('t.me/mini_hub_bot/app')
+      window.Telegram.WebApp.openTelegramLink(targetUrl.toString())
+    } else if (isExternal) {
+      e.preventDefault()
+      window.Telegram.WebApp.openLink(targetUrl.toString())
     }
   }
 
-  return (
-    <A {...props} onClick={onClick} class={props.class}>
-      {props.children}
-    </A>
-  )
+  return <A {...props} onClick={onClick} class={props.class} />
 }

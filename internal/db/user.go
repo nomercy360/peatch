@@ -48,6 +48,7 @@ type Link struct {
 	Label string `bson:"label" json:"label"`
 	Type  string `bson:"type" json:"type"` // e.g., "github", "linkedin", "website", "portfolio"
 	Order int    `bson:"order" json:"order"`
+	Icon  string `bson:"icon,omitempty" json:"icon,omitempty"` // Optional icon for the link
 }
 
 type User struct {

@@ -33,6 +33,7 @@ type Collaboration struct {
 	VerificationStatus VerificationStatus `bson:"verification_status,omitempty" json:"verification_status"`
 	VerifiedAt         *time.Time         `bson:"verified_at,omitempty" json:"verified_at"`
 	HasInterest        bool               `bson:"has_interest,omitempty" json:"has_interest"`
+	Links              []Link             `bson:"links,omitempty" json:"links"`
 }
 
 type CollaborationQuery struct {

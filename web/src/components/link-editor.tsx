@@ -7,6 +7,7 @@ import { addToast } from '~/components/toast'
 import { useTranslations } from '~/lib/locale-context'
 import { useMutation, useQuery } from '@tanstack/solid-query'
 import { useMainButton } from '~/lib/useMainButton'
+import { Link as SolidLink } from '~/components/link'
 
 interface LinkEditorProps {
   links: Link[]
@@ -207,10 +208,8 @@ export default function LinkEditor(props: LinkEditorProps) {
                       delay: 0.1 + index() * 0.05,
                     }}
                   >
-                    <a
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <SolidLink
+                      href={link.url!}
                       class="flex flex-1 items-center gap-2 text-secondary-foreground"
                     >
                       <span class="material-symbols-rounded text-[20px]">
@@ -219,7 +218,7 @@ export default function LinkEditor(props: LinkEditorProps) {
                       <span class="truncate text-sm font-medium">
                         {link.label}
                       </span>
-                    </a>
+                    </SolidLink>
                     <Show when={editingLinks()}>
                       <div class="flex gap-1">
                         <Motion.button
@@ -241,6 +240,11 @@ export default function LinkEditor(props: LinkEditorProps) {
                           </span>
                         </Motion.button>
                       </div>
+                    </Show>
+                    <Show when={!props.isCurrentUser}>
+                      <span class="material-symbols-rounded text-[16px]">
+                        open_in_new
+                      </span>
                     </Show>
                   </Motion.div>
                 )

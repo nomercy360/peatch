@@ -54,6 +54,7 @@ type Link struct {
 	Label string `json:"label"`
 	Type  string `json:"type"`
 	Order int    `json:"order"`
+	Icon  string `json:"icon"`
 } // @Name Link
 
 type UpdateUserRequest struct {
@@ -351,6 +352,7 @@ func ToLinkResponseList(links []db.Link) []Link {
 			Label: link.Label,
 			Type:  link.Type,
 			Order: link.Order,
+			Icon:  link.Icon,
 		}
 	}
 	return linkResponses
@@ -387,6 +389,7 @@ type CollaborationResponse struct {
 	Location           *CityResponse         `json:"location"`
 	CreatedAt          time.Time             `json:"created_at"`
 	UpdatedAt          time.Time             `json:"updated_at"`
+	Links              []Link                `json:"links"`
 	User               UserProfileResponse   `json:"user"`
 	VerificationStatus db.VerificationStatus `json:"verification_status"`
 } // @Name CollaborationResponse
@@ -403,6 +406,7 @@ func ToCollaborationResponse(collab db.Collaboration) CollaborationResponse {
 		Opportunity:        ToOpportunityResponseList([]db.Opportunity{collab.Opportunity}, db.LanguageEN)[0],
 		CreatedAt:          collab.CreatedAt,
 		UpdatedAt:          collab.UpdatedAt,
+		Links:              ToLinkResponseList(collab.Links),
 		User:               ToUserProfile(collab.User),
 		VerificationStatus: collab.VerificationStatus,
 	}

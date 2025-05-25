@@ -200,7 +200,7 @@ export default function UserProfilePage() {
         </Match>
         <Match when={query.isSuccess}>
           <Motion.div
-            class="flex h-fit min-h-screen flex-col items-center p-2 text-center"
+            class="flex h-fit min-h-screen flex-col items-center p-2 pb-8 text-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3 }}
