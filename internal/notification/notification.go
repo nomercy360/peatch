@@ -319,12 +319,14 @@ func (n *Notifier) NotifyUsersWithMatchingOpportunity(collab db.Collaboration, u
 		}
 
 		// Skip users with notifications disabled
-		if user.NotificationsEnabledAt == nil {
-			continue
-		}
+		//if user.NotificationsEnabledAt == nil {
+		//	continue
+		//}
 
 		eligibleUsers = append(eligibleUsers, user)
 	}
+
+	fmt.Printf("Found %d eligible users for collaboration %s\n", len(eligibleUsers), collab.ID)
 
 	// If no eligible users, return early
 	if len(eligibleUsers) == 0 {
@@ -449,6 +451,7 @@ func (n *Notifier) NotifyUsersWithMatchingOpportunity(collab db.Collaboration, u
 						Photo:       photoData,
 						ReplyMarkup: &keyboard,
 					})
+					fmt.Printf("Sent opportunity match notification to user %s with image\n", user.ID)
 				} else {
 					// Fall back to text-only message if no image data available
 					_, err = n.bot.SendMessage(context.Background(), &telegram.SendMessageParams{
@@ -456,6 +459,7 @@ func (n *Notifier) NotifyUsersWithMatchingOpportunity(collab db.Collaboration, u
 						Text:        msgText,
 						ReplyMarkup: &keyboard,
 					})
+					fmt.Printf("Sent opportunity match notification to user %s without image\n", user.ID)
 				}
 
 				if err != nil {
