@@ -78,9 +78,9 @@ type Tag struct {
 func (n *Notifier) NotifyUserVerified(user db.User) error {
 	var msgText string
 	if user.LanguageCode == db.LanguageRU {
-		msgText = fmt.Sprintf("🎉 Поздравляем! Ваш профиль был подтверждён. 💡 Следующие шаги:\n• Ищешь кого-то? Запости - и мы сообщим подходящим людям.\n• [Вступай в комьюнити](https://t.me/peatch_community), чтобы быть в курсе событий.")
+		msgText = fmt.Sprintf("🎉 Поздравляем\\! Ваш профиль был подтверждён\\. 💡 Следующие шаги:\n• Ищешь кого-то? Запости \\- и мы сообщим подходящим людям\\.\n• [Вступай в комьюнити](https://t.me/peatch_community), чтобы быть в курсе событий\\.")
 	} else {
-		msgText = fmt.Sprintf("🎉 Congratulations! Your profile has been verified.\n• Looking for someone? Post it - we'll notify the right people.\n• [Join the community](https://t.me/peatch_community) to stay updated.")
+		msgText = fmt.Sprintf("🎉 Congratulations\\! Your profile has been verified\\.\n• Looking for someone? Post it \\- we'll notify the right people\\.\n• [Join the community](https://t.me/peatch_community) to stay updated\\.")
 	}
 
 	btnText := "Publish Collaboration"
@@ -106,6 +106,10 @@ func (n *Notifier) NotifyUserVerified(user db.User) error {
 		//ChatID:      n.adminChatID,
 		Text:        msgText,
 		ReplyMarkup: &keyboard,
+		ParseMode:   models.ParseModeMarkdown,
+		LinkPreviewOptions: &models.LinkPreviewOptions{
+			IsDisabled: new(bool), // Disable link previews
+		},
 	})
 
 	if err != nil {
@@ -166,6 +170,19 @@ func (n *Notifier) NotifyUserVerified(user db.User) error {
 	communityMsg := fmt.Sprintf("🌟 Welcome new member!\nMeet %s\n\nCheck their profile",
 		fullName)
 
+	btnText = "View Profile"
+
+	button = models.InlineKeyboardButton{
+		Text: btnText,
+		URL:  fmt.Sprintf("%s?startapp=u_%s", n.botWebApp, user.ID),
+	}
+
+	keyboard = models.InlineKeyboardMarkup{
+		InlineKeyboard: [][]models.InlineKeyboardButton{
+			{button},
+		},
+	}
+
 	if imageBytes != nil && len(imageBytes) > 0 {
 		photoData := &models.InputFileUpload{
 			Filename: fmt.Sprintf("welcome_%s.png", user.ID),
@@ -173,8 +190,8 @@ func (n *Notifier) NotifyUserVerified(user db.User) error {
 		}
 
 		if _, err := n.bot.SendPhoto(context.Background(), &telegram.SendPhotoParams{
-			ChatID: fmt.Sprintf("%d", n.communityChatID),
-			// ChatID:      n.adminChatID,
+			//ChatID: fmt.Sprintf("%d", n.communityChatID),
+			ChatID:      n.adminChatID,
 			Caption:     communityMsg,
 			Photo:       photoData,
 			ReplyMarkup: &keyboard,
