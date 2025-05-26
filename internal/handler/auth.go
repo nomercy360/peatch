@@ -30,7 +30,7 @@ const (
 // @Failure 400 {object} contract.ErrorResponse
 // @Failure 500 {object} contract.ErrorResponse
 // @Router /auth/telegram [post]
-func (h *handler) TelegramAuth(c echo.Context) error {
+func (h *Handler) TelegramAuth(c echo.Context) error {
 	var req contract.AuthTelegramRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, ErrInvalidRequest).WithInternal(err)

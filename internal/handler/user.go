@@ -1,11 +1,13 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 	"github.com/peatch-io/peatch/internal/contract"
 	"github.com/peatch-io/peatch/internal/db"
+	"github.com/peatch-io/peatch/internal/embedding"
 	"github.com/peatch-io/peatch/internal/notification"
 	"log/slog"
 	"net/http"
@@ -24,12 +26,24 @@ import (
 // @Param find_similar query bool false "Find similar"
 // @Success 200 {array} contract.UserProfileResponse
 // @Router /api/users [get]
-func (h *handler) handleListUsers(c echo.Context) error {
+func (h *Handler) handleListUsers(c echo.Context) error {
 	page := parseIntQuery(c, "page", 1)
 	limit := parseIntQuery(c, "limit", 10)
 	search := c.QueryParam("search")
 
-	users, err := h.storage.ListUsers(c.Request().Context(), search, (page-1)*limit, limit, false)
+	if limit < 1 || limit > 100 {
+		return echo.NewHTTPError(http.StatusBadRequest, "limit must be between 1 and 100")
+	}
+
+	params := db.ListUsersOptions{
+		Limit:         limit,
+		Offset:        (page - 1) * limit,
+		SearchQuery:   search,
+		UserID:        getUserID(c),
+		IncludeHidden: false,
+	}
+
+	users, err := h.storage.ListUsers(c.Request().Context(), params)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get users").WithInternal(err)
 	}
@@ -50,7 +64,7 @@ func (h *handler) handleListUsers(c echo.Context) error {
 // @Param id path string true "User ID or username"
 // @Success 200 {object} contract.UserProfileResponse
 // @Router /api/users/{id} [get]
-func (h *handler) handleGetUser(c echo.Context) error {
+func (h *Handler) handleGetUser(c echo.Context) error {
 	idOrUsername := c.Param("id")
 	uid := getUserID(c)
 
@@ -85,7 +99,7 @@ func getUserLang(c echo.Context) db.LanguageCode {
 // @Param user body contract.UpdateUserRequest true "User data"
 // @Success 200 {object} contract.UserResponse
 // @Router /api/users [put]
-func (h *handler) handleUpdateUser(c echo.Context) error {
+func (h *Handler) handleUpdateUser(c echo.Context) error {
 	uid := getUserID(c)
 
 	var req contract.UpdateUserRequest
@@ -152,57 +166,56 @@ func (h *handler) handleUpdateUser(c echo.Context) error {
 		}()
 	}
 
-	// Generate embedding for the updated user profile in the background
-	//go func() {
-	//	// Extract text from user profile
-	//	ctx := context.Background()
-	//	name := ""
-	//	if resp.Name != nil {
-	//		name = *resp.Name
-	//	}
-	//	title := ""
-	//	if resp.Title != nil {
-	//		title = *resp.Title
-	//	}
-	//	description := ""
-	//	if resp.Description != nil {
-	//		description = *resp.Description
-	//	}
-	//	location := ""
-	//	if resp.Location != nil {
-	//		location = resp.Location.Name
-	//	}
-	//
-	//	// Extract badge texts
-	//	badges := make([]string, len(resp.Badges))
-	//	for i, badge := range resp.Badges {
-	//		badges[i] = badge.Text
-	//	}
-	//
-	//	// Extract opportunity texts
-	//	opportunities := make([]string, len(resp.Opportunities))
-	//	for i, opp := range resp.Opportunities {
-	//		opportunities[i] = opp.Text
-	//	}
-	//
-	//	// Build embedding text
-	//	embeddingText := embedding.BuildUserEmbeddingText(name, title, description, badges, opportunities, location)
-	//
-	//	// Generate embedding
-	//	embeddingVector, err := h.embeddingService.GenerateEmbedding(ctx, embeddingText)
-	//	if err != nil {
-	//		h.logger.Error("failed to generate user embedding",
-	//			slog.String("user_id", uid),
-	//			slog.String("error", err.Error()))
-	//		return
-	//	}
-	//
-	//	if err := h.storage.UpdateUserEmbedding(context.Background(), uid, embeddingVector); err != nil {
-	//		h.logger.Error("failed to generate user embedding",
-	//			slog.String("user_id", uid),
-	//			slog.String("error", err.Error()))
-	//	}
-	//}()
+	go func() {
+		// Extract text from user profile
+		ctx := context.Background()
+		name := ""
+		if resp.Name != nil {
+			name = *resp.Name
+		}
+		title := ""
+		if resp.Title != nil {
+			title = *resp.Title
+		}
+		description := ""
+		if resp.Description != nil {
+			description = *resp.Description
+		}
+		location := ""
+		if resp.Location != nil {
+			location = resp.Location.Name
+		}
+
+		// Extract badge texts
+		badges := make([]string, len(resp.Badges))
+		for i, badge := range resp.Badges {
+			badges[i] = badge.Text
+		}
+
+		// Extract opportunity texts
+		opportunities := make([]string, len(resp.Opportunities))
+		for i, opp := range resp.Opportunities {
+			opportunities[i] = opp.Text
+		}
+
+		// Build embedding text
+		embeddingText := embedding.BuildUserEmbeddingText(name, title, description, badges, opportunities, location)
+
+		// Generate embedding
+		embeddingVector, err := h.embeddingService.GenerateEmbedding(ctx, embeddingText)
+		if err != nil {
+			h.logger.Error("failed to generate user embedding",
+				slog.String("user_id", uid),
+				slog.String("error", err.Error()))
+			return
+		}
+
+		if err := h.storage.UpdateUserEmbedding(context.Background(), uid, embeddingVector); err != nil {
+			h.logger.Error("failed to generate user embedding",
+				slog.String("user_id", uid),
+				slog.String("error", err.Error()))
+		}
+	}()
 
 	return c.JSON(http.StatusOK, contract.ToUserResponse(resp))
 }
@@ -216,7 +229,7 @@ func (h *handler) handleUpdateUser(c echo.Context) error {
 // @Success 204
 // @Success 200 {object} contract.BotBlockedResponse "When user has blocked the bot, returns username for direct Telegram navigation"
 // @Router /api/users/{id}/follow [post]
-func (h *handler) handleFollowUser(c echo.Context) error {
+func (h *Handler) handleFollowUser(c echo.Context) error {
 	userIDToFollow := c.Param("id")
 	followerID := getUserID(c)
 
@@ -297,10 +310,10 @@ func (h *handler) handleFollowUser(c echo.Context) error {
 // @Produce  json
 // @Success 200 {object} contract.UserResponse
 // @Router /api/users/me [get]
-func (h *handler) handleGetMe(c echo.Context) error {
-	// uid := getUserID(c)
+func (h *Handler) handleGetMe(c echo.Context) error {
+	uid := getUserID(c)
 
-	user, err := h.storage.GetUserByChatID(c.Request().Context(), 927635965)
+	user, err := h.storage.GetUserByID(c.Request().Context(), uid)
 	if err != nil && errors.Is(err, db.ErrNotFound) {
 		return echo.NewHTTPError(http.StatusNotFound, "User not found").WithInternal(err)
 	} else if err != nil {
@@ -318,7 +331,7 @@ func (h *handler) handleGetMe(c echo.Context) error {
 // @Produce  json
 // @Success 200 {object} contract.StatusResponse
 // @Router /api/users/publish [post]
-func (h *handler) handlePublishProfile(c echo.Context) error {
+func (h *Handler) handlePublishProfile(c echo.Context) error {
 	uid := getUserID(c)
 
 	// Check if user profile is complete before publishing
@@ -359,7 +372,7 @@ func (h *handler) handlePublishProfile(c echo.Context) error {
 // @Param links body contract.UpdateUserLinksRequest true "User links data"
 // @Success 200 {object} contract.UserResponse
 // @Router /api/users/links [put]
-func (h *handler) handleUpdateUserLinks(c echo.Context) error {
+func (h *Handler) handleUpdateUserLinks(c echo.Context) error {
 	uid := getUserID(c)
 
 	var req contract.UpdateUserLinksRequest

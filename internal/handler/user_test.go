@@ -15,16 +15,17 @@ import (
 )
 
 func TestListUsers_Success(t *testing.T) {
-	e := testutils.SetupHandlerDependencies(t)
+	ts := testutils.SetupTestEnvironment(t)
+	defer ts.Teardown()
 
-	authResp, err := testutils.AuthHelper(t, e, testutils.TelegramTestUserID, "user1", "First")
+	authResp, err := testutils.AuthHelper(t, ts.Echo, testutils.TelegramTestUserID, "user1", "First")
 	if err != nil {
 		t.Fatalf("failed to authenticate: %v", err)
 	}
 
 	token := authResp.Token
 
-	badges, opps, loc := setupTestRecords(t)
+	badges, opps, loc := setupTestRecords(ts.Storage, t)
 
 	users := []db.User{
 		{
@@ -56,12 +57,12 @@ func TestListUsers_Success(t *testing.T) {
 	}
 
 	for _, user := range users {
-		if err := testutils.GetDBStorage().CreateUser(context.Background(), user); err != nil {
+		if err := ts.Storage.CreateUser(context.Background(), user); err != nil {
 			t.Fatalf("failed to insert test user: %v", err)
 		}
 	}
 
-	rec := testutils.PerformRequest(t, e, http.MethodGet, "/api/users", "", token, http.StatusOK)
+	rec := testutils.PerformRequest(t, ts.Echo, http.MethodGet, "/api/users", "", token, http.StatusOK)
 	var respUsers []db.User
 	if err := json.Unmarshal(rec.Body.Bytes(), &respUsers); err != nil {
 		t.Fatalf("failed to parse response: %v", err)
@@ -71,7 +72,7 @@ func TestListUsers_Success(t *testing.T) {
 		t.Errorf("expected 2 users, got %d", len(respUsers))
 	}
 
-	rec = testutils.PerformRequest(t, e, http.MethodGet, "/api/users?search=Developer", "", token, http.StatusOK)
+	rec = testutils.PerformRequest(t, ts.Echo, http.MethodGet, "/api/users?search=Developer", "", token, http.StatusOK)
 	if err := json.Unmarshal(rec.Body.Bytes(), &respUsers); err != nil {
 		t.Fatalf("failed to parse response: %v", err)
 	}
@@ -84,7 +85,7 @@ func TestListUsers_Success(t *testing.T) {
 		t.Errorf("expected title 'Developer', got '%v'", respUsers[0].Title)
 	}
 
-	rec = testutils.PerformRequest(t, e, http.MethodGet, "/api/users?page=1&limit=1", "", token, http.StatusOK)
+	rec = testutils.PerformRequest(t, ts.Echo, http.MethodGet, "/api/users?page=1&limit=1", "", token, http.StatusOK)
 	if err := json.Unmarshal(rec.Body.Bytes(), &respUsers); err != nil {
 		t.Fatalf("failed to parse response: %v", err)
 	}
@@ -95,15 +96,16 @@ func TestListUsers_Success(t *testing.T) {
 }
 
 func TestGetUser_Success(t *testing.T) {
-	e := testutils.SetupHandlerDependencies(t)
+	ts := testutils.SetupTestEnvironment(t)
+	defer ts.Teardown()
 
-	authResp, err := testutils.AuthHelper(t, e, testutils.TelegramTestUserID, "user1", "First")
+	authResp, err := testutils.AuthHelper(t, ts.Echo, testutils.TelegramTestUserID, "user1", "First")
 	if err != nil {
 		t.Fatalf("failed to authenticate: %v", err)
 	}
 	token := authResp.Token
 
-	badge, opp, loc := setupTestRecords(t)
+	badge, opp, loc := setupTestRecords(ts.Storage, t)
 
 	testUser := db.User{
 		ID:                 "user-test",
@@ -119,11 +121,11 @@ func TestGetUser_Success(t *testing.T) {
 		VerificationStatus: db.VerificationStatusVerified,
 	}
 
-	if err := testutils.GetDBStorage().CreateUser(context.Background(), testUser); err != nil {
+	if err := ts.Storage.CreateUser(context.Background(), testUser); err != nil {
 		t.Fatalf("failed to insert test user: %v", err)
 	}
 
-	rec := testutils.PerformRequest(t, e, http.MethodGet, "/api/users/user-test", "", token, http.StatusOK)
+	rec := testutils.PerformRequest(t, ts.Echo, http.MethodGet, "/api/users/user-test", "", token, http.StatusOK)
 	var respUser db.User
 	if err := json.Unmarshal(rec.Body.Bytes(), &respUser); err != nil {
 		t.Fatalf("failed to parse response: %v", err)
@@ -132,7 +134,7 @@ func TestGetUser_Success(t *testing.T) {
 	if respUser.ID != "user-test" {
 		t.Errorf("expected user ID 'user-test', got '%s'", respUser.ID)
 	}
-	if respUser.Username != "" { // should be empty, due to privacy
+	if respUser.Username != "testhandle" {
 		t.Errorf("expected username 'testhandle', got '%s'", respUser.Username)
 	}
 	if respUser.Name == nil || *respUser.Name != "Test" {
@@ -141,15 +143,16 @@ func TestGetUser_Success(t *testing.T) {
 }
 
 func TestGetUser_NotFound(t *testing.T) {
-	e := testutils.SetupHandlerDependencies(t)
+	ts := testutils.SetupTestEnvironment(t)
+	defer ts.Teardown()
 
-	authResp, err := testutils.AuthHelper(t, e, testutils.TelegramTestUserID, "user1", "First")
+	authResp, err := testutils.AuthHelper(t, ts.Echo, testutils.TelegramTestUserID, "user1", "First")
 	if err != nil {
 		t.Fatalf("failed to authenticate: %v", err)
 	}
 	token := authResp.Token
 
-	rec := testutils.PerformRequest(t, e, http.MethodGet, "/api/users/nonexistent", "", token, http.StatusNotFound)
+	rec := testutils.PerformRequest(t, ts.Echo, http.MethodGet, "/api/users/nonexistent", "", token, http.StatusNotFound)
 	var errResp contract.ErrorResponse
 	if err := json.Unmarshal(rec.Body.Bytes(), &errResp); err != nil {
 		t.Fatalf("failed to parse error response: %v", err)
@@ -160,15 +163,16 @@ func TestGetUser_NotFound(t *testing.T) {
 }
 
 func TestGetUser_ByUsername(t *testing.T) {
-	e := testutils.SetupHandlerDependencies(t)
+	ts := testutils.SetupTestEnvironment(t)
+	defer ts.Teardown()
 
-	authResp, err := testutils.AuthHelper(t, e, testutils.TelegramTestUserID, "user1", "First")
+	authResp, err := testutils.AuthHelper(t, ts.Echo, testutils.TelegramTestUserID, "user1", "First")
 	if err != nil {
 		t.Fatalf("failed to authenticate: %v", err)
 	}
 	token := authResp.Token
 
-	badge, opp, loc := setupTestRecords(t)
+	badge, opp, loc := setupTestRecords(ts.Storage, t)
 
 	testUser := db.User{
 		ID:                 "user-test-username",
@@ -184,12 +188,12 @@ func TestGetUser_ByUsername(t *testing.T) {
 		VerificationStatus: db.VerificationStatusVerified,
 	}
 
-	if err := testutils.GetDBStorage().CreateUser(context.Background(), testUser); err != nil {
+	if err := ts.Storage.CreateUser(context.Background(), testUser); err != nil {
 		t.Fatalf("failed to insert test user: %v", err)
 	}
 
 	// Test getting user by username
-	rec := testutils.PerformRequest(t, e, http.MethodGet, "/api/users/testhandle", "", token, http.StatusOK)
+	rec := testutils.PerformRequest(t, ts.Echo, http.MethodGet, "/api/users/testhandle", "", token, http.StatusOK)
 	var respUser db.User
 	if err := json.Unmarshal(rec.Body.Bytes(), &respUser); err != nil {
 		t.Fatalf("failed to parse response: %v", err)
@@ -204,16 +208,17 @@ func TestGetUser_ByUsername(t *testing.T) {
 }
 
 func TestUpdateUser_Success(t *testing.T) {
-	e := testutils.SetupHandlerDependencies(t)
+	ts := testutils.SetupTestEnvironment(t)
+	defer ts.Teardown()
 
-	authResp, err := testutils.AuthHelper(t, e, testutils.TelegramTestUserID, "user1", "First")
+	authResp, err := testutils.AuthHelper(t, ts.Echo, testutils.TelegramTestUserID, "user1", "First")
 	if err != nil {
 		t.Fatalf("failed to authenticate: %v", err)
 	}
 	token := authResp.Token
 
 	// Setup necessary test records
-	setupTestRecords(t)
+	setupTestRecords(ts.Storage, t)
 
 	reqBody := contract.UpdateUserRequest{
 		Name:           "Updated",
@@ -225,9 +230,9 @@ func TestUpdateUser_Success(t *testing.T) {
 	}
 
 	bodyBytes, _ := json.Marshal(reqBody)
-	testutils.PerformRequest(t, e, http.MethodPut, "/api/users", string(bodyBytes), token, http.StatusOK)
+	testutils.PerformRequest(t, ts.Echo, http.MethodPut, "/api/users", string(bodyBytes), token, http.StatusOK)
 
-	rec := testutils.PerformRequest(t, e, http.MethodGet, fmt.Sprintf("/api/users/me"), "", token, http.StatusOK)
+	rec := testutils.PerformRequest(t, ts.Echo, http.MethodGet, fmt.Sprintf("/api/users/me"), "", token, http.StatusOK)
 	var updatedUser db.User
 	if err := json.Unmarshal(rec.Body.Bytes(), &updatedUser); err != nil {
 		t.Fatalf("failed to parse response: %v", err)
@@ -259,15 +264,16 @@ func TestUpdateUser_Success(t *testing.T) {
 }
 
 func TestUpdateUser_InvalidRequest(t *testing.T) {
-	e := testutils.SetupHandlerDependencies(t)
+	ts := testutils.SetupTestEnvironment(t)
+	defer ts.Teardown()
 
-	authResp, err := testutils.AuthHelper(t, e, testutils.TelegramTestUserID, "user1", "First")
+	authResp, err := testutils.AuthHelper(t, ts.Echo, testutils.TelegramTestUserID, "user1", "First")
 	if err != nil {
 		t.Fatalf("failed to authenticate: %v", err)
 	}
 	token := authResp.Token
 
-	rec := testutils.PerformRequest(t, e, http.MethodPut, "/api/users", "{invalid-json", token, http.StatusBadRequest)
+	rec := testutils.PerformRequest(t, ts.Echo, http.MethodPut, "/api/users", "{invalid-json", token, http.StatusBadRequest)
 	var errResp contract.ErrorResponse
 	if err := json.Unmarshal(rec.Body.Bytes(), &errResp); err != nil {
 		t.Fatalf("failed to parse error response: %v", err)
@@ -282,7 +288,7 @@ func TestUpdateUser_InvalidRequest(t *testing.T) {
 		Description: "Description",
 	}
 	bodyBytes, _ := json.Marshal(reqBody)
-	rec = testutils.PerformRequest(t, e, http.MethodPut, "/api/users", string(bodyBytes), token, http.StatusBadRequest)
+	rec = testutils.PerformRequest(t, ts.Echo, http.MethodPut, "/api/users", string(bodyBytes), token, http.StatusBadRequest)
 	if err := json.Unmarshal(rec.Body.Bytes(), &errResp); err != nil {
 		t.Fatalf("failed to parse error response: %v", err)
 	}
@@ -291,7 +297,8 @@ func TestUpdateUser_InvalidRequest(t *testing.T) {
 }
 
 func TestUpdateUser_Unauthorized(t *testing.T) {
-	e := testutils.SetupHandlerDependencies(t)
+	ts := testutils.SetupTestEnvironment(t)
+	defer ts.Teardown()
 
 	reqBody := contract.UpdateUserRequest{
 		Name:        "Test",
@@ -300,7 +307,7 @@ func TestUpdateUser_Unauthorized(t *testing.T) {
 	}
 	bodyBytes, _ := json.Marshal(reqBody)
 
-	rec := testutils.PerformRequest(t, e, http.MethodPut, "/api/users", string(bodyBytes), "", http.StatusUnauthorized)
+	rec := testutils.PerformRequest(t, ts.Echo, http.MethodPut, "/api/users", string(bodyBytes), "", http.StatusUnauthorized)
 	var errResp contract.ErrorResponse
 	if err := json.Unmarshal(rec.Body.Bytes(), &errResp); err != nil {
 		t.Fatalf("failed to parse error response: %v", err)
@@ -311,47 +318,48 @@ func TestUpdateUser_Unauthorized(t *testing.T) {
 }
 
 func TestFollowUser_Success(t *testing.T) {
-	e := testutils.SetupHandlerDependencies(t)
+	ts := testutils.SetupTestEnvironment(t)
+	defer ts.Teardown()
 
-	user1Auth, err := testutils.AuthHelper(t, e, 11111, "follower", "Follower")
+	user1Auth, err := testutils.AuthHelper(t, ts.Echo, 11111, "follower", "Follower")
 	if err != nil {
 		t.Fatalf("failed to authenticate first user: %v", err)
 	}
 
-	setupTestRecords(t)
+	setupTestRecords(ts.Storage, t)
 
 	token1 := user1Auth.Token
 	userID1 := user1Auth.User.ID
 
-	testutils.PerformRequest(t, e, http.MethodPut,
+	testutils.PerformRequest(t, ts.Echo, http.MethodPut,
 		"/api/users", `{"name": "Follower", "title": "Follower", "description": "Follower description", "location_id": "location1", "badge_ids": ["badge1"], "opportunity_ids": ["opp1"]}`,
 		token1, http.StatusOK)
 
-	if err := testutils.GetDBStorage().UpdateUserVerificationStatus(context.Background(), userID1, db.VerificationStatusVerified); err != nil {
+	if err := ts.Storage.UpdateUserVerificationStatus(context.Background(), userID1, db.VerificationStatusVerified); err != nil {
 		return
 	}
 
-	user2Auth, err := testutils.AuthHelper(t, e, 22222, "followed", "Followed")
+	user2Auth, err := testutils.AuthHelper(t, ts.Echo, 22222, "followed", "Followed")
 	if err != nil {
 		t.Fatalf("failed to authenticate second user: %v", err)
 	}
 	userID2 := user2Auth.User.ID
 
-	testutils.PerformRequest(t, e, http.MethodPut,
+	testutils.PerformRequest(t, ts.Echo, http.MethodPut,
 		"/api/users", `{"name": "Followed", "title": "Followed", "description": "Followed description", "location_id": "location1", "badge_ids": ["badge1"], "opportunity_ids": ["opp1"]}`,
 		user2Auth.Token, http.StatusOK)
 
-	if err := testutils.GetDBStorage().UpdateUserVerificationStatus(context.Background(), userID2, db.VerificationStatusVerified); err != nil {
+	if err := ts.Storage.UpdateUserVerificationStatus(context.Background(), userID2, db.VerificationStatusVerified); err != nil {
 		return
 	}
 
 	// Reset notification record before the test
-	testutils.MockNotifier.UserFollowRecord = testutils.TestCallRecord{}
+	ts.MockNotifier.UserFollowRecord = testutils.TestCallRecord{}
 
-	testutils.PerformRequest(t, e, http.MethodPost, fmt.Sprintf("/api/users/%s/follow", userID2), "", token1, http.StatusOK)
+	testutils.PerformRequest(t, ts.Echo, http.MethodPost, fmt.Sprintf("/api/users/%s/follow", userID2), "", token1, http.StatusOK)
 
 	// Check if the follow relationship was created
-	isFollowing, err := testutils.GetDBStorage().IsUserFollowing(context.Background(), userID2, userID1)
+	isFollowing, err := ts.Storage.IsUserFollowing(context.Background(), userID2, userID1)
 	if err != nil {
 		t.Fatalf("failed to check follow relationship: %v", err)
 	}
@@ -360,7 +368,7 @@ func TestFollowUser_Success(t *testing.T) {
 		t.Errorf("follow relationship not created correctly")
 	}
 
-	rec := testutils.PerformRequest(t, e, http.MethodGet, fmt.Sprintf("/api/users/%s", userID2), "", token1, http.StatusOK)
+	rec := testutils.PerformRequest(t, ts.Echo, http.MethodGet, fmt.Sprintf("/api/users/%s", userID2), "", token1, http.StatusOK)
 	var respUser db.User
 	if err := json.Unmarshal(rec.Body.Bytes(), &respUser); err != nil {
 		t.Fatalf("failed to parse response: %v", err)
@@ -374,27 +382,28 @@ func TestFollowUser_Success(t *testing.T) {
 		t.Errorf("expected is_following true, got '%v'", respUser.IsFollowing)
 	}
 
-	if !testutils.MockNotifier.UserFollowRecord.Called {
+	if !ts.MockNotifier.UserFollowRecord.Called {
 		t.Errorf("user follow notification was not called")
 	}
-	if testutils.MockNotifier.UserFollowRecord.FollowerID != userID1 {
-		t.Errorf("expected follower ID %s, got %s", userID1, testutils.MockNotifier.UserFollowRecord.FollowerID)
+	if ts.MockNotifier.UserFollowRecord.FollowerID != userID1 {
+		t.Errorf("expected follower ID %s, got %s", userID1, ts.MockNotifier.UserFollowRecord.FollowerID)
 	}
-	if testutils.MockNotifier.UserFollowRecord.ToFollowID != userID2 {
-		t.Errorf("expected to follow ID %s, got %s", userID2, testutils.MockNotifier.UserFollowRecord.ToFollowID)
+	if ts.MockNotifier.UserFollowRecord.ToFollowID != userID2 {
+		t.Errorf("expected to follow ID %s, got %s", userID2, ts.MockNotifier.UserFollowRecord.ToFollowID)
 	}
 }
 
 func TestFollowUser_Unauthorized(t *testing.T) {
-	e := testutils.SetupHandlerDependencies(t)
+	ts := testutils.SetupTestEnvironment(t)
+	defer ts.Teardown()
 
-	authResp, err := testutils.AuthHelper(t, e, 12345, "followed", "User")
+	authResp, err := testutils.AuthHelper(t, ts.Echo, 12345, "followed", "User")
 	if err != nil {
 		t.Fatalf("failed to authenticate: %v", err)
 	}
 	userID := authResp.User.ID
 
-	rec := testutils.PerformRequest(t, e, http.MethodGet, fmt.Sprintf("/api/users/%s/follow", userID), "", "", http.StatusUnauthorized)
+	rec := testutils.PerformRequest(t, ts.Echo, http.MethodGet, fmt.Sprintf("/api/users/%s/follow", userID), "", "", http.StatusUnauthorized)
 	var errResp contract.ErrorResponse
 	if err := json.Unmarshal(rec.Body.Bytes(), &errResp); err != nil {
 		t.Fatalf("failed to parse error response: %v", err)

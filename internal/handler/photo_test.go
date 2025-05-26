@@ -44,16 +44,17 @@ func performMultipartRequest(t *testing.T, e *echo.Echo, fieldName, fileName, fi
 }
 
 func TestUploadPhoto(t *testing.T) {
-	e := testutils.SetupHandlerDependencies(t)
+	ts := testutils.SetupTestEnvironment(t)
+	defer ts.Teardown()
 
-	authResp, err := testutils.AuthHelper(t, e, 927635965, "mkkksim", "Maksim")
+	authResp, err := testutils.AuthHelper(t, ts.Echo, 927635965, "mkkksim", "Maksim")
 	if err != nil {
 		t.Fatalf("Failed to authenticate: %v", err)
 	}
 	token := authResp.Token
 
 	t.Run("UploadPNG", func(t *testing.T) {
-		rec := performMultipartRequest(t, e, "photo", "image.png", "mock png content", token, http.StatusOK)
+		rec := performMultipartRequest(t, ts.Echo, "photo", "image.png", "mock png content", token, http.StatusOK)
 		var status contract.StatusResponse
 		err := json.Unmarshal(rec.Body.Bytes(), &status)
 		if err != nil {
@@ -63,7 +64,7 @@ func TestUploadPhoto(t *testing.T) {
 	})
 
 	t.Run("InvalidFileType", func(t *testing.T) {
-		rec := performMultipartRequest(t, e, "photo", "test.txt", "text content", token, http.StatusBadRequest)
+		rec := performMultipartRequest(t, ts.Echo, "photo", "test.txt", "text content", token, http.StatusBadRequest)
 		errResp := testutils.ParseResponse[contract.ErrorResponse](t, rec)
 		assert.Equal(t, handler.ErrInvalidPhotoFormat, errResp.Error)
 	})
@@ -77,7 +78,7 @@ func TestUploadPhoto(t *testing.T) {
 		req.Header.Set(echo.HeaderContentType, writer.FormDataContentType())
 		req.Header.Set(echo.HeaderAuthorization, "Bearer "+token)
 		rec := httptest.NewRecorder()
-		e.ServeHTTP(rec, req)
+		ts.Echo.ServeHTTP(rec, req)
 
 		assert.Equal(t, http.StatusBadRequest, rec.Code, "Expected status 400")
 		errResp := testutils.ParseResponse[contract.ErrorResponse](t, rec)
@@ -85,7 +86,7 @@ func TestUploadPhoto(t *testing.T) {
 	})
 
 	t.Run("Unauthenticated", func(t *testing.T) {
-		rec := performMultipartRequest(t, e, "photo", "test.jpg", "mock jpg content", "", http.StatusUnauthorized)
+		rec := performMultipartRequest(t, ts.Echo, "photo", "test.jpg", "mock jpg content", "", http.StatusUnauthorized)
 		// Just check the status code since middleware returns different error messages
 		assert.Equal(t, http.StatusUnauthorized, rec.Code)
 	})

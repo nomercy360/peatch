@@ -3,7 +3,6 @@ package handler_test
 import (
 	"encoding/json"
 	"net/http"
-	"os"
 	"testing"
 
 	"github.com/peatch-io/peatch/internal/contract"
@@ -12,17 +11,11 @@ import (
 	"github.com/peatch-io/peatch/internal/testutils"
 )
 
-func TestMain(m *testing.M) {
-	testutils.InitTestDB()
-	code := m.Run()
-	testutils.CleanupTestDB()
-	os.Exit(code)
-}
-
 func TestTelegramAuth_Success(t *testing.T) {
-	e := testutils.SetupHandlerDependencies(t)
+	ts := testutils.SetupTestEnvironment(t)
+	defer ts.Teardown()
 
-	resp, err := testutils.AuthHelper(t, e, testutils.TelegramTestUserID, "mkkksim", "Maksim")
+	resp, err := testutils.AuthHelper(t, ts.Echo, testutils.TelegramTestUserID, "mkkksim", "Maksim")
 	if err != nil {
 		t.Fatalf("Failed to authenticate: %v", err)
 	}
@@ -45,14 +38,15 @@ func TestTelegramAuth_Success(t *testing.T) {
 }
 
 func TestTelegramAuth_InvalidInitData(t *testing.T) {
-	e := testutils.SetupHandlerDependencies(t)
+	ts := testutils.SetupTestEnvironment(t)
+	defer ts.Teardown()
 
 	reqBody := contract.AuthTelegramRequest{
 		Query: "invalid-init-data",
 	}
 	body, _ := json.Marshal(reqBody)
 
-	rec := testutils.PerformRequest(t, e, http.MethodPost, "/auth/telegram", string(body), "", http.StatusUnauthorized)
+	rec := testutils.PerformRequest(t, ts.Echo, http.MethodPost, "/auth/telegram", string(body), "", http.StatusUnauthorized)
 
 	resp := testutils.ParseResponse[contract.ErrorResponse](t, rec)
 	if resp.Error != handler.ErrInvalidInitData {
@@ -61,12 +55,13 @@ func TestTelegramAuth_InvalidInitData(t *testing.T) {
 }
 
 func TestTelegramAuth_MissingQuery(t *testing.T) {
-	e := testutils.SetupHandlerDependencies(t)
+	ts := testutils.SetupTestEnvironment(t)
+	defer ts.Teardown()
 
 	reqBody := contract.AuthTelegramRequest{}
 	body, _ := json.Marshal(reqBody)
 
-	rec := testutils.PerformRequest(t, e, http.MethodPost, "/auth/telegram", string(body), "", http.StatusBadRequest)
+	rec := testutils.PerformRequest(t, ts.Echo, http.MethodPost, "/auth/telegram", string(body), "", http.StatusBadRequest)
 
 	resp := testutils.ParseResponse[contract.ErrorResponse](t, rec)
 	if resp.Error != handler.ErrInvalidRequest {

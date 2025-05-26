@@ -98,8 +98,16 @@ func (u *User) IsProfileComplete() bool {
 	return true
 }
 
+type ListUsersOptions struct {
+	SearchQuery   string
+	Offset        int
+	Limit         int
+	IncludeHidden bool
+	UserID        string // Optional viewer ID
+}
+
 // ListUsers lists users with pagination and search
-func (s *Storage) ListUsers(ctx context.Context, searchQuery string, offset, limit int, includeHidden bool) ([]User, error) {
+func (s *Storage) ListUsers(ctx context.Context, params ListUsersOptions) ([]User, error) {
 	query := `
 		SELECT id, name, chat_id, username, created_at, updated_at, 
 		       notifications_enabled_at, hidden_at, avatar_url, title, 
@@ -112,20 +120,25 @@ func (s *Storage) ListUsers(ctx context.Context, searchQuery string, offset, lim
 	var args []interface{}
 
 	// Add search filter
-	if searchQuery != "" {
+	if params.SearchQuery != "" {
 		query += fmt.Sprintf(` AND (name LIKE ? OR username LIKE ? OR title LIKE ? OR description LIKE ?)`)
-		searchPattern := "%" + searchQuery + "%"
+		searchPattern := "%" + params.SearchQuery + "%"
 		args = append(args, searchPattern, searchPattern, searchPattern, searchPattern)
 	}
 
 	// Add hidden filter
-	if !includeHidden {
+	if !params.IncludeHidden {
 		query += fmt.Sprintf(` AND hidden_at IS NULL`)
+	}
+
+	if params.UserID != "" {
+		query += fmt.Sprintf(` AND id != ?`) // Exclude the viewer themselves
+		args = append(args, params.UserID)
 	}
 
 	// Add ordering and pagination
 	query += fmt.Sprintf(` ORDER BY created_at DESC LIMIT ? OFFSET ?`)
-	args = append(args, limit, offset)
+	args = append(args, params.Limit, params.Offset)
 
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -290,12 +303,18 @@ func (s *Storage) UpdateUser(
 		}
 	}
 
-	location, err := s.GetCityByID(ctx, locationID)
-	if err != nil {
-		if errors.Is(err, ErrNotFound) {
-			return fmt.Errorf("location not found: %w", err)
+	var location City
+	if locationID != "" {
+		query := `SELECT id, name, country_code, latitude, longitude FROM cities WHERE id = ?`
+		row := tx.QueryRowContext(ctx, query, locationID)
+		if err := row.Scan(&location.ID, &location.Name, &location.CountryCode, &location.Latitude, &location.Longitude); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return fmt.Errorf("location not found")
+			}
+			return err
 		}
-		return err
+	} else {
+		location = City{}
 	}
 
 	badgesJSON, _ := json.Marshal(badges)
@@ -621,7 +640,7 @@ func isSQLiteConstraintError(err error) bool {
 	return strings.Contains(err.Error(), "UNIQUE constraint failed")
 }
 
-func (s *Storage) GetUserProfile(ctx context.Context, viewerID string, id string) (User, error) {
+func (s *Storage) GetUserProfile(ctx context.Context, viewerID string, idOrUsername string) (User, error) {
 	query := `
 		SELECT id, name, chat_id, username, created_at, updated_at, 
 		       notifications_enabled_at, hidden_at, avatar_url, title, 
@@ -629,10 +648,10 @@ func (s *Storage) GetUserProfile(ctx context.Context, viewerID string, id string
 		       verification_status, verified_at, embedding_updated_at,
 		       login_metadata, location, links, badges, opportunities
 		FROM users
-		WHERE id = ?
+		WHERE id = ? OR username = ?
 	`
 
-	resp, err := s.getUserByQuery(ctx, query, id)
+	resp, err := s.getUserByQuery(ctx, query, idOrUsername, idOrUsername)
 	if err != nil {
 		if errors.Is(err, ErrNotFound) {
 			return User{}, fmt.Errorf("user not found")
@@ -640,7 +659,7 @@ func (s *Storage) GetUserProfile(ctx context.Context, viewerID string, id string
 		return User{}, fmt.Errorf("failed to get user profile: %w", err)
 	}
 
-	isFollowing, err := s.IsUserFollowing(ctx, id, viewerID)
+	isFollowing, err := s.IsUserFollowing(ctx, resp.ID, viewerID)
 	if err != nil {
 		return User{}, fmt.Errorf("failed to check following status: %w", err)
 	}

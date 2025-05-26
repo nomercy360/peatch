@@ -39,7 +39,7 @@ var messages = LocalizedMessages{
 	},
 }
 
-func (h *handler) HandleWebhook(c echo.Context) error {
+func (h *Handler) HandleWebhook(c echo.Context) error {
 	ctx := c.Request().Context()
 	var update models.Update
 
@@ -69,7 +69,7 @@ func (h *handler) HandleWebhook(c echo.Context) error {
 	return c.NoContent(http.StatusOK)
 }
 
-func (h *handler) handleMessage(ctx context.Context, update models.Update) error {
+func (h *Handler) handleMessage(ctx context.Context, update models.Update) error {
 	chatID := update.Message.Chat.ID
 
 	lang := determineLanguage(update.Message.From.LanguageCode)
@@ -149,7 +149,7 @@ func createWebAppKeyboard(buttonText, webAppURL string) *models.InlineKeyboardMa
 	}
 }
 
-func (h *handler) sendWelcomePhoto(ctx context.Context, chatID int64, message string, keyboard *models.InlineKeyboardMarkup) error {
+func (h *Handler) sendWelcomePhoto(ctx context.Context, chatID int64, message string, keyboard *models.InlineKeyboardMarkup) error {
 	photo := &models.InputFileString{Data: "https://assets.peatch.io/peatch-preview.png"}
 
 	params := &telegram.SendPhotoParams{
@@ -164,7 +164,7 @@ func (h *handler) sendWelcomePhoto(ctx context.Context, chatID int64, message st
 	return err
 }
 
-func (h *handler) handleBotAvatar(ctx context.Context, userID string, chatID int64) {
+func (h *Handler) handleBotAvatar(ctx context.Context, userID string, chatID int64) {
 	photos, err := h.bot.GetUserProfilePhotos(ctx, &telegram.GetUserProfilePhotosParams{
 		UserID: chatID,
 		Offset: 0,
@@ -223,7 +223,7 @@ func findBestQualityPhoto(photos [][]models.PhotoSize) *models.PhotoSize {
 	return bestPhoto
 }
 
-func (h *handler) downloadAndStoreAvatar(ctx context.Context, userID string, chatID int64, fileURL string) error {
+func (h *Handler) downloadAndStoreAvatar(ctx context.Context, userID string, chatID int64, fileURL string) error {
 	resp, err := http.Get(fileURL)
 	if err != nil {
 		return fmt.Errorf("failed to download file: %w", err)
@@ -243,7 +243,7 @@ func (h *handler) downloadAndStoreAvatar(ctx context.Context, userID string, cha
 	return nil
 }
 
-func (h *handler) setMenuButton(chatID int64, lang db.LanguageCode) {
+func (h *Handler) setMenuButton(chatID int64, lang db.LanguageCode) {
 	ctx := context.Background()
 	msg := messages[lang]
 
@@ -266,7 +266,7 @@ func (h *handler) setMenuButton(chatID int64, lang db.LanguageCode) {
 	h.logger.Info("menu button set successfully", slog.Int64("chat_id", chatID))
 }
 
-func (h *handler) createUser(ctx context.Context, update models.Update, lang db.LanguageCode) db.User {
+func (h *Handler) createUser(ctx context.Context, update models.Update, lang db.LanguageCode) db.User {
 	chatID := update.Message.Chat.ID
 
 	username := update.Message.Chat.Username

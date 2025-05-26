@@ -21,7 +21,7 @@ import (
 // @Param order query string false "Order by"
 // @Success 200 {array} contract.CollaborationResponse
 // @Router /api/collaborations [get]
-func (h *handler) handleListCollaborations(c echo.Context) error {
+func (h *Handler) handleListCollaborations(c echo.Context) error {
 	page := parseIntQuery(c, "page", 1)
 	limit := parseIntQuery(c, "limit", 10)
 	search := c.QueryParam("search")
@@ -56,7 +56,7 @@ func (h *handler) handleListCollaborations(c echo.Context) error {
 // @Param id path int true "Collaboration ID"
 // @Success 200 {object} contract.CollaborationResponse
 // @Router /api/collaborations/{id} [get]
-func (h *handler) handleGetCollaboration(c echo.Context) error {
+func (h *Handler) handleGetCollaboration(c echo.Context) error {
 	id := c.Param("id")
 	uid := getUserID(c)
 
@@ -79,7 +79,7 @@ func (h *handler) handleGetCollaboration(c echo.Context) error {
 // @Param collaboration body contract.CreateCollaboration true "Collaboration data"
 // @Success 201 {object} contract.CollaborationResponse
 // @Router /api/collaborations [post]
-func (h *handler) handleCreateCollaboration(c echo.Context) error {
+func (h *Handler) handleCreateCollaboration(c echo.Context) error {
 	var req contract.CreateCollaboration
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, ErrInvalidRequest).WithInternal(err)
@@ -135,7 +135,7 @@ func (h *handler) handleCreateCollaboration(c echo.Context) error {
 // @Param collaboration body contract.CreateCollaboration true "Collaboration data"
 // @Success 200 {object} contract.CollaborationResponse
 // @Router /api/collaborations/{id} [put]
-func (h *handler) handleUpdateCollaboration(c echo.Context) error {
+func (h *Handler) handleUpdateCollaboration(c echo.Context) error {
 	cid := c.Param("id")
 	uid := getUserID(c)
 
@@ -185,7 +185,7 @@ func (h *handler) handleUpdateCollaboration(c echo.Context) error {
 // @Success 204
 // @Success 200 {object} contract.BotBlockedResponse "When user has blocked the bot, returns username for direct Telegram navigation"
 // @Router /api/collaborations/{id}/interest [post]
-func (h *handler) handleExpressInterest(c echo.Context) error {
+func (h *Handler) handleExpressInterest(c echo.Context) error {
 	collabID := c.Param("id")
 	userID := getUserID(c)
 

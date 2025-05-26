@@ -11,12 +11,7 @@ import (
 	"testing"
 )
 
-func setupTestRecords(t *testing.T) ([]db.Badge, []db.Opportunity, db.City) {
-	// Clear test data first to avoid duplicates
-	if err := testutils.ClearTestData(); err != nil {
-		t.Fatalf("failed to clear test data: %v", err)
-	}
-
+func setupTestRecords(storage *db.Storage, t *testing.T) ([]db.Badge, []db.Opportunity, db.City) {
 	badges := []db.Badge{
 		{
 			ID:   "badge1",
@@ -31,28 +26,30 @@ func setupTestRecords(t *testing.T) ([]db.Badge, []db.Opportunity, db.City) {
 	}
 
 	for _, badge := range badges {
-		if err := testutils.GetDBStorage().CreateBadge(context.Background(), badge); err != nil {
+		if err := storage.CreateBadge(context.Background(), badge); err != nil {
 			t.Fatalf("failed to create badge: %v", err)
 		}
 	}
 
 	opportunities := []db.Opportunity{
 		{
-			ID:          "opp1",
-			Text:        "Test Opportunity 1",
-			Description: "Desc 1",
-			Icon:        "ico1",
+			ID:            "opp1",
+			Text:          "Test Opportunity 1",
+			Description:   "Desc 1",
+			Icon:          "ico1",
+			DescriptionRU: "Описание 1",
 		},
 		{
-			ID:          "opp2",
-			Text:        "Test Opportunity 2",
-			Description: "Desc 2",
-			Icon:        "ico2",
+			ID:            "opp2",
+			Text:          "Test Opportunity 2",
+			Description:   "Desc 2",
+			Icon:          "ico2",
+			DescriptionRU: "Описание 2",
 		},
 	}
 
 	for _, opp := range opportunities {
-		if err := testutils.GetDBStorage().CreateOpportunity(context.Background(), opp); err != nil {
+		if err := storage.CreateOpportunity(context.Background(), opp); err != nil {
 			t.Fatalf("failed to insert opportunity: %v", err)
 		}
 	}
@@ -66,7 +63,7 @@ func setupTestRecords(t *testing.T) ([]db.Badge, []db.Opportunity, db.City) {
 		Longitude:   56.78,
 	}
 
-	if err := testutils.GetDBStorage().CreateCity(context.Background(), location); err != nil {
+	if err := storage.CreateCity(context.Background(), location); err != nil {
 		t.Fatalf("failed to insert location: %v", err)
 	}
 
@@ -74,15 +71,16 @@ func setupTestRecords(t *testing.T) ([]db.Badge, []db.Opportunity, db.City) {
 }
 
 func TestCreateCollaboration_Success(t *testing.T) {
-	e := testutils.SetupHandlerDependencies(t)
+	ts := testutils.SetupTestEnvironment(t)
+	defer ts.Teardown()
 
-	authResp, err := testutils.AuthHelper(t, e, testutils.TelegramTestUserID, "user1", "First")
+	authResp, err := testutils.AuthHelper(t, ts.Echo, testutils.TelegramTestUserID, "user1", "First")
 	if err != nil {
 		t.Fatalf("failed to authenticate: %v", err)
 	}
 	token := authResp.Token
 
-	setupTestRecords(t)
+	setupTestRecords(ts.Storage, t)
 
 	reqBody := contract.CreateCollaboration{
 		OpportunityID: "opp1",
@@ -94,7 +92,7 @@ func TestCreateCollaboration_Success(t *testing.T) {
 	}
 	bodyBytes, _ := json.Marshal(reqBody)
 
-	rec := testutils.PerformRequest(t, e, http.MethodPost, "/api/collaborations", string(bodyBytes), token, http.StatusCreated)
+	rec := testutils.PerformRequest(t, ts.Echo, http.MethodPost, "/api/collaborations", string(bodyBytes), token, http.StatusCreated)
 
 	var resp db.Collaboration
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
@@ -119,14 +117,16 @@ func TestCreateCollaboration_Success(t *testing.T) {
 }
 
 func TestCreateCollaboration_InvalidJSON(t *testing.T) {
-	e := testutils.SetupHandlerDependencies(t)
-	authResp, err := testutils.AuthHelper(t, e, testutils.TelegramTestUserID, "user1", "First")
+	ts := testutils.SetupTestEnvironment(t)
+	defer ts.Teardown()
+
+	authResp, err := testutils.AuthHelper(t, ts.Echo, testutils.TelegramTestUserID, "user1", "First")
 	if err != nil {
 		t.Fatalf("failed to authenticate: %v", err)
 	}
 	token := authResp.Token
 
-	rec := testutils.PerformRequest(t, e, http.MethodPost, "/api/collaborations", "{invalid-json", token, http.StatusBadRequest)
+	rec := testutils.PerformRequest(t, ts.Echo, http.MethodPost, "/api/collaborations", "{invalid-json", token, http.StatusBadRequest)
 	var errResp contract.ErrorResponse
 	if err := json.Unmarshal(rec.Body.Bytes(), &errResp); err != nil {
 		t.Fatalf("failed to parse error response: %v", err)
@@ -137,12 +137,13 @@ func TestCreateCollaboration_InvalidJSON(t *testing.T) {
 }
 
 func TestCreateCollaboration_Unauthorized(t *testing.T) {
-	e := testutils.SetupHandlerDependencies(t)
+	ts := testutils.SetupTestEnvironment(t)
+	defer ts.Teardown()
 
 	reqBody := contract.CreateCollaboration{OpportunityID: "any"}
 	bodyBytes, _ := json.Marshal(reqBody)
 
-	rec := testutils.PerformRequest(t, e, http.MethodPost, "/api/collaborations", string(bodyBytes), "", http.StatusUnauthorized)
+	rec := testutils.PerformRequest(t, ts.Echo, http.MethodPost, "/api/collaborations", string(bodyBytes), "", http.StatusUnauthorized)
 	var errResp contract.ErrorResponse
 	if err := json.Unmarshal(rec.Body.Bytes(), &errResp); err != nil {
 		t.Fatalf("failed to parse error response: %v", err)
@@ -153,34 +154,35 @@ func TestCreateCollaboration_Unauthorized(t *testing.T) {
 }
 
 func TestExpressInterest_Success(t *testing.T) {
-	e := testutils.SetupHandlerDependencies(t)
+	ts := testutils.SetupTestEnvironment(t)
+	defer ts.Teardown()
 
-	creatorAuthResp, err := testutils.AuthHelper(t, e, testutils.TelegramTestUserID, "creator", "Creator")
+	creatorAuthResp, err := testutils.AuthHelper(t, ts.Echo, testutils.TelegramTestUserID, "creator", "Creator")
 	if err != nil {
 		t.Fatalf("failed to authenticate creator: %v", err)
 	}
 	creatorToken := creatorAuthResp.Token
 
-	interestedAuthResp, err := testutils.AuthHelper(t, e, testutils.TelegramTestUserID+1, "interested", "Interested")
+	interestedAuthResp, err := testutils.AuthHelper(t, ts.Echo, testutils.TelegramTestUserID+1, "interested", "Interested")
 	if err != nil {
 		t.Fatalf("failed to authenticate interested user: %v", err)
 	}
 	interestedToken := interestedAuthResp.Token
 
-	badges, opportunities, location := setupTestRecords(t)
+	badges, opportunities, location := setupTestRecords(ts.Storage, t)
 
-	testutils.PerformRequest(t, e, http.MethodPut,
+	testutils.PerformRequest(t, ts.Echo, http.MethodPut,
 		"/api/users", `{"name": "creator", "title": "creator", "description": "creator description", "location_id": "location1", "badge_ids": ["badge1"], "opportunity_ids": ["opp1"]}`,
 		creatorAuthResp.Token, http.StatusOK)
 
-	if err := testutils.GetDBStorage().UpdateUserVerificationStatus(context.Background(), creatorAuthResp.User.ID, db.VerificationStatusVerified); err != nil {
+	if err := ts.Storage.UpdateUserVerificationStatus(context.Background(), creatorAuthResp.User.ID, db.VerificationStatusVerified); err != nil {
 		return
 	}
 
-	testutils.PerformRequest(t, e, http.MethodPut,
+	testutils.PerformRequest(t, ts.Echo, http.MethodPut,
 		"/api/users", `{"name": "interested", "title": "interested", "description": "interested description", "location_id": "location1", "badge_ids": ["badge1"], "opportunity_ids": ["opp1"]}`,
 		interestedAuthResp.Token, http.StatusOK)
-	if err := testutils.GetDBStorage().UpdateUserVerificationStatus(context.Background(), interestedAuthResp.User.ID, db.VerificationStatusVerified); err != nil {
+	if err := ts.Storage.UpdateUserVerificationStatus(context.Background(), interestedAuthResp.User.ID, db.VerificationStatusVerified); err != nil {
 		return
 	}
 
@@ -195,24 +197,24 @@ func TestExpressInterest_Success(t *testing.T) {
 	}
 	bodyBytes, _ := json.Marshal(createReqBody)
 
-	createRec := testutils.PerformRequest(t, e, http.MethodPost, "/api/collaborations", string(bodyBytes), creatorToken, http.StatusCreated)
+	createRec := testutils.PerformRequest(t, ts.Echo, http.MethodPost, "/api/collaborations", string(bodyBytes), creatorToken, http.StatusCreated)
 
 	var collab contract.CollaborationResponse
 	if err := json.Unmarshal(createRec.Body.Bytes(), &collab); err != nil {
 		t.Fatalf("failed to parse collaboration response: %v", err)
 	}
 
-	storage := testutils.GetDBStorage()
+	storage := ts.Storage
 	err = storage.UpdateCollaborationVerificationStatus(context.Background(), collab.ID, db.VerificationStatusVerified)
 	if err != nil {
 		t.Fatalf("failed to update collaboration verification status: %v", err)
 	}
 
 	// Reset notification record before the test
-	testutils.MockNotifier.CollabInterestRecord = testutils.TestCallRecord{}
+	ts.MockNotifier.CollabInterestRecord = testutils.TestCallRecord{}
 
 	expressInterestPath := fmt.Sprintf("/api/collaborations/%s/interest", collab.ID)
-	rec := testutils.PerformRequest(t, e, http.MethodPost, expressInterestPath, "", interestedToken, http.StatusOK)
+	rec := testutils.PerformRequest(t, ts.Echo, http.MethodPost, expressInterestPath, "", interestedToken, http.StatusOK)
 
 	var statusResp contract.StatusResponse
 	if err := json.Unmarshal(rec.Body.Bytes(), &statusResp); err != nil {
@@ -230,24 +232,25 @@ func TestExpressInterest_Success(t *testing.T) {
 		t.Errorf("expected user to have expressed interest, but didn't")
 	}
 
-	if !testutils.MockNotifier.CollabInterestRecord.Called {
+	if !ts.MockNotifier.CollabInterestRecord.Called {
 		t.Errorf("notification was not called")
 	}
-	if testutils.MockNotifier.CollabInterestRecord.FollowerID != interestedAuthResp.User.ID {
+	if ts.MockNotifier.CollabInterestRecord.FollowerID != interestedAuthResp.User.ID {
 		t.Errorf("expected interested user ID %s, got %s", interestedAuthResp.User.ID,
-			testutils.MockNotifier.CollabInterestRecord.FollowerID)
+			ts.MockNotifier.CollabInterestRecord.FollowerID)
 	}
-	if testutils.MockNotifier.CollabInterestRecord.ToFollowID != collab.ID {
+	if ts.MockNotifier.CollabInterestRecord.ToFollowID != collab.ID {
 		t.Errorf("expected collaboration ID %s, got %s", collab.ID,
-			testutils.MockNotifier.CollabInterestRecord.ToFollowID)
+			ts.MockNotifier.CollabInterestRecord.ToFollowID)
 	}
 }
 
 func TestExpressInterest_Unauthorized(t *testing.T) {
-	e := testutils.SetupHandlerDependencies(t)
+	ts := testutils.SetupTestEnvironment(t)
+	defer ts.Teardown()
 
 	expressInterestPath := "/api/collaborations/some-id/interest"
-	rec := testutils.PerformRequest(t, e, http.MethodPost, expressInterestPath, "", "", http.StatusUnauthorized)
+	rec := testutils.PerformRequest(t, ts.Echo, http.MethodPost, expressInterestPath, "", "", http.StatusUnauthorized)
 
 	var errResp contract.ErrorResponse
 	if err := json.Unmarshal(rec.Body.Bytes(), &errResp); err != nil {
@@ -259,17 +262,18 @@ func TestExpressInterest_Unauthorized(t *testing.T) {
 }
 
 func TestExpressInterest_OwnCollaboration(t *testing.T) {
-	e := testutils.SetupHandlerDependencies(t)
+	ts := testutils.SetupTestEnvironment(t)
+	defer ts.Teardown()
 
 	// Create a user for the collaboration
-	authResp, err := testutils.AuthHelper(t, e, testutils.TelegramTestUserID, "creator", "Creator")
+	authResp, err := testutils.AuthHelper(t, ts.Echo, testutils.TelegramTestUserID, "creator", "Creator")
 	if err != nil {
 		t.Fatalf("failed to authenticate: %v", err)
 	}
 	token := authResp.Token
 
 	// Set up required test records
-	badges, opportunities, location := setupTestRecords(t)
+	badges, opportunities, location := setupTestRecords(ts.Storage, t)
 
 	// Create a collaboration
 	createReqBody := contract.CreateCollaboration{
@@ -282,7 +286,7 @@ func TestExpressInterest_OwnCollaboration(t *testing.T) {
 	}
 	bodyBytes, _ := json.Marshal(createReqBody)
 
-	createRec := testutils.PerformRequest(t, e, http.MethodPost, "/api/collaborations", string(bodyBytes), token, http.StatusCreated)
+	createRec := testutils.PerformRequest(t, ts.Echo, http.MethodPost, "/api/collaborations", string(bodyBytes), token, http.StatusCreated)
 
 	var collab contract.CollaborationResponse
 	if err := json.Unmarshal(createRec.Body.Bytes(), &collab); err != nil {
@@ -291,7 +295,7 @@ func TestExpressInterest_OwnCollaboration(t *testing.T) {
 
 	// Try to express interest in own collaboration (should fail)
 	expressInterestPath := fmt.Sprintf("/api/collaborations/%s/interest", collab.ID)
-	rec := testutils.PerformRequest(t, e, http.MethodPost, expressInterestPath, "", token, http.StatusBadRequest)
+	rec := testutils.PerformRequest(t, ts.Echo, http.MethodPost, expressInterestPath, "", token, http.StatusBadRequest)
 
 	var errResp contract.ErrorResponse
 	if err := json.Unmarshal(rec.Body.Bytes(), &errResp); err != nil {

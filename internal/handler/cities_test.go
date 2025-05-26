@@ -11,9 +11,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func insertTestLocations(t *testing.T) {
+func insertTestLocations(storage *db.Storage, t *testing.T) {
 	ctx := context.Background()
-	storage := testutils.GetDBStorage()
 
 	// Clear existing cities
 	if _, err := storage.DB().ExecContext(ctx, "DELETE FROM cities WHERE 1=1"); err != nil {
@@ -34,22 +33,23 @@ func insertTestLocations(t *testing.T) {
 }
 
 func TestSearchCities(t *testing.T) {
-	e := testutils.SetupHandlerDependencies(t)
+	ts := testutils.SetupTestEnvironment(t)
+	defer ts.Teardown()
 
-	auth, err := testutils.AuthHelper(t, e, testutils.TelegramTestUserID, "tester", "Tester")
+	auth, err := testutils.AuthHelper(t, ts.Echo, testutils.TelegramTestUserID, "tester", "Tester")
 	if err != nil {
 		t.Fatalf("Failed to authenticate: %v", err)
 	}
 
-	insertTestLocations(t)
+	insertTestLocations(ts.Storage, t)
 
-	rec := testutils.PerformRequest(t, e, http.MethodGet, "/api/locations?limit=2&page=2", "", auth.Token, http.StatusOK)
+	rec := testutils.PerformRequest(t, ts.Echo, http.MethodGet, "/api/locations?limit=2&page=2", "", auth.Token, http.StatusOK)
 	resp := testutils.ParseResponse[[]contract.CityResponse](t, rec)
 	assert.Len(t, resp, 1, "expected one city on second page with limit=2")
 	assert.Equal(t, "3", resp[0].ID)
 	assert.Equal(t, "CityC", resp[0].Name)
 
-	rec = testutils.PerformRequest(t, e, http.MethodGet, "/api/locations?search=cityb", "", auth.Token, http.StatusOK)
+	rec = testutils.PerformRequest(t, ts.Echo, http.MethodGet, "/api/locations?search=cityb", "", auth.Token, http.StatusOK)
 	resp = testutils.ParseResponse[[]contract.CityResponse](t, rec)
 	assert.Len(t, resp, 1, "expected one city matching 'cityb'")
 	assert.Equal(t, "2", resp[0].ID)

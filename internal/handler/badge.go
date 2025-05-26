@@ -15,7 +15,7 @@ import (
 // @Produce  json
 // @Success 200 {array} contract.BadgeResponse
 // @Router /api/badges [get]
-func (h *handler) handleListBadges(c echo.Context) error {
+func (h *Handler) handleListBadges(c echo.Context) error {
 	query := c.QueryParam("search")
 
 	badges, err := h.storage.ListBadges(c.Request().Context(), query)
@@ -34,7 +34,7 @@ func (h *handler) handleListBadges(c echo.Context) error {
 // @Param id path int true "Badge ID"
 // @Success 200 {object} contract.BadgeResponse
 // @Router /api/badges/{id} [get]
-func (h *handler) handleCreateBadge(c echo.Context) error {
+func (h *Handler) handleCreateBadge(c echo.Context) error {
 	var req contract.CreateBadgeRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, ErrInvalidRequest).WithInternal(err)

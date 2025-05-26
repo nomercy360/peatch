@@ -13,7 +13,7 @@ import (
 // @Produce  json
 // @Success 200 {array} contract.OpportunityResponse
 // @Router /api/opportunities [get]
-func (h *handler) handleListOpportunities(c echo.Context) error {
+func (h *Handler) handleListOpportunities(c echo.Context) error {
 	res, err := h.storage.ListOpportunities(c.Request().Context())
 
 	if err != nil {

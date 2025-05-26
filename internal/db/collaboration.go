@@ -314,24 +314,49 @@ func (s *Storage) UpdateCollaboration(
 	}
 
 	// Fetch opportunity
-	opp, err := s.GetOpportunityByID(ctx, oppID)
-	if err != nil {
-		if errors.Is(err, ErrNotFound) {
-			return fmt.Errorf("opportunity not found: %w", err)
-		}
+	var opp Opportunity
+	err = tx.QueryRowContext(ctx, `
+		SELECT id, text_en, text_ru, description_en, description_ru, icon, color, created_at
+		FROM opportunities
+		WHERE id = ?
+	`, oppID).Scan(
+		&opp.ID, &opp.Text, &opp.TextRU, &opp.Description, &opp.DescriptionRU,
+		&opp.Icon, &opp.Color, &opp.CreatedAt,
+	)
+
+	if err != nil && errors.Is(err, sql.ErrNoRows) {
+		return ErrNotFound
+	} else if err != nil {
 		return fmt.Errorf("failed to fetch opportunity: %w", err)
 	}
 
 	var locationJSON *string
 	if locationID != nil && *locationID != "" {
-		location, err := s.GetCityByID(ctx, *locationID)
-		if err != nil && !errors.Is(err, ErrNotFound) {
+		var city City
+		err := tx.QueryRowContext(ctx, `
+			SELECT id, name, country_code, country_name, latitude, longitude
+			FROM cities
+			WHERE id = ?
+		`, *locationID).Scan(
+			&city.ID,
+			&city.Name,
+			&city.CountryCode,
+			&city.CountryName,
+			&city.Latitude,
+			&city.Longitude,
+		)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return ErrNotFound
+			}
 			return fmt.Errorf("failed to fetch location: %w", err)
 		}
-
-		locationData, _ := json.Marshal(location)
-		locationJSON = new(string)
-		*locationJSON = string(locationData)
+		locationData := &city
+		locationJSONBytes, _ := json.Marshal(locationData)
+		locationJSONStr := string(locationJSONBytes)
+		locationJSON = &locationJSONStr
+	} else {
+		locationJSON = nil // No location provided
 	}
 
 	// Marshal complex fields

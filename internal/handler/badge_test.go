@@ -13,14 +13,10 @@ import (
 )
 
 func TestListBadges_Success(t *testing.T) {
-	e := testutils.SetupHandlerDependencies(t)
+	ts := testutils.SetupTestEnvironment(t)
+	defer ts.Teardown()
 
-	// Clear test data first
-	if err := testutils.ClearTestData(); err != nil {
-		t.Fatalf("failed to clear test data: %v", err)
-	}
-
-	authResp, err := testutils.AuthHelper(t, e, 927635965, "mkkksim", "Maksim")
+	authResp, err := testutils.AuthHelper(t, ts.Echo, 927635965, "mkkksim", "Maksim")
 	if err != nil {
 		t.Fatalf("Failed to authenticate: %v", err)
 	}
@@ -45,12 +41,12 @@ func TestListBadges_Success(t *testing.T) {
 	}
 
 	for _, badge := range badges {
-		if err := testutils.GetDBStorage().CreateBadge(context.Background(), badge); err != nil {
+		if err := ts.Storage.CreateBadge(context.Background(), badge); err != nil {
 			t.Fatalf("failed to create badge: %v", err)
 		}
 	}
 
-	rec := testutils.PerformRequest(t, e, http.MethodGet, "/api/badges", "", token, http.StatusOK)
+	rec := testutils.PerformRequest(t, ts.Echo, http.MethodGet, "/api/badges", "", token, http.StatusOK)
 	var respBadges []db.Badge
 	if err := json.Unmarshal(rec.Body.Bytes(), &respBadges); err != nil {
 		t.Fatalf("failed to parse response: %v", err)
@@ -60,7 +56,7 @@ func TestListBadges_Success(t *testing.T) {
 		t.Errorf("expected 2 badges, got %d", len(respBadges))
 	}
 
-	rec = testutils.PerformRequest(t, e, http.MethodGet, "/api/badges?search=Badge%201", "", token, http.StatusOK)
+	rec = testutils.PerformRequest(t, ts.Echo, http.MethodGet, "/api/badges?search=Badge%201", "", token, http.StatusOK)
 	if err := json.Unmarshal(rec.Body.Bytes(), &respBadges); err != nil {
 		t.Fatalf("failed to parse response: %v", err)
 	}
@@ -75,9 +71,10 @@ func TestListBadges_Success(t *testing.T) {
 }
 
 func TestCreateBadge_Success(t *testing.T) {
-	e := testutils.SetupHandlerDependencies(t)
+	ts := testutils.SetupTestEnvironment(t)
+	defer ts.Teardown()
 
-	authResp, err := testutils.AuthHelper(t, e, testutils.TelegramTestUserID, "user1", "First")
+	authResp, err := testutils.AuthHelper(t, ts.Echo, testutils.TelegramTestUserID, "user1", "First")
 	if err != nil {
 		t.Fatalf("failed to authenticate: %v", err)
 	}
@@ -91,7 +88,7 @@ func TestCreateBadge_Success(t *testing.T) {
 
 	bodyBytes, _ := json.Marshal(reqBody)
 
-	rec := testutils.PerformRequest(t, e, http.MethodPost, "/api/badges", string(bodyBytes), token, http.StatusCreated)
+	rec := testutils.PerformRequest(t, ts.Echo, http.MethodPost, "/api/badges", string(bodyBytes), token, http.StatusCreated)
 
 	var respBadge db.Badge
 	if err := json.Unmarshal(rec.Body.Bytes(), &respBadge); err != nil {
@@ -113,14 +110,16 @@ func TestCreateBadge_Success(t *testing.T) {
 }
 
 func TestCreateBadge_InvalidJSON(t *testing.T) {
-	e := testutils.SetupHandlerDependencies(t)
-	authResp, err := testutils.AuthHelper(t, e, testutils.TelegramTestUserID, "user1", "First")
+	ts := testutils.SetupTestEnvironment(t)
+	defer ts.Teardown()
+
+	authResp, err := testutils.AuthHelper(t, ts.Echo, testutils.TelegramTestUserID, "user1", "First")
 	if err != nil {
 		t.Fatalf("failed to authenticate: %v", err)
 	}
 	token := authResp.Token
 
-	rec := testutils.PerformRequest(t, e, http.MethodPost, "/api/badges", "{invalid-json", token, http.StatusBadRequest)
+	rec := testutils.PerformRequest(t, ts.Echo, http.MethodPost, "/api/badges", "{invalid-json", token, http.StatusBadRequest)
 	var errResp contract.ErrorResponse
 	if err := json.Unmarshal(rec.Body.Bytes(), &errResp); err != nil {
 		t.Fatalf("failed to parse error response: %v", err)
@@ -131,7 +130,8 @@ func TestCreateBadge_InvalidJSON(t *testing.T) {
 }
 
 func TestCreateBadge_Unauthorized(t *testing.T) {
-	e := testutils.SetupHandlerDependencies(t)
+	ts := testutils.SetupTestEnvironment(t)
+	defer ts.Teardown()
 
 	reqBody := contract.CreateBadgeRequest{
 		Text:  "New Badge",
@@ -140,7 +140,7 @@ func TestCreateBadge_Unauthorized(t *testing.T) {
 	}
 	bodyBytes, _ := json.Marshal(reqBody)
 
-	rec := testutils.PerformRequest(t, e, http.MethodPost, "/api/badges", string(bodyBytes), "", http.StatusUnauthorized)
+	rec := testutils.PerformRequest(t, ts.Echo, http.MethodPost, "/api/badges", string(bodyBytes), "", http.StatusUnauthorized)
 	var errResp contract.ErrorResponse
 	if err := json.Unmarshal(rec.Body.Bytes(), &errResp); err != nil {
 		t.Fatalf("failed to parse error response: %v", err)
@@ -151,8 +151,10 @@ func TestCreateBadge_Unauthorized(t *testing.T) {
 }
 
 func TestCreateBadge_ValidationError(t *testing.T) {
-	e := testutils.SetupHandlerDependencies(t)
-	authResp, err := testutils.AuthHelper(t, e, testutils.TelegramTestUserID, "user1", "First")
+	ts := testutils.SetupTestEnvironment(t)
+	defer ts.Teardown()
+
+	authResp, err := testutils.AuthHelper(t, ts.Echo, testutils.TelegramTestUserID, "user1", "First")
 	if err != nil {
 		t.Fatalf("failed to authenticate: %v", err)
 	}
@@ -166,7 +168,7 @@ func TestCreateBadge_ValidationError(t *testing.T) {
 
 	bodyBytes, _ := json.Marshal(reqBody)
 
-	rec := testutils.PerformRequest(t, e, http.MethodPost, "/api/badges", string(bodyBytes), token, http.StatusBadRequest)
+	rec := testutils.PerformRequest(t, ts.Echo, http.MethodPost, "/api/badges", string(bodyBytes), token, http.StatusBadRequest)
 	var errResp contract.ErrorResponse
 	if err := json.Unmarshal(rec.Body.Bytes(), &errResp); err != nil {
 		t.Fatalf("failed to parse error response: %v", err)

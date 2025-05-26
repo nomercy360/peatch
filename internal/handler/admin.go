@@ -26,7 +26,7 @@ import (
 // @Success 200 {object} contract.AdminAuthResponse
 // @Failure 400 {object} contract.ErrorResponse
 // @Router /admin/login [post]
-func (h *handler) handleAdminLogin(c echo.Context) error {
+func (h *Handler) handleAdminLogin(c echo.Context) error {
 	var req contract.AdminLoginRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid request").WithInternal(err)
@@ -64,7 +64,7 @@ func (h *handler) handleAdminLogin(c echo.Context) error {
 // @Failure 401 {object} contract.ErrorResponse
 // @Failure 500 {object} contract.ErrorResponse
 // @Router /admin/auth/telegram [post]
-func (h *handler) handleAdminTelegramAuth(c echo.Context) error {
+func (h *Handler) handleAdminTelegramAuth(c echo.Context) error {
 	var req contract.AdminTelegramAuthRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid request").WithInternal(err)
@@ -139,7 +139,7 @@ func generateAdminJWT(adminID string, secretKey string) (string, error) {
 // @Failure 401 {object} contract.ErrorResponse
 // @Security ApiKeyAuth
 // @Router /admin/users [get]
-func (h *handler) handleAdminListUsers(c echo.Context) error {
+func (h *Handler) handleAdminListUsers(c echo.Context) error {
 	status := c.QueryParam("status")
 	if status == "" {
 		status = string(db.VerificationStatusPending)
@@ -180,7 +180,7 @@ func (h *handler) handleAdminListUsers(c echo.Context) error {
 // @Failure 401 {object} contract.ErrorResponse
 // @Security ApiKeyAuth
 // @Router /admin/collaborations [get]
-func (h *handler) handleAdminListCollaborations(c echo.Context) error {
+func (h *Handler) handleAdminListCollaborations(c echo.Context) error {
 	// Parse query parameters
 	status := c.QueryParam("status")
 	if status == "" {
@@ -221,7 +221,7 @@ func (h *handler) handleAdminListCollaborations(c echo.Context) error {
 // @Failure 404 {object} contract.ErrorResponse
 // @Security ApiKeyAuth
 // @Router /admin/users/{id}/verify [put]
-func (h *handler) handleAdminUpdateUserVerification(c echo.Context) error {
+func (h *Handler) handleAdminUpdateUserVerification(c echo.Context) error {
 	userID := c.Param("id")
 	if userID == "" {
 		return echo.NewHTTPError(http.StatusBadRequest, "user ID is required")
@@ -286,7 +286,7 @@ func (h *handler) handleAdminUpdateUserVerification(c echo.Context) error {
 // @Failure 404 {object} contract.ErrorResponse
 // @Security ApiKeyAuth
 // @Router /admin/users/{user_id}/collaborations/{collab_id}/verify [put]
-func (h *handler) handleAdminUpdateCollaborationVerification(c echo.Context) error {
+func (h *Handler) handleAdminUpdateCollaborationVerification(c echo.Context) error {
 	collabID := c.Param("cid")
 	if collabID == "" {
 		return echo.NewHTTPError(http.StatusBadRequest, "collaboration ID is required")
@@ -368,7 +368,7 @@ func (h *handler) handleAdminUpdateCollaborationVerification(c echo.Context) err
 // @Failure 401 {object} contract.ErrorResponse
 // @Security ApiKeyAuth
 // @Router /admin/create [post]
-func (h *handler) handleAdminCreate(c echo.Context) error {
+func (h *Handler) handleAdminCreate(c echo.Context) error {
 	var req contract.AdminLoginRequest
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid request").WithInternal(err)

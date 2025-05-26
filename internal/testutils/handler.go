@@ -5,19 +5,20 @@ import (
 	"encoding/json"
 	"fmt"
 	telegram "github.com/go-telegram/bot"
+	"github.com/go-telegram/bot/models"
 	"github.com/labstack/echo/v4"
-	"github.com/peatch-io/peatch/internal/config"
 	"github.com/peatch-io/peatch/internal/contract"
 	"github.com/peatch-io/peatch/internal/db"
 	"github.com/peatch-io/peatch/internal/handler"
 	"github.com/peatch-io/peatch/internal/middleware"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	initdata "github.com/telegram-mini-apps/init-data-golang"
 	"io"
-	"log"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -148,14 +149,6 @@ func (m *MockEmbeddingService) GenerateEmbedding(ctx context.Context, text strin
 	return embedding, nil
 }
 
-var (
-	dbStorage     *db.Storage
-	cleanupDB     func()
-	s3Client      *MockPhotoUploader
-	MockNotifier  *MockNotificationService
-	MockEmbedding *MockEmbeddingService
-)
-
 const (
 	TestBotToken       = "test-bot-token"
 	TelegramTestUserID = 927635965
@@ -176,108 +169,86 @@ func (m *MockPhotoUploader) UploadFile(ctx context.Context, key string, body io.
 	return nil
 }
 
-func GetDBStorage() *db.Storage {
-	return dbStorage
+type MockTelegramBot struct {
+	mock.Mock
 }
 
-// ClearTestData clears all test data from the database
-func ClearTestData() error {
-	ctx := context.Background()
-	if dbStorage == nil {
-		return fmt.Errorf("database not initialized")
+func (m *MockTelegramBot) Send(ctx context.Context, params *telegram.SendMessageParams) (*models.Message, error) {
+	args := m.Called(ctx, params)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
 	}
-
-	// Clear tables in the correct order to avoid foreign key constraints
-	tables := []string{
-		"collaboration_interests",
-		"user_followers",
-		"collaborations",
-		"user_embeddings",
-		"opportunity_embeddings",
-		// "users",
-		"badges",
-		"opportunities",
-		"cities",
-		"admins",
-	}
-
-	for _, table := range tables {
-		if _, err := dbStorage.DB().ExecContext(ctx, fmt.Sprintf("DELETE FROM %s", table)); err != nil {
-			return fmt.Errorf("failed to clear %s: %w", table, err)
-		}
-	}
-
-	return nil
+	return args.Get(0).(*models.Message), args.Error(1)
 }
 
-func InitTestDB() {
-	ctx := context.Background()
-	var err error
-	dbStorage, _, err = setupTestDB(ctx)
-	if err != nil {
-		panic(fmt.Sprintf("Failed to initialize test database: %v", err))
-	}
+func (m *MockTelegramBot) SetWebhook(ctx context.Context, params *telegram.SetWebhookParams) (bool, error) {
+	args := m.Called(ctx, params)
+	return args.Bool(0), args.Error(1)
 }
 
-func CleanupTestDB() {
-	if dbStorage != nil {
-		if err := dbStorage.Close(); err != nil {
-			fmt.Printf("Warning: Failed to close test database: %v\n", err)
-		}
-		dbStorage = nil
-	}
+type testSetup struct {
+	Echo                 *echo.Echo
+	Storage              *db.Storage
+	Handler              *handler.Handler
+	MockS3               *MockPhotoUploader
+	MockBot              *MockTelegramBot
+	MockNotifier         *MockNotificationService
+	MockEmbeddingService *MockEmbeddingService
+	Teardown             func()
 }
 
-func setupTestDB(ctx context.Context) (*db.Storage, func(), error) {
-	storage, err := db.NewStorage(TestDBPath)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to connect to test database: %w", err)
-	}
-
-	cleanup := func() {
-		if err := storage.Close(); err != nil {
-			fmt.Printf("Warning: Failed to close test database: %v\n", err)
-		}
-	}
-
-	return storage, cleanup, nil
-}
-
-func SetupHandlerDependencies(t *testing.T) *echo.Echo {
-	_ = os.Setenv("CONFIG_FILE_PATH", "../../config.yml")
-
-	cfg, err := config.LoadConfig()
-	if err != nil {
-		log.Fatalf("Error loading config: %v", err)
-	}
+func SetupTestEnvironment(t *testing.T) *testSetup {
+	t.Helper()
 
 	hConfig := handler.Config{
-		JWTSecret:        cfg.JWTSecret,
+		JWTSecret:        "test-jwt-secret",
+		WebhookURL:       "http://localhost/test/webhook",
 		TelegramBotToken: TestBotToken,
-		WebhookURL:       "https://example.com",
+		AdminBotToken:    "test-tg-admin-token",
+		AssetsURL:        "http://localhost/assets",
+		AdminChatID:      12345,
+		CommunityChatID:  67890,
+		WebAppURL:        "http://localhost/webapp",
+		BotWebApp:        "http://localhost/botwebapp",
+		ImageServiceURL:  "http://localhost/images",
 	}
 
-	logr := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	storage, err := db.NewStorage(":memory:")
+	require.NoError(t, err, "Failed to create in-memory storage")
 
-	s3Client = &MockPhotoUploader{}
+	err = storage.InitSchema()
+	require.NoError(t, err, "Failed to initialize DB schema")
 
-	var bot *telegram.Bot
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
-	// Create a new mock notifier and store it globally for test access
-	MockNotifier = &MockNotificationService{}
+	// 4. Mocks
+	mockS3Client := new(MockPhotoUploader)
+	mockBotClient := new(MockTelegramBot)
+	mockNotifierClient := new(MockNotificationService)
+	mockEmbeddingSvc := new(MockEmbeddingService)
 
-	// Create a new mock embedding service and store it globally for test access
-	MockEmbedding = &MockEmbeddingService{}
-
-	h := handler.New(dbStorage, hConfig, s3Client, logr, bot, MockNotifier, MockEmbedding)
+	h := handler.New(storage, hConfig, mockS3Client, logger, nil, mockNotifierClient, mockEmbeddingSvc)
 
 	e := echo.New()
+	middleware.Setup(e, logger)
 
-	middleware.Setup(e, logr)
+	h.SetupRoutes(e) // Register all your application routes
 
-	h.SetupRoutes(e)
+	teardown := func() {
+		err := storage.Close()
+		assert.NoError(t, err, "Failed to close storage")
+	}
 
-	return e
+	return &testSetup{
+		Echo:                 e,
+		Storage:              storage,
+		Handler:              h,
+		MockS3:               mockS3Client,
+		MockBot:              mockBotClient,
+		MockNotifier:         mockNotifierClient,
+		MockEmbeddingService: mockEmbeddingSvc,
+		Teardown:             teardown,
+	}
 }
 
 func PerformRequest(t *testing.T, e *echo.Echo, method, path, body, token string, expectedStatus int) *httptest.ResponseRecorder {

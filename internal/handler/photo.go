@@ -33,7 +33,7 @@ var ErrInvalidPhotoFormat = "Invalid photo format"
 // @Failure 401 {object} contract.ErrorResponse
 // @Failure 500 {object} contract.ErrorResponse
 // @Router /api/users/avatar [post]
-func (h *handler) handleUserAvatar(c echo.Context) error {
+func (h *Handler) handleUserAvatar(c echo.Context) error {
 	userID := getUserID(c)
 
 	file, err := c.FormFile("photo")

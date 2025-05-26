@@ -22,7 +22,7 @@ func parseIntQuery(c echo.Context, key string, defaultValue int) int {
 // @Produce  json
 // @Success 200 {array} contract.CityResponse
 // @Router /api/locations [get]
-func (h *handler) handleSearchLocations(c echo.Context) error {
+func (h *Handler) handleSearchLocations(c echo.Context) error {
 	query := c.QueryParam("search")
 
 	limit := parseIntQuery(c, "limit", 10)

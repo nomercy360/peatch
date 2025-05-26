@@ -73,15 +73,10 @@ func NewStorage(dbFile string) (*Storage, error) {
 
 	s := &Storage{db: db}
 
-	// Initialize schema
-	if err := s.initSchema(); err != nil {
-		return nil, fmt.Errorf("failed to initialize schema: %w", err)
-	}
-
 	return s, nil
 }
 
-func (s *Storage) initSchema() error {
+func (s *Storage) InitSchema() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 

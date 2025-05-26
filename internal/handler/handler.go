@@ -18,7 +18,7 @@ import (
 	"github.com/peatch-io/peatch/internal/middleware"
 )
 
-type handler struct {
+type Handler struct {
 	storage             storager
 	config              Config
 	s3Client            s3Client
@@ -51,7 +51,7 @@ type Config struct {
 
 type storager interface {
 	// User-related operations
-	ListUsers(ctx context.Context, searchQuery string, offset, limit int, includeHidden bool) ([]db.User, error)
+	ListUsers(ctx context.Context, params db.ListUsersOptions) ([]db.User, error)
 	GetUserByChatID(ctx context.Context, chatID int64) (db.User, error)
 	GetUserByID(ctx context.Context, ID string) (db.User, error)
 	CreateUser(ctx context.Context, user db.User) error
@@ -93,8 +93,8 @@ type storager interface {
 	GetUsersWithOpportunityVectorSearch(ctx context.Context, opportunityID string, limit int) ([]db.User, error)
 }
 
-func New(storage storager, config Config, s3Client s3Client, logger *slog.Logger, bot *telegram.Bot, n interfaces.NotificationService, es embeddingService) *handler {
-	return &handler{
+func New(storage storager, config Config, s3Client s3Client, logger *slog.Logger, bot *telegram.Bot, n interfaces.NotificationService, es embeddingService) *Handler {
+	return &Handler{
 		storage:             storage,
 		config:              config,
 		s3Client:            s3Client,
@@ -105,7 +105,7 @@ func New(storage storager, config Config, s3Client s3Client, logger *slog.Logger
 	}
 }
 
-func (h *handler) SetupWebhook(ctx context.Context) error {
+func (h *Handler) SetupWebhook(ctx context.Context) error {
 	if h.bot == nil {
 		return errors.New("bot is not initialized")
 	}
@@ -131,7 +131,7 @@ func (h *handler) SetupWebhook(ctx context.Context) error {
 	return nil
 }
 
-func (h *handler) SetupRoutes(e *echo.Echo) {
+func (h *Handler) SetupRoutes(e *echo.Echo) {
 	// Public routes
 	e.POST("/auth/telegram", h.TelegramAuth)
 	e.POST("/tg/webhook", h.HandleWebhook)
@@ -185,14 +185,14 @@ func (h *handler) SetupRoutes(e *echo.Echo) {
 	admin.PUT("/users/:uid/collaborations/:cid/verify", h.handleAdminUpdateCollaborationVerification)
 }
 
-func (h *handler) handleIndex(c echo.Context) error {
+func (h *Handler) handleIndex(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{
 		"service": "Peatch API",
 		"status":  "online",
 	})
 }
 
-func (h *handler) getRandomAvatar(c echo.Context) error {
+func (h *Handler) getRandomAvatar(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
