@@ -25,10 +25,15 @@ type handler struct {
 	logger              *slog.Logger
 	bot                 *telegram.Bot
 	notificationService interfaces.NotificationService
+	embeddingService    embeddingService
 }
 
 type s3Client interface {
 	UploadFile(ctx context.Context, key string, body io.Reader, contentType string) error
+}
+
+type embeddingService interface {
+	GenerateEmbedding(ctx context.Context, text string) ([]float64, error)
 }
 
 type Config struct {
@@ -46,7 +51,7 @@ type Config struct {
 
 type storager interface {
 	// User-related operations
-	ListUsers(ctx context.Context, query db.UserQuery) ([]db.User, error)
+	ListUsers(ctx context.Context, searchQuery string, offset, limit int, includeHidden bool) ([]db.User, error)
 	GetUserByChatID(ctx context.Context, chatID int64) (db.User, error)
 	GetUserByID(ctx context.Context, ID string) (db.User, error)
 	CreateUser(ctx context.Context, user db.User) error
@@ -60,7 +65,6 @@ type storager interface {
 	FollowUser(ctx context.Context, userID, followerID string, ttlDuration time.Duration) error
 	IsUserFollowing(ctx context.Context, userID, followerID string) (bool, error)
 	GetUsersByVerificationStatus(ctx context.Context, status db.VerificationStatus, page, perPage int) ([]db.User, error)
-	GetUsersWithOpportunity(ctx context.Context, opportunityID string) ([]db.User, error)
 	// Collaboration-related operations
 	ListCollaborations(ctx context.Context, query db.CollaborationQuery) ([]db.Collaboration, error)
 	GetCollaborationByID(ctx context.Context, userID, id string) (db.Collaboration, error)
@@ -83,9 +87,13 @@ type storager interface {
 	CreateBadge(ctx context.Context, badge db.Badge) error
 	SearchCities(ctx context.Context, query string, limit, skip int) ([]db.City, error)
 	Health() (db.HealthStats, error)
+
+	// Embedding-related operations
+	UpdateUserEmbedding(ctx context.Context, userID string, embeddingVector []float64) error
+	GetUsersWithOpportunityVectorSearch(ctx context.Context, opportunityID string, limit int) ([]db.User, error)
 }
 
-func New(storage storager, config Config, s3Client s3Client, logger *slog.Logger, bot *telegram.Bot, n interfaces.NotificationService) *handler {
+func New(storage storager, config Config, s3Client s3Client, logger *slog.Logger, bot *telegram.Bot, n interfaces.NotificationService, es embeddingService) *handler {
 	return &handler{
 		storage:             storage,
 		config:              config,
@@ -93,6 +101,7 @@ func New(storage storager, config Config, s3Client s3Client, logger *slog.Logger
 		logger:              logger,
 		bot:                 bot,
 		notificationService: n,
+		embeddingService:    es,
 	}
 }
 

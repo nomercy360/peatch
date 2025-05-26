@@ -12,6 +12,11 @@ import (
 )
 
 func setupTestRecords(t *testing.T) ([]db.Badge, []db.Opportunity, db.City) {
+	// Clear test data first to avoid duplicates
+	if err := testutils.ClearTestData(); err != nil {
+		t.Fatalf("failed to clear test data: %v", err)
+	}
+
 	badges := []db.Badge{
 		{
 			ID:   "badge1",
@@ -26,7 +31,7 @@ func setupTestRecords(t *testing.T) ([]db.Badge, []db.Opportunity, db.City) {
 	}
 
 	for _, badge := range badges {
-		if err := testutils.GetTestDBStorage().CreateBadge(context.Background(), badge); err != nil {
+		if err := testutils.GetDBStorage().CreateBadge(context.Background(), badge); err != nil {
 			t.Fatalf("failed to create badge: %v", err)
 		}
 	}
@@ -47,7 +52,7 @@ func setupTestRecords(t *testing.T) ([]db.Badge, []db.Opportunity, db.City) {
 	}
 
 	for _, opp := range opportunities {
-		if _, err := testutils.GetTestDBStorage().Database().Collection(testutils.OpportunitiesCollection).InsertOne(context.Background(), opp); err != nil {
+		if err := testutils.GetDBStorage().CreateOpportunity(context.Background(), opp); err != nil {
 			t.Fatalf("failed to insert opportunity: %v", err)
 		}
 	}
@@ -57,13 +62,11 @@ func setupTestRecords(t *testing.T) ([]db.Badge, []db.Opportunity, db.City) {
 		Name:        "Test City",
 		CountryName: "Test Country",
 		CountryCode: "TC",
-		Geo: db.GeoPoint{
-			Type:        "Point",
-			Coordinates: []float64{12.34, 56.78},
-		},
+		Latitude:    12.34,
+		Longitude:   56.78,
 	}
 
-	if _, err := testutils.GetTestDBStorage().Database().Collection(testutils.CitiesCollection).InsertOne(context.Background(), location); err != nil {
+	if err := testutils.GetDBStorage().CreateCity(context.Background(), location); err != nil {
 		t.Fatalf("failed to insert location: %v", err)
 	}
 
@@ -170,14 +173,14 @@ func TestExpressInterest_Success(t *testing.T) {
 		"/api/users", `{"name": "creator", "title": "creator", "description": "creator description", "location_id": "location1", "badge_ids": ["badge1"], "opportunity_ids": ["opp1"]}`,
 		creatorAuthResp.Token, http.StatusOK)
 
-	if err := testutils.GetTestDBStorage().UpdateUserVerificationStatus(context.Background(), creatorAuthResp.User.ID, db.VerificationStatusVerified); err != nil {
+	if err := testutils.GetDBStorage().UpdateUserVerificationStatus(context.Background(), creatorAuthResp.User.ID, db.VerificationStatusVerified); err != nil {
 		return
 	}
 
 	testutils.PerformRequest(t, e, http.MethodPut,
 		"/api/users", `{"name": "interested", "title": "interested", "description": "interested description", "location_id": "location1", "badge_ids": ["badge1"], "opportunity_ids": ["opp1"]}`,
 		interestedAuthResp.Token, http.StatusOK)
-	if err := testutils.GetTestDBStorage().UpdateUserVerificationStatus(context.Background(), interestedAuthResp.User.ID, db.VerificationStatusVerified); err != nil {
+	if err := testutils.GetDBStorage().UpdateUserVerificationStatus(context.Background(), interestedAuthResp.User.ID, db.VerificationStatusVerified); err != nil {
 		return
 	}
 
@@ -199,7 +202,7 @@ func TestExpressInterest_Success(t *testing.T) {
 		t.Fatalf("failed to parse collaboration response: %v", err)
 	}
 
-	storage := testutils.GetTestDBStorage()
+	storage := testutils.GetDBStorage()
 	err = storage.UpdateCollaborationVerificationStatus(context.Background(), collab.ID, db.VerificationStatusVerified)
 	if err != nil {
 		t.Fatalf("failed to update collaboration verification status: %v", err)

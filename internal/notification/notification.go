@@ -659,18 +659,10 @@ func (n *Notifier) NotifyUserFollow(userToFollow db.User, follower db.User) erro
 	}
 
 	var msgText string
-	if follower.IsGeneratedUsername() {
-		if userToFollow.LanguageCode == db.LanguageRU {
-			msgText = fmt.Sprintf("👋 %s заметил ваш профиль, смотри в приложении\\!", telegram.EscapeMarkdown(followerName))
-		} else {
-			msgText = fmt.Sprintf("👋 %s noticed your profile, check in the app\\!", telegram.EscapeMarkdown(followerName))
-		}
+	if userToFollow.LanguageCode == db.LanguageRU {
+		msgText = fmt.Sprintf("👋 [%s](https://t.me/%s) заметил ваш профиль, напишите ему в Telegram\\!", telegram.EscapeMarkdown(followerName), follower.Username)
 	} else {
-		if userToFollow.LanguageCode == db.LanguageRU {
-			msgText = fmt.Sprintf("👋 [%s](https://t.me/%s) заметил ваш профиль, напишите ему в Telegram\\!", telegram.EscapeMarkdown(followerName), follower.Username)
-		} else {
-			msgText = fmt.Sprintf("👋 [%s](https://t.me/%s) noticed your profile, write to him in Telegram\\!", telegram.EscapeMarkdown(followerName), follower.Username)
-		}
+		msgText = fmt.Sprintf("👋 [%s](https://t.me/%s) noticed your profile, write to him in Telegram\\!", telegram.EscapeMarkdown(followerName), follower.Username)
 	}
 
 	btnText := "View Profile"
@@ -790,18 +782,10 @@ func (n *Notifier) NotifyCollabInterest(collab db.Collaboration, user db.User) e
 	}
 
 	var msgText string
-	if user.IsGeneratedUsername() {
-		if collab.User.LanguageCode == db.LanguageRU {
-			msgText = fmt.Sprintf("🔔 %s проявил интерес к вашему проекту \"%s\", смотри в приложении\\!", telegram.EscapeMarkdown(userName), telegram.EscapeMarkdown(collab.Title))
-		} else {
-			msgText = fmt.Sprintf("🔔 %s expressed interest in your project \"%s\", check in the app\\!", telegram.EscapeMarkdown(userName), telegram.EscapeMarkdown(collab.Title))
-		}
+	if collab.User.LanguageCode == db.LanguageRU {
+		msgText = fmt.Sprintf("🔔 [%s](https://t.me/%s) проявил интерес к вашему проекту \"%s\", напишите ему в Telegram\\!", telegram.EscapeMarkdown(userName), user.Username, collab.Title)
 	} else {
-		if collab.User.LanguageCode == db.LanguageRU {
-			msgText = fmt.Sprintf("🔔 [%s](https://t.me/%s) проявил интерес к вашему проекту \"%s\", напишите ему в Telegram\\!", telegram.EscapeMarkdown(userName), user.Username, collab.Title)
-		} else {
-			msgText = fmt.Sprintf("🔔 [%s](https://t.me/%s) expressed interest in your project \"%s\", write to them in Telegram\\!", telegram.EscapeMarkdown(userName), user.Username, collab.Title)
-		}
+		msgText = fmt.Sprintf("🔔 [%s](https://t.me/%s) expressed interest in your project \"%s\", write to them in Telegram\\!", telegram.EscapeMarkdown(userName), user.Username, collab.Title)
 	}
 
 	btnText := "View Profile"

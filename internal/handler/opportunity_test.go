@@ -15,6 +15,11 @@ import (
 func TestListOpportunities_Success(t *testing.T) {
 	e := testutils.SetupHandlerDependencies(t)
 
+	// Clear test data first
+	if err := testutils.ClearTestData(); err != nil {
+		t.Fatalf("failed to clear test data: %v", err)
+	}
+
 	authResp, err := testutils.AuthHelper(t, e, 927635965, "mkkksim", "Maksim")
 	if err != nil {
 		t.Fatalf("Failed to authenticate: %v", err)
@@ -45,7 +50,7 @@ func TestListOpportunities_Success(t *testing.T) {
 	}
 
 	for _, opp := range opps {
-		if _, err := testutils.GetTestDBStorage().Database().Collection(testutils.OpportunitiesCollection).InsertOne(context.Background(), opp); err != nil {
+		if err := testutils.GetDBStorage().CreateOpportunity(context.Background(), opp); err != nil {
 			t.Fatalf("failed to insert opportunity: %v", err)
 		}
 	}
@@ -57,14 +62,25 @@ func TestListOpportunities_Success(t *testing.T) {
 	}
 
 	if len(respOpps) != 2 {
-		t.Errorf("expected 2 badges, got %d", len(respOpps))
+		t.Errorf("expected 2 opportunities, got %d", len(respOpps))
 	}
 
-	if respOpps[0].Text != "Тестовая Бейдж 1" {
-		t.Errorf("expected badge text 'Test Badge 1', got '%s'", respOpps[0].Text)
+	// Check that both opportunities exist (order may vary)
+	foundOpp1 := false
+	foundOpp2 := false
+	for _, opp := range respOpps {
+		if opp.Text == "Тестовая Бейдж 1" && opp.Description == "Тестовое описание 1" {
+			foundOpp1 = true
+		}
+		if opp.Text == "Тестовая Бейдж 2" && opp.Description == "Test Description 2" {
+			foundOpp2 = true
+		}
 	}
 
-	if respOpps[0].Description != "Тестовое описание 1" {
-		t.Errorf("expected badge text 'Test Description 1', got '%s'", respOpps[0].Description)
+	if !foundOpp1 {
+		t.Error("expected to find opportunity with text 'Тестовая Бейдж 1' and description 'Тестовое описание 1'")
+	}
+	if !foundOpp2 {
+		t.Error("expected to find opportunity with text 'Тестовая Бейдж 2' and description 'Test Description 2'")
 	}
 }

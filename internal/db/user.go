@@ -2,15 +2,14 @@ package db
 
 import (
 	"context"
+	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	nanoid "github.com/matoous/go-nanoid/v2"
 )
 
 type UserFollower struct {
@@ -69,480 +68,583 @@ type User struct {
 	Badges                 []Badge            `bson:"badges,omitempty" json:"badges"`
 	Opportunities          []Opportunity      `bson:"opportunities,omitempty" json:"opportunities"`
 	Links                  []Link             `bson:"links,omitempty" json:"links"`
-	LoginMeta              *LoginMeta         `bson:"login_meta,omitempty" json:"login_meta"`
+	LoginMetadata          *LoginMeta         `bson:"login_metadata,omitempty" json:"login_metadata"`
 	LastActiveAt           time.Time          `bson:"last_active_at,omitempty" json:"last_active_at"`
 	VerificationStatus     VerificationStatus `bson:"verification_status,omitempty" json:"verification_status"`
 	VerifiedAt             *time.Time         `bson:"verified_at,omitempty" json:"verified_at"`
-}
-
-func (u *User) IsGeneratedUsername() bool {
-	if strings.HasPrefix(u.Username, "user_") {
-		return true
-	}
-
-	return false
+	Embedding              []float64          `bson:"embedding,omitempty" json:"-"`
+	EmbeddingUpdatedAt     *time.Time         `bson:"embedding_updated_at,omitempty" json:"-"`
 }
 
 func (u *User) IsProfileComplete() bool {
-	if u.Name == nil || u.Title == nil || u.Description == nil {
+	if u.Name == nil || *u.Name == "" {
+		return false
+	}
+	if u.Title == nil || *u.Title == "" {
+		return false
+	}
+	if u.Description == nil || *u.Description == "" {
 		return false
 	}
 	if u.Location == nil || u.Location.ID == "" {
 		return false
 	}
-	if u.Badges == nil || len(u.Badges) == 0 {
+	if len(u.Badges) == 0 {
 		return false
 	}
-	if u.Opportunities == nil || len(u.Opportunities) == 0 {
-		return false
-	}
-	if u.AvatarURL == nil || *u.AvatarURL == "" {
+	if len(u.Opportunities) == 0 {
 		return false
 	}
 	return true
 }
 
-type UserQuery struct {
-	Page   int
-	Limit  int
-	Search string
-	UserID string
-}
-type GetUsersParams struct {
-	ViewerID string
-	Username string
-	UserID   string
-	Lang     string
-}
+// ListUsers lists users with pagination and search
+func (s *Storage) ListUsers(ctx context.Context, searchQuery string, offset, limit int, includeHidden bool) ([]User, error) {
+	query := `
+		SELECT id, name, chat_id, username, created_at, updated_at, 
+		       notifications_enabled_at, hidden_at, avatar_url, title, 
+		       description, language_code, last_active_at,
+		       verification_status, verified_at, embedding_updated_at,
+		       login_metadata, location, links, badges, opportunities
+		FROM users
+		WHERE 1=1
+	`
+	var args []interface{}
 
-func (s *Storage) ListUsers(ctx context.Context, params UserQuery) ([]User, error) {
-	collection := s.db.Collection("users")
-	users := make([]User, 0)
-
-	conditions := []bson.M{
-		{"hidden_at": nil, "verification_status": VerificationStatusVerified},
+	// Add search filter
+	if searchQuery != "" {
+		query += fmt.Sprintf(` AND (name LIKE ? OR username LIKE ? OR title LIKE ? OR description LIKE ?)`)
+		searchPattern := "%" + searchQuery + "%"
+		args = append(args, searchPattern, searchPattern, searchPattern, searchPattern)
 	}
 
-	if params.UserID != "" {
-		conditions = append(conditions, bson.M{"_id": bson.M{"$ne": params.UserID}})
+	// Add hidden filter
+	if !includeHidden {
+		query += fmt.Sprintf(` AND hidden_at IS NULL`)
 	}
 
-	if params.Search != "" {
-		searchRegex := primitive.Regex{Pattern: params.Search, Options: "i"}
-		conditions = append(conditions, bson.M{
-			"$or": []bson.M{
-				{"name": searchRegex},
-				{"title": searchRegex},
-				{"description": searchRegex},
-			},
-		})
-	}
+	// Add ordering and pagination
+	query += fmt.Sprintf(` ORDER BY created_at DESC LIMIT ? OFFSET ?`)
+	args = append(args, limit, offset)
 
-	var filter bson.M
-	if len(conditions) == 1 {
-		filter = conditions[0]
-	} else {
-		filter = bson.M{"$and": conditions}
-	}
-
-	findOptions := options.Find()
-	findOptions.SetLimit(int64(params.Limit))
-	findOptions.SetSkip(int64((params.Page - 1) * params.Limit))
-	findOptions.SetSort(bson.D{{"created_at", -1}})
-
-	cursor, err := collection.Find(ctx, filter, findOptions)
+	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to find users: %w", err)
+		return nil, err
 	}
-	defer cursor.Close(ctx)
+	defer rows.Close()
 
-	if err := cursor.All(ctx, &users); err != nil {
-		return nil, fmt.Errorf("failed to decode users: %w", err)
+	var users []User
+	for rows.Next() {
+		user, err := scanUser(rows)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, user)
 	}
 
-	return users, nil
+	return users, rows.Err()
 }
 
-func (s *Storage) getUserBy(ctx context.Context, filter bson.M) (User, error) {
-	collection := s.db.Collection("users")
+// GetUserByChatID retrieves a user by Telegram chat ID
+func (s *Storage) GetUserByChatID(ctx context.Context, chatID int64) (User, error) {
+	query := `
+		SELECT id, name, chat_id, username, created_at, updated_at, 
+		       notifications_enabled_at, hidden_at, avatar_url, title, 
+		       description, language_code, last_active_at,
+		       verification_status, verified_at, embedding_updated_at,
+		       login_metadata, location, links, badges, opportunities
+		FROM users
+		WHERE chat_id = ?
+	`
+	return s.getUserByQuery(ctx, query, chatID)
+}
 
+// GetUserByID retrieves a user by ID
+func (s *Storage) GetUserByID(ctx context.Context, id string) (User, error) {
+	query := `
+		SELECT id, name, chat_id, username, created_at, updated_at, 
+		       notifications_enabled_at, hidden_at, avatar_url, title, 
+		       description, language_code, last_active_at,
+		       verification_status, verified_at, embedding_updated_at,
+		       login_metadata, location, links, badges, opportunities
+		FROM users
+		WHERE id = ?
+	`
+	return s.getUserByQuery(ctx, query, id)
+}
+
+// CreateUser creates a new user
+func (s *Storage) CreateUser(ctx context.Context, user User) error {
+	now := time.Now()
+	user.CreatedAt = now
+	user.UpdatedAt = now
+	user.LastActiveAt = now
+	if user.VerificationStatus == "" {
+		user.VerificationStatus = VerificationStatusUnverified
+	}
+
+	// Marshal complex fields to JSON
+	linksJSON, _ := json.Marshal(user.Links)
+	badgesJSON, _ := json.Marshal(user.Badges)
+	oppsJSON, _ := json.Marshal(user.Opportunities)
+	locationJSON, _ := json.Marshal(user.Location)
+
+	query := `
+		INSERT INTO users (
+			id, name, chat_id, username, created_at, updated_at,
+			notifications_enabled_at, hidden_at, avatar_url, title,
+			description, language_code,
+			verification_status, verified_at,
+		    location, links, badges, opportunities, last_active_at
+		) VALUES (
+			?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+		)
+	`
+
+	_, err := s.db.ExecContext(ctx, query,
+		user.ID, user.Name, user.ChatID, user.Username, user.CreatedAt, user.UpdatedAt,
+		user.NotificationsEnabledAt, user.HiddenAt, user.AvatarURL, user.Title,
+		user.Description, user.LanguageCode,
+		user.VerificationStatus, user.VerifiedAt, user.EmbeddingUpdatedAt,
+		string(locationJSON), string(linksJSON),
+		string(badgesJSON), string(oppsJSON),
+		user.LastActiveAt,
+	)
+
+	if err != nil {
+		if isSQLiteConstraintError(err) {
+			return ErrAlreadyExists
+		}
+		return err
+	}
+
+	return nil
+}
+
+// UpdateUser updates user profile
+func (s *Storage) UpdateUser(
+	ctx context.Context,
+	user User,
+	badgeIDs []string,
+	opportunityIDs []string,
+	locationID string,
+) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// Fetch badge and opportunity details
+	var badges []Badge
+	var opportunities []Opportunity
+
+	if len(badgeIDs) > 0 {
+		// Fetch badges
+		placeholders := make([]string, len(badgeIDs))
+		args := make([]interface{}, len(badgeIDs))
+		for i, id := range badgeIDs {
+			placeholders[i] = "?"
+			args[i] = id
+		}
+
+		query := fmt.Sprintf(`SELECT id, text, icon, color FROM badges WHERE id IN (%s)`, strings.Join(placeholders, ","))
+		rows, err := tx.QueryContext(ctx, query, args...)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var badge Badge
+			if err := rows.Scan(&badge.ID, &badge.Text, &badge.Icon, &badge.Color); err != nil {
+				return err
+			}
+			badges = append(badges, badge)
+		}
+	}
+
+	if len(opportunityIDs) > 0 {
+		// Fetch opportunities
+		placeholders := make([]string, len(opportunityIDs))
+		args := make([]interface{}, len(opportunityIDs))
+		for i, id := range opportunityIDs {
+			placeholders[i] = "?"
+			args[i] = id
+		}
+
+		query := fmt.Sprintf(`SELECT id, text_en, text_ru, icon, color FROM opportunities WHERE id IN (%s)`,
+			strings.Join(placeholders, ","))
+		rows, err := tx.QueryContext(ctx, query, args...)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var opp Opportunity
+			if err := rows.Scan(&opp.ID, &opp.Text, &opp.TextRU, &opp.Icon, &opp.Color); err != nil {
+				return err
+			}
+			opportunities = append(opportunities, opp)
+		}
+	}
+
+	location, err := s.GetCityByID(ctx, locationID)
+	if err != nil {
+		if errors.Is(err, ErrNotFound) {
+			return fmt.Errorf("location not found: %w", err)
+		}
+		return err
+	}
+
+	badgesJSON, _ := json.Marshal(badges)
+	oppsJSON, _ := json.Marshal(opportunities)
+	locationJSON, _ := json.Marshal(location)
+
+	// Update user
+	query := `
+		UPDATE users SET
+			name = ?,
+			title = ?,
+			description = ?,
+			location = ?,
+			badges = ?,
+			opportunities = ?,
+			updated_at = ?,
+			embedding_updated_at = ?
+		WHERE id = ?
+	`
+
+	var embeddingUpdatedAt *time.Time
+	if user.Description != nil || len(opportunityIDs) > 0 {
+		now := time.Now()
+		embeddingUpdatedAt = &now
+	}
+
+	result, err := tx.ExecContext(ctx, query,
+		user.Name,
+		user.Title,
+		user.Description,
+		string(locationJSON),
+		string(badgesJSON),
+		string(oppsJSON),
+		time.Now(),
+		embeddingUpdatedAt,
+		user.ID,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		return ErrNotFound
+	}
+
+	return tx.Commit()
+}
+
+// GetUsersByVerificationStatus gets users by verification status
+func (s *Storage) GetUsersByVerificationStatus(ctx context.Context, status VerificationStatus, offset, limit int) ([]User, error) {
+	query := `
+		SELECT id, name, chat_id, username, created_at, updated_at, 
+		       notifications_enabled_at, hidden_at, avatar_url, title, 
+		       description, language_code, last_active_at,
+		       verification_status, verified_at, embedding_updated_at,
+		       login_metadata, location, links, badges, opportunities
+		FROM users
+		WHERE verification_status = ?
+		ORDER BY created_at DESC
+		LIMIT ? OFFSET ?
+	`
+
+	rows, err := s.db.QueryContext(ctx, query, status, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []User
+	for rows.Next() {
+		user, err := scanUser(rows)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+
+	return users, rows.Err()
+}
+
+// FollowUser creates a follow relationship
+func (s *Storage) FollowUser(ctx context.Context, userID, followerID string, ttlDuration time.Duration) error {
+	// Check users exist
+	var count int
+	err := s.db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM users WHERE id IN (?, ?)`,
+		userID, followerID).Scan(&count)
+	if err != nil {
+		return err
+	}
+	if count != 2 {
+		return fmt.Errorf("user not found")
+	}
+
+	// Insert follow relationship with TTL
+	id := nanoid.Must()
+	expiresAt := time.Now().Add(24 * time.Hour)
+
+	_, err = s.db.ExecContext(ctx, `
+		INSERT INTO user_followers (id, user_id, follower_id, expires_at, created_at)
+		VALUES (?, ?, ?, ?, ?)
+		ON CONFLICT (user_id, follower_id) DO UPDATE SET
+			expires_at = EXCLUDED.expires_at
+	`, id, userID, followerID, expiresAt, time.Now())
+
+	return err
+}
+
+// IsUserFollowing checks if one user follows another
+func (s *Storage) IsUserFollowing(ctx context.Context, userID, followerID string) (bool, error) {
+	var count int
+	err := s.db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM user_followers 
+		WHERE user_id = ? AND follower_id = ? AND expires_at > ?
+	`, userID, followerID, time.Now()).Scan(&count)
+
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+// UpdateUserAvatarURL updates user's avatar URL
+func (s *Storage) UpdateUserAvatarURL(ctx context.Context, userID, avatarURL string) error {
+	result, err := s.db.ExecContext(ctx, `
+		UPDATE users SET avatar_url = ?, updated_at = ? WHERE id = ?
+	`, avatarURL, time.Now(), userID)
+
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		return ErrNotFound
+	}
+
+	return nil
+}
+
+// UpdateUserLoginMetadata updates login metadata
+func (s *Storage) UpdateUserLoginMetadata(ctx context.Context, userID string, metadata LoginMeta) error {
+	metaJSON, _ := json.Marshal(metadata)
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	result, err := s.db.ExecContext(ctx, `
+		UPDATE users SET 
+			login_metadata = ?, 
+			last_active_at = ?, 
+			updated_at = ?
+		WHERE id = ?
+	`, string(metaJSON), time.Now(), time.Now(), userID)
+
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		return ErrNotFound
+	}
+
+	return nil
+}
+
+// UpdateUserVerificationStatus updates verification status
+func (s *Storage) UpdateUserVerificationStatus(ctx context.Context, userID string, status VerificationStatus) error {
+	var verifiedAt *time.Time
+	if status == VerificationStatusVerified {
+		now := time.Now()
+		verifiedAt = &now
+	}
+
+	result, err := s.db.ExecContext(ctx, `
+		UPDATE users SET 
+			verification_status = ?, 
+			verified_at = ?,
+			updated_at = ?
+		WHERE id = ?
+	`, status, verifiedAt, time.Now(), userID)
+
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		return ErrNotFound
+	}
+
+	return nil
+}
+
+// PublishUserProfile makes user profile visible
+func (s *Storage) PublishUserProfile(ctx context.Context, userID string) error {
+	result, err := s.db.ExecContext(ctx, `
+		UPDATE users SET hidden_at = NULL, updated_at = ? WHERE id = ?
+	`, time.Now(), userID)
+
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		return ErrNotFound
+	}
+
+	return nil
+}
+
+// UpdateUserLinks updates user's links
+func (s *Storage) UpdateUserLinks(ctx context.Context, userID string, links []Link) error {
+	linksJSON, _ := json.Marshal(links)
+
+	result, err := s.db.ExecContext(ctx, `
+		UPDATE users SET links = ?, updated_at = ? WHERE id = ?
+	`, string(linksJSON), time.Now(), userID)
+
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		return ErrNotFound
+	}
+
+	return nil
+}
+
+// Helper functions
+
+func (s *Storage) getUserByQuery(ctx context.Context, query string, args ...interface{}) (User, error) {
+	row := s.db.QueryRowContext(ctx, query, args...)
+	return scanUserRow(row)
+}
+
+func scanUser(rows *sql.Rows) (User, error) {
 	var user User
-	err := collection.FindOne(ctx, filter).Decode(&user)
+	var loginMetaJSON, locationJSON, linksJSON, badgesJSON, oppsJSON sql.NullString
+
+	err := rows.Scan(
+		&user.ID, &user.Name, &user.ChatID, &user.Username,
+		&user.CreatedAt, &user.UpdatedAt, &user.NotificationsEnabledAt,
+		&user.HiddenAt, &user.AvatarURL, &user.Title, &user.Description,
+		&user.LanguageCode, &user.LastActiveAt,
+		&user.VerificationStatus, &user.VerifiedAt, &user.EmbeddingUpdatedAt,
+		&loginMetaJSON, &locationJSON, &linksJSON, &badgesJSON, &oppsJSON,
+	)
 	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
+		return User{}, err
+	}
+
+	// Unmarshal JSON fields
+	if loginMetaJSON.Valid && loginMetaJSON.String != "" {
+		json.Unmarshal([]byte(loginMetaJSON.String), &user.LoginMetadata)
+	}
+	if locationJSON.Valid && locationJSON.String != "" {
+		json.Unmarshal([]byte(locationJSON.String), &user.Location)
+	}
+	if linksJSON.Valid && linksJSON.String != "" {
+		json.Unmarshal([]byte(linksJSON.String), &user.Links)
+	}
+	if badgesJSON.Valid && badgesJSON.String != "" {
+		json.Unmarshal([]byte(badgesJSON.String), &user.Badges)
+	}
+	if oppsJSON.Valid && oppsJSON.String != "" {
+		json.Unmarshal([]byte(oppsJSON.String), &user.Opportunities)
+	}
+
+	return user, nil
+}
+
+func scanUserRow(row *sql.Row) (User, error) {
+	var user User
+	var loginMetaJSON, locationJSON, linksJSON, badgesJSON, oppsJSON sql.NullString
+
+	err := row.Scan(
+		&user.ID, &user.Name, &user.ChatID, &user.Username,
+		&user.CreatedAt, &user.UpdatedAt, &user.NotificationsEnabledAt,
+		&user.HiddenAt, &user.AvatarURL, &user.Title, &user.Description,
+		&user.LanguageCode, &user.LastActiveAt,
+		&user.VerificationStatus, &user.VerifiedAt, &user.EmbeddingUpdatedAt,
+		&loginMetaJSON, &locationJSON, &linksJSON, &badgesJSON, &oppsJSON,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
 			return User{}, ErrNotFound
 		}
 		return User{}, err
 	}
 
-	return user, nil
-}
-
-func (s *Storage) GetUserByChatID(ctx context.Context, chatID int64) (User, error) {
-	return s.getUserBy(ctx, bson.M{"chat_id": chatID})
-}
-
-func (s *Storage) GetUserByID(ctx context.Context, id string) (User, error) {
-	return s.getUserBy(ctx, bson.M{"_id": id})
-}
-
-func (s *Storage) CreateUser(ctx context.Context, user User) error {
-	collection := s.db.Collection("users")
-
-	now := time.Now()
-	user.CreatedAt = now
-	user.UpdatedAt = now
-	user.LastActiveAt = now
-	user.VerificationStatus = VerificationStatusUnverified
-
-	if _, err := collection.InsertOne(ctx, user); err != nil {
-		return nil
+	// Unmarshal JSON fields
+	if loginMetaJSON.Valid && loginMetaJSON.String != "" {
+		json.Unmarshal([]byte(loginMetaJSON.String), &user.LoginMetadata)
 	}
-
-	return nil
-}
-
-func (s *Storage) UpdateUser(ctx context.Context, user User, badgeIDs, oppIDs []string, locationID string) error {
-	collection := s.db.Collection("users")
-	badgeCollection := s.db.Collection("badges")
-	oppCollection := s.db.Collection("opportunities")
-	locationCollection := s.db.Collection("cities")
-
-	badgeFilter := bson.M{"_id": bson.M{"$in": badgeIDs}}
-	badgeCursor, err := badgeCollection.Find(ctx, badgeFilter)
-	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
-		return ErrNotFound
-	} else if err != nil {
-		return nil
+	if locationJSON.Valid && locationJSON.String != "" {
+		json.Unmarshal([]byte(locationJSON.String), &user.Location)
 	}
-
-	var badges []Badge
-	if err := badgeCursor.All(ctx, &badges); err != nil {
-		return fmt.Errorf("failed to decode badges: %w", err)
+	if linksJSON.Valid && linksJSON.String != "" {
+		json.Unmarshal([]byte(linksJSON.String), &user.Links)
 	}
-
-	var opps []Opportunity
-	oppFilter := bson.M{"_id": bson.M{"$in": oppIDs}}
-	oppCursor, err := oppCollection.Find(ctx, oppFilter)
-
-	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
-		return ErrNotFound
-	} else if err != nil {
-		return nil
+	if badgesJSON.Valid && badgesJSON.String != "" {
+		json.Unmarshal([]byte(badgesJSON.String), &user.Badges)
 	}
-
-	if err := oppCursor.All(ctx, &opps); err != nil {
-		return fmt.Errorf("failed to decode opportunities: %w", err)
-	}
-
-	var locationData City
-	locationFilter := bson.M{"_id": locationID}
-	if err := locationCollection.FindOne(ctx, locationFilter).Decode(&locationData); err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return ErrNotFound
-		}
-
-		return fmt.Errorf("failed to fetch location: %w", err)
-	}
-
-	filter := bson.M{"_id": user.ID}
-
-	update := bson.M{
-		"$set": bson.M{
-			"name":          user.Name,
-			"updated_at":    time.Now(),
-			"title":         user.Title,
-			"description":   user.Description,
-			"location":      locationData,
-			"badges":        badges,
-			"opportunities": opps,
-		},
-	}
-
-	res, err := collection.UpdateOne(ctx, filter, update)
-	if err != nil {
-		return fmt.Errorf("failed to update user: %w", err)
-	}
-
-	if res.MatchedCount == 0 {
-		return ErrNotFound
-	}
-
-	return nil
-}
-
-func (s *Storage) GetUsersByVerificationStatus(ctx context.Context, status VerificationStatus, page, perPage int) ([]User, error) {
-	collection := s.db.Collection("users")
-
-	filter := bson.M{"verification_status": status}
-
-	skip := (page - 1) * perPage
-
-	findOptions := options.Find().
-		SetLimit(int64(perPage)).
-		SetSkip(int64(skip)).
-		SetSort(bson.M{"created_at": -1})
-
-	cursor, err := collection.Find(ctx, filter, findOptions)
-	if err != nil {
-		return nil, fmt.Errorf("failed to find users by verification status: %w", err)
-	}
-	defer cursor.Close(ctx)
-
-	var users []User
-	if err := cursor.All(ctx, &users); err != nil {
-		return nil, fmt.Errorf("failed to decode users: %w", err)
-	}
-
-	return users, nil
-}
-
-func (s *Storage) GetUserProfile(ctx context.Context, viewerID string, idOrUsername string) (User, error) {
-	usersCollection := s.db.Collection("users")
-	followersCollection := s.db.Collection("user_followers")
-
-	var user User
-
-	filter := bson.M{
-		"$or": []bson.M{
-			{"_id": idOrUsername},
-			{"username": idOrUsername},
-		},
-		"$and": []bson.M{
-			{
-				"$or": []bson.M{
-					{"_id": viewerID},
-					{
-						"$and": []bson.M{
-							{"verification_status": VerificationStatusVerified},
-							{"hidden_at": nil},
-						},
-					},
-				},
-			},
-		},
-	}
-
-	err := usersCollection.FindOne(ctx, filter).Decode(&user)
-	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return user, ErrNotFound
-		}
-		return user, fmt.Errorf("failed to get user profile: %w", err)
-	}
-
-	followerFilter := bson.M{
-		"user_id":     user.ID,
-		"follower_id": viewerID,
-	}
-
-	count, err := followersCollection.CountDocuments(ctx, followerFilter)
-	if err != nil {
-		user.IsFollowing = false
-	} else {
-		user.IsFollowing = count > 0
+	if oppsJSON.Valid && oppsJSON.String != "" {
+		json.Unmarshal([]byte(oppsJSON.String), &user.Opportunities)
 	}
 
 	return user, nil
 }
 
-func (s *Storage) FollowUser(ctx context.Context, userID string, followerID string, ttlDuration time.Duration) error {
-	usersCollection := s.db.Collection("users")
-	followersCollection := s.db.Collection("user_followers")
-
-	userFilter := bson.M{
-		"_id":                 userID,
-		"hidden_at":           nil,
-		"verification_status": VerificationStatusVerified,
+func isSQLiteConstraintError(err error) bool {
+	if err == nil {
+		return false
 	}
+	// Check for UNIQUE constraint violation
+	return strings.Contains(err.Error(), "UNIQUE constraint failed")
+}
 
-	count, err := usersCollection.CountDocuments(ctx, userFilter)
+func (s *Storage) GetUserProfile(ctx context.Context, viewerID string, id string) (User, error) {
+	query := `
+		SELECT id, name, chat_id, username, created_at, updated_at, 
+		       notifications_enabled_at, hidden_at, avatar_url, title, 
+		       description, language_code, last_active_at,
+		       verification_status, verified_at, embedding_updated_at,
+		       login_metadata, location, links, badges, opportunities
+		FROM users
+		WHERE id = ?
+	`
+
+	resp, err := s.getUserByQuery(ctx, query, id)
 	if err != nil {
-		return fmt.Errorf("failed to check user existence for follow: %w", err)
-	}
-
-	if count == 0 {
-		return ErrNotFound
-	}
-
-	expiresAt := time.Now().Add(ttlDuration)
-
-	followDoc := UserFollower{
-		UserID:     userID,
-		FollowerID: followerID,
-		ExpiresAt:  expiresAt,
-	}
-
-	_, err = followersCollection.InsertOne(ctx, followDoc)
-	if err != nil {
-		if mongo.IsDuplicateKeyError(err) {
-			return nil
+		if errors.Is(err, ErrNotFound) {
+			return User{}, fmt.Errorf("user not found")
 		}
-		return fmt.Errorf("failed to follow user: %w", err)
+		return User{}, fmt.Errorf("failed to get user profile: %w", err)
 	}
 
-	return nil
-}
-
-func (s *Storage) IsUserFollowing(ctx context.Context, userID string, followerID string) (bool, error) {
-	followersCollection := s.db.Collection("user_followers")
-
-	filter := bson.M{
-		"follower_id": followerID,
-		"user_id":     userID,
-		"expires_at":  bson.M{"$gt": time.Now()},
-	}
-
-	count, err := followersCollection.CountDocuments(ctx, filter)
+	isFollowing, err := s.IsUserFollowing(ctx, id, viewerID)
 	if err != nil {
-		return false, fmt.Errorf("failed to check following status: %w", err)
+		return User{}, fmt.Errorf("failed to check following status: %w", err)
 	}
 
-	return count > 0, nil
-}
-
-func (s *Storage) UpdateUserAvatarURL(ctx context.Context, userID string, avatarURL string) error {
-	collection := s.db.Collection("users")
-
-	filter := bson.M{"_id": userID}
-	update := bson.M{"$set": bson.M{"avatar_url": avatarURL}}
-
-	res, err := collection.UpdateOne(ctx, filter, update)
-
-	if err != nil {
-		return fmt.Errorf("failed to update user avatar URL: %w", err)
-	}
-
-	if res.MatchedCount == 0 {
-		return ErrNotFound
-	}
-
-	return nil
-}
-
-func (s *Storage) UpdateUserLoginMetadata(ctx context.Context, userID string, meta LoginMeta) error {
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
-
-	collection := s.db.Collection("users")
-	now := time.Now()
-
-	update := bson.M{
-		"last_login":     meta,
-		"last_active_at": now,
-	}
-
-	_, err := collection.UpdateOne(
-		ctx,
-		bson.M{"_id": userID},
-		bson.M{"$set": update},
-	)
-	return err
-}
-
-func (s *Storage) UpdateUserVerificationStatus(ctx context.Context, userID string, status VerificationStatus) error {
-	collection := s.db.Collection("users")
-	now := time.Now()
-
-	update := bson.M{
-		"$set": bson.M{
-			"verification_status": status,
-			"updated_at":          now,
-		},
-	}
-
-	if status == VerificationStatusVerified {
-		update = bson.M{
-			"$set": bson.M{
-				"verification_status": status,
-				"verified_at":         time.Now(),
-				"updated_at":          time.Now(),
-			},
-		}
-	}
-
-	res, err := collection.UpdateOne(ctx, bson.M{"_id": userID}, update)
-	if err != nil {
-		return fmt.Errorf("failed to update user verification status: %w", err)
-	}
-
-	if res.MatchedCount == 0 {
-		return ErrNotFound
-	}
-
-	return nil
-}
-
-// GetUsersWithOpportunity returns all verified users who have the specified opportunity in their profile
-func (s *Storage) GetUsersWithOpportunity(ctx context.Context, opportunityID string) ([]User, error) {
-	collection := s.db.Collection("users")
-	users := make([]User, 0)
-
-	filter := bson.M{
-		"opportunities": bson.M{
-			"$elemMatch": bson.M{
-				"_id": opportunityID,
-			},
-		},
-	}
-
-	cursor, err := collection.Find(ctx, filter)
-	if err != nil {
-		return nil, fmt.Errorf("failed to find users with opportunity: %w", err)
-	}
-	defer cursor.Close(ctx)
-
-	if err := cursor.All(ctx, &users); err != nil {
-		return nil, fmt.Errorf("failed to decode users with opportunity: %w", err)
-	}
-
-	return users, nil
-}
-
-// PublishUserProfile sets hidden_at to null to make the profile visible
-func (s *Storage) PublishUserProfile(ctx context.Context, userID string) error {
-	collection := s.db.Collection("users")
-
-	filter := bson.M{"_id": userID}
-	update := bson.M{
-		"$set": bson.M{
-			"hidden_at":  nil,
-			"updated_at": time.Now(),
-		},
-	}
-
-	res, err := collection.UpdateOne(ctx, filter, update)
-	if err != nil {
-		return fmt.Errorf("failed to publish user profile: %w", err)
-	}
-
-	if res.MatchedCount == 0 {
-		return ErrNotFound
-	}
-
-	return nil
-}
-
-// UpdateUserLinks updates only the links for a user
-func (s *Storage) UpdateUserLinks(ctx context.Context, userID string, links []Link) error {
-	collection := s.db.Collection("users")
-
-	filter := bson.M{"_id": userID}
-	update := bson.M{
-		"$set": bson.M{
-			"links":      links,
-			"updated_at": time.Now(),
-		},
-	}
-
-	res, err := collection.UpdateOne(ctx, filter, update)
-	if err != nil {
-		return fmt.Errorf("failed to update user links: %w", err)
-	}
-
-	if res.MatchedCount == 0 {
-		return ErrNotFound
-	}
-
-	return nil
+	resp.IsFollowing = isFollowing
+	return resp, nil
 }

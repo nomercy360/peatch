@@ -251,7 +251,7 @@ func (h *handler) handleAdminUpdateUserVerification(c echo.Context) error {
 	}
 
 	if err := h.storage.UpdateUserVerificationStatus(c.Request().Context(), userID, req.Status); err != nil {
-		if db.IsNoRowsError(err) {
+		if errors.Is(err, db.ErrNotFound) {
 			return echo.NewHTTPError(http.StatusNotFound, "user not found")
 		}
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to update user verification status").WithInternal(err)
@@ -343,7 +343,7 @@ func (h *handler) handleAdminUpdateCollaborationVerification(c echo.Context) err
 					h.logger.Error("failed to send collaboration to community chat", slog.String("error", err.Error()))
 				}
 
-				users, err := h.storage.GetUsersWithOpportunity(ctx, collab.Opportunity.ID)
+				users, err := h.storage.GetUsersWithOpportunityVectorSearch(ctx, collab.Opportunity.ID, 100)
 				if err != nil {
 					h.logger.Error("failed to get users with opportunity", slog.String("error", err.Error()))
 					return
@@ -385,7 +385,7 @@ func (h *handler) handleAdminCreate(c echo.Context) error {
 	})
 
 	if err != nil {
-		if db.IsAlreadyExistsError(err) {
+		if errors.Is(err, db.ErrAlreadyExists) {
 			return echo.NewHTTPError(http.StatusConflict, "admin already exists").WithInternal(err)
 		}
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to create admin").WithInternal(err)

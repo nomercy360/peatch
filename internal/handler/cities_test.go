@@ -3,8 +3,8 @@ package handler_test
 import (
 	"context"
 	"github.com/peatch-io/peatch/internal/contract"
+	"github.com/peatch-io/peatch/internal/db"
 	"github.com/peatch-io/peatch/internal/testutils"
-	"go.mongodb.org/mongo-driver/bson"
 	"net/http"
 	"testing"
 
@@ -13,19 +13,23 @@ import (
 
 func insertTestLocations(t *testing.T) {
 	ctx := context.Background()
-	coll := testutils.GetTestDBStorage().Database().Collection("cities")
-	if _, err := coll.DeleteMany(ctx, bson.M{}); err != nil {
-		t.Fatalf("Failed to clear cities collection: %v", err)
+	storage := testutils.GetDBStorage()
+
+	// Clear existing cities
+	if _, err := storage.DB().ExecContext(ctx, "DELETE FROM cities WHERE 1=1"); err != nil {
+		t.Fatalf("Failed to clear cities table: %v", err)
 	}
 
-	docs := []interface{}{
-		bson.M{"_id": "1", "name": "CityA", "country_code": "CA", "country_name": "CountryA", "geo": bson.M{"type": "Point", "coordinates": []float64{-74.0060, 40.7128}}},
-		bson.M{"_id": "2", "name": "CityB", "country_code": "CB", "country_name": "CountryB", "geo": bson.M{"type": "Point", "coordinates": []float64{20, 30}}},
-		bson.M{"_id": "3", "name": "CityC", "country_code": "CC", "country_name": "CountryC", "geo": bson.M{"type": "Point", "coordinates": []float64{50, 60}}},
+	cities := []db.City{
+		{ID: "1", Name: "CityA", CountryCode: "CA", CountryName: "CountryA", Latitude: -74.0060, Longitude: 40.7128},
+		{ID: "2", Name: "CityB", CountryCode: "CB", CountryName: "CountryB", Latitude: 30.0, Longitude: 40.0},
+		{ID: "3", Name: "CityC", CountryCode: "CC", CountryName: "CountryC", Latitude: 50.0, Longitude: 60.0},
 	}
 
-	if _, err := coll.InsertMany(ctx, docs); err != nil {
-		t.Fatalf("Failed to insert sample cities: %v", err)
+	for _, city := range cities {
+		if err := storage.CreateCity(ctx, city); err != nil {
+			t.Fatalf("Failed to insert city %s: %v", city.ID, err)
+		}
 	}
 }
 

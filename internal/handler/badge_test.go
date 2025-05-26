@@ -15,6 +15,11 @@ import (
 func TestListBadges_Success(t *testing.T) {
 	e := testutils.SetupHandlerDependencies(t)
 
+	// Clear test data first
+	if err := testutils.ClearTestData(); err != nil {
+		t.Fatalf("failed to clear test data: %v", err)
+	}
+
 	authResp, err := testutils.AuthHelper(t, e, 927635965, "mkkksim", "Maksim")
 	if err != nil {
 		t.Fatalf("Failed to authenticate: %v", err)
@@ -40,7 +45,7 @@ func TestListBadges_Success(t *testing.T) {
 	}
 
 	for _, badge := range badges {
-		if err := testutils.GetTestDBStorage().CreateBadge(context.Background(), badge); err != nil {
+		if err := testutils.GetDBStorage().CreateBadge(context.Background(), badge); err != nil {
 			t.Fatalf("failed to create badge: %v", err)
 		}
 	}

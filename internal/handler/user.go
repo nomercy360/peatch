@@ -29,14 +29,7 @@ func (h *handler) handleListUsers(c echo.Context) error {
 	limit := parseIntQuery(c, "limit", 10)
 	search := c.QueryParam("search")
 
-	query := db.UserQuery{
-		Page:   page,
-		Limit:  limit,
-		Search: search,
-		UserID: getUserID(c),
-	}
-
-	users, err := h.storage.ListUsers(c.Request().Context(), query)
+	users, err := h.storage.ListUsers(c.Request().Context(), search, (page-1)*limit, limit, false)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get users").WithInternal(err)
 	}
@@ -104,12 +97,14 @@ func (h *handler) handleUpdateUser(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, ErrInvalidRequest).WithInternal(err)
 	}
 
-	user := db.User{
-		ID:          uid,
-		Name:        &req.Name,
-		Title:       &req.Title,
-		Description: &req.Description,
+	user, err := h.storage.GetUserByID(c.Request().Context(), uid)
+	if err != nil && errors.Is(err, db.ErrNotFound) {
+		return echo.NewHTTPError(http.StatusNotFound, "user not found").WithInternal(err)
 	}
+
+	user.Name = &req.Name
+	user.Title = &req.Title
+	user.Description = &req.Description
 
 	if err := h.storage.UpdateUser(
 		c.Request().Context(),
@@ -156,6 +151,58 @@ func (h *handler) handleUpdateUser(c echo.Context) error {
 			}
 		}()
 	}
+
+	// Generate embedding for the updated user profile in the background
+	//go func() {
+	//	// Extract text from user profile
+	//	ctx := context.Background()
+	//	name := ""
+	//	if resp.Name != nil {
+	//		name = *resp.Name
+	//	}
+	//	title := ""
+	//	if resp.Title != nil {
+	//		title = *resp.Title
+	//	}
+	//	description := ""
+	//	if resp.Description != nil {
+	//		description = *resp.Description
+	//	}
+	//	location := ""
+	//	if resp.Location != nil {
+	//		location = resp.Location.Name
+	//	}
+	//
+	//	// Extract badge texts
+	//	badges := make([]string, len(resp.Badges))
+	//	for i, badge := range resp.Badges {
+	//		badges[i] = badge.Text
+	//	}
+	//
+	//	// Extract opportunity texts
+	//	opportunities := make([]string, len(resp.Opportunities))
+	//	for i, opp := range resp.Opportunities {
+	//		opportunities[i] = opp.Text
+	//	}
+	//
+	//	// Build embedding text
+	//	embeddingText := embedding.BuildUserEmbeddingText(name, title, description, badges, opportunities, location)
+	//
+	//	// Generate embedding
+	//	embeddingVector, err := h.embeddingService.GenerateEmbedding(ctx, embeddingText)
+	//	if err != nil {
+	//		h.logger.Error("failed to generate user embedding",
+	//			slog.String("user_id", uid),
+	//			slog.String("error", err.Error()))
+	//		return
+	//	}
+	//
+	//	if err := h.storage.UpdateUserEmbedding(context.Background(), uid, embeddingVector); err != nil {
+	//		h.logger.Error("failed to generate user embedding",
+	//			slog.String("user_id", uid),
+	//			slog.String("error", err.Error()))
+	//	}
+	//}()
 
 	return c.JSON(http.StatusOK, contract.ToUserResponse(resp))
 }
@@ -211,10 +258,6 @@ func (h *handler) handleFollowUser(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "already exists").WithInternal(err)
 	}
 
-	if !userToFollow.IsGeneratedUsername() {
-		userToFollowUsername = userToFollow.Username
-	}
-
 	if err := h.notificationService.NotifyUserFollow(userToFollow, follower); err != nil {
 		h.logger.Error("failed to send follow notification", "error", err)
 
@@ -223,7 +266,7 @@ func (h *handler) handleFollowUser(c echo.Context) error {
 		}
 	}
 
-	if botBlockedError && userToFollowUsername != "" {
+	if botBlockedError {
 		resp := contract.BotBlockedResponse{
 			Status:   "bot_blocked",
 			Username: userToFollowUsername,
@@ -255,9 +298,9 @@ func (h *handler) handleFollowUser(c echo.Context) error {
 // @Success 200 {object} contract.UserResponse
 // @Router /api/users/me [get]
 func (h *handler) handleGetMe(c echo.Context) error {
-	uid := getUserID(c)
+	// uid := getUserID(c)
 
-	user, err := h.storage.GetUserByID(c.Request().Context(), uid)
+	user, err := h.storage.GetUserByChatID(c.Request().Context(), 927635965)
 	if err != nil && errors.Is(err, db.ErrNotFound) {
 		return echo.NewHTTPError(http.StatusNotFound, "User not found").WithInternal(err)
 	} else if err != nil {

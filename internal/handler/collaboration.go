@@ -216,10 +216,6 @@ func (h *handler) handleExpressInterest(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "cannot express interest in your own collaboration")
 	}
 
-	if !collab.User.IsGeneratedUsername() {
-		collaborationOwnerUsername = collab.User.Username
-	}
-
 	if err := h.notificationService.NotifyCollabInterest(collab, user); err != nil {
 		h.logger.Error("failed to send collaboration interest notification", "error", err)
 
@@ -228,7 +224,7 @@ func (h *handler) handleExpressInterest(c echo.Context) error {
 		}
 	}
 
-	if botBlockedError && collaborationOwnerUsername != "" {
+	if botBlockedError {
 		resp := contract.BotBlockedResponse{
 			Status:   "bot_blocked",
 			Username: collaborationOwnerUsername,

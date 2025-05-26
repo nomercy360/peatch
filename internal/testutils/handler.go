@@ -12,10 +12,6 @@ import (
 	"github.com/peatch-io/peatch/internal/handler"
 	"github.com/peatch-io/peatch/internal/middleware"
 	initdata "github.com/telegram-mini-apps/init-data-golang"
-	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/wait"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 	"io"
 	"log"
 	"log/slog"
@@ -129,113 +125,42 @@ type MockPhotoUploader struct {
 	UploadedFiles map[string]string
 }
 
+type MockEmbeddingService struct {
+	// Function implementation
+	GenerateEmbeddingFunc func(ctx context.Context, text string) ([]float64, error)
+	// Call tracking for testing
+	GeneratedTexts []string
+}
+
+func (m *MockEmbeddingService) GenerateEmbedding(ctx context.Context, text string) ([]float64, error) {
+	// Track the text that was sent for embedding
+	m.GeneratedTexts = append(m.GeneratedTexts, text)
+
+	if m.GenerateEmbeddingFunc != nil {
+		return m.GenerateEmbeddingFunc(ctx, text)
+	}
+
+	// Return a default embedding vector for testing (1536 dimensions for text-embedding-3-small)
+	embedding := make([]float64, 1536)
+	for i := range embedding {
+		embedding[i] = float64(i) * 0.001 // Simple pattern for testing
+	}
+	return embedding, nil
+}
+
 var (
-	dbStorage    *db.Storage
-	cleanupDB    func()
-	s3Client     *MockPhotoUploader
-	MockNotifier *MockNotificationService
+	dbStorage     *db.Storage
+	cleanupDB     func()
+	s3Client      *MockPhotoUploader
+	MockNotifier  *MockNotificationService
+	MockEmbedding *MockEmbeddingService
 )
 
 const (
-	TestBotToken            = "test-bot-token"
-	TelegramTestUserID      = 927635965
-	UsersCollection         = "users"
-	CitiesCollection        = "cities"
-	TestDBName              = "testdb"
-	OpportunitiesCollection = "opportunities"
-	UserFollowersCollection = "user_followers"
-	CollaborationCollection = "collaborations"
-	LocationCollection      = "cities"
-	BadgesCollection        = "badges"
+	TestBotToken       = "test-bot-token"
+	TelegramTestUserID = 927635965
+	TestDBPath         = ":memory:" // Use in-memory SQLite for tests
 )
-
-func setupTestDB(ctx context.Context) (*db.Storage, func(), error) {
-	req := testcontainers.ContainerRequest{
-		Image:        "mongo:latest",
-		ExposedPorts: []string{"27017/tcp"},
-		WaitingFor:   wait.ForListeningPort("27017/tcp"),
-	}
-
-	mongoContainer, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: req,
-		Started:          true,
-	})
-
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to start MongoDB container: %w", err)
-	}
-
-	host, err := mongoContainer.Host(ctx)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get container host: %w", err)
-	}
-
-	port, err := mongoContainer.MappedPort(ctx, "27017")
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get container port: %w", err)
-	}
-
-	uri := fmt.Sprintf("mongodb://%s:%s/%s", host, port.Port(), TestDBName)
-
-	conn, err := db.ConnectDB(uri, TestDBName)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to connect to MongoDB: %w", err)
-	}
-
-	cleanup := func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		if err := conn.Client().Disconnect(ctx); err != nil {
-			log.Printf("Failed to disconnect MongoDB client: %v", err)
-		}
-		if err := mongoContainer.Terminate(ctx); err != nil {
-			log.Printf("Failed to terminate MongoDB container: %v", err)
-		}
-	}
-
-	return conn, cleanup, nil
-}
-
-// InitTestDB initializes the test database for tests
-func InitTestDB() {
-	ctx := context.Background()
-
-	var err error
-	dbStorage, cleanupDB, err = setupTestDB(ctx)
-	if err != nil {
-		log.Fatalf("Failed to setup test database: %v", err)
-	}
-}
-
-// CleanupTestDB cleans up the test database
-func CleanupTestDB() {
-	if cleanupDB != nil {
-		cleanupDB()
-	}
-}
-
-// ClearCollections clears all collections in the database
-func ClearCollections(t *testing.T, db *mongo.Database) {
-	collections := []string{
-		UsersCollection,
-		CitiesCollection,
-		OpportunitiesCollection,
-		UserFollowersCollection,
-		LocationCollection,
-		CollaborationCollection,
-		BadgesCollection,
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	for _, collection := range collections {
-		_, err := db.Collection(collection).DeleteMany(ctx, bson.M{})
-		if err != nil {
-			t.Fatalf("Failed to clean collection %s: %v", collection, err)
-		}
-	}
-}
 
 func (m *MockPhotoUploader) UploadFile(ctx context.Context, key string, body io.Reader, contentType string) error {
 	// Read the file content to simulate upload
@@ -251,12 +176,74 @@ func (m *MockPhotoUploader) UploadFile(ctx context.Context, key string, body io.
 	return nil
 }
 
-// SetupHandlerDependencies sets up the handler dependencies for tests
-func SetupHandlerDependencies(t *testing.T) *echo.Echo {
-	t.Cleanup(func() {
-		ClearCollections(t, dbStorage.Database())
-	})
+func GetDBStorage() *db.Storage {
+	return dbStorage
+}
 
+// ClearTestData clears all test data from the database
+func ClearTestData() error {
+	ctx := context.Background()
+	if dbStorage == nil {
+		return fmt.Errorf("database not initialized")
+	}
+
+	// Clear tables in the correct order to avoid foreign key constraints
+	tables := []string{
+		"collaboration_interests",
+		"user_followers",
+		"collaborations",
+		"user_embeddings",
+		"opportunity_embeddings",
+		// "users",
+		"badges",
+		"opportunities",
+		"cities",
+		"admins",
+	}
+
+	for _, table := range tables {
+		if _, err := dbStorage.DB().ExecContext(ctx, fmt.Sprintf("DELETE FROM %s", table)); err != nil {
+			return fmt.Errorf("failed to clear %s: %w", table, err)
+		}
+	}
+
+	return nil
+}
+
+func InitTestDB() {
+	ctx := context.Background()
+	var err error
+	dbStorage, _, err = setupTestDB(ctx)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to initialize test database: %v", err))
+	}
+}
+
+func CleanupTestDB() {
+	if dbStorage != nil {
+		if err := dbStorage.Close(); err != nil {
+			fmt.Printf("Warning: Failed to close test database: %v\n", err)
+		}
+		dbStorage = nil
+	}
+}
+
+func setupTestDB(ctx context.Context) (*db.Storage, func(), error) {
+	storage, err := db.NewStorage(TestDBPath)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to connect to test database: %w", err)
+	}
+
+	cleanup := func() {
+		if err := storage.Close(); err != nil {
+			fmt.Printf("Warning: Failed to close test database: %v\n", err)
+		}
+	}
+
+	return storage, cleanup, nil
+}
+
+func SetupHandlerDependencies(t *testing.T) *echo.Echo {
 	_ = os.Setenv("CONFIG_FILE_PATH", "../../config.yml")
 
 	cfg, err := config.LoadConfig()
@@ -279,7 +266,10 @@ func SetupHandlerDependencies(t *testing.T) *echo.Echo {
 	// Create a new mock notifier and store it globally for test access
 	MockNotifier = &MockNotificationService{}
 
-	h := handler.New(dbStorage, hConfig, s3Client, logr, bot, MockNotifier)
+	// Create a new mock embedding service and store it globally for test access
+	MockEmbedding = &MockEmbeddingService{}
+
+	h := handler.New(dbStorage, hConfig, s3Client, logr, bot, MockNotifier, MockEmbedding)
 
 	e := echo.New()
 
@@ -305,7 +295,6 @@ func PerformRequest(t *testing.T, e *echo.Echo, method, path, body, token string
 	return rec
 }
 
-// ParseResponse parses the response from the HTTP request
 func ParseResponse[T any](t *testing.T, rec *httptest.ResponseRecorder) T {
 	var result T
 	if err := json.Unmarshal(rec.Body.Bytes(), &result); err != nil {
@@ -314,7 +303,6 @@ func ParseResponse[T any](t *testing.T, rec *httptest.ResponseRecorder) T {
 	return result
 }
 
-// AuthHelper creates an authenticated user for tests
 func AuthHelper(t *testing.T, e *echo.Echo, telegramID int64, username, firstName string) (contract.AuthResponse, error) {
 	userJSON := fmt.Sprintf(
 		`{"id":%d,"first_name":"%s","last_name":"","username":"%s","language_code":"ru","is_premium":true,"allows_write_to_pm":true,"photo_url":"https://t.me/i/userpic/320/test.svg"}`,
@@ -347,9 +335,4 @@ func AuthHelper(t *testing.T, e *echo.Echo, telegramID int64, username, firstNam
 	resp := ParseResponse[contract.AuthResponse](t, rec)
 
 	return resp, nil
-}
-
-// GetTestDBStorage returns the test database storage
-func GetTestDBStorage() *db.Storage {
-	return dbStorage
 }

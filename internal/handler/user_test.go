@@ -12,7 +12,6 @@ import (
 
 	"github.com/peatch-io/peatch/internal/contract"
 	"github.com/peatch-io/peatch/internal/db"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func TestListUsers_Success(t *testing.T) {
@@ -57,7 +56,7 @@ func TestListUsers_Success(t *testing.T) {
 	}
 
 	for _, user := range users {
-		if _, err := testutils.GetTestDBStorage().Database().Collection(testutils.UsersCollection).InsertOne(context.Background(), user); err != nil {
+		if err := testutils.GetDBStorage().CreateUser(context.Background(), user); err != nil {
 			t.Fatalf("failed to insert test user: %v", err)
 		}
 	}
@@ -120,7 +119,7 @@ func TestGetUser_Success(t *testing.T) {
 		VerificationStatus: db.VerificationStatusVerified,
 	}
 
-	if _, err := testutils.GetTestDBStorage().Database().Collection(testutils.UsersCollection).InsertOne(context.Background(), testUser); err != nil {
+	if err := testutils.GetDBStorage().CreateUser(context.Background(), testUser); err != nil {
 		t.Fatalf("failed to insert test user: %v", err)
 	}
 
@@ -185,7 +184,7 @@ func TestGetUser_ByUsername(t *testing.T) {
 		VerificationStatus: db.VerificationStatusVerified,
 	}
 
-	if _, err := testutils.GetTestDBStorage().Database().Collection(testutils.UsersCollection).InsertOne(context.Background(), testUser); err != nil {
+	if err := testutils.GetDBStorage().CreateUser(context.Background(), testUser); err != nil {
 		t.Fatalf("failed to insert test user: %v", err)
 	}
 
@@ -328,7 +327,7 @@ func TestFollowUser_Success(t *testing.T) {
 		"/api/users", `{"name": "Follower", "title": "Follower", "description": "Follower description", "location_id": "location1", "badge_ids": ["badge1"], "opportunity_ids": ["opp1"]}`,
 		token1, http.StatusOK)
 
-	if err := testutils.GetTestDBStorage().UpdateUserVerificationStatus(context.Background(), userID1, db.VerificationStatusVerified); err != nil {
+	if err := testutils.GetDBStorage().UpdateUserVerificationStatus(context.Background(), userID1, db.VerificationStatusVerified); err != nil {
 		return
 	}
 
@@ -342,7 +341,7 @@ func TestFollowUser_Success(t *testing.T) {
 		"/api/users", `{"name": "Followed", "title": "Followed", "description": "Followed description", "location_id": "location1", "badge_ids": ["badge1"], "opportunity_ids": ["opp1"]}`,
 		user2Auth.Token, http.StatusOK)
 
-	if err := testutils.GetTestDBStorage().UpdateUserVerificationStatus(context.Background(), userID2, db.VerificationStatusVerified); err != nil {
+	if err := testutils.GetDBStorage().UpdateUserVerificationStatus(context.Background(), userID2, db.VerificationStatusVerified); err != nil {
 		return
 	}
 
@@ -351,20 +350,13 @@ func TestFollowUser_Success(t *testing.T) {
 
 	testutils.PerformRequest(t, e, http.MethodPost, fmt.Sprintf("/api/users/%s/follow", userID2), "", token1, http.StatusOK)
 
-	var follow struct {
-		FollowerID string `bson:"follower_id"`
-		UserID     string `bson:"user_id"`
-	}
-
-	err = testutils.GetTestDBStorage().Database().Collection(testutils.UserFollowersCollection).FindOne(context.Background(), bson.M{
-		"user_id":     userID2,
-		"follower_id": userID1,
-	}).Decode(&follow)
+	// Check if the follow relationship was created
+	isFollowing, err := testutils.GetDBStorage().IsUserFollowing(context.Background(), userID2, userID1)
 	if err != nil {
-		t.Fatalf("failed to find follow relationship: %v", err)
+		t.Fatalf("failed to check follow relationship: %v", err)
 	}
 
-	if follow.UserID != userID2 || follow.FollowerID != userID1 {
+	if !isFollowing {
 		t.Errorf("follow relationship not created correctly")
 	}
 

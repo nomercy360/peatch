@@ -9,6 +9,7 @@ import (
 	_ "github.com/peatch-io/peatch/docs"
 	"github.com/peatch-io/peatch/internal/config"
 	"github.com/peatch-io/peatch/internal/db"
+	"github.com/peatch-io/peatch/internal/embedding"
 	"github.com/peatch-io/peatch/internal/handler"
 	"github.com/peatch-io/peatch/internal/job"
 	"github.com/peatch-io/peatch/internal/middleware"
@@ -51,7 +52,7 @@ func main() {
 		log.Fatalf("Error loading config: %v", err)
 	}
 
-	storage, err := db.ConnectDB(cfg.DBURL, cfg.DBName)
+	storage, err := db.NewStorage(cfg.DBPath)
 	if err != nil {
 		log.Fatalf("failed to connect to db: %v", err)
 	}
@@ -108,7 +109,8 @@ func main() {
 
 	notifier := notification.NewNotifier(notifierConfig, bot)
 
-	h := handler.New(storage, hConfig, s3Client, logr, bot, notifier)
+	embeddingService := embedding.New(cfg.OpenAIAPIKey)
+	h := handler.New(storage, hConfig, s3Client, logr, bot, notifier, embeddingService)
 
 	if err := h.SetupWebhook(context.Background()); err != nil {
 		log.Fatalf("failed to setup webhook: %v", err)

@@ -18,6 +18,8 @@ type Config struct {
 	AWSConfig       AWSConfig      `yaml:"aws" validate:"required"`
 	AssetsURL       string         `yaml:"assets_url" validate:"required,url"`
 	ImageServiceURL string         `yaml:"image_service_url" validate:"required,url"`
+	OpenAIAPIKey    string         `yaml:"openai_api_key" validate:"required"`
+	DBPath          string         `yaml:"db_path"`
 }
 
 type AWSConfig struct {

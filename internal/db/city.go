@@ -2,64 +2,140 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"errors"
-	"go.mongodb.org/mongo-driver/mongo"
+	"fmt"
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type GeoPoint struct {
-	Type        string    `bson:"type" json:"type"`
-	Coordinates []float64 `bson:"coordinates" json:"coordinates"`
-}
 type City struct {
-	ID          string   `bson:"_id" json:"id"`
-	Name        string   `bson:"name" json:"name"`
-	CountryCode string   `bson:"country_code" json:"country_code"`
-	CountryName string   `bson:"country_name" json:"country_name"`
-	Geo         GeoPoint `bson:"geo" json:"geo"`
+	ID          string  `json:"id"`
+	Name        string  `json:"name"`
+	CountryCode string  `json:"country_code"`
+	CountryName string  `json:"country_name"`
+	Latitude    float64 `json:"latitude,omitempty"`
+	Longitude   float64 `json:"longitude,omitempty"`
 }
 
+// SearchCities searches cities by name with pagination
 func (s *Storage) SearchCities(ctx context.Context, search string, limit, skip int) ([]City, error) {
-	collection := s.db.Collection("cities")
-	filter := bson.M{}
+	query := `
+		SELECT id, name, country_code, country_name, latitude, longitude
+		FROM cities
+		WHERE 1=1
+	`
+	var args []interface{}
+
+	// Add search filter
 	if search != "" {
-		filter["name"] = bson.M{"$regex": search, "$options": "i"}
+		query += fmt.Sprintf(` AND name LIKE ?`)
+		args = append(args, "%"+search+"%")
 	}
-	findOptions := options.Find().SetLimit(int64(limit)).SetSkip(int64(skip)).SetSort(bson.D{{Key: "name", Value: 1}})
+
+	// Add ordering and pagination
+	query += fmt.Sprintf(` ORDER BY name ASC LIMIT ? OFFSET ?`)
+	args = append(args, limit, skip)
+
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	cur, err := collection.Find(ctx, filter, findOptions)
+	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
-	defer cur.Close(ctx)
+	defer rows.Close()
 
-	cities := make([]City, 0)
-	for cur.Next(ctx) {
-		var city City
-		if err := cur.Decode(&city); err != nil {
+	var cities []City
+	for rows.Next() {
+		city, err := scanCity(rows)
+		if err != nil {
 			return nil, err
 		}
 		cities = append(cities, city)
 	}
-	if err := cur.Err(); err != nil {
-		return nil, err
-	}
-	return cities, nil
+
+	return cities, rows.Err()
 }
 
+// GetCityByID retrieves a city by ID
 func (s *Storage) GetCityByID(ctx context.Context, id string) (City, error) {
-	collection := s.db.Collection("cities")
-	var city City
-	err := collection.FindOne(ctx, bson.M{"_id": id}).Decode(&city)
+	query := `
+		SELECT id, name, country_code, country_name, latitude, longitude
+		FROM cities
+		WHERE id = ?
+	`
+
+	row := s.db.QueryRowContext(ctx, query, id)
+	city, err := scanCityRow(row)
 	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
+		if errors.Is(err, sql.ErrNoRows) {
 			return City{}, ErrNotFound
 		}
+		return City{}, err
 	}
+
+	return city, nil
+}
+
+// CreateCity creates a new city
+func (s *Storage) CreateCity(ctx context.Context, city City) error {
+	query := `
+		INSERT INTO cities (id, name, country_code, country_name, latitude, longitude, created_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
+	`
+
+	_, err := s.db.ExecContext(ctx, query,
+		city.ID,
+		city.Name,
+		city.CountryCode,
+		city.CountryName,
+		city.Latitude,
+		city.Longitude,
+		time.Now(),
+	)
+
+	if err != nil {
+		if isSQLiteConstraintError(err) {
+			return ErrAlreadyExists
+		}
+		return err
+	}
+
+	return nil
+}
+
+func scanCity(rows *sql.Rows) (City, error) {
+	var city City
+
+	err := rows.Scan(
+		&city.ID,
+		&city.Name,
+		&city.CountryCode,
+		&city.CountryName,
+		&city.Latitude,
+		&city.Longitude,
+	)
+	if err != nil {
+		return city, err
+	}
+
+	return city, nil
+}
+
+func scanCityRow(row *sql.Row) (City, error) {
+	var city City
+
+	err := row.Scan(
+		&city.ID,
+		&city.Name,
+		&city.CountryCode,
+		&city.CountryName,
+		&city.Latitude,
+		&city.Longitude,
+	)
+	if err != nil {
+		return city, err
+	}
+
 	return city, nil
 }

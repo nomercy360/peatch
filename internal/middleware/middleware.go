@@ -5,14 +5,12 @@ import (
 	"errors"
 	"github.com/golang-jwt/jwt/v5"
 	echojwt "github.com/labstack/echo-jwt/v4"
+	"github.com/labstack/echo/v4"
+	echoMiddleware "github.com/labstack/echo/v4/middleware"
 	"github.com/peatch-io/peatch/internal/contract"
 	"log"
 	"log/slog"
 	"net/http"
-	"time"
-
-	"github.com/labstack/echo/v4"
-	echoMiddleware "github.com/labstack/echo/v4/middleware"
 )
 
 const (
@@ -72,7 +70,7 @@ func CustomHTTPErrorHandler(logger *slog.Logger) echo.HTTPErrorHandler {
 }
 
 func Setup(e *echo.Echo, logger *slog.Logger) {
-	e.Use(echoMiddleware.Recover())
+	// e.Use(echoMiddleware.Recover())
 	e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
 		AllowOrigins: []string{"*"},
 		AllowMethods: []string{echo.GET, echo.PUT, echo.POST, echo.DELETE},
@@ -100,9 +98,9 @@ func Setup(e *echo.Echo, logger *slog.Logger) {
 		},
 	}))
 	e.HTTPErrorHandler = CustomHTTPErrorHandler(logger)
-	e.Use(echoMiddleware.TimeoutWithConfig(echoMiddleware.TimeoutConfig{
-		Timeout: 20 * time.Second,
-	}))
+	//e.Use(echoMiddleware.TimeoutWithConfig(echoMiddleware.TimeoutConfig{
+	//	Timeout: 20 * time.Second,
+	//}))
 }
 
 func GetUserAuthConfig(secret string) echojwt.Config {

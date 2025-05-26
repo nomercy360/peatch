@@ -66,31 +66,23 @@ type UpdateUserRequest struct {
 	OpportunityIDs []string `json:"opportunity_ids"`
 } // @Name UpdateUserRequest
 
-type Location struct {
-	Latitude  float64 `json:"latitude"`
-	Longitude float64 `json:"longitude"`
-} // @Name Location
-
 type CityResponse struct {
-	ID          string   `json:"id"`
-	Name        string   `json:"name"`
-	CountryCode string   `json:"country_code"`
-	CountryName string   `json:"country_name"`
-	Location    Location `json:"location"`
+	ID          string  `json:"id"`
+	Name        string  `json:"name"`
+	CountryCode string  `json:"country_code"`
+	CountryName string  `json:"country_name"`
+	Latitude    float64 `json:"latitude,omitempty"`
+	Longitude   float64 `json:"longitude,omitempty"`
 } // @Name CityResponse
 
 func ToCityResponse(city db.City) CityResponse {
-	loc := Location{}
-	if len(city.Geo.Coordinates) == 2 {
-		loc.Latitude = city.Geo.Coordinates[1]
-		loc.Longitude = city.Geo.Coordinates[0]
-	}
 	return CityResponse{
 		ID:          city.ID,
 		Name:        city.Name,
 		CountryCode: city.CountryCode,
 		CountryName: city.CountryName,
-		Location:    loc,
+		Latitude:    city.Latitude,
+		Longitude:   city.Longitude,
 	}
 }
 
@@ -241,10 +233,8 @@ func ToUserResponse(user db.User) UserResponse {
 			Name:        user.Location.Name,
 			CountryCode: user.Location.CountryCode,
 			CountryName: user.Location.CountryName,
-			Location: Location{
-				Latitude:  user.Location.Geo.Coordinates[1],
-				Longitude: user.Location.Geo.Coordinates[0],
-			},
+			Latitude:    user.Location.Latitude,
+			Longitude:   user.Location.Longitude,
 		}
 	}
 	return UserResponse{

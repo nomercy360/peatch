@@ -2,38 +2,40 @@ package db
 
 import (
 	"context"
+	"database/sql"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"strings"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
+	nanoid "github.com/matoous/go-nanoid/v2"
 )
 
 type CollabInterest struct {
-	ID        string    `bson:"_id,omitempty"`
-	UserID    string    `bson:"user_id"`
-	CollabID  string    `bson:"collab_id"`
-	ExpiresAt time.Time `bson:"expires_at"`
+	ID        string
+	UserID    string
+	CollabID  string
+	ExpiresAt time.Time
 }
 
 type Collaboration struct {
-	ID                 string             `bson:"_id,omitempty" json:"id"`
-	UserID             string             `bson:"user_id" json:"user_id"`
-	Title              string             `bson:"title" json:"title"`
-	Description        string             `bson:"description" json:"description"`
-	IsPayable          bool               `bson:"is_payable" json:"is_payable"`
-	CreatedAt          time.Time          `bson:"created_at" json:"created_at"`
-	UpdatedAt          time.Time          `bson:"updated_at" json:"-"`
-	HiddenAt           *time.Time         `bson:"hidden_at,omitempty" json:"hidden_at"`
-	Badges             []Badge            `bson:"badges,omitempty" json:"badges"`
-	Opportunity        Opportunity        `bson:"opportunity,omitempty" json:"opportunity"`
-	Location           *City              `bson:"location,omitempty" json:"location"`
-	User               User               `bson:"user,omitempty" json:"user"`
-	VerificationStatus VerificationStatus `bson:"verification_status,omitempty" json:"verification_status"`
-	VerifiedAt         *time.Time         `bson:"verified_at,omitempty" json:"verified_at"`
-	HasInterest        bool               `bson:"has_interest,omitempty" json:"has_interest"`
-	Links              []Link             `bson:"links,omitempty" json:"links"`
+	ID                 string             `json:"id"`
+	UserID             string             `json:"user_id"`
+	Title              string             `json:"title"`
+	Description        string             `json:"description"`
+	IsPayable          bool               `json:"is_payable"`
+	CreatedAt          time.Time          `json:"created_at"`
+	UpdatedAt          time.Time          `json:"-"`
+	HiddenAt           *time.Time         `json:"hidden_at"`
+	Badges             []Badge            `json:"badges"`
+	Opportunity        Opportunity        `json:"opportunity"`
+	Location           *City              `json:"location"`
+	User               User               `json:"user"`
+	VerificationStatus VerificationStatus `json:"verification_status"`
+	VerifiedAt         *time.Time         `json:"verified_at"`
+	HasInterest        bool               `json:"has_interest"`
+	Links              []Link             `json:"links"`
 }
 
 type CollaborationQuery struct {
@@ -43,167 +45,96 @@ type CollaborationQuery struct {
 	ViewerID string
 }
 
+// ListCollaborations lists collaborations with pagination and search
 func (s *Storage) ListCollaborations(ctx context.Context, params CollaborationQuery) ([]Collaboration, error) {
-	collabCollection := s.db.Collection("collaborations")
-	var results []Collaboration
+	query := `
+		SELECT 
+			c.id, c.user_id, c.title, c.description, c.is_payable,
+			c.created_at, c.updated_at, c.hidden_at,
+			c.location, c.links, c.badges, c.opportunity,
+			c.verification_status, c.verified_at,
+			u.id, u.name, u.username, u.avatar_url, u.title,
+			u.verification_status, u.verified_at
+		FROM collaborations c
+		LEFT JOIN users u ON c.user_id = u.id
+		WHERE 1=1
+	`
+	var args []interface{}
 
-	pipeline := mongo.Pipeline{}
-
-	matchStage := bson.D{}
-
+	// Add search filter
 	if params.Search != "" {
-		searchRegex := primitive.Regex{Pattern: params.Search, Options: "i"}
-		matchStage = append(matchStage, bson.E{
-			Key: "$or", Value: []bson.M{
-				{"title": bson.M{"$regex": searchRegex}},
-				{"description": bson.M{"$regex": searchRegex}},
-			},
-		})
+		query += fmt.Sprintf(` AND (c.title LIKE ? OR c.description LIKE ?)`)
+		searchPattern := "%" + params.Search + "%"
+		args = append(args, searchPattern, searchPattern)
 	}
 
-	if len(matchStage) == 0 {
-		matchStage = bson.D{}
-	}
+	// Add visibility filter - show own collaborations or verified public ones
+	query += fmt.Sprintf(` AND (c.user_id = ? OR (c.verification_status = 'verified' AND c.hidden_at IS NULL))`)
+	args = append(args, params.ViewerID)
 
-	matchStage = append(matchStage, bson.E{
-		Key: "$or", Value: []bson.M{
-			{"user_id": params.ViewerID},
-			{
-				"verification_status": VerificationStatusVerified,
-				"hidden_at":           nil,
-			},
-		},
-	})
-
-	pipeline = append(pipeline, bson.D{{Key: "$match", Value: matchStage}})
-
-	sortStage := bson.D{{Key: "$sort", Value: bson.D{{"created_at", -1}}}}
-	pipeline = append(pipeline, sortStage)
-
+	// Add ordering and pagination
+	query += ` ORDER BY c.created_at DESC`
 	if params.Page > 0 && params.Limit > 0 {
 		skip := (params.Page - 1) * params.Limit
-		skipStage := bson.D{{Key: "$skip", Value: int64(skip)}}
-		pipeline = append(pipeline, skipStage)
+		query += fmt.Sprintf(` LIMIT ? OFFSET ?`)
+		args = append(args, params.Limit, skip)
 	}
 
-	if params.Limit > 0 {
-		limitStage := bson.D{{Key: "$limit", Value: int64(params.Limit)}}
-		pipeline = append(pipeline, limitStage)
-	}
-
-	lookupUserStage := bson.D{
-		{
-			Key: "$lookup",
-			Value: bson.M{
-				"from":         "users",
-				"localField":   "user_id",
-				"foreignField": "_id",
-				"as":           "user",
-			},
-		},
-	}
-
-	unwindUserStage := bson.D{
-		{
-			Key: "$unwind",
-			Value: bson.M{
-				"path":                       "$user",
-				"preserveNullAndEmptyArrays": true,
-			},
-		},
-	}
-
-	pipeline = append(pipeline, lookupUserStage, unwindUserStage)
-
-	cursor, err := collabCollection.Aggregate(ctx, pipeline)
+	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, fmt.Errorf("aggregation failed: %w", err)
+		return nil, fmt.Errorf("query failed: %w", err)
 	}
-	defer cursor.Close(ctx)
+	defer rows.Close()
 
-	if err = cursor.All(ctx, &results); err != nil {
-		return nil, fmt.Errorf("decoding aggregation results failed: %w", err)
+	var collaborations []Collaboration
+	for rows.Next() {
+		collab, err := scanCollaboration(rows)
+		if err != nil {
+			return nil, fmt.Errorf("scan failed: %w", err)
+		}
+		collaborations = append(collaborations, collab)
 	}
 
-	if err := cursor.Err(); err != nil {
-		return nil, fmt.Errorf("cursor error: %w", err)
-	}
-
-	return results, nil
+	return collaborations, rows.Err()
 }
 
+// GetCollaborationByID retrieves a collaboration by ID
 func (s *Storage) GetCollaborationByID(ctx context.Context, viewerID string, collabID string) (Collaboration, error) {
-	collabCollection := s.db.Collection("collaborations")
-	var result Collaboration
+	query := `
+		SELECT 
+			c.id, c.user_id, c.title, c.description, c.is_payable,
+			c.created_at, c.updated_at, c.hidden_at,
+			c.location, c.links, c.badges, c.opportunity,
+			c.verification_status, c.verified_at,
+			u.id, u.name, u.username, u.avatar_url, u.title,
+			u.verification_status, u.verified_at
+		FROM collaborations c
+		LEFT JOIN users u ON c.user_id = u.id
+		WHERE c.id = ?
+		AND (c.user_id = ? OR (c.verification_status = 'verified' AND c.hidden_at IS NULL))
+	`
 
-	pipeline := mongo.Pipeline{}
-
-	matchCriteria := bson.M{"_id": collabID}
-
-	matchCriteria["$or"] = []bson.M{
-		{"user_id": viewerID},
-		{
-			"verification_status": VerificationStatusVerified,
-			"hidden_at":           nil,
-		},
-	}
-
-	matchStage := bson.D{{Key: "$match", Value: matchCriteria}}
-	pipeline = append(pipeline, matchStage)
-
-	lookupUserStage := bson.D{
-		{
-			Key: "$lookup",
-			Value: bson.M{
-				"from":         "users",
-				"localField":   "user_id",
-				"foreignField": "_id",
-				"as":           "user",
-			},
-		},
-	}
-
-	unwindUserStage := bson.D{
-		{
-			Key: "$unwind",
-			Value: bson.M{
-				"path":                       "$user",
-				"preserveNullAndEmptyArrays": true,
-			},
-		},
-	}
-
-	pipeline = append(pipeline, lookupUserStage, unwindUserStage)
-
-	cursor, err := collabCollection.Aggregate(ctx, pipeline)
+	row := s.db.QueryRowContext(ctx, query, collabID, viewerID)
+	collab, err := scanCollaborationRow(row)
 	if err != nil {
-		return result, fmt.Errorf("aggregation failed: %w", err)
-	}
-	defer cursor.Close(ctx)
-
-	if cursor.Next(ctx) {
-		if err = cursor.Decode(&result); err != nil {
-			return result, fmt.Errorf("decoding aggregation result failed: %w", err)
+		if errors.Is(err, sql.ErrNoRows) {
+			return Collaboration{}, ErrNotFound
 		}
-	} else {
-		return result, ErrNotFound
+		return Collaboration{}, err
 	}
 
-	if err := cursor.Err(); err != nil {
-		return result, fmt.Errorf("cursor error: %w", err)
-	}
-
-	// Check if the viewer has expressed interest in this collaboration
-	if viewerID != "" && result.UserID != viewerID {
+	// Check if viewer has expressed interest
+	if viewerID != "" && collab.UserID != viewerID {
 		hasInterest, err := s.HasExpressedInterest(ctx, viewerID, collabID)
 		if err == nil {
-			result.HasInterest = hasInterest
+			collab.HasInterest = hasInterest
 		}
 	}
 
-	return result, nil
+	return collab, nil
 }
 
+// CreateCollaboration creates a new collaboration
 func (s *Storage) CreateCollaboration(
 	ctx context.Context,
 	collabInput Collaboration,
@@ -211,119 +142,119 @@ func (s *Storage) CreateCollaboration(
 	oppID string,
 	location *string,
 ) error {
-	collabCollection := s.db.Collection("collaborations")
-	badgeCollection := s.db.Collection("badges")
-	oppCollection := s.db.Collection("opportunities")
-	locationCollection := s.db.Collection("cities")
-
-	badgeFilter := bson.M{"_id": bson.M{"$in": badgeIDs}}
-	badgeCursor, err := badgeCollection.Find(ctx, badgeFilter)
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("failed to fetch badges: %w", err)
+		return err
 	}
+	defer tx.Rollback()
+
+	// Fetch badges
 	var badges []Badge
-	if err := badgeCursor.All(ctx, &badges); err != nil {
-		return fmt.Errorf("failed to decode badges: %w", err)
+	if len(badgeIDs) > 0 {
+		placeholders := make([]string, len(badgeIDs))
+		args := make([]interface{}, len(badgeIDs))
+		for i, id := range badgeIDs {
+			placeholders[i] = "?"
+			args[i] = id
+		}
+
+		query := fmt.Sprintf(`
+			SELECT id, text, icon, color, created_at 
+			FROM badges 
+			WHERE id IN (%s)
+		`, strings.Join(placeholders, ","))
+
+		rows, err := tx.QueryContext(ctx, query, args...)
+		if err != nil {
+			return fmt.Errorf("failed to fetch badges: %w", err)
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var badge Badge
+			if err := rows.Scan(&badge.ID, &badge.Text, &badge.Icon, &badge.Color, &badge.CreatedAt); err != nil {
+				return err
+			}
+			badges = append(badges, badge)
+		}
 	}
 
+	// Fetch opportunity
 	var opportunity Opportunity
-	oppFilter := bson.M{"_id": oppID}
-	if err := oppCollection.FindOne(ctx, oppFilter).Decode(&opportunity); err != nil {
+	err = tx.QueryRowContext(ctx, `
+		SELECT id, text_en, text_ru, description_en, description_ru, icon, color, created_at
+		FROM opportunities
+		WHERE id = ?
+	`, oppID).Scan(
+		&opportunity.ID, &opportunity.Text, &opportunity.TextRU,
+		&opportunity.Description, &opportunity.DescriptionRU,
+		&opportunity.Icon, &opportunity.Color, &opportunity.CreatedAt,
+	)
+	if err != nil {
 		return fmt.Errorf("failed to fetch opportunity: %w", err)
 	}
 
-	now := time.Now()
-	docToInsert := Collaboration{
-		ID:                 collabInput.ID,
-		UserID:             collabInput.UserID,
-		Title:              collabInput.Title,
-		Description:        collabInput.Description,
-		IsPayable:          collabInput.IsPayable,
-		CreatedAt:          now,
-		UpdatedAt:          now,
-		Badges:             badges,
-		Opportunity:        opportunity,
-		VerificationStatus: VerificationStatusPending,
-	}
+	// Fetch location if provided
+	var locationData *City
+	var locationJSON []byte
+	if location != nil && *location != "" {
+		var city City
+		err := tx.QueryRowContext(ctx, `
+			SELECT id, name, country_code, country_name, latitude, longitude
+			FROM cities
+			WHERE id = ?
+		`, *location).Scan(
+			&city.ID,
+			&city.Name,
+			&city.CountryCode,
+			&city.CountryName,
+			&city.Latitude,
+			&city.Longitude,
+		)
 
-	if location != nil {
-		var locationData City
-		locationFilter := bson.M{"_id": location}
-		if err := locationCollection.FindOne(ctx, locationFilter).Decode(&locationData); err != nil {
+		if err != nil {
 			return fmt.Errorf("failed to fetch location: %w", err)
 		}
-		docToInsert.Location = &locationData
+
+		locationData = &city
+		locationJSON, _ = json.Marshal(locationData)
 	}
 
-	if _, err := collabCollection.InsertOne(ctx, docToInsert); err != nil {
+	// Marshal complex fields
+	badgesJSON, _ := json.Marshal(badges)
+	opportunityJSON, _ := json.Marshal(opportunity)
+	linksJSON, _ := json.Marshal(collabInput.Links)
+
+	now := time.Now()
+	query := `
+		INSERT INTO collaborations (
+			id, user_id, title, description, is_payable,
+			created_at, updated_at, opportunity_id, location,
+			links, badges, opportunity, verification_status
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`
+
+	_, err = tx.ExecContext(ctx, query,
+		collabInput.ID,
+		collabInput.UserID,
+		collabInput.Title,
+		collabInput.Description,
+		collabInput.IsPayable,
+		now,
+		now,
+		oppID,
+		string(locationJSON),
+		string(linksJSON),
+		string(badgesJSON),
+		string(opportunityJSON),
+		VerificationStatusPending,
+	)
+
+	if err != nil {
 		return fmt.Errorf("failed to insert collaboration: %w", err)
 	}
 
-	return nil
-}
-
-func (s *Storage) GetCollaborationsByVerificationStatus(ctx context.Context, status VerificationStatus, page, perPage int) ([]Collaboration, error) {
-	collection := s.db.Collection("collaborations")
-
-	pipeline := mongo.Pipeline{
-		{{Key: "$match", Value: bson.M{"verification_status": status}}},
-		{{Key: "$sort", Value: bson.D{{"created_at", -1}}}},
-	}
-
-	if page > 0 && perPage > 0 {
-		skip := (page - 1) * perPage
-		pipeline = append(pipeline, bson.D{{Key: "$skip", Value: int64(skip)}})
-	}
-
-	if perPage > 0 {
-		pipeline = append(pipeline, bson.D{{Key: "$limit", Value: int64(perPage)}})
-	}
-
-	pipeline = append(pipeline,
-		bson.D{{Key: "$lookup", Value: bson.M{
-			"from":         "users",
-			"localField":   "user_id",
-			"foreignField": "_id",
-			"as":           "user",
-		}}},
-		bson.D{{Key: "$unwind", Value: bson.M{
-			"path":                       "$user",
-			"preserveNullAndEmptyArrays": true,
-		}}},
-	)
-
-	cursor, err := collection.Aggregate(ctx, pipeline)
-	if err != nil {
-		return nil, fmt.Errorf("aggregation failed: %w", err)
-	}
-	defer cursor.Close(ctx)
-
-	var collabs []Collaboration
-	if err := cursor.All(ctx, &collabs); err != nil {
-		return nil, fmt.Errorf("failed to decode collaborations: %w", err)
-	}
-
-	return collabs, nil
-}
-
-func (s *Storage) UpdateCollaborationVerificationStatus(ctx context.Context, id string, status VerificationStatus) error {
-	collection := s.db.Collection("collaborations")
-	now := time.Now()
-	update := bson.M{
-		"$set": bson.M{
-			"verification_status": status,
-			"updated_at":          now,
-			"verified_at":         now,
-		},
-	}
-	result, err := collection.UpdateOne(ctx, bson.M{"_id": id}, update)
-	if err != nil {
-		return fmt.Errorf("failed to update collaboration verification status: %w", err)
-	}
-	if result.MatchedCount == 0 {
-		return ErrNotFound
-	}
-	return nil
+	return tx.Commit()
 }
 
 func (s *Storage) UpdateCollaboration(
@@ -331,137 +262,333 @@ func (s *Storage) UpdateCollaboration(
 	collabInput Collaboration,
 	badgeIDs []string,
 	oppID string,
-	location *string,
+	locationID *string,
 ) error {
-	collabCollection := s.db.Collection("collaborations")
-	badgeCollection := s.db.Collection("badges")
-	oppCollection := s.db.Collection("opportunities")
-	locationCollection := s.db.Collection("cities")
-
-	filter := bson.M{
-		"_id":     collabInput.ID,
-		"user_id": collabInput.UserID,
-	}
-
-	badgeFilter := bson.M{"_id": bson.M{"$in": badgeIDs}}
-	badgeCursor, err := badgeCollection.Find(ctx, badgeFilter)
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("failed to fetch badges: %w", err)
+		return err
+	}
+	defer tx.Rollback()
+
+	// Check ownership
+	var exists bool
+	err = tx.QueryRowContext(ctx, `
+		SELECT EXISTS(SELECT 1 FROM collaborations WHERE id = ? AND user_id = ?)
+	`, collabInput.ID, collabInput.UserID).Scan(&exists)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return ErrNotFound
 	}
 
+	// Fetch badges, opportunity, and location (similar to CreateCollaboration)
 	var badges []Badge
-	if err := badgeCursor.All(ctx, &badges); err != nil {
-		return fmt.Errorf("failed to decode badges: %w", err)
+	if len(badgeIDs) > 0 {
+		placeholders := make([]string, len(badgeIDs))
+		args := make([]interface{}, len(badgeIDs))
+		for i, id := range badgeIDs {
+			placeholders[i] = "?"
+			args[i] = id
+		}
+
+		query := fmt.Sprintf(`
+			SELECT id, text, icon, color, created_at 
+			FROM badges 
+			WHERE id IN (%s)
+		`, strings.Join(placeholders, ","))
+
+		rows, err := tx.QueryContext(ctx, query, args...)
+		if err != nil {
+			return fmt.Errorf("failed to fetch badges: %w", err)
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var badge Badge
+			if err := rows.Scan(&badge.ID, &badge.Text, &badge.Icon, &badge.Color, &badge.CreatedAt); err != nil {
+				return err
+			}
+			badges = append(badges, badge)
+		}
 	}
 
-	var opportunity Opportunity
-	oppFilter := bson.M{"_id": oppID}
-	if err := oppCollection.FindOne(ctx, oppFilter).Decode(&opportunity); err != nil {
+	// Fetch opportunity
+	opp, err := s.GetOpportunityByID(ctx, oppID)
+	if err != nil {
+		if errors.Is(err, ErrNotFound) {
+			return fmt.Errorf("opportunity not found: %w", err)
+		}
 		return fmt.Errorf("failed to fetch opportunity: %w", err)
 	}
 
-	updateFields := bson.M{
-		"title":       collabInput.Title,
-		"description": collabInput.Description,
-		"is_payable":  collabInput.IsPayable,
-		"badge_ids":   badgeIDs,
-		"badges":      badges,
-		"opportunity": opportunity,
-		"updated_at":  collabInput.UpdatedAt,
-	}
-
-	if location != nil {
-		var locationData City
-		locationFilter := bson.M{"_id": location}
-		if err := locationCollection.FindOne(ctx, locationFilter).Decode(&locationData); err != nil {
+	var locationJSON *string
+	if locationID != nil && *locationID != "" {
+		location, err := s.GetCityByID(ctx, *locationID)
+		if err != nil && !errors.Is(err, ErrNotFound) {
 			return fmt.Errorf("failed to fetch location: %w", err)
 		}
-		updateFields["location"] = locationData
+
+		locationData, _ := json.Marshal(location)
+		locationJSON = new(string)
+		*locationJSON = string(locationData)
 	}
 
-	update := bson.M{
-		"$set": updateFields,
-	}
+	// Marshal complex fields
+	badgesJSON, _ := json.Marshal(badges)
+	opportunityJSON, _ := json.Marshal(opp)
+	linksJSON, _ := json.Marshal(collabInput.Links)
 
-	result, err := collabCollection.UpdateOne(ctx, filter, update)
+	query := `
+		UPDATE collaborations SET
+			title = ?, description = ?, is_payable = ?,
+			updated_at = ?, opportunity_id = ?, location = ?,
+			links = ?, badges = ?, opportunity = ?
+		WHERE id = ? AND user_id = ?
+	`
+
+	result, err := tx.ExecContext(ctx, query,
+		collabInput.Title,
+		collabInput.Description,
+		collabInput.IsPayable,
+		time.Now(),
+		oppID,
+		locationJSON,
+		string(linksJSON),
+		string(badgesJSON),
+		string(opportunityJSON),
+		collabInput.ID,
+		collabInput.UserID,
+	)
+
 	if err != nil {
 		return fmt.Errorf("failed to update collaboration: %w", err)
 	}
 
-	if result.MatchedCount == 0 {
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		return ErrNotFound
+	}
+
+	return tx.Commit()
+}
+
+// GetCollaborationsByVerificationStatus gets collaborations by verification status
+func (s *Storage) GetCollaborationsByVerificationStatus(ctx context.Context, status VerificationStatus, page, perPage int) ([]Collaboration, error) {
+	query := `
+		SELECT 
+			c.id, c.user_id, c.title, c.description, c.is_payable,
+			c.created_at, c.updated_at, c.hidden_at, c.opportunity_id,
+			c.location, c.links, c.badges, c.opportunity,
+			c.verification_status, c.verified_at,
+			u.id, u.name, u.username, u.avatar_url, u.title,
+			u.verification_status, u.verified_at
+		FROM collaborations c
+		LEFT JOIN users u ON c.user_id = u.id
+		WHERE c.verification_status = ?
+		ORDER BY c.created_at DESC
+	`
+
+	var args = []interface{}{status}
+	if page > 0 && perPage > 0 {
+		skip := (page - 1) * perPage
+		query += ` LIMIT ? OFFSET ?`
+		args = append(args, perPage, skip)
+	}
+
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("query failed: %w", err)
+	}
+	defer rows.Close()
+
+	var collaborations []Collaboration
+	for rows.Next() {
+		collab, err := scanCollaboration(rows)
+		if err != nil {
+			return nil, fmt.Errorf("scan failed: %w", err)
+		}
+		collaborations = append(collaborations, collab)
+	}
+
+	return collaborations, rows.Err()
+}
+
+// UpdateCollaborationVerificationStatus updates verification status
+func (s *Storage) UpdateCollaborationVerificationStatus(ctx context.Context, id string, status VerificationStatus) error {
+	now := time.Now()
+	var verifiedAt *time.Time
+	if status == VerificationStatusVerified {
+		verifiedAt = &now
+	}
+
+	query := `
+		UPDATE collaborations SET
+			verification_status = ?,
+			updated_at = ?,
+			verified_at = ?
+		WHERE id = ?
+	`
+
+	result, err := s.db.ExecContext(ctx, query, status, now, verifiedAt, id)
+	if err != nil {
+		return fmt.Errorf("failed to update collaboration verification status: %w", err)
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
 		return ErrNotFound
 	}
 
 	return nil
 }
 
+// ExpressInterest creates an interest expression
 func (s *Storage) ExpressInterest(ctx context.Context, collabID string, userID string, ttlDuration time.Duration) error {
-	usersCollection := s.db.Collection("users")
-	collabsCollection := s.db.Collection("collaborations")
-	interestsCollection := s.db.Collection("collab_interests")
-
-	userFilter := bson.M{
-		"_id":                 userID,
-		"hidden_at":           nil,
-		"verification_status": VerificationStatusVerified,
-	}
-
-	count, err := usersCollection.CountDocuments(ctx, userFilter)
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("failed to check user existence: %w", err)
+		return err
 	}
+	defer tx.Rollback()
 
-	if count == 0 {
+	// Check user exists and is verified
+	var userExists bool
+	err = tx.QueryRowContext(ctx, `
+		SELECT EXISTS(
+			SELECT 1 FROM users 
+			WHERE id = ? AND hidden_at IS NULL AND verification_status = 'verified'
+		)
+	`, userID).Scan(&userExists)
+	if err != nil {
+		return err
+	}
+	if !userExists {
 		return ErrNotFound
 	}
 
-	collabFilter := bson.M{
-		"_id":                 collabID,
-		"verification_status": VerificationStatusVerified,
-		"hidden_at":           nil,
-	}
-
-	count, err = collabsCollection.CountDocuments(ctx, collabFilter)
+	// Check collaboration exists and is verified
+	var collabExists bool
+	err = tx.QueryRowContext(ctx, `
+		SELECT EXISTS(
+			SELECT 1 FROM collaborations 
+			WHERE id = ? AND verification_status = 'verified' AND hidden_at IS NULL
+		)
+	`, collabID).Scan(&collabExists)
 	if err != nil {
-		return fmt.Errorf("failed to check collaboration existence: %w", err)
+		return err
 	}
-
-	if count == 0 {
+	if !collabExists {
 		return ErrNotFound
 	}
 
+	// Insert interest with TTL
+	id := nanoid.Must()
 	expiresAt := time.Now().Add(ttlDuration)
 
-	interest := CollabInterest{
-		UserID:    userID,
-		CollabID:  collabID,
-		ExpiresAt: expiresAt,
-	}
+	_, err = tx.ExecContext(ctx, `
+		INSERT INTO collaboration_interests (id, user_id, collaboration_id, expires_at)
+		VALUES (?, ?, ?, ?)
+		ON CONFLICT (user_id, collaboration_id) DO UPDATE SET
+			expires_at = EXCLUDED.expires_at
+	`, id, userID, collabID, expiresAt)
 
-	_, err = interestsCollection.InsertOne(ctx, interest)
 	if err != nil {
-		if mongo.IsDuplicateKeyError(err) {
-			return nil
-		}
 		return fmt.Errorf("failed to express interest: %w", err)
 	}
 
-	return nil
+	return tx.Commit()
 }
 
+// HasExpressedInterest checks if user has expressed interest
 func (s *Storage) HasExpressedInterest(ctx context.Context, userID string, collabID string) (bool, error) {
-	interestsCollection := s.db.Collection("collab_interests")
+	var count int
+	err := s.db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM collaboration_interests
+		WHERE user_id = ? AND collaboration_id = ? AND expires_at > ?
+	`, userID, collabID, time.Now()).Scan(&count)
 
-	filter := bson.M{
-		"user_id":    userID,
-		"collab_id":  collabID,
-		"expires_at": bson.M{"$gt": time.Now()},
-	}
-
-	count, err := interestsCollection.CountDocuments(ctx, filter)
 	if err != nil {
 		return false, fmt.Errorf("failed to check interest status: %w", err)
 	}
 
 	return count > 0, nil
+}
+
+// Helper functions
+
+func scanCollaboration(rows *sql.Rows) (Collaboration, error) {
+	var collab Collaboration
+	var user User
+	var locationJSON, linksJSON, badgesJSON, opportunityJSON sql.NullString
+
+	err := rows.Scan(
+		&collab.ID, &collab.UserID, &collab.Title, &collab.Description, &collab.IsPayable,
+		&collab.CreatedAt, &collab.UpdatedAt, &collab.HiddenAt,
+		&locationJSON, &linksJSON, &badgesJSON, &opportunityJSON,
+		&collab.VerificationStatus, &collab.VerifiedAt,
+		&user.ID, &user.Name, &user.Username, &user.AvatarURL, &user.Title,
+		&user.VerificationStatus, &user.VerifiedAt,
+	)
+	if err != nil {
+		return collab, err
+	}
+
+	// Unmarshal JSON fields
+	if locationJSON.Valid && locationJSON.String != "" && locationJSON.String != "null" {
+		var location City
+		if err := json.Unmarshal([]byte(locationJSON.String), &location); err == nil {
+			collab.Location = &location
+		}
+	}
+	if linksJSON.Valid && linksJSON.String != "" {
+		json.Unmarshal([]byte(linksJSON.String), &collab.Links)
+	}
+	if badgesJSON.Valid && badgesJSON.String != "" {
+		json.Unmarshal([]byte(badgesJSON.String), &collab.Badges)
+	}
+	if opportunityJSON.Valid && opportunityJSON.String != "" {
+		json.Unmarshal([]byte(opportunityJSON.String), &collab.Opportunity)
+	}
+	collab.User = user
+
+	return collab, nil
+}
+
+func scanCollaborationRow(row *sql.Row) (Collaboration, error) {
+	var collab Collaboration
+	var user User
+	var locationJSON, linksJSON, badgesJSON, opportunityJSON sql.NullString
+
+	err := row.Scan(
+		&collab.ID, &collab.UserID, &collab.Title, &collab.Description, &collab.IsPayable,
+		&collab.CreatedAt, &collab.UpdatedAt, &collab.HiddenAt,
+		&locationJSON, &linksJSON, &badgesJSON, &opportunityJSON,
+		&collab.VerificationStatus, &collab.VerifiedAt,
+		&user.ID, &user.Name, &user.Username, &user.AvatarURL,
+		&user.Title, &user.VerificationStatus, &user.VerifiedAt,
+	)
+	if err != nil {
+		return collab, err
+	}
+
+	// Unmarshal JSON fields (same as scanCollaboration)
+	if locationJSON.Valid && locationJSON.String != "" && locationJSON.String != "null" {
+		var location City
+		if err := json.Unmarshal([]byte(locationJSON.String), &location); err == nil {
+			collab.Location = &location
+		}
+	}
+	if linksJSON.Valid && linksJSON.String != "" {
+		json.Unmarshal([]byte(linksJSON.String), &collab.Links)
+	}
+	if badgesJSON.Valid && badgesJSON.String != "" {
+		json.Unmarshal([]byte(badgesJSON.String), &collab.Badges)
+	}
+	if opportunityJSON.Valid && opportunityJSON.String != "" {
+		json.Unmarshal([]byte(opportunityJSON.String), &collab.Opportunity)
+	}
+
+	collab.User = user
+
+	return collab, nil
 }
