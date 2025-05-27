@@ -171,7 +171,6 @@ func (s *Storage) InitSchema() error {
 			created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			updated_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			hidden_at           TIMESTAMP,
-			opportunity_id      TEXT NOT NULL,
 			location            TEXT,
 			links               TEXT,
 			badges              TEXT,
@@ -196,7 +195,7 @@ func (s *Storage) InitSchema() error {
 		`CREATE TABLE IF NOT EXISTS admins (
 			id            TEXT PRIMARY KEY,
 			username      TEXT UNIQUE NOT NULL,
-			password_hash TEXT        NOT NULL,
+			api_token TEXT        NOT NULL,
 			chat_id       INTEGER UNIQUE,
 			created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -247,6 +246,7 @@ func (s *Storage) InitSchema() error {
 		`CREATE INDEX IF NOT EXISTS idx_collaborations_created ON collaborations (created_at)`,
 		`CREATE INDEX IF NOT EXISTS idx_user_followers_expires ON user_followers (expires_at)`,
 		`CREATE INDEX IF NOT EXISTS idx_collab_interests_expires ON collaboration_interests (expires_at)`,
+		`CREATE UNIQUE INDEX idx_admins_api_token ON admins(api_token) WHERE api_token IS NOT NULL`,
 	}
 
 	for _, stmt := range indexes {

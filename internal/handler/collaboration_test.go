@@ -11,7 +11,7 @@ import (
 	"testing"
 )
 
-func setupTestRecords(storage *db.Storage, t *testing.T) ([]db.Badge, []db.Opportunity, db.City) {
+func setupTestRecords(storage *db.Storage, t *testing.T) ([]string, []string, string) {
 	badges := []db.Badge{
 		{
 			ID:   "badge1",
@@ -67,7 +67,19 @@ func setupTestRecords(storage *db.Storage, t *testing.T) ([]db.Badge, []db.Oppor
 		t.Fatalf("failed to insert location: %v", err)
 	}
 
-	return badges, opportunities, location
+	badgesIDs := make([]string, len(badges))
+	for i, badge := range badges {
+		badgesIDs[i] = badge.ID
+	}
+
+	opportunitiesIDs := make([]string, len(opportunities))
+	for i, opp := range opportunities {
+		opportunitiesIDs[i] = opp.ID
+	}
+
+	locationID := location.ID
+
+	return badgesIDs, opportunitiesIDs, locationID
 }
 
 func TestCreateCollaboration_Success(t *testing.T) {
@@ -188,13 +200,14 @@ func TestExpressInterest_Success(t *testing.T) {
 
 	// Create a collaboration
 	createReqBody := contract.CreateCollaboration{
-		OpportunityID: opportunities[0].ID,
 		Title:         "Test Collaboration",
 		Description:   "Test description",
 		IsPayable:     true,
-		LocationID:    &location.ID,
-		BadgeIDs:      []string{badges[0].ID},
+		LocationID:    &location,
+		BadgeIDs:      badges,
+		OpportunityID: opportunities[0],
 	}
+
 	bodyBytes, _ := json.Marshal(createReqBody)
 
 	createRec := testutils.PerformRequest(t, ts.Echo, http.MethodPost, "/api/collaborations", string(bodyBytes), creatorToken, http.StatusCreated)
@@ -277,12 +290,12 @@ func TestExpressInterest_OwnCollaboration(t *testing.T) {
 
 	// Create a collaboration
 	createReqBody := contract.CreateCollaboration{
-		OpportunityID: opportunities[0].ID,
+		OpportunityID: opportunities[0],
 		Title:         "Test Collaboration",
 		Description:   "Test description",
 		IsPayable:     true,
-		LocationID:    &location.ID,
-		BadgeIDs:      []string{badges[0].ID},
+		LocationID:    &location,
+		BadgeIDs:      badges,
 	}
 	bodyBytes, _ := json.Marshal(createReqBody)
 

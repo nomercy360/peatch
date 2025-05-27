@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	nanoid "github.com/matoous/go-nanoid/v2"
@@ -186,13 +185,17 @@ func (s *Storage) GetCollaborationByID(ctx context.Context, viewerID string, col
 	return collab, nil
 }
 
+type CreateCollaborationParams struct {
+	Collaboration Collaboration
+	BadgeIDs      []string
+	OpportunityID string
+	LocationID    *string
+}
+
 // CreateCollaboration creates a new collaboration
 func (s *Storage) CreateCollaboration(
 	ctx context.Context,
-	collabInput Collaboration,
-	badgeIDs []string,
-	oppID string,
-	location *string,
+	params CreateCollaborationParams,
 ) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -200,108 +203,62 @@ func (s *Storage) CreateCollaboration(
 	}
 	defer tx.Rollback()
 
-	// Fetch badges
-	var badges []Badge
-	if len(badgeIDs) > 0 {
-		placeholders := make([]string, len(badgeIDs))
-		args := make([]interface{}, len(badgeIDs))
-		for i, id := range badgeIDs {
-			placeholders[i] = "?"
-			args[i] = id
-		}
+	// Preload
+	now := time.Now()
 
-		query := fmt.Sprintf(`
-			SELECT id, text, icon, color, created_at 
-			FROM badges 
-			WHERE id IN (%s)
-		`, strings.Join(placeholders, ","))
-
-		rows, err := tx.QueryContext(ctx, query, args...)
-		if err != nil {
-			return fmt.Errorf("failed to fetch badges: %w", err)
-		}
-		defer rows.Close()
-
-		for rows.Next() {
-			var badge Badge
-			if err := rows.Scan(&badge.ID, &badge.Text, &badge.Icon, &badge.Color, &badge.CreatedAt); err != nil {
-				return err
-			}
-			badges = append(badges, badge)
-		}
-	}
-
-	// Fetch opportunity
-	var opportunity Opportunity
-	err = tx.QueryRowContext(ctx, `
-		SELECT id, text_en, text_ru, description_en, description_ru, icon, color, created_at
-		FROM opportunities
-		WHERE id = ?
-	`, oppID).Scan(
-		&opportunity.ID, &opportunity.Text, &opportunity.TextRU,
-		&opportunity.Description, &opportunity.DescriptionRU,
-		&opportunity.Icon, &opportunity.Color, &opportunity.CreatedAt,
-	)
+	badges, err := s.fetchBadgesTx(ctx, tx, params.BadgeIDs)
 	if err != nil {
+		return fmt.Errorf("failed to fetch badges: %w", err)
+	}
+	badgesJSON, _ := json.Marshal(badges)
+
+	opportunity, err := s.fetchOpportunityTx(ctx, tx, params.OpportunityID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrNotFound
+		}
 		return fmt.Errorf("failed to fetch opportunity: %w", err)
 	}
+	opportunityJSON, _ := json.Marshal(opportunity)
 
-	// Fetch location if provided
-	var locationData *City
-	var locationJSON []byte
-	if location != nil && *location != "" {
-		var city City
-		err := tx.QueryRowContext(ctx, `
-			SELECT id, name, country_code, country_name, latitude, longitude
-			FROM cities
-			WHERE id = ?
-		`, *location).Scan(
-			&city.ID,
-			&city.Name,
-			&city.CountryCode,
-			&city.CountryName,
-			&city.Latitude,
-			&city.Longitude,
-		)
-
+	var locationJSON *[]byte
+	if params.LocationID != nil && *params.LocationID != "" {
+		city, err := s.fetchCityTx(ctx, tx, *params.LocationID)
 		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return ErrNotFound
+			}
 			return fmt.Errorf("failed to fetch location: %w", err)
 		}
-
-		locationData = &city
-		locationJSON, _ = json.Marshal(locationData)
+		locBytes, _ := json.Marshal(city)
+		locationJSON = &locBytes
 	}
 
-	// Marshal complex fields
-	badgesJSON, _ := json.Marshal(badges)
-	opportunityJSON, _ := json.Marshal(opportunity)
-	linksJSON, _ := json.Marshal(collabInput.Links)
+	var linksJSON *[]byte
+	if len(params.Collaboration.Links) > 0 {
+		data, _ := json.Marshal(params.Collaboration.Links)
+		linksJSON = &data
+	}
 
-	now := time.Now()
-	query := `
+	_, err = tx.ExecContext(ctx, `
 		INSERT INTO collaborations (
 			id, user_id, title, description, is_payable,
-			created_at, updated_at, opportunity_id, location,
+			created_at, updated_at, location,
 			links, badges, opportunity, verification_status
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`
-
-	_, err = tx.ExecContext(ctx, query,
-		collabInput.ID,
-		collabInput.UserID,
-		collabInput.Title,
-		collabInput.Description,
-		collabInput.IsPayable,
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		params.Collaboration.ID,
+		params.Collaboration.UserID,
+		params.Collaboration.Title,
+		params.Collaboration.Description,
+		params.Collaboration.IsPayable,
 		now,
 		now,
-		oppID,
-		string(locationJSON),
-		string(linksJSON),
+		locationJSON,
+		linksJSON,
 		string(badgesJSON),
 		string(opportunityJSON),
 		VerificationStatusPending,
 	)
-
 	if err != nil {
 		return fmt.Errorf("failed to insert collaboration: %w", err)
 	}
@@ -311,10 +268,7 @@ func (s *Storage) CreateCollaboration(
 
 func (s *Storage) UpdateCollaboration(
 	ctx context.Context,
-	collabInput Collaboration,
-	badgeIDs []string,
-	oppID string,
-	locationID *string,
+	params CreateCollaborationParams,
 ) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -322,11 +276,10 @@ func (s *Storage) UpdateCollaboration(
 	}
 	defer tx.Rollback()
 
-	// Check ownership
 	var exists bool
 	err = tx.QueryRowContext(ctx, `
 		SELECT EXISTS(SELECT 1 FROM collaborations WHERE id = ? AND user_id = ?)
-	`, collabInput.ID, collabInput.UserID).Scan(&exists)
+	`, params.Collaboration.ID, params.Collaboration.UserID).Scan(&exists)
 	if err != nil {
 		return err
 	}
@@ -334,104 +287,52 @@ func (s *Storage) UpdateCollaboration(
 		return ErrNotFound
 	}
 
-	// Fetch badges, opportunity, and location (similar to CreateCollaboration)
-	var badges []Badge
-	if len(badgeIDs) > 0 {
-		placeholders := make([]string, len(badgeIDs))
-		args := make([]interface{}, len(badgeIDs))
-		for i, id := range badgeIDs {
-			placeholders[i] = "?"
-			args[i] = id
-		}
+	now := time.Now()
 
-		query := fmt.Sprintf(`
-			SELECT id, text, icon, color, created_at 
-			FROM badges 
-			WHERE id IN (%s)
-		`, strings.Join(placeholders, ","))
-
-		rows, err := tx.QueryContext(ctx, query, args...)
-		if err != nil {
-			return fmt.Errorf("failed to fetch badges: %w", err)
-		}
-		defer rows.Close()
-
-		for rows.Next() {
-			var badge Badge
-			if err := rows.Scan(&badge.ID, &badge.Text, &badge.Icon, &badge.Color, &badge.CreatedAt); err != nil {
-				return err
-			}
-			badges = append(badges, badge)
-		}
+	badges, err := s.fetchBadgesTx(ctx, tx, params.BadgeIDs)
+	if err != nil {
+		return fmt.Errorf("failed to fetch badges: %w", err)
 	}
+	badgesJSON, _ := json.Marshal(badges)
 
-	// Fetch opportunity
-	var opp Opportunity
-	err = tx.QueryRowContext(ctx, `
-		SELECT id, text_en, text_ru, description_en, description_ru, icon, color, created_at
-		FROM opportunities
-		WHERE id = ?
-	`, oppID).Scan(
-		&opp.ID, &opp.Text, &opp.TextRU, &opp.Description, &opp.DescriptionRU,
-		&opp.Icon, &opp.Color, &opp.CreatedAt,
-	)
-
-	if err != nil && errors.Is(err, sql.ErrNoRows) {
-		return ErrNotFound
-	} else if err != nil {
+	opportunity, err := s.fetchOpportunityTx(ctx, tx, params.OpportunityID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrNotFound
+		}
 		return fmt.Errorf("failed to fetch opportunity: %w", err)
 	}
+	opportunityJSON, _ := json.Marshal(opportunity)
 
-	var locationJSON *string
-	if locationID != nil && *locationID != "" {
-		var city City
-		err := tx.QueryRowContext(ctx, `
-			SELECT id, name, country_code, country_name, latitude, longitude
-			FROM cities
-			WHERE id = ?
-		`, *locationID).Scan(
-			&city.ID,
-			&city.Name,
-			&city.CountryCode,
-			&city.CountryName,
-			&city.Latitude,
-			&city.Longitude,
-		)
+	var locationJSON *[]byte
+	if params.LocationID != nil && *params.LocationID != "" {
+		city, err := s.fetchCityTx(ctx, tx, *params.LocationID)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				return ErrNotFound
 			}
 			return fmt.Errorf("failed to fetch location: %w", err)
 		}
-		locationData := &city
-		locationJSONBytes, _ := json.Marshal(locationData)
-		locationJSONStr := string(locationJSONBytes)
-		locationJSON = &locationJSONStr
-	} else {
-		locationJSON = nil // No location provided
+		locBytes, _ := json.Marshal(city)
+		locationJSON = &locBytes
 	}
-
-	// Marshal complex fields
-	badgesJSON, _ := json.Marshal(badges)
-	opportunityJSON, _ := json.Marshal(opp)
-	linksJSON, _ := json.Marshal(collabInput.Links)
 
 	query := `
 		UPDATE collaborations SET
 			title = ?, description = ?, is_payable = ?,
-			updated_at = ?, opportunity_id = ?, location = ?,
-			links = ?, badges = ?, opportunity = ?
+			updated_at = ?, location = ?,
+			badges = ?, opportunity = ?
 		WHERE id = ? AND user_id = ?
 	`
+
+	collabInput := params.Collaboration
 
 	result, err := tx.ExecContext(ctx, query,
 		collabInput.Title,
 		collabInput.Description,
 		collabInput.IsPayable,
-		time.Now(),
-		oppID,
+		now,
 		locationJSON,
-		string(linksJSON),
 		string(badgesJSON),
 		string(opportunityJSON),
 		collabInput.ID,
@@ -455,7 +356,7 @@ func (s *Storage) GetCollaborationsByVerificationStatus(ctx context.Context, sta
 	query := `
 		SELECT 
 			c.id, c.user_id, c.title, c.description, c.is_payable,
-			c.created_at, c.updated_at, c.hidden_at, c.opportunity_id,
+			c.created_at, c.updated_at, c.hidden_at,
 			c.location, c.links, c.badges, c.opportunity,
 			c.verification_status, c.verified_at,
 			u.id, u.name, u.username, u.avatar_url, u.title,

@@ -54,7 +54,7 @@ type storager interface {
 	ListUsers(ctx context.Context, params db.ListUsersOptions) ([]db.User, error)
 	GetUserByChatID(ctx context.Context, chatID int64) (db.User, error)
 	GetUserByID(ctx context.Context, ID string) (db.User, error)
-	CreateUser(ctx context.Context, user db.User) error
+	CreateUser(ctx context.Context, params db.UpdateUserParams) error
 	GetUserProfile(ctx context.Context, viewerID string, id string) (db.User, error)
 	UpdateUser(ctx context.Context, params db.UpdateUserParams) error
 	UpdateUserLinks(ctx context.Context, userID string, links []db.Link) error
@@ -68,8 +68,8 @@ type storager interface {
 	// Collaboration-related operations
 	ListCollaborations(ctx context.Context, query db.CollaborationQuery) ([]db.Collaboration, error)
 	GetCollaborationByID(ctx context.Context, userID, id string) (db.Collaboration, error)
-	CreateCollaboration(ctx context.Context, collaboration db.Collaboration, badges []string, opportunityID string, location *string) error
-	UpdateCollaboration(ctx context.Context, collaboration db.Collaboration, badges []string, opportunityID string, location *string) error
+	CreateCollaboration(ctx context.Context, params db.CreateCollaborationParams) error
+	UpdateCollaboration(ctx context.Context, params db.CreateCollaborationParams) error
 	UpdateCollaborationVerificationStatus(ctx context.Context, collaborationID string, status db.VerificationStatus) error
 	GetCollaborationsByVerificationStatus(ctx context.Context, status db.VerificationStatus, page, perPage int) ([]db.Collaboration, error)
 	ExpressInterest(ctx context.Context, userID string, collabID string, ttlDuration time.Duration) error
@@ -80,6 +80,9 @@ type storager interface {
 	GetAdminByUsername(ctx context.Context, username string) (db.Admin, error)
 	GetAdminByChatID(ctx context.Context, chatID int64) (db.Admin, error)
 	ValidateAdminCredentials(ctx context.Context, username, password string) (db.Admin, error)
+	GetAdminByAPIToken(ctx context.Context, apiToken string) (db.Admin, error)
+	GenerateAdminAPIToken(ctx context.Context, adminID string) (string, error)
+	RevokeAdminAPIToken(ctx context.Context, adminID string) error
 
 	// Miscellaneous operations
 	ListOpportunities(ctx context.Context) ([]db.Opportunity, error)
@@ -139,7 +142,6 @@ func (h *Handler) SetupRoutes(e *echo.Echo) {
 	e.GET("/avatar", h.getRandomAvatar)
 
 	// Admin login routes (public)
-	e.POST("/admin/login", h.handleAdminLogin)
 	e.POST("/admin/auth/telegram", h.handleAdminTelegramAuth)
 
 	// Regular API routes (require JWT auth)
@@ -167,21 +169,27 @@ func (h *Handler) SetupRoutes(e *echo.Echo) {
 
 	api.GET("/locations", h.handleSearchLocations)
 
-	// Admin API routes (require admin JWT auth)
-	adminConfig := middleware.GetAdminAuthConfig(h.config.JWTSecret)
+	// Admin API routes with API token auth
+	apiTokenAuth := middleware.NewAdminAPITokenAuth(h.storage)
 
 	admin := e.Group("/admin")
-	admin.Use(echojwt.WithConfig(adminConfig))
+	admin.Use(apiTokenAuth.Middleware())
 
-	// First admin can be created through a special init endpoint or directly in the database
+	// API token management
+	admin.POST("/api-token", h.handleGenerateAPIToken)
+	admin.DELETE("/api-token", h.handleRevokeAPIToken)
+
+	// Admin management
 	admin.POST("/create", h.handleAdminCreate)
 
-	// User verification endpoints
+	// User management endpoints
 	admin.GET("/users", h.handleAdminListUsers)
+	admin.POST("/users", h.handleAdminCreateUser)
 	admin.PUT("/users/:id/verify", h.handleAdminUpdateUserVerification)
 
-	// Collaboration verification endpoints
+	// Collaboration endpoints
 	admin.GET("/collaborations", h.handleAdminListCollaborations)
+	admin.POST("/collaborations", h.handleAdminCreateCollaboration)
 	admin.PUT("/users/:uid/collaborations/:cid/verify", h.handleAdminUpdateCollaborationVerification)
 }
 

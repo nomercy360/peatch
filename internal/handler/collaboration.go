@@ -102,12 +102,16 @@ func (h *Handler) handleCreateCollaboration(c echo.Context) error {
 		UpdatedAt:   now,
 	}
 
+	params := db.CreateCollaborationParams{
+		Collaboration: collaboration,
+		BadgeIDs:      req.BadgeIDs,
+		OpportunityID: req.OpportunityID,
+		LocationID:    req.LocationID,
+	}
+
 	if err := h.storage.CreateCollaboration(
 		c.Request().Context(),
-		collaboration,
-		req.BadgeIDs,
-		req.OpportunityID,
-		req.LocationID,
+		params,
 	); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "create failed").WithInternal(err)
 	}
@@ -156,12 +160,16 @@ func (h *Handler) handleUpdateCollaboration(c echo.Context) error {
 		IsPayable:   req.IsPayable,
 	}
 
+	params := db.CreateCollaborationParams{
+		Collaboration: collab,
+		BadgeIDs:      req.BadgeIDs,
+		OpportunityID: req.OpportunityID,
+		LocationID:    req.LocationID,
+	}
+
 	if err := h.storage.UpdateCollaboration(
 		c.Request().Context(),
-		collab,
-		req.BadgeIDs,
-		req.OpportunityID,
-		req.LocationID,
+		params,
 	); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "update failed").WithInternal(err)
 	}

@@ -16,40 +16,55 @@ import (
 	initdata "github.com/telegram-mini-apps/init-data-golang"
 )
 
-// @Summary Admin login via password
-// @Description Login as admin using username and password
-// @ID admin-login
+// @Summary Generate API token
+// @Description Generate a new API token for the authenticated admin
+// @ID admin-generate-token
 // @Tags admin
 // @Accept json
 // @Produce json
-// @Param request body contract.AdminLoginRequest true "Admin login credentials"
-// @Success 200 {object} contract.AdminAuthResponse
-// @Failure 400 {object} contract.ErrorResponse
-// @Router /admin/login [post]
-func (h *Handler) handleAdminLogin(c echo.Context) error {
-	var req contract.AdminLoginRequest
-	if err := c.Bind(&req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid request").WithInternal(err)
+// @Success 200 {object} map[string]string{token=string}
+// @Failure 401 {object} contract.ErrorResponse
+// @Failure 500 {object} contract.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /admin/api-token [post]
+func (h *Handler) handleGenerateAPIToken(c echo.Context) error {
+	claims := getAdminClaims(c)
+	if claims == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, "unauthorized")
 	}
 
-	if err := req.Validate(); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid request").WithInternal(err)
-	}
-
-	admin, err := h.storage.ValidateAdminCredentials(c.Request().Context(), req.Username, req.Password)
+	token, err := h.storage.GenerateAdminAPIToken(c.Request().Context(), claims.AdminID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusUnauthorized, "invalid credentials").WithInternal(err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to generate token").WithInternal(err)
 	}
 
-	token, err := generateAdminJWT(admin.ID, h.config.JWTSecret)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to sign token").WithInternal(err)
-	}
-
-	return c.JSON(http.StatusOK, contract.AdminAuthResponse{
-		Token: token,
-		Admin: contract.ToAdminResponse(admin),
+	return c.JSON(http.StatusOK, map[string]string{
+		"token": token,
 	})
+}
+
+// @Summary Revoke API token
+// @Description Revoke the current admin's API token
+// @ID admin-revoke-token
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Success 200 {object} contract.StatusResponse
+// @Failure 401 {object} contract.ErrorResponse
+// @Failure 500 {object} contract.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /admin/api-token [delete]
+func (h *Handler) handleRevokeAPIToken(c echo.Context) error {
+	claims := getAdminClaims(c)
+	if claims == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, "unauthorized")
+	}
+
+	if err := h.storage.RevokeAdminAPIToken(c.Request().Context(), claims.AdminID); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to revoke token").WithInternal(err)
+	}
+
+	return c.JSON(http.StatusOK, contract.StatusResponse{Success: true})
 }
 
 // @Summary Admin Telegram Auth
@@ -123,6 +138,22 @@ func generateAdminJWT(adminID string, secretKey string) (string, error) {
 	}
 
 	return signedToken, nil
+}
+
+func getAdminClaims(c echo.Context) *contract.AdminJWTClaims {
+	user := c.Get("user")
+	if user == nil {
+		return nil
+	}
+	token, ok := user.(*jwt.Token)
+	if !ok {
+		return nil
+	}
+	claims, ok := token.Claims.(*contract.AdminJWTClaims)
+	if !ok {
+		return nil
+	}
+	return claims
 }
 
 // @Summary List users by verification status
@@ -392,4 +423,151 @@ func (h *Handler) handleAdminCreate(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, contract.ToAdminResponse(admin))
+}
+
+// @Summary Create user as admin
+// @Description Create a new user with optional fields as admin
+// @ID admin-create-user
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param request body contract.AdminCreateUserRequest true "User data"
+// @Success 200 {object} contract.UserResponse
+// @Failure 400 {object} contract.ErrorResponse
+// @Failure 401 {object} contract.ErrorResponse
+// @Failure 500 {object} contract.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /admin/users [post]
+func (h *Handler) handleAdminCreateUser(c echo.Context) error {
+	var req contract.AdminCreateUserRequest
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid request").WithInternal(err)
+	}
+
+	now := time.Now()
+
+	user := db.User{
+		ID:                 nanoid.Must(),
+		VerificationStatus: db.VerificationStatusVerified,
+		HiddenAt:           &now,
+		Name:               req.Name,
+		Username:           req.Username,
+		ChatID:             req.ChatID,
+		Description:        req.Description,
+		Title:              req.Title,
+	}
+
+	var links []db.Link
+	for _, link := range req.Links {
+		l := db.Link{
+			Type:  link.Type,
+			URL:   link.URL,
+			Label: link.Label,
+			Icon:  link.Icon,
+			Order: link.Order,
+		}
+
+		links = append(links, l)
+	}
+
+	params := db.UpdateUserParams{
+		User:           user,
+		BadgeIDs:       req.Badges,
+		OpportunityIDs: req.OpportunityIDs,
+	}
+
+	if req.LocationID != nil {
+		params.LocationID = *req.LocationID
+	}
+
+	if err := h.storage.CreateUser(c.Request().Context(), params); err != nil {
+		if errors.Is(err, db.ErrAlreadyExists) {
+			return echo.NewHTTPError(http.StatusConflict, "user already exists").WithInternal(err)
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to create user").WithInternal(err)
+	}
+
+	createdUser, err := h.storage.GetUserByID(c.Request().Context(), user.ID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get created user").WithInternal(err)
+	}
+
+	return c.JSON(http.StatusOK, contract.ToUserResponse(createdUser))
+}
+
+// @Summary Create collaboration as admin
+// @Description Create a new collaboration for a user as admin
+// @ID admin-create-collaboration
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param request body contract.AdminCreateCollaborationRequest true "Collaboration data"
+// @Success 200 {object} contract.CollaborationResponse
+// @Failure 400 {object} contract.ErrorResponse
+// @Failure 401 {object} contract.ErrorResponse
+// @Failure 404 {object} contract.ErrorResponse
+// @Failure 500 {object} contract.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /admin/collaborations [post]
+func (h *Handler) handleAdminCreateCollaboration(c echo.Context) error {
+	var req contract.AdminCreateCollaborationRequest
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid request").WithInternal(err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid request").WithInternal(err)
+	}
+
+	// Verify user exists
+	user, err := h.storage.GetUserByID(c.Request().Context(), req.UserID)
+	if err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			return echo.NewHTTPError(http.StatusNotFound, "user not found").WithInternal(err)
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get user").WithInternal(err)
+	}
+
+	var links []db.Link
+	for _, link := range req.Links {
+		l := db.Link{
+			Type:  link.Type,
+			URL:   link.URL,
+			Label: link.Label,
+			Icon:  link.Icon,
+			Order: link.Order,
+		}
+
+		links = append(links, l)
+	}
+
+	// Create collaboration
+	collaboration := db.Collaboration{
+		ID:                 nanoid.Must(),
+		UserID:             req.UserID,
+		Title:              req.Title,
+		Description:        req.Description,
+		Links:              links,
+		VerificationStatus: db.VerificationStatusVerified,
+		User:               user,
+	}
+
+	params := db.CreateCollaborationParams{
+		Collaboration: collaboration,
+		OpportunityID: req.OpportunityID,
+		LocationID:    req.LocationID,
+		BadgeIDs:      req.Badges,
+	}
+
+	if err := h.storage.CreateCollaboration(c.Request().Context(), params); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to create collaboration").WithInternal(err)
+	}
+
+	// Get the created collaboration to return full response
+	createdCollab, err := h.storage.GetCollaborationByID(c.Request().Context(), req.UserID, collaboration.ID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get created collaboration").WithInternal(err)
+	}
+
+	return c.JSON(http.StatusOK, contract.ToCollaborationResponse(createdCollab))
 }

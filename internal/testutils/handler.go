@@ -153,7 +153,6 @@ func (m *MockEmbeddingService) GenerateEmbedding(ctx context.Context, text strin
 const (
 	TestBotToken       = "test-bot-token"
 	TelegramTestUserID = 927635965
-	TestDBPath         = ":memory:" // Use in-memory SQLite for tests
 )
 
 func (m *MockPhotoUploader) UploadFile(ctx context.Context, key string, body io.Reader, contentType string) error {

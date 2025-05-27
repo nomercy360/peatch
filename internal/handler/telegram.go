@@ -288,14 +288,19 @@ func (h *Handler) createUser(ctx context.Context, update models.Update, lang db.
 	}
 
 	user := db.User{
-		ID:           nanoid.Must(),
-		ChatID:       chatID,
-		Name:         name,
-		Username:     username,
-		LanguageCode: lang,
+		ID:                 nanoid.Must(),
+		ChatID:             chatID,
+		Name:               name,
+		Username:           username,
+		LanguageCode:       lang,
+		VerificationStatus: db.VerificationStatusUnverified,
 	}
 
-	if err := h.storage.CreateUser(ctx, user); err != nil {
+	params := db.UpdateUserParams{
+		User: user,
+	}
+
+	if err := h.storage.CreateUser(ctx, params); err != nil {
 		h.logger.Error("failed to create user",
 			slog.Int64("chat_id", chatID),
 			slog.String("error", err.Error()))
@@ -307,7 +312,7 @@ func (h *Handler) createUser(ctx context.Context, update models.Update, lang db.
 		h.logger.Error("failed to retrieve new user",
 			slog.Int64("chat_id", chatID),
 			slog.String("error", err.Error()))
-		return user
+		return db.User{}
 	}
 
 	go h.handleBotAvatar(context.Background(), newUser.ID, chatID)

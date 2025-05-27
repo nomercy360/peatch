@@ -81,14 +81,19 @@ func (h *Handler) TelegramAuth(c echo.Context) error {
 		}
 
 		create := db.User{
-			ID:           nanoid.Must(),
-			Username:     username,
-			ChatID:       data.User.ID,
-			Name:         name,
-			LanguageCode: lang,
+			ID:                 nanoid.Must(),
+			Username:           username,
+			ChatID:             data.User.ID,
+			Name:               name,
+			LanguageCode:       lang,
+			VerificationStatus: db.VerificationStatusUnverified,
 		}
 
-		if err = h.storage.CreateUser(c.Request().Context(), create); err != nil {
+		params := db.UpdateUserParams{
+			User: create,
+		}
+
+		if err = h.storage.CreateUser(c.Request().Context(), params); err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, "failed to create user").WithInternal(err)
 		}
 

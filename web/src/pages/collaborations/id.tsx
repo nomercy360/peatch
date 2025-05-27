@@ -105,8 +105,8 @@ export default function Collaboration() {
             >
               <Motion.span
                 class="material-symbols-rounded text-[48px] text-white"
-                initial={{ scale: 0, rotate: -180 }}
-                animate={{ scale: 1, rotate: 0 }}
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
                 transition={{ duration: 0.5, easing: 'ease-out' }}
               >
                 {String.fromCodePoint(

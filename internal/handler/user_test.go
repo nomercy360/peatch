@@ -36,9 +36,6 @@ func TestListUsers_Success(t *testing.T) {
 			AvatarURL:          strPtr("https://example.com/avatar1.jpg"),
 			Title:              strPtr("Developer"),
 			Description:        strPtr("Test user 1 description"),
-			Badges:             badges,
-			Opportunities:      opps,
-			Location:           &loc,
 			VerificationStatus: db.VerificationStatusVerified,
 		},
 		{
@@ -49,14 +46,21 @@ func TestListUsers_Success(t *testing.T) {
 			AvatarURL:          strPtr("https://example.com/avatar2.jpg"),
 			Title:              strPtr("Designer"),
 			Description:        strPtr("Test user 2 description"),
-			Badges:             badges,
-			Opportunities:      opps,
-			Location:           &loc,
 			VerificationStatus: db.VerificationStatusVerified,
 		},
 	}
 
-	for _, user := range users {
+	userParams := make([]db.UpdateUserParams, len(users))
+	for i, user := range users {
+		userParams[i] = db.UpdateUserParams{
+			User:           user,
+			BadgeIDs:       badges,
+			OpportunityIDs: opps,
+			LocationID:     loc,
+		}
+	}
+
+	for _, user := range userParams {
 		if err := ts.Storage.CreateUser(context.Background(), user); err != nil {
 			t.Fatalf("failed to insert test user: %v", err)
 		}
@@ -115,13 +119,17 @@ func TestGetUser_Success(t *testing.T) {
 		AvatarURL:          strPtr("https://example.com/avatar.jpg"),
 		Title:              strPtr("Developer"),
 		Description:        strPtr("Test user description"),
-		Badges:             badge,
-		Opportunities:      opp,
-		Location:           &loc,
 		VerificationStatus: db.VerificationStatusVerified,
 	}
 
-	if err := ts.Storage.CreateUser(context.Background(), testUser); err != nil {
+	userParams := db.UpdateUserParams{
+		User:           testUser,
+		BadgeIDs:       badge,
+		OpportunityIDs: opp,
+		LocationID:     loc,
+	}
+
+	if err := ts.Storage.CreateUser(context.Background(), userParams); err != nil {
 		t.Fatalf("failed to insert test user: %v", err)
 	}
 
@@ -182,13 +190,17 @@ func TestGetUser_ByUsername(t *testing.T) {
 		AvatarURL:          strPtr("https://example.com/avatar.jpg"),
 		Title:              strPtr("Developer"),
 		Description:        strPtr("Test user description"),
-		Badges:             badge,
-		Opportunities:      opp,
-		Location:           &loc,
 		VerificationStatus: db.VerificationStatusVerified,
 	}
 
-	if err := ts.Storage.CreateUser(context.Background(), testUser); err != nil {
+	userParams := db.UpdateUserParams{
+		User:           testUser,
+		BadgeIDs:       badge,
+		OpportunityIDs: opp,
+		LocationID:     loc,
+	}
+
+	if err := ts.Storage.CreateUser(context.Background(), userParams); err != nil {
 		t.Fatalf("failed to insert test user: %v", err)
 	}
 
@@ -218,15 +230,15 @@ func TestUpdateUser_Success(t *testing.T) {
 	token := authResp.Token
 
 	// Setup necessary test records
-	setupTestRecords(ts.Storage, t)
+	badges, opp, loc := setupTestRecords(ts.Storage, t)
 
 	reqBody := contract.UpdateUserRequest{
 		Name:           "Updated",
 		Title:          "Senior Developer",
 		Description:    "Updated description",
-		BadgeIDs:       []string{"badge1", "badge2"},
-		OpportunityIDs: []string{"opp1", "opp2"},
-		LocationID:     "location1",
+		BadgeIDs:       badges,
+		OpportunityIDs: opp,
+		LocationID:     loc,
 	}
 
 	bodyBytes, _ := json.Marshal(reqBody)

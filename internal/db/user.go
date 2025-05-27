@@ -255,20 +255,59 @@ func (s *Storage) GetUserByID(ctx context.Context, id string) (User, error) {
 }
 
 // CreateUser creates a new user
-func (s *Storage) CreateUser(ctx context.Context, user User) error {
+func (s *Storage) CreateUser(ctx context.Context, params UpdateUserParams) error {
 	now := time.Now()
+	user := params.User
 	user.CreatedAt = now
 	user.UpdatedAt = now
 	user.LastActiveAt = &now
-	if user.VerificationStatus == "" {
-		user.VerificationStatus = VerificationStatusUnverified
+	user.NotificationsEnabledAt = &now
+
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
 	}
 
-	// Marshal complex fields to JSON
-	linksJSON, _ := json.Marshal(user.Links)
-	badgesJSON, _ := json.Marshal(user.Badges)
-	oppsJSON, _ := json.Marshal(user.Opportunities)
-	locationJSON, _ := json.Marshal(user.Location)
+	defer tx.Rollback()
+
+	var locationJSON, linksJSON, badgesJSON, oppsJSON *[]byte
+
+	if len(params.BadgeIDs) > 0 {
+		badges, err := s.fetchBadgesTx(ctx, tx, params.BadgeIDs)
+		if err != nil {
+			return err
+		}
+
+		data, _ := json.Marshal(badges)
+		badgesJSON = &data
+	}
+
+	if len(params.OpportunityIDs) > 0 {
+		opportunities, err := s.fetchOpportunitiesTx(ctx, tx, params.OpportunityIDs)
+		if err != nil {
+			return err
+		}
+
+		data, _ := json.Marshal(opportunities)
+		oppsJSON = &data
+	}
+
+	if locationID := params.LocationID; locationID != "" {
+		location, err := s.fetchCityTx(ctx, tx, locationID)
+		if err != nil {
+			if errors.Is(err, ErrNotFound) {
+				return ErrNotFound
+			}
+			return err
+		}
+		data, _ := json.Marshal(location)
+		locationJSON = &data
+	}
+
+	if len(params.Links) > 0 {
+		data, _ := json.Marshal(params.Links)
+		linksJSON = &data
+	}
 
 	query := `
 		INSERT INTO users (
@@ -282,20 +321,23 @@ func (s *Storage) CreateUser(ctx context.Context, user User) error {
 		)
 	`
 
-	_, err := s.db.ExecContext(ctx, query,
+	_, err = tx.ExecContext(ctx, query,
 		user.ID, user.Name, user.ChatID, user.Username, user.CreatedAt, user.UpdatedAt,
 		user.NotificationsEnabledAt, user.HiddenAt, user.AvatarURL, user.Title,
 		user.Description, user.LanguageCode,
 		user.VerificationStatus, user.VerifiedAt, user.EmbeddingUpdatedAt,
-		string(locationJSON), string(linksJSON),
-		string(badgesJSON), string(oppsJSON),
+		locationJSON,
+		linksJSON,
+		badgesJSON,
+		oppsJSON,
 		user.LastActiveAt,
 	)
 
 	if err != nil {
-		if isSQLiteConstraintError(err) {
-			return ErrAlreadyExists
-		}
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
 		return err
 	}
 
@@ -307,6 +349,7 @@ type UpdateUserParams struct {
 	BadgeIDs       []string
 	OpportunityIDs []string
 	LocationID     string
+	Links          []Link
 }
 
 // UpdateUser updates user profile
@@ -320,32 +363,39 @@ func (s *Storage) UpdateUser(
 	}
 	defer tx.Rollback()
 
-	var badgesJSON, oppsJSON, locationJSON []byte
+	var locationJSON, badgesJSON, oppsJSON *[]byte
 
-	badges, err := s.fetchBadgesTx(ctx, tx, params.BadgeIDs)
-
-	if err != nil {
-		return err
-	}
-
-	badgesJSON, err = json.Marshal(badges)
-
-	opportunities, err := s.fetchOpportunitiesTx(ctx, tx, params.OpportunityIDs)
-
-	if err != nil {
-		return err
-	}
-
-	oppsJSON, err = json.Marshal(opportunities)
-
-	location, err := s.fetchCityTx(ctx, tx, params.LocationID)
-	if err != nil {
-		if errors.Is(err, ErrNotFound) {
-			return ErrNotFound
+	if len(params.BadgeIDs) > 0 {
+		badges, err := s.fetchBadgesTx(ctx, tx, params.BadgeIDs)
+		if err != nil {
+			return err
 		}
-		return err
+
+		data, _ := json.Marshal(badges)
+		badgesJSON = &data
 	}
-	locationJSON, err = json.Marshal(location)
+
+	if len(params.OpportunityIDs) > 0 {
+		opportunities, err := s.fetchOpportunitiesTx(ctx, tx, params.OpportunityIDs)
+		if err != nil {
+			return err
+		}
+
+		data, _ := json.Marshal(opportunities)
+		oppsJSON = &data
+	}
+
+	if locationID := params.LocationID; locationID != "" {
+		location, err := s.fetchCityTx(ctx, tx, locationID)
+		if err != nil {
+			if errors.Is(err, ErrNotFound) {
+				return ErrNotFound
+			}
+			return err
+		}
+		data, _ := json.Marshal(location)
+		locationJSON = &data
+	}
 
 	// Update user
 	query := `
@@ -372,9 +422,9 @@ func (s *Storage) UpdateUser(
 		user.Name,
 		user.Title,
 		user.Description,
-		string(locationJSON),
-		string(badgesJSON),
-		string(oppsJSON),
+		locationJSON,
+		badgesJSON,
+		oppsJSON,
 		time.Now(),
 		embeddingUpdatedAt,
 		user.ID,
