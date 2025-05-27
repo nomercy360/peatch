@@ -77,12 +77,8 @@ type storager interface {
 
 	// Admin-related operations
 	CreateAdmin(ctx context.Context, admin db.Admin) (db.Admin, error)
-	GetAdminByUsername(ctx context.Context, username string) (db.Admin, error)
 	GetAdminByChatID(ctx context.Context, chatID int64) (db.Admin, error)
-	ValidateAdminCredentials(ctx context.Context, username, password string) (db.Admin, error)
 	GetAdminByAPIToken(ctx context.Context, apiToken string) (db.Admin, error)
-	GenerateAdminAPIToken(ctx context.Context, adminID string) (string, error)
-	RevokeAdminAPIToken(ctx context.Context, adminID string) error
 
 	// Miscellaneous operations
 	ListOpportunities(ctx context.Context) ([]db.Opportunity, error)
@@ -171,14 +167,13 @@ func (h *Handler) SetupRoutes(e *echo.Echo) {
 	api.GET("/locations", h.handleSearchLocations)
 
 	admin := e.Group("/admin")
-	admin.Use(echojwt.WithConfig(middleware.GetAdminAuthConfig(h.config.JWTSecret)))
-
-	// API token management
-	admin.POST("/api-token", h.handleGenerateAPIToken)
-	admin.DELETE("/api-token", h.handleRevokeAPIToken)
-
-	// Admin management
-	admin.POST("/create", h.handleAdminCreate)
+	admin.Use(middleware.AdminAuth(h.config.JWTSecret, func(ctx context.Context, apiToken string) (string, error) {
+		admin, err := h.storage.GetAdminByAPIToken(ctx, apiToken)
+		if err != nil {
+			return "", err
+		}
+		return admin.ID, nil
+	}))
 
 	// User management endpoints
 	admin.GET("/users", h.handleAdminListUsers)

@@ -7,21 +7,6 @@ import (
 	"time"
 )
 
-type AdminLoginRequest struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-} // @Name AdminLoginRequest
-
-func (r AdminLoginRequest) Validate() error {
-	if r.Username == "" {
-		return fmt.Errorf("username is required")
-	}
-	if r.Password == "" {
-		return fmt.Errorf("password is required")
-	}
-	return nil
-}
-
 type AdminTelegramAuthRequest struct {
 	Query string `json:"query"` // Telegram init data
 } // @Name AdminTelegramAuthRequest

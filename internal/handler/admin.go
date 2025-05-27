@@ -16,57 +16,6 @@ import (
 	initdata "github.com/telegram-mini-apps/init-data-golang"
 )
 
-// @Summary Generate API token
-// @Description Generate a new API token for the authenticated admin
-// @ID admin-generate-token
-// @Tags admin
-// @Accept json
-// @Produce json
-// @Success 200 {object} map[string]string{token=string}
-// @Failure 401 {object} contract.ErrorResponse
-// @Failure 500 {object} contract.ErrorResponse
-// @Security ApiKeyAuth
-// @Router /admin/api-token [post]
-func (h *Handler) handleGenerateAPIToken(c echo.Context) error {
-	claims := getAdminClaims(c)
-	if claims == nil {
-		return echo.NewHTTPError(http.StatusUnauthorized, "unauthorized")
-	}
-
-	token, err := h.storage.GenerateAdminAPIToken(c.Request().Context(), claims.AdminID)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to generate token").WithInternal(err)
-	}
-
-	return c.JSON(http.StatusOK, map[string]string{
-		"token": token,
-	})
-}
-
-// @Summary Revoke API token
-// @Description Revoke the current admin's API token
-// @ID admin-revoke-token
-// @Tags admin
-// @Accept json
-// @Produce json
-// @Success 200 {object} contract.StatusResponse
-// @Failure 401 {object} contract.ErrorResponse
-// @Failure 500 {object} contract.ErrorResponse
-// @Security ApiKeyAuth
-// @Router /admin/api-token [delete]
-func (h *Handler) handleRevokeAPIToken(c echo.Context) error {
-	claims := getAdminClaims(c)
-	if claims == nil {
-		return echo.NewHTTPError(http.StatusUnauthorized, "unauthorized")
-	}
-
-	if err := h.storage.RevokeAdminAPIToken(c.Request().Context(), claims.AdminID); err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to revoke token").WithInternal(err)
-	}
-
-	return c.JSON(http.StatusOK, contract.StatusResponse{Success: true})
-}
-
 // @Summary Admin Telegram Auth
 // @Description Authenticate admin via Telegram using init data
 // @ID admin-telegram-auth
@@ -385,44 +334,6 @@ func (h *Handler) handleAdminUpdateCollaborationVerification(c echo.Context) err
 	}
 
 	return c.JSON(http.StatusOK, contract.StatusResponse{Success: true})
-}
-
-// @Summary Create admin account
-// @Description Create a new admin account (protected, only existing admins can create new admins)
-// @ID admin-create
-// @Tags admin
-// @Accept json
-// @Produce json
-// @Param request body contract.AdminLoginRequest true "Admin credentials"
-// @Success 200 {object} contract.AdminResponse
-// @Failure 400 {object} contract.ErrorResponse
-// @Failure 401 {object} contract.ErrorResponse
-// @Security ApiKeyAuth
-// @Router /admin/create [post]
-func (h *Handler) handleAdminCreate(c echo.Context) error {
-	var req contract.AdminLoginRequest
-	if err := c.Bind(&req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid request").WithInternal(err)
-	}
-
-	if err := req.Validate(); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid request").WithInternal(err)
-	}
-
-	admin, err := h.storage.CreateAdmin(c.Request().Context(), db.Admin{
-		ID:       nanoid.Must(),
-		Username: req.Username,
-		Password: req.Password,
-	})
-
-	if err != nil {
-		if errors.Is(err, db.ErrAlreadyExists) {
-			return echo.NewHTTPError(http.StatusConflict, "admin already exists").WithInternal(err)
-		}
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to create admin").WithInternal(err)
-	}
-
-	return c.JSON(http.StatusOK, contract.ToAdminResponse(admin))
 }
 
 // @Summary Create user as admin
