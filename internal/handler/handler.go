@@ -93,7 +93,7 @@ type storager interface {
 
 	// Embedding-related operations
 	UpdateUserEmbedding(ctx context.Context, userID string, embeddingVector []float64) error
-	GetUsersWithOpportunityVectorSearch(ctx context.Context, opportunityID string, limit int) ([]db.User, error)
+	GetMatchingUsersForCollaboration(ctx context.Context, opportunityID string, limit int) ([]db.User, error)
 }
 
 func New(storage storager, config Config, s3Client s3Client, logger *slog.Logger, bot *telegram.Bot, n interfaces.NotificationService, es embeddingService) *Handler {
@@ -166,14 +166,12 @@ func (h *Handler) SetupRoutes(e *echo.Echo) {
 	api.POST("/collaborations", h.handleCreateCollaboration)
 	api.PUT("/collaborations/:id", h.handleUpdateCollaboration)
 	api.POST("/collaborations/:id/interest", h.handleExpressInterest)
+	api.GET("/collaborations/profiles/:id", h.HandleGetMatchingProfiles)
 
 	api.GET("/locations", h.handleSearchLocations)
 
-	// Admin API routes with API token auth
-	apiTokenAuth := middleware.NewAdminAPITokenAuth(h.storage)
-
 	admin := e.Group("/admin")
-	admin.Use(apiTokenAuth.Middleware())
+	admin.Use(echojwt.WithConfig(middleware.GetAdminAuthConfig(h.config.JWTSecret)))
 
 	// API token management
 	admin.POST("/api-token", h.handleGenerateAPIToken)

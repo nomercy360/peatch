@@ -176,6 +176,7 @@ func (s *Storage) InitSchema() error {
 			badges              TEXT,
 			opportunity         TEXT,
 			verification_status TEXT      DEFAULT 'pending',
+			embedding_updated_at TIMESTAMP,
 			verified_at         TIMESTAMP,
 			FOREIGN KEY (user_id) REFERENCES users (id),
 			CHECK (verification_status IN ('pending', 'verified', 'denied', 'blocked', 'unverified'))
@@ -222,8 +223,8 @@ func (s *Storage) InitSchema() error {
 			user_id TEXT PRIMARY KEY,
 			embedding FLOAT[1536]
 		)`,
-		`CREATE VIRTUAL TABLE IF NOT EXISTS opportunity_embeddings USING vec0 (
-			opportunity_id TEXT PRIMARY KEY,
+		`CREATE VIRTUAL TABLE IF NOT EXISTS collaboration_embeddings USING vec0 (
+			collaboration_id TEXT PRIMARY KEY,
 			embedding FLOAT[1536]
 		)`,
 	}
@@ -246,7 +247,7 @@ func (s *Storage) InitSchema() error {
 		`CREATE INDEX IF NOT EXISTS idx_collaborations_created ON collaborations (created_at)`,
 		`CREATE INDEX IF NOT EXISTS idx_user_followers_expires ON user_followers (expires_at)`,
 		`CREATE INDEX IF NOT EXISTS idx_collab_interests_expires ON collaboration_interests (expires_at)`,
-		`CREATE UNIQUE INDEX idx_admins_api_token ON admins(api_token) WHERE api_token IS NOT NULL`,
+		`CREATE UNIQUE INDEX IF NOT EXISTS idx_admins_api_token ON admins(api_token) WHERE api_token IS NOT NULL`,
 	}
 
 	for _, stmt := range indexes {

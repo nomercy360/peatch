@@ -374,7 +374,7 @@ func (h *Handler) handleAdminUpdateCollaborationVerification(c echo.Context) err
 					h.logger.Error("failed to send collaboration to community chat", slog.String("error", err.Error()))
 				}
 
-				users, err := h.storage.GetUsersWithOpportunityVectorSearch(ctx, collab.Opportunity.ID, 100)
+				users, err := h.storage.GetMatchingUsersForCollaboration(ctx, collab.Opportunity.ID, 100)
 				if err != nil {
 					h.logger.Error("failed to get users with opportunity", slog.String("error", err.Error()))
 					return

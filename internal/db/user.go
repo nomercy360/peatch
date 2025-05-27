@@ -314,8 +314,8 @@ func (s *Storage) CreateUser(ctx context.Context, params UpdateUserParams) error
 			id, name, chat_id, username, created_at, updated_at,
 			notifications_enabled_at, hidden_at, avatar_url, title,
 			description, language_code,
-			verification_status, verified_at,
-		    location, links, badges, opportunities, last_active_at
+			verification_status, verified_at, last_active_at,
+		    location, links, badges, opportunities
 		) VALUES (
 			?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 		)
@@ -325,12 +325,11 @@ func (s *Storage) CreateUser(ctx context.Context, params UpdateUserParams) error
 		user.ID, user.Name, user.ChatID, user.Username, user.CreatedAt, user.UpdatedAt,
 		user.NotificationsEnabledAt, user.HiddenAt, user.AvatarURL, user.Title,
 		user.Description, user.LanguageCode,
-		user.VerificationStatus, user.VerifiedAt, user.EmbeddingUpdatedAt,
+		user.VerificationStatus, user.VerifiedAt, user.LastActiveAt,
 		locationJSON,
 		linksJSON,
 		badgesJSON,
 		oppsJSON,
-		user.LastActiveAt,
 	)
 
 	if err != nil {

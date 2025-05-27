@@ -382,6 +382,7 @@ type CollaborationResponse struct {
 	Links              []Link                `json:"links"`
 	User               UserProfileResponse   `json:"user"`
 	VerificationStatus db.VerificationStatus `json:"verification_status"`
+	HasInterest        bool                  `json:"has_interest,omitempty"`
 } // @Name CollaborationResponse
 
 func ToCollaborationResponse(collab db.Collaboration) CollaborationResponse {
@@ -399,6 +400,7 @@ func ToCollaborationResponse(collab db.Collaboration) CollaborationResponse {
 		Links:              ToLinkResponseList(collab.Links),
 		User:               ToUserProfile(collab.User),
 		VerificationStatus: collab.VerificationStatus,
+		HasInterest:        collab.HasInterest,
 	}
 
 	if collab.Location != nil {

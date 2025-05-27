@@ -8,6 +8,7 @@ import (
 	"github.com/peatch-io/peatch/internal/testutils"
 	"github.com/stretchr/testify/assert"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/peatch-io/peatch/internal/contract"
@@ -18,84 +19,214 @@ func TestListUsers_Success(t *testing.T) {
 	ts := testutils.SetupTestEnvironment(t)
 	defer ts.Teardown()
 
-	authResp, err := testutils.AuthHelper(t, ts.Echo, testutils.TelegramTestUserID, "user1", "First")
+	// Create the viewer/authenticated user
+	viewerAuth, err := testutils.AuthHelper(t, ts.Echo, testutils.TelegramTestUserID, "viewer", "Viewer")
 	if err != nil {
-		t.Fatalf("failed to authenticate: %v", err)
+		t.Fatalf("failed to authenticate viewer: %v", err)
+	}
+	viewerToken := viewerAuth.Token
+
+	// Setup test records
+	badges, opps, locationID := setupTestRecords(ts.Storage, t)
+
+	// Update viewer profile to be verified
+	testutils.PerformRequest(t, ts.Echo, http.MethodPut,
+		"/api/users", fmt.Sprintf(`{"name": "Viewer", "title": "Product Manager", "description": "Viewer description", "location_id": "%s", "badge_ids": ["%s"], "opportunity_ids": ["%s"]}`, locationID, badges[0], opps[0]),
+		viewerToken, http.StatusOK)
+	if err := ts.Storage.UpdateUserVerificationStatus(context.Background(), viewerAuth.User.ID, db.VerificationStatusVerified); err != nil {
+		t.Fatalf("failed to verify viewer: %v", err)
 	}
 
-	token := authResp.Token
-
-	badges, opps, loc := setupTestRecords(ts.Storage, t)
-
-	users := []db.User{
+	// Create multiple test users with different characteristics
+	testUsers := []struct {
+		id          string
+		chatID      int64
+		username    string
+		name        string
+		title       string
+		description string
+		badgeIDs    []string
+		oppIDs      []string
+	}{
 		{
-			ID:                 "user-1",
-			ChatID:             123456,
-			Username:           "testuser1",
-			Name:               strPtr("Test"),
-			AvatarURL:          strPtr("https://example.com/avatar1.jpg"),
-			Title:              strPtr("Developer"),
-			Description:        strPtr("Test user 1 description"),
-			VerificationStatus: db.VerificationStatusVerified,
+			id:          "user-1",
+			chatID:      123456,
+			username:    "frontend_dev",
+			name:        "Alice Johnson",
+			title:       "Frontend Developer",
+			description: "Experienced React developer with 5 years of experience",
+			badgeIDs:    []string{badges[0]},
+			oppIDs:      []string{opps[0]},
 		},
 		{
-			ID:                 "user-2",
-			ChatID:             654321,
-			Username:           "testuser2",
-			Name:               strPtr("Another"),
-			AvatarURL:          strPtr("https://example.com/avatar2.jpg"),
-			Title:              strPtr("Designer"),
-			Description:        strPtr("Test user 2 description"),
-			VerificationStatus: db.VerificationStatusVerified,
+			id:          "user-2",
+			chatID:      654321,
+			username:    "ui_designer",
+			name:        "Bob Smith",
+			title:       "UI/UX Designer",
+			description: "Creative designer focused on user experience",
+			badgeIDs:    []string{badges[1]},
+			oppIDs:      []string{opps[1]},
+		},
+		{
+			id:          "user-3",
+			chatID:      789012,
+			username:    "backend_dev",
+			name:        "Charlie Brown",
+			title:       "Backend Developer",
+			description: "Go and Python expert, building scalable systems",
+			badgeIDs:    badges, // Has all badges
+			oppIDs:      opps,   // Has all opportunities
+		},
+		{
+			id:          "user-4",
+			chatID:      345678,
+			username:    "fullstack",
+			name:        "Diana Prince",
+			title:       "Full Stack Developer",
+			description: "JavaScript ninja, proficient in React and Node.js",
+			badgeIDs:    []string{badges[0], badges[1]},
+			oppIDs:      []string{opps[0]},
 		},
 	}
 
-	userParams := make([]db.UpdateUserParams, len(users))
-	for i, user := range users {
-		userParams[i] = db.UpdateUserParams{
+	// Create all test users
+	for _, userData := range testUsers {
+		user := db.User{
+			ID:                 userData.id,
+			ChatID:             userData.chatID,
+			Username:           userData.username,
+			Name:               strPtr(userData.name),
+			AvatarURL:          strPtr(fmt.Sprintf("https://example.com/avatar_%s.jpg", userData.id)),
+			Title:              strPtr(userData.title),
+			Description:        strPtr(userData.description),
+			VerificationStatus: db.VerificationStatusVerified,
+		}
+
+		userParams := db.UpdateUserParams{
 			User:           user,
-			BadgeIDs:       badges,
-			OpportunityIDs: opps,
-			LocationID:     loc,
+			BadgeIDs:       userData.badgeIDs,
+			OpportunityIDs: userData.oppIDs,
+			LocationID:     locationID,
+		}
+
+		if err := ts.Storage.CreateUser(context.Background(), userParams); err != nil {
+			t.Fatalf("failed to insert test user %s: %v", userData.id, err)
 		}
 	}
 
-	for _, user := range userParams {
-		if err := ts.Storage.CreateUser(context.Background(), user); err != nil {
-			t.Fatalf("failed to insert test user: %v", err)
-		}
-	}
-
-	rec := testutils.PerformRequest(t, ts.Echo, http.MethodGet, "/api/users", "", token, http.StatusOK)
+	// Test 1: List all users (should exclude the viewer)
+	rec := testutils.PerformRequest(t, ts.Echo, http.MethodGet, "/api/users", "", viewerToken, http.StatusOK)
 	var respUsers []db.User
 	if err := json.Unmarshal(rec.Body.Bytes(), &respUsers); err != nil {
 		t.Fatalf("failed to parse response: %v", err)
 	}
 
-	if len(respUsers) != 2 { // my profile should not be included
-		t.Errorf("expected 2 users, got %d", len(respUsers))
+	if len(respUsers) != 4 {
+		t.Errorf("expected 4 users (excluding viewer), got %d", len(respUsers))
 	}
 
-	rec = testutils.PerformRequest(t, ts.Echo, http.MethodGet, "/api/users?search=Developer", "", token, http.StatusOK)
+	// Test 2: Search by title keyword "Developer"
+	rec = testutils.PerformRequest(t, ts.Echo, http.MethodGet, "/api/users?search=Developer", "", viewerToken, http.StatusOK)
+	if err := json.Unmarshal(rec.Body.Bytes(), &respUsers); err != nil {
+		t.Fatalf("failed to parse response: %v", err)
+	}
+
+	if len(respUsers) != 3 {
+		t.Errorf("expected 3 users with 'Developer' in title, got %d", len(respUsers))
+	}
+
+	// Verify all results contain "Developer"
+	for _, user := range respUsers {
+		if user.Title == nil || !strings.Contains(*user.Title, "Developer") {
+			t.Errorf("expected title to contain 'Developer', got '%v'", user.Title)
+		}
+	}
+
+	// Test 3: Search by specific title "Frontend"
+	rec = testutils.PerformRequest(t, ts.Echo, http.MethodGet, "/api/users?search=Frontend", "", viewerToken, http.StatusOK)
 	if err := json.Unmarshal(rec.Body.Bytes(), &respUsers); err != nil {
 		t.Fatalf("failed to parse response: %v", err)
 	}
 
 	if len(respUsers) != 1 {
-		t.Errorf("expected 1 user with search query, got %d", len(respUsers))
+		t.Errorf("expected 1 user with 'Frontend' in title, got %d", len(respUsers))
 	}
 
-	if respUsers[0].Title == nil || *respUsers[0].Title != "Developer" {
-		t.Errorf("expected title 'Developer', got '%v'", respUsers[0].Title)
+	if respUsers[0].Name == nil || *respUsers[0].Name != "Alice Johnson" {
+		t.Errorf("expected name 'Alice Johnson', got '%v'", respUsers[0].Name)
 	}
 
-	rec = testutils.PerformRequest(t, ts.Echo, http.MethodGet, "/api/users?page=1&limit=1", "", token, http.StatusOK)
+	// Test 4: Search in description
+	rec = testutils.PerformRequest(t, ts.Echo, http.MethodGet, "/api/users?search=React", "", viewerToken, http.StatusOK)
 	if err := json.Unmarshal(rec.Body.Bytes(), &respUsers); err != nil {
 		t.Fatalf("failed to parse response: %v", err)
 	}
 
-	if len(respUsers) != 1 {
-		t.Errorf("expected 1 user with pagination, got %d", len(respUsers))
+	if len(respUsers) != 2 {
+		t.Errorf("expected 2 users with 'React' in description, got %d", len(respUsers))
+	}
+
+	// Test 5: Pagination - first page
+	rec = testutils.PerformRequest(t, ts.Echo, http.MethodGet, "/api/users?page=1&limit=2", "", viewerToken, http.StatusOK)
+	if err := json.Unmarshal(rec.Body.Bytes(), &respUsers); err != nil {
+		t.Fatalf("failed to parse response: %v", err)
+	}
+
+	if len(respUsers) != 2 {
+		t.Errorf("expected 2 users on first page with limit=2, got %d", len(respUsers))
+	}
+
+	// Test 6: Pagination - second page
+	rec = testutils.PerformRequest(t, ts.Echo, http.MethodGet, "/api/users?page=2&limit=2", "", viewerToken, http.StatusOK)
+	if err := json.Unmarshal(rec.Body.Bytes(), &respUsers); err != nil {
+		t.Fatalf("failed to parse response: %v", err)
+	}
+
+	if len(respUsers) != 2 {
+		t.Errorf("expected 2 users on second page with limit=2, got %d", len(respUsers))
+	}
+
+	// Test 7: Pagination - third page (should be empty or have remaining users)
+	rec = testutils.PerformRequest(t, ts.Echo, http.MethodGet, "/api/users?page=3&limit=2", "", viewerToken, http.StatusOK)
+	if err := json.Unmarshal(rec.Body.Bytes(), &respUsers); err != nil {
+		t.Fatalf("failed to parse response: %v", err)
+	}
+
+	if len(respUsers) != 0 {
+		t.Errorf("expected 0 users on third page with limit=2, got %d", len(respUsers))
+	}
+
+	// Test 8: Follow a user to test IsFollowing field
+	userToFollow := "user-2"
+	testutils.PerformRequest(t, ts.Echo, http.MethodPost, fmt.Sprintf("/api/users/%s/follow", userToFollow), "", viewerToken, http.StatusOK)
+
+	// Get the specific user to check IsFollowing
+	rec = testutils.PerformRequest(t, ts.Echo, http.MethodGet, fmt.Sprintf("/api/users/%s", userToFollow), "", viewerToken, http.StatusOK)
+	var singleUser db.User
+	if err := json.Unmarshal(rec.Body.Bytes(), &singleUser); err != nil {
+		t.Fatalf("failed to parse single user response: %v", err)
+	}
+
+	if !singleUser.IsFollowing {
+		t.Errorf("expected IsFollowing to be true for followed user")
+	}
+
+	// Test 9: Verify user has all expected fields populated
+	if singleUser.Username != "ui_designer" {
+		t.Errorf("expected username 'ui_designer', got '%s'", singleUser.Username)
+	}
+	if singleUser.Name == nil || *singleUser.Name != "Bob Smith" {
+		t.Errorf("expected name 'Bob Smith', got '%v'", singleUser.Name)
+	}
+	if len(singleUser.Badges) != 1 {
+		t.Errorf("expected 1 badge, got %d", len(singleUser.Badges))
+	}
+	if len(singleUser.Opportunities) != 1 {
+		t.Errorf("expected 1 opportunity, got %d", len(singleUser.Opportunities))
+	}
+	if singleUser.Location == nil || singleUser.Location.ID != locationID {
+		t.Errorf("expected location ID '%s', got '%v'", locationID, singleUser.Location)
 	}
 }
 

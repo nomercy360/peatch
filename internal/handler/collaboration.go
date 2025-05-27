@@ -7,6 +7,7 @@ import (
 	"github.com/peatch-io/peatch/internal/db"
 	"github.com/peatch-io/peatch/internal/nanoid"
 	"github.com/peatch-io/peatch/internal/notification"
+	"log/slog"
 	"net/http"
 	"time"
 )
@@ -252,4 +253,32 @@ func (h *Handler) handleExpressInterest(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, contract.StatusResponse{Success: true})
+}
+
+func (h *Handler) HandleGetMatchingProfiles(c echo.Context) error {
+	collabID := c.Param("id")
+	uid := getUserID(c)
+
+	if uid == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "user id is required")
+	}
+
+	collab, err := h.storage.GetCollaborationByID(c.Request().Context(), uid, collabID)
+	if err != nil && errors.Is(err, db.ErrNotFound) {
+		return echo.NewHTTPError(http.StatusNotFound, "collaboration not found").WithInternal(err)
+	} else if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get collaboration").WithInternal(err)
+	}
+
+	users, err := h.storage.GetMatchingUsersForCollaboration(c.Request().Context(), collab.ID, 100)
+	if err != nil {
+		h.logger.Error("failed to get users with opportunity", slog.String("error", err.Error()))
+	}
+
+	resp := make([]contract.UserProfileResponse, len(users))
+	for i, u := range users {
+		resp[i] = contract.ToUserProfile(u)
+	}
+
+	return c.JSON(http.StatusOK, users)
 }

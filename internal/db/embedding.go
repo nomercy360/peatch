@@ -60,22 +60,21 @@ func (s *Storage) UpdateUserEmbedding(ctx context.Context, userID string, embedd
 	return tx.Commit()
 }
 
-// GetUsersWithOpportunityVectorSearch finds users similar to an opportunity using vector search
-func (s *Storage) GetUsersWithOpportunityVectorSearch(ctx context.Context, opportunityID string, limit int) ([]User, error) {
+// GetMatchingUsersForCollaboration finds users similar to an embedding vector for a given collaboration
+func (s *Storage) GetMatchingUsersForCollaboration(ctx context.Context, collabID string, limit int) ([]User, error) {
 	if limit <= 0 {
 		limit = 100
 	}
 
-	// First get the opportunity's embedding
-	var opportunityEmbedding []byte
+	var collabEmbedding []byte
 	err := s.db.QueryRowContext(ctx,
-		"SELECT embedding FROM opportunity_embeddings WHERE opportunity_id = ?",
-		opportunityID).Scan(&opportunityEmbedding)
+		"SELECT embedding FROM collaboration_embeddings WHERE collaboration_id = ?",
+		collabID).Scan(&collabEmbedding)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("opportunity has no embedding")
+			return nil, fmt.Errorf("collaboration embedding not found for ID %s: %w", collabID, ErrNotFound)
 		}
-		return nil, fmt.Errorf("failed to get opportunity embedding: %w", err)
+		return nil, fmt.Errorf("failed to retrieve collaboration embedding: %w", err)
 	}
 
 	// Perform vector similarity search
@@ -92,11 +91,11 @@ func (s *Storage) GetUsersWithOpportunityVectorSearch(ctx context.Context, oppor
 		WHERE u.hidden_at IS NULL 
 		AND u.verification_status = 'verified'
 		AND ue.embedding MATCH ?
+		AND k = ?
 		ORDER BY distance
-		LIMIT ?
 	`
 
-	rows, err := s.db.QueryContext(ctx, query, opportunityEmbedding, limit)
+	rows, err := s.db.QueryContext(ctx, query, collabEmbedding, collabEmbedding, limit)
 	if err != nil {
 		return nil, fmt.Errorf("failed to perform vector search: %w", err)
 	}
@@ -112,47 +111,6 @@ func (s *Storage) GetUsersWithOpportunityVectorSearch(ctx context.Context, oppor
 	}
 
 	return users, rows.Err()
-}
-
-// UpdateOpportunityEmbedding updates or inserts an opportunity's embedding vector
-func (s *Storage) UpdateOpportunityEmbedding(ctx context.Context, opportunityID string, embeddingVector []float64) error {
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %w", err)
-	}
-	defer tx.Rollback()
-
-	// Check if opportunity exists
-	var exists bool
-	err = tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM opportunities WHERE id = ?)", opportunityID).Scan(&exists)
-	if err != nil {
-		return fmt.Errorf("failed to check opportunity existence: %w", err)
-	}
-	if !exists {
-		return ErrNotFound
-	}
-
-	// Serialize the embedding vector
-	serializedVector, err := sqlite_vec.SerializeFloat32(vectorFloat64ToFloat32(embeddingVector))
-	if err != nil {
-		return fmt.Errorf("failed to serialize embedding vector: %w", err)
-	}
-
-	// Delete existing embedding if any
-	_, err = tx.ExecContext(ctx, "DELETE FROM opportunity_embeddings WHERE opportunity_id = ?", opportunityID)
-	if err != nil {
-		return fmt.Errorf("failed to delete existing embedding: %w", err)
-	}
-
-	// Insert new embedding
-	_, err = tx.ExecContext(ctx,
-		"INSERT INTO opportunity_embeddings(opportunity_id, embedding) VALUES (?, ?)",
-		opportunityID, serializedVector)
-	if err != nil {
-		return fmt.Errorf("failed to insert opportunity embedding: %w", err)
-	}
-
-	return tx.Commit()
 }
 
 // FindSimilarUsers finds users with embeddings similar to a given embedding vector
@@ -201,45 +159,6 @@ func (s *Storage) FindSimilarUsers(ctx context.Context, embeddingVector []float6
 
 	return users, rows.Err()
 }
-
-// GetUsersNeedingEmbeddings returns users that don't have embeddings yet
-func (s *Storage) GetUsersNeedingEmbeddings(ctx context.Context, limit int) ([]User, error) {
-	query := `
-		SELECT 
-			u.id, u.name, u.chat_id, u.username, u.created_at, u.updated_at,
-			u.notifications_enabled_at, u.hidden_at, u.avatar_url, u.title,
-			u.description, u.language_code, u.last_active_at,
-			u.verification_status, u.verified_at, u.embedding_updated_at,
-			u.login_metadata, u.location, u.links, u.badges, u.opportunities
-		FROM users u
-		LEFT JOIN user_embeddings ue ON u.id = ue.user_id
-		WHERE ue.user_id IS NULL
-		AND u.description IS NOT NULL
-		AND u.description != ''
-		AND u.hidden_at IS NULL
-		ORDER BY u.created_at DESC
-		LIMIT ?
-	`
-
-	rows, err := s.db.QueryContext(ctx, query, limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var users []User
-	for rows.Next() {
-		user, err := scanUser(rows)
-		if err != nil {
-			return nil, err
-		}
-		users = append(users, user)
-	}
-
-	return users, rows.Err()
-}
-
-// Helper functions
 
 // vectorFloat64ToFloat32 converts []float64 to []float32 for sqlite-vec
 func vectorFloat64ToFloat32(vec []float64) []float32 {
