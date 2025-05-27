@@ -19,6 +19,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -213,13 +214,18 @@ func SetupTestEnvironment(t *testing.T) *testSetup {
 		ImageServiceURL:  "http://localhost/images",
 	}
 
-	storage, err := db.NewStorage(":memory:")
+	// Use a shared in-memory database for tests to avoid connection issues
+	// The ?cache=shared ensures all connections see the same database
+	storage, err := db.NewStorage("file::memory:?cache=shared")
 	require.NoError(t, err, "Failed to create in-memory storage")
 
 	err = storage.InitSchema()
-	require.NoError(t, err, "Failed to initialize DB schema")
+	if err != nil {
+		t.Logf("Schema initialization error: %v", err)
+		require.NoError(t, err, "Failed to initialize DB schema")
+	}
 
-	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	// 4. Mocks
 	mockS3Client := new(MockPhotoUploader)

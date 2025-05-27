@@ -38,6 +38,58 @@ type Collaboration struct {
 	Links              []Link             `json:"links"`
 }
 
+func (c *Collaboration) ToString() string {
+	var parts []string
+
+	if c.Title != "" {
+		parts = append(parts, c.Title)
+	}
+
+	if c.Description != "" {
+		parts = append(parts, c.Description)
+	}
+
+	if c.Location != nil && c.Location.Name != "" {
+		parts = append(parts, fmt.Sprintf("Location: %s", c.Location.Name))
+	}
+
+	// Add badges text
+	for _, badge := range c.Badges {
+		if badge.Text != "" {
+			parts = append(parts, badge.Text)
+		}
+	}
+
+	// Add opportunity text
+	if c.Opportunity.Text != "" {
+		parts = append(parts, fmt.Sprintf("Looking for: %s", c.Opportunity.Text))
+	}
+	if c.Opportunity.Description != "" {
+		parts = append(parts, c.Opportunity.Description)
+	}
+
+	if c.IsPayable {
+		parts = append(parts, "Paid opportunity")
+	}
+
+	text := ""
+	for _, part := range parts {
+		if part != "" {
+			if text != "" {
+				text += ". "
+			}
+			text += part
+		}
+	}
+
+	// Limit to 8000 characters as per embedding service
+	if len(text) > 8000 {
+		text = text[:8000]
+	}
+
+	return text
+}
+
 type CollaborationQuery struct {
 	Page     int
 	Limit    int

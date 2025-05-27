@@ -69,11 +69,79 @@ type User struct {
 	Opportunities          []Opportunity      `bson:"opportunities,omitempty" json:"opportunities"`
 	Links                  []Link             `bson:"links,omitempty" json:"links"`
 	LoginMetadata          *LoginMeta         `bson:"login_metadata,omitempty" json:"login_metadata"`
-	LastActiveAt           time.Time          `bson:"last_active_at,omitempty" json:"last_active_at"`
+	LastActiveAt           *time.Time         `bson:"last_active_at,omitempty" json:"last_active_at"`
 	VerificationStatus     VerificationStatus `bson:"verification_status,omitempty" json:"verification_status"`
 	VerifiedAt             *time.Time         `bson:"verified_at,omitempty" json:"verified_at"`
 	Embedding              []float64          `bson:"embedding,omitempty" json:"-"`
 	EmbeddingUpdatedAt     *time.Time         `bson:"embedding_updated_at,omitempty" json:"-"`
+}
+
+func (u *User) ToString() string {
+	var badgeTexts []string
+	for _, badge := range u.Badges {
+		badgeTexts = append(badgeTexts, badge.Text)
+	}
+	var oppTexts []string
+	for _, opp := range u.Opportunities {
+		oppTexts = append(oppTexts, opp.Text)
+	}
+	locationName := ""
+	if u.Location != nil {
+		locationName = u.Location.Name
+	}
+
+	name := ""
+	if u.Name != nil {
+		name = *u.Name
+	}
+
+	description := ""
+	if u.Description != nil {
+		description = *u.Description
+	}
+
+	title := ""
+	if u.Title != nil {
+		title = *u.Title
+	}
+
+	var parts []string
+
+	if name != "" {
+		parts = append(parts, "Name: "+name)
+	}
+	if title != "" {
+		parts = append(parts, "Title: "+title)
+	}
+	if description != "" {
+		parts = append(parts, "Description: "+description)
+	}
+	if locationName != "" {
+		parts = append(parts, "Location: "+locationName)
+	}
+	if len(badgeTexts) > 0 {
+		parts = append(parts, "Skills: "+strings.Join(badgeTexts, ", "))
+	}
+	if len(oppTexts) > 0 {
+		parts = append(parts, "Interests: "+strings.Join(oppTexts, ", "))
+	}
+
+	text := ""
+	for _, part := range parts {
+		if part != "" {
+			if text != "" {
+				text += ". "
+			}
+			text += part
+		}
+	}
+
+	// Limit to 8000 characters as per embedding service
+	if len(text) > 8000 {
+		text = text[:8000]
+	}
+
+	return text
 }
 
 func (u *User) IsProfileComplete() bool {
@@ -121,23 +189,23 @@ func (s *Storage) ListUsers(ctx context.Context, params ListUsersOptions) ([]Use
 
 	// Add search filter
 	if params.SearchQuery != "" {
-		query += fmt.Sprintf(` AND (name LIKE ? OR username LIKE ? OR title LIKE ? OR description LIKE ?)`)
+		query += ` AND (name LIKE ? OR username LIKE ? OR title LIKE ? OR description LIKE ?)`
 		searchPattern := "%" + params.SearchQuery + "%"
 		args = append(args, searchPattern, searchPattern, searchPattern, searchPattern)
 	}
 
 	// Add hidden filter
 	if !params.IncludeHidden {
-		query += fmt.Sprintf(` AND hidden_at IS NULL`)
+		query += ` AND hidden_at IS NULL`
 	}
 
 	if params.UserID != "" {
-		query += fmt.Sprintf(` AND id != ?`) // Exclude the viewer themselves
+		query += ` AND id != ?` // Exclude the viewer themselves
 		args = append(args, params.UserID)
 	}
 
 	// Add ordering and pagination
-	query += fmt.Sprintf(` ORDER BY created_at DESC LIMIT ? OFFSET ?`)
+	query += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`
 	args = append(args, params.Limit, params.Offset)
 
 	rows, err := s.db.QueryContext(ctx, query, args...)
@@ -191,7 +259,7 @@ func (s *Storage) CreateUser(ctx context.Context, user User) error {
 	now := time.Now()
 	user.CreatedAt = now
 	user.UpdatedAt = now
-	user.LastActiveAt = now
+	user.LastActiveAt = &now
 	if user.VerificationStatus == "" {
 		user.VerificationStatus = VerificationStatusUnverified
 	}
@@ -234,13 +302,17 @@ func (s *Storage) CreateUser(ctx context.Context, user User) error {
 	return nil
 }
 
+type UpdateUserParams struct {
+	User           User
+	BadgeIDs       []string
+	OpportunityIDs []string
+	LocationID     string
+}
+
 // UpdateUser updates user profile
 func (s *Storage) UpdateUser(
 	ctx context.Context,
-	user User,
-	badgeIDs []string,
-	opportunityIDs []string,
-	locationID string,
+	params UpdateUserParams,
 ) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -248,78 +320,32 @@ func (s *Storage) UpdateUser(
 	}
 	defer tx.Rollback()
 
-	// Fetch badge and opportunity details
-	var badges []Badge
-	var opportunities []Opportunity
+	var badgesJSON, oppsJSON, locationJSON []byte
 
-	if len(badgeIDs) > 0 {
-		// Fetch badges
-		placeholders := make([]string, len(badgeIDs))
-		args := make([]interface{}, len(badgeIDs))
-		for i, id := range badgeIDs {
-			placeholders[i] = "?"
-			args[i] = id
-		}
+	badges, err := s.fetchBadgesTx(ctx, tx, params.BadgeIDs)
 
-		query := fmt.Sprintf(`SELECT id, text, icon, color FROM badges WHERE id IN (%s)`, strings.Join(placeholders, ","))
-		rows, err := tx.QueryContext(ctx, query, args...)
-		if err != nil {
-			return err
-		}
-		defer rows.Close()
-
-		for rows.Next() {
-			var badge Badge
-			if err := rows.Scan(&badge.ID, &badge.Text, &badge.Icon, &badge.Color); err != nil {
-				return err
-			}
-			badges = append(badges, badge)
-		}
+	if err != nil {
+		return err
 	}
 
-	if len(opportunityIDs) > 0 {
-		// Fetch opportunities
-		placeholders := make([]string, len(opportunityIDs))
-		args := make([]interface{}, len(opportunityIDs))
-		for i, id := range opportunityIDs {
-			placeholders[i] = "?"
-			args[i] = id
-		}
+	badgesJSON, err = json.Marshal(badges)
 
-		query := fmt.Sprintf(`SELECT id, text_en, text_ru, icon, color FROM opportunities WHERE id IN (%s)`,
-			strings.Join(placeholders, ","))
-		rows, err := tx.QueryContext(ctx, query, args...)
-		if err != nil {
-			return err
-		}
-		defer rows.Close()
+	opportunities, err := s.fetchOpportunitiesTx(ctx, tx, params.OpportunityIDs)
 
-		for rows.Next() {
-			var opp Opportunity
-			if err := rows.Scan(&opp.ID, &opp.Text, &opp.TextRU, &opp.Icon, &opp.Color); err != nil {
-				return err
-			}
-			opportunities = append(opportunities, opp)
-		}
+	if err != nil {
+		return err
 	}
 
-	var location City
-	if locationID != "" {
-		query := `SELECT id, name, country_code, latitude, longitude FROM cities WHERE id = ?`
-		row := tx.QueryRowContext(ctx, query, locationID)
-		if err := row.Scan(&location.ID, &location.Name, &location.CountryCode, &location.Latitude, &location.Longitude); err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				return fmt.Errorf("location not found")
-			}
-			return err
-		}
-	} else {
-		location = City{}
-	}
+	oppsJSON, err = json.Marshal(opportunities)
 
-	badgesJSON, _ := json.Marshal(badges)
-	oppsJSON, _ := json.Marshal(opportunities)
-	locationJSON, _ := json.Marshal(location)
+	location, err := s.fetchCityTx(ctx, tx, params.LocationID)
+	if err != nil {
+		if errors.Is(err, ErrNotFound) {
+			return ErrNotFound
+		}
+		return err
+	}
+	locationJSON, err = json.Marshal(location)
 
 	// Update user
 	query := `
@@ -336,7 +362,8 @@ func (s *Storage) UpdateUser(
 	`
 
 	var embeddingUpdatedAt *time.Time
-	if user.Description != nil || len(opportunityIDs) > 0 {
+	user := params.User
+	if user.Description != nil {
 		now := time.Now()
 		embeddingUpdatedAt = &now
 	}
@@ -654,7 +681,7 @@ func (s *Storage) GetUserProfile(ctx context.Context, viewerID string, idOrUsern
 	resp, err := s.getUserByQuery(ctx, query, idOrUsername, idOrUsername)
 	if err != nil {
 		if errors.Is(err, ErrNotFound) {
-			return User{}, fmt.Errorf("user not found")
+			return User{}, ErrNotFound
 		}
 		return User{}, fmt.Errorf("failed to get user profile: %w", err)
 	}

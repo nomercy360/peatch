@@ -3,8 +3,6 @@ package embedding
 import (
 	"context"
 	"fmt"
-	"strings"
-
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 )
@@ -52,44 +50,4 @@ func (s *Service) GenerateEmbedding(ctx context.Context, text string) ([]float64
 	}
 
 	return embedding, nil
-}
-
-// BuildUserEmbeddingText creates a text representation of a user for embedding
-func BuildUserEmbeddingText(name, title, description string, badges []string, opportunities []string, location string) string {
-	parts := []string{}
-
-	if name != "" {
-		parts = append(parts, "Name: "+name)
-	}
-	if title != "" {
-		parts = append(parts, "Title: "+title)
-	}
-	if description != "" {
-		parts = append(parts, "Description: "+description)
-	}
-	if location != "" {
-		parts = append(parts, "Location: "+location)
-	}
-	if len(badges) > 0 {
-		parts = append(parts, "Skills: "+strings.Join(badges, ", "))
-	}
-	if len(opportunities) > 0 {
-		parts = append(parts, "Interests: "+strings.Join(opportunities, ", "))
-	}
-
-	return strings.Join(parts, "\n")
-}
-
-// BuildOpportunityEmbeddingText creates a text representation of an opportunity for embedding
-func BuildOpportunityEmbeddingText(text, description string) string {
-	var parts []string
-
-	if text != "" {
-		parts = append(parts, "Opportunity: "+text)
-	}
-	if description != "" {
-		parts = append(parts, "Description: "+description)
-	}
-
-	return strings.Join(parts, "\n")
 }

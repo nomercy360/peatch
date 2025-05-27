@@ -7,7 +7,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/peatch-io/peatch/internal/contract"
 	"github.com/peatch-io/peatch/internal/db"
-	"github.com/peatch-io/peatch/internal/embedding"
 	"github.com/peatch-io/peatch/internal/notification"
 	"log/slog"
 	"net/http"
@@ -120,12 +119,16 @@ func (h *Handler) handleUpdateUser(c echo.Context) error {
 	user.Title = &req.Title
 	user.Description = &req.Description
 
+	params := db.UpdateUserParams{
+		User:           user,
+		BadgeIDs:       req.BadgeIDs,
+		OpportunityIDs: req.OpportunityIDs,
+		LocationID:     req.LocationID,
+	}
+
 	if err := h.storage.UpdateUser(
 		c.Request().Context(),
-		user,
-		req.BadgeIDs,
-		req.OpportunityIDs,
-		req.LocationID,
+		params,
 	); err != nil && errors.Is(err, db.ErrNotFound) {
 		return echo.NewHTTPError(http.StatusNotFound, "not found").WithInternal(err)
 	} else if err != nil {
@@ -169,40 +172,9 @@ func (h *Handler) handleUpdateUser(c echo.Context) error {
 	go func() {
 		// Extract text from user profile
 		ctx := context.Background()
-		name := ""
-		if resp.Name != nil {
-			name = *resp.Name
-		}
-		title := ""
-		if resp.Title != nil {
-			title = *resp.Title
-		}
-		description := ""
-		if resp.Description != nil {
-			description = *resp.Description
-		}
-		location := ""
-		if resp.Location != nil {
-			location = resp.Location.Name
-		}
-
-		// Extract badge texts
-		badges := make([]string, len(resp.Badges))
-		for i, badge := range resp.Badges {
-			badges[i] = badge.Text
-		}
-
-		// Extract opportunity texts
-		opportunities := make([]string, len(resp.Opportunities))
-		for i, opp := range resp.Opportunities {
-			opportunities[i] = opp.Text
-		}
-
-		// Build embedding text
-		embeddingText := embedding.BuildUserEmbeddingText(name, title, description, badges, opportunities, location)
 
 		// Generate embedding
-		embeddingVector, err := h.embeddingService.GenerateEmbedding(ctx, embeddingText)
+		embeddingVector, err := h.embeddingService.GenerateEmbedding(ctx, user.ToString())
 		if err != nil {
 			h.logger.Error("failed to generate user embedding",
 				slog.String("user_id", uid),

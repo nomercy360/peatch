@@ -269,3 +269,66 @@ func (s *Storage) GetOpportunitiesNeedingEmbeddings(ctx context.Context, limit i
 
 	return opportunities, rows.Err()
 }
+
+func (s *Storage) fetchOpportunityTx(ctx context.Context, tx *sql.Tx, id string) (*Opportunity, error) {
+	query := `
+		SELECT id, text_en, text_ru, description_en, description_ru, 
+		       icon, color, created_at
+		FROM opportunities
+		WHERE id = ?
+	`
+
+	var opp Opportunity
+	var descEN, descRU sql.NullString
+
+	err := tx.QueryRowContext(ctx, query, id).Scan(
+		&opp.ID,
+		&opp.Text,
+		&opp.TextRU,
+		&descEN,
+		&descRU,
+		&opp.Icon,
+		&opp.Color,
+		&opp.CreatedAt,
+	)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+
+	if descEN.Valid {
+		opp.Description = descEN.String
+	}
+	if descRU.Valid {
+		opp.DescriptionRU = descRU.String
+	}
+
+	return &opp, nil
+}
+
+func (s *Storage) fetchOpportunitiesTx(ctx context.Context, tx *sql.Tx, ids []string) ([]Opportunity, error) {
+	queryTemplate := `
+		SELECT id, text_en, text_ru, description_en, description_ru,
+		       icon, color, created_at
+		FROM opportunities
+		WHERE id IN (%s)
+	`
+
+	return fetchItemsByID(ctx, tx, queryTemplate, ids, func(rows *sql.Rows) (Opportunity, error) {
+		var op Opportunity
+		err := rows.Scan(
+			&op.ID,
+			&op.Text,
+			&op.TextRU,
+			&op.Description,
+			&op.DescriptionRU,
+			&op.Icon,
+			&op.Color,
+			&op.CreatedAt,
+		)
+		return op, err
+	})
+}

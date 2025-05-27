@@ -221,7 +221,7 @@ type UserResponse struct {
 	HiddenAt           *time.Time            `json:"hidden_at"`
 	CreatedAt          time.Time             `json:"created_at"`
 	UpdatedAt          time.Time             `json:"updated_at"`
-	LastActiveAt       time.Time             `json:"last_active_at"`
+	LastActiveAt       *time.Time            `json:"last_active_at"`
 	VerificationStatus db.VerificationStatus `json:"verification_status"`
 } // @Name UserResponse
 
@@ -269,7 +269,7 @@ type UserProfileResponse struct {
 	Badges        []BadgeResponse       `json:"badges"`
 	Opportunities []OpportunityResponse `json:"opportunities"`
 	Links         []Link                `json:"links"`
-	LastActiveAt  time.Time             `json:"last_active_at"`
+	LastActiveAt  *time.Time            `json:"last_active_at"`
 	Username      string                `json:"username"`
 } // @Name UserProfileResponse
 

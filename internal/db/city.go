@@ -139,3 +139,22 @@ func scanCityRow(row *sql.Row) (City, error) {
 
 	return city, nil
 }
+
+func (s *Storage) fetchCityTx(ctx context.Context, tx *sql.Tx, id string) (City, error) {
+	query := `
+		SELECT id, name, country_code, country_name, latitude, longitude
+		FROM cities
+		WHERE id = ?
+	`
+
+	row := tx.QueryRowContext(ctx, query, id)
+	city, err := scanCityRow(row)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return City{}, ErrNotFound
+		}
+		return City{}, err
+	}
+
+	return city, nil
+}

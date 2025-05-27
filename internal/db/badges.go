@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -156,4 +157,56 @@ func (s *Storage) GetBadgesByIDs(ctx context.Context, ids []string) ([]Badge, er
 	}
 
 	return badges, rows.Err()
+}
+
+func fetchItemsByID[T any](ctx context.Context, tx *sql.Tx, queryTemplate string, ids []string, scanFunc func(*sql.Rows) (T, error)) ([]T, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	placeholders := make([]string, len(ids))
+	args := make([]interface{}, len(ids))
+	for i, id := range ids {
+		placeholders[i] = "?"
+		args[i] = id
+	}
+	query := fmt.Sprintf(queryTemplate, strings.Join(placeholders, ","))
+
+	rows, err := tx.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var items []T
+	for rows.Next() {
+		item, err := scanFunc(rows)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+func (s *Storage) fetchBadgesTx(ctx context.Context, tx *sql.Tx, ids []string) ([]Badge, error) {
+	queryTemplate := `
+		SELECT id, text, icon, color, created_at
+		FROM badges
+		WHERE id IN (%s)
+	`
+
+	return fetchItemsByID(ctx, tx, queryTemplate, ids, func(rows *sql.Rows) (Badge, error) {
+		var badge Badge
+		err := rows.Scan(
+			&badge.ID,
+			&badge.Text,
+			&badge.Icon,
+			&badge.Color,
+			&badge.CreatedAt,
+		)
+		return badge, err
+	})
 }
