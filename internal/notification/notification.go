@@ -649,7 +649,7 @@ func (n *Notifier) NotifyNewPendingCollaboration(collab db.Collaboration) error 
 		collab.Title, name, user.Username)
 
 	params := &telegram.SendMessageParams{
-		ChatID:      fmt.Sprintf("%d", n.adminChatID),
+		ChatID:      n.getChatID(n.adminChatID),
 		Text:        msgText,
 		ReplyMarkup: &keyboard,
 	}

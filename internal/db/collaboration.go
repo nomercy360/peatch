@@ -376,7 +376,7 @@ func (s *Storage) GetCollaborationsByVerificationStatus(ctx context.Context, sta
 		query += ` WHERE c.verification_status IS NOT NULL`
 	}
 
-	query += fmt.Sprintf(` ORDER BY c.created_at DESC`)
+	query += fmt.Sprintf(` ORDER BY c.updated_at DESC`)
 
 	if page > 0 && perPage > 0 {
 		skip := (page - 1) * perPage

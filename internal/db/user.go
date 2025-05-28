@@ -476,7 +476,7 @@ func (s *Storage) GetUsersByVerificationStatus(ctx context.Context, status strin
 	}
 
 	args = append(args, limit, offset)
-	query += fmt.Sprintf(` ORDER BY created_at DESC LIMIT ? OFFSET ?`)
+	query += fmt.Sprintf(` ORDER BY updated_at DESC LIMIT ? OFFSET ?`)
 
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
