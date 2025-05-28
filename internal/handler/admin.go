@@ -413,7 +413,7 @@ func (h *Handler) handleAdminCreateUser(c echo.Context) error {
 
 	params := db.UpdateUserParams{
 		User:           user,
-		BadgeIDs:       req.Badges,
+		BadgeIDs:       req.BadgeIDs,
 		OpportunityIDs: req.OpportunityIDs,
 	}
 
@@ -495,7 +495,7 @@ func (h *Handler) handleAdminCreateCollaboration(c echo.Context) error {
 		Collaboration: collaboration,
 		OpportunityID: req.OpportunityID,
 		LocationID:    req.LocationID,
-		BadgeIDs:      req.Badges,
+		BadgeIDs:      req.BadgeIDs,
 	}
 
 	if err := h.storage.CreateCollaboration(c.Request().Context(), params); err != nil {

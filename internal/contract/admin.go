@@ -71,7 +71,7 @@ type AdminCreateUserRequest struct {
 	Description    *string  `json:"description"`
 	Title          *string  `json:"title"`
 	ChatID         int64    `json:"chat_id"`
-	Badges         []string `json:"badges"`
+	BadgeIDs       []string `json:"badge_ids"`
 	OpportunityIDs []string `json:"opportunity_ids"`
 	LocationID     *string  `json:"location"`
 	Links          []Link   `json:"links"`
@@ -110,7 +110,7 @@ type AdminCreateCollaborationRequest struct {
 	UserID        string   `json:"user_id"`
 	Title         string   `json:"title"`
 	Description   string   `json:"description"`
-	Badges        []string `json:"badges"`
+	BadgeIDs      []string `json:"badge_ids"`
 	OpportunityID string   `json:"opportunity_id"`
 	LocationID    *string  `json:"location"`
 	Links         []Link   `json:"links"`
