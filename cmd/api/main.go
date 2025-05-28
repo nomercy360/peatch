@@ -98,13 +98,14 @@ func main() {
 	}
 
 	notifierConfig := notification.NotifierConfig{
-		BotToken:        cfg.Telegram.BotToken,
-		AdminChatID:     cfg.Telegram.AdminChatID,
-		CommunityChatID: cfg.Telegram.CommunityChatID,
-		BotWebApp:       cfg.Telegram.BotWebApp,
-		WebAppURL:       cfg.Telegram.WebAppURL,
-		AdminWebApp:     cfg.Telegram.WebAppURL,
-		ImageServiceURL: cfg.ImageServiceURL,
+		BotToken:         cfg.Telegram.BotToken,
+		AdminChatID:      cfg.Telegram.AdminChatID,
+		CommunityChatID:  cfg.Telegram.CommunityChatID,
+		BotWebApp:        cfg.Telegram.BotWebApp,
+		WebAppURL:        cfg.Telegram.WebAppURL,
+		AdminWebApp:      cfg.Telegram.WebAppURL,
+		ImageServiceURL:  cfg.ImageServiceURL,
+		TestNotification: cfg.Telegram.TestNotification,
 	}
 
 	notifier := notification.NewNotifier(notifierConfig, bot)
