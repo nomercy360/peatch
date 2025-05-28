@@ -247,7 +247,7 @@ func getCollaborationsWithoutEmbeddings(ctx context.Context, storage *db.Storage
 		LEFT JOIN collaboration_embeddings ce ON c.id = ce.collaboration_id
 		WHERE ce.collaboration_id IS NULL
 		  AND c.hidden_at IS NULL
-		  AND c.verification_status = 'verified'
+		  AND c.verification_status IN ('verified', 'pending')
 		  AND (c.title IS NOT NULL AND c.description IS NOT NULL)
 	`
 
