@@ -438,17 +438,13 @@ func (n *Notifier) NotifyUsersWithMatchingOpportunity(collab db.Collaboration, u
 					if collab.User.Name != nil {
 						collabUserName = *collab.User.Name
 					}
-					msgText = fmt.Sprintf("🔍 Новая коллаборация от %s, которая может вас заинтересовать!\n\n%s",
-						collabUserName,
-						collab.Title)
+					msgText = fmt.Sprintf("🌟 *%s*\n\n%s\n[@%s](tg://user?id=%d)", telegram.EscapeMarkdown(collab.Title), telegram.EscapeMarkdown(collab.Description), telegram.EscapeMarkdown(collabUserName), collab.User.ChatID)
 				} else {
 					collabUserName := collab.User.Username
 					if collab.User.Name != nil {
 						collabUserName = *collab.User.Name
 					}
-					msgText = fmt.Sprintf("🔍 New collaboration from %s that might interest you!\n\n%s",
-						collabUserName,
-						collab.Title)
+					msgText = fmt.Sprintf("🌟 *%s*\n\n%s\n[@%s](tg://user?id=%d)", telegram.EscapeMarkdown(collab.Title), telegram.EscapeMarkdown(collab.Description), telegram.EscapeMarkdown(collabUserName), collab.User.ChatID)
 				}
 
 				var err error
@@ -461,6 +457,7 @@ func (n *Notifier) NotifyUsersWithMatchingOpportunity(collab db.Collaboration, u
 
 					_, err = n.bot.SendPhoto(context.Background(), &telegram.SendPhotoParams{
 						ChatID:      n.getChatID(user.ChatID),
+						ParseMode:   models.ParseModeMarkdown,
 						Caption:     msgText,
 						Photo:       photoData,
 						ReplyMarkup: &keyboard,
@@ -470,6 +467,7 @@ func (n *Notifier) NotifyUsersWithMatchingOpportunity(collab db.Collaboration, u
 					// Fall back to text-only message if no image data available
 					_, err = n.bot.SendMessage(context.Background(), &telegram.SendMessageParams{
 						ChatID:      n.getChatID(user.ChatID),
+						ParseMode:   models.ParseModeMarkdown,
 						Text:        msgText,
 						ReplyMarkup: &keyboard,
 					})
@@ -557,7 +555,7 @@ func (n *Notifier) SendCollaborationToCommunityChatWithImage(collab db.Collabora
 		}
 	}
 
-	communityMsg := fmt.Sprintf("🌟 *%s*\n\n%s\n", telegram.EscapeMarkdown(collab.Title), telegram.EscapeMarkdown(collab.Description))
+	communityMsg := fmt.Sprintf("🌟 *%s*\n\n%s\n[@%s](tg://user?id=%d)", telegram.EscapeMarkdown(collab.Title), telegram.EscapeMarkdown(collab.Description), telegram.EscapeMarkdown(fullName), collab.User.ChatID)
 
 	if imageBytes != nil && len(imageBytes) > 0 {
 		photoData := &models.InputFileUpload{
