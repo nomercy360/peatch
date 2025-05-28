@@ -433,7 +433,7 @@ func (h *Handler) handleAdminCreateUser(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get created user").WithInternal(err)
 	}
 
-	return c.JSON(http.StatusOK, contract.ToUserResponse(createdUser))
+	return c.JSON(http.StatusOK, createdUser)
 }
 
 // @Summary Create collaboration as admin
