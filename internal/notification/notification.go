@@ -18,34 +18,53 @@ import (
 )
 
 type NotifierConfig struct {
-	BotToken        string
-	AdminChatID     int64
-	CommunityChatID int64
-	BotWebApp       string
-	WebAppURL       string
-	AdminWebApp     string
-	ImageServiceURL string
+	BotToken         string
+	AdminChatID      int64
+	CommunityChatID  int64
+	BotWebApp        string
+	WebAppURL        string
+	AdminWebApp      string
+	ImageServiceURL  string
+	TestNotification bool
 }
 
 type Notifier struct {
-	bot             *telegram.Bot
-	adminChatID     int64
-	communityChatID int64
-	botWebApp       string
-	webappURL       string
-	adminWebApp     string
-	imageServiceURL string
+	bot              *telegram.Bot
+	adminChatID      int64
+	communityChatID  int64
+	botWebApp        string
+	webappURL        string
+	adminWebApp      string
+	imageServiceURL  string
+	testNotification bool
 }
 
 func NewNotifier(config NotifierConfig, bot *telegram.Bot) *Notifier {
 	return &Notifier{
-		bot:             bot,
-		adminChatID:     config.AdminChatID,
-		communityChatID: config.CommunityChatID,
-		botWebApp:       config.BotWebApp,
-		webappURL:       config.WebAppURL,
-		adminWebApp:     config.AdminWebApp,
-		imageServiceURL: config.ImageServiceURL,
+		bot:              bot,
+		adminChatID:      config.AdminChatID,
+		communityChatID:  config.CommunityChatID,
+		botWebApp:        config.BotWebApp,
+		webappURL:        config.WebAppURL,
+		adminWebApp:      config.AdminWebApp,
+		imageServiceURL:  config.ImageServiceURL,
+		testNotification: config.TestNotification,
+	}
+}
+
+// getChatID returns the appropriate chat ID based on test mode
+func (n *Notifier) getChatID(originalChatID interface{}) string {
+	if n.testNotification {
+		return fmt.Sprintf("%d", n.adminChatID)
+	}
+
+	switch v := originalChatID.(type) {
+	case int64:
+		return fmt.Sprintf("%d", v)
+	case string:
+		return v
+	default:
+		return fmt.Sprintf("%v", v)
 	}
 }
 
@@ -102,8 +121,7 @@ func (n *Notifier) NotifyUserVerified(user db.User) error {
 	}
 
 	_, err := n.bot.SendMessage(context.Background(), &telegram.SendMessageParams{
-		ChatID: fmt.Sprintf("%d", user.ChatID),
-		//ChatID:      n.adminChatID,
+		ChatID:      n.getChatID(user.ChatID),
 		Text:        msgText,
 		ReplyMarkup: &keyboard,
 		ParseMode:   models.ParseModeMarkdown,
@@ -190,8 +208,7 @@ func (n *Notifier) NotifyUserVerified(user db.User) error {
 		}
 
 		if _, err := n.bot.SendPhoto(context.Background(), &telegram.SendPhotoParams{
-			ChatID: fmt.Sprintf("%d", n.communityChatID),
-			// ChatID:      n.adminChatID,
+			ChatID:      n.getChatID(n.communityChatID),
 			Caption:     communityMsg,
 			Photo:       photoData,
 			ReplyMarkup: &keyboard,
@@ -200,8 +217,7 @@ func (n *Notifier) NotifyUserVerified(user db.User) error {
 		}
 	} else {
 		params := &telegram.SendMessageParams{
-			ChatID: fmt.Sprintf("%d", n.communityChatID),
-			// ChatID:      n.adminChatID,
+			ChatID:      n.getChatID(n.communityChatID),
 			Text:        communityMsg,
 			ReplyMarkup: &keyboard,
 		}
@@ -279,7 +295,7 @@ func (n *Notifier) NotifyCollaborationVerified(collab db.Collaboration) error {
 	}
 
 	_, err := n.bot.SendMessage(context.Background(), &telegram.SendMessageParams{
-		ChatID:      collab.User.ChatID,
+		ChatID:      n.getChatID(collab.User.ChatID),
 		Text:        msgText,
 		ReplyMarkup: &keyboard,
 	})
@@ -446,7 +462,7 @@ func (n *Notifier) NotifyUsersWithMatchingOpportunity(collab db.Collaboration, u
 					}
 
 					_, err = n.bot.SendPhoto(context.Background(), &telegram.SendPhotoParams{
-						ChatID:      user.ChatID,
+						ChatID:      n.getChatID(user.ChatID),
 						Caption:     msgText,
 						Photo:       photoData,
 						ReplyMarkup: &keyboard,
@@ -455,7 +471,7 @@ func (n *Notifier) NotifyUsersWithMatchingOpportunity(collab db.Collaboration, u
 				} else {
 					// Fall back to text-only message if no image data available
 					_, err = n.bot.SendMessage(context.Background(), &telegram.SendMessageParams{
-						ChatID:      user.ChatID,
+						ChatID:      n.getChatID(user.ChatID),
 						Text:        msgText,
 						ReplyMarkup: &keyboard,
 					})
@@ -553,8 +569,7 @@ func (n *Notifier) SendCollaborationToCommunityChatWithImage(collab db.Collabora
 		}
 
 		if _, err := n.bot.SendPhoto(context.Background(), &telegram.SendPhotoParams{
-			ChatID: fmt.Sprintf("%d", n.communityChatID),
-			//ChatID:      n.adminChatID,
+			ChatID:      n.getChatID(n.communityChatID),
 			Caption:     communityMsg,
 			Photo:       photoData,
 			ReplyMarkup: &keyboard,
@@ -564,8 +579,7 @@ func (n *Notifier) SendCollaborationToCommunityChatWithImage(collab db.Collabora
 		}
 	} else {
 		params := &telegram.SendMessageParams{
-			ChatID: fmt.Sprintf("%d", n.communityChatID),
-			// ChatID:      n.adminChatID,
+			ChatID:      n.getChatID(n.communityChatID),
 			Text:        communityMsg,
 			ReplyMarkup: &keyboard,
 		}
@@ -602,7 +616,7 @@ func (n *Notifier) NotifyNewPendingUser(user db.User) error {
 		name, user.Username)
 
 	params := &telegram.SendMessageParams{
-		ChatID:      fmt.Sprintf("%d", n.adminChatID),
+		ChatID:      n.getChatID(n.adminChatID),
 		Text:        msgText,
 		ReplyMarkup: &keyboard,
 	}
@@ -684,8 +698,7 @@ func (n *Notifier) NotifyUserFollow(userToFollow db.User, follower db.User) erro
 	disabled := true
 
 	_, err := n.bot.SendMessage(context.Background(), &telegram.SendMessageParams{
-		ChatID: fmt.Sprintf("%d", userToFollow.ChatID),
-		// ChatID: n.adminChatID,
+		ChatID: n.getChatID(userToFollow.ChatID),
 		LinkPreviewOptions: &models.LinkPreviewOptions{
 			IsDisabled: &disabled,
 		},
@@ -728,8 +741,7 @@ func (n *Notifier) NotifyUserVerificationDenied(user db.User) error {
 	}
 
 	_, err := n.bot.SendMessage(context.Background(), &telegram.SendMessageParams{
-		ChatID: fmt.Sprintf("%d", user.ChatID),
-		//ChatID:      n.adminChatID,
+		ChatID:      n.getChatID(user.ChatID),
 		Text:        msgText,
 		ReplyMarkup: &keyboard,
 	})
@@ -762,8 +774,7 @@ func (n *Notifier) NotifyCollaborationVerificationDenied(collab db.Collaboration
 	}
 
 	_, err := n.bot.SendMessage(context.Background(), &telegram.SendMessageParams{
-		ChatID: fmt.Sprintf("%d", collab.User.ChatID),
-		// ChatID:      n.adminChatID,
+		ChatID:      n.getChatID(collab.User.ChatID),
 		Text:        msgText,
 		ReplyMarkup: &keyboard,
 	})
@@ -807,8 +818,7 @@ func (n *Notifier) NotifyCollabInterest(collab db.Collaboration, user db.User) e
 	disabled := true
 
 	_, err := n.bot.SendMessage(context.Background(), &telegram.SendMessageParams{
-		ChatID: fmt.Sprintf("%d", collab.User.ChatID),
-		// ChatID: n.adminChatID,
+		ChatID: n.getChatID(collab.User.ChatID),
 		LinkPreviewOptions: &models.LinkPreviewOptions{
 			IsDisabled: &disabled,
 		},

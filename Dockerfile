@@ -1,30 +1,30 @@
-FROM golang:1.23-alpine3.19 AS build
+FROM golang:1.23 AS build
 
-ENV CGO_ENABLED=1
+WORKDIR /src
 
-RUN apk add --no-cache \
-    # Important: required for go-sqlite3
-    gcc \
-    # Required for Alpine
-    musl-dev
+RUN echo "deb http://deb.debian.org/debian trixie main" >>/etc/apt/sources.list
+RUN set -x && apt-get update && \
+  DEBIAN_FRONTEND=noninteractive apt-get install -y libsqlite3-dev/trixie
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . ./
+
+ARG TARGETARCH
+RUN GOOS=linux GOARCH=${TARGETARCH} CGO_ENABLED=1 go build -tags fts5,libsqlite3 -buildvcs=false -ldflags="-s -w" -o /bin/api ./cmd/api
+
+FROM debian:bookworm-slim
 
 WORKDIR /app
 
-COPY . /app/
-
-RUN go mod tidy && \
-    go install -ldflags='-s -w -extldflags "-static"' ./cmd/api/main.go
-
-FROM alpine:3.19
-
-WORKDIR /app
-
-RUN apk add --no-cache \
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y \
     ca-certificates \
     curl \
-    bash \
-    sqlite
+    sqlite3 \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY --from=build /go/bin/main /app/main
+COPY --from=build /bin/api /app/main
 
 CMD [ "/app/main" ]
