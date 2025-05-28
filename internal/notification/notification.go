@@ -97,7 +97,7 @@ type Tag struct {
 func (n *Notifier) NotifyUserVerified(user db.User) error {
 	var msgText string
 	if user.LanguageCode == db.LanguageRU {
-		msgText = fmt.Sprintf("🎉 Поздравляем\\! Ваш профиль был подтверждён\\. 💡 Следующие шаги:\n• Ищешь кого-то? Запости \\- и мы сообщим подходящим людям\\.\n• [Вступай в комьюнити](https://t.me/peatch_community), чтобы быть в курсе событий\\.")
+		msgText = fmt.Sprintf("🎉 Поздравляем\\! Ваш профиль был подтверждён\\. 💡 Следующие шаги:\n• Ищешь кого\\-то? Запости \\- и мы сообщим подходящим людям\\.\n• [Вступай в комьюнити](https://t.me/peatch_community), чтобы быть в курсе событий\\.")
 	} else {
 		msgText = fmt.Sprintf("🎉 Congratulations\\! Your profile has been verified\\.\n• Looking for someone? Post it \\- we'll notify the right people\\.\n• [Join the community](https://t.me/peatch_community) to stay updated\\.")
 	}
