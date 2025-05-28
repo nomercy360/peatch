@@ -14,27 +14,26 @@ type Badge struct {
 	Icon      string    `json:"icon"`
 	Color     string    `json:"color"`
 	CreatedAt time.Time `json:"created_at"`
-}
+} // @Name Badge
 
 // ListBadges lists all badges with optional search
 func (s *Storage) ListBadges(ctx context.Context, search string) ([]Badge, error) {
 	query := `
 		SELECT id, text, icon, color, created_at
 		FROM badges
-		WHERE 1=1
 	`
 	var args []interface{}
 	argPos := 1
 
 	// Add search filter
 	if search != "" {
-		query += fmt.Sprintf(` AND text LIKE ?`)
+		query += fmt.Sprintf(`WHERE text LIKE ?`)
 		args = append(args, "%"+search+"%")
 		argPos++
 	}
 
 	// Add ordering
-	query += ` ORDER BY created_at DESC`
+	query += fmt.Sprintf(` ORDER BY created_at DESC`)
 
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {

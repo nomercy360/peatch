@@ -6,9 +6,52 @@ definitions:
       token:
         type: string
     type: object
-  AdminLoginRequest:
+  AdminCreateCollaborationRequest:
     properties:
-      password:
+      badges:
+        items:
+          type: string
+        type: array
+      description:
+        type: string
+      links:
+        items:
+          $ref: '#/definitions/Link'
+        type: array
+      location:
+        type: string
+      opportunity_id:
+        type: string
+      title:
+        type: string
+      user_id:
+        type: string
+    type: object
+  AdminCreateUserRequest:
+    properties:
+      avatar_url:
+        type: string
+      badges:
+        items:
+          type: string
+        type: array
+      chat_id:
+        type: integer
+      description:
+        type: string
+      links:
+        items:
+          $ref: '#/definitions/Link'
+        type: array
+      location:
+        type: string
+      name:
+        type: string
+      opportunity_ids:
+        items:
+          type: string
+        type: array
+      title:
         type: string
       username:
         type: string
@@ -35,6 +78,19 @@ definitions:
       query:
         type: string
     type: object
+  Badge:
+    properties:
+      color:
+        type: string
+      created_at:
+        type: string
+      icon:
+        type: string
+      id:
+        type: string
+      text:
+        type: string
+    type: object
   BadgeResponse:
     properties:
       color:
@@ -55,6 +111,21 @@ definitions:
       username:
         type: string
     type: object
+  City:
+    properties:
+      country_code:
+        type: string
+      country_name:
+        type: string
+      id:
+        type: string
+      latitude:
+        type: number
+      longitude:
+        type: number
+      name:
+        type: string
+    type: object
   CityResponse:
     properties:
       country_code:
@@ -63,9 +134,48 @@ definitions:
         type: string
       id:
         type: string
-      location:
-        $ref: '#/definitions/Location'
+      latitude:
+        type: number
+      longitude:
+        type: number
       name:
+        type: string
+    type: object
+  Collaboration:
+    properties:
+      badges:
+        items:
+          $ref: '#/definitions/Badge'
+        type: array
+      created_at:
+        type: string
+      description:
+        type: string
+      has_interest:
+        type: boolean
+      hidden_at:
+        type: string
+      id:
+        type: string
+      is_payable:
+        type: boolean
+      links:
+        items:
+          $ref: '#/definitions/Link'
+        type: array
+      location:
+        $ref: '#/definitions/City'
+      opportunity:
+        $ref: '#/definitions/Opportunity'
+      title:
+        type: string
+      user:
+        $ref: '#/definitions/User'
+      user_id:
+        type: string
+      verification_status:
+        $ref: '#/definitions/VerificationStatus'
+      verified_at:
         type: string
     type: object
   CollaborationResponse:
@@ -78,10 +188,16 @@ definitions:
         type: string
       description:
         type: string
+      has_interest:
+        type: boolean
       id:
         type: string
       is_payable:
         type: boolean
+      links:
+        items:
+          $ref: '#/definitions/Link'
+        type: array
       location:
         $ref: '#/definitions/CityResponse'
       opportunity:
@@ -96,6 +212,15 @@ definitions:
         type: string
       verification_status:
         $ref: '#/definitions/VerificationStatus'
+    type: object
+  CreateBadgeRequest:
+    properties:
+      color:
+        type: string
+      icon:
+        type: string
+      text:
+        type: string
     type: object
   CreateCollaboration:
     properties:
@@ -121,21 +246,48 @@ definitions:
     type: object
   Link:
     properties:
+      icon:
+        description: Optional icon for the link
+        type: string
       label:
         type: string
       order:
         type: integer
       type:
+        description: e.g., "github", "linkedin", "website", "portfolio"
         type: string
       url:
         type: string
     type: object
-  Location:
+  LoginMeta:
     properties:
-      latitude:
-        type: number
-      longitude:
-        type: number
+      city:
+        type: string
+      country:
+        type: string
+      ip:
+        type: string
+      user_agent:
+        type: string
+    type: object
+  Opportunity:
+    properties:
+      color:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      description_ru:
+        type: string
+      icon:
+        type: string
+      id:
+        type: string
+      text:
+        type: string
+      text_ru:
+        type: string
     type: object
   OpportunityResponse:
     properties:
@@ -170,10 +322,6 @@ definitions:
         type: array
       description:
         type: string
-      links:
-        items:
-          $ref: '#/definitions/Link'
-        type: array
       location_id:
         type: string
       name:
@@ -183,6 +331,53 @@ definitions:
           type: string
         type: array
       title:
+        type: string
+    type: object
+  User:
+    properties:
+      avatar_url:
+        type: string
+      badges:
+        items:
+          $ref: '#/definitions/Badge'
+        type: array
+      chat_id:
+        type: integer
+      created_at:
+        type: string
+      description:
+        type: string
+      hidden_at:
+        type: string
+      id:
+        type: string
+      is_following:
+        type: boolean
+      language_code:
+        type: string
+      last_active_at:
+        type: string
+      links:
+        items:
+          $ref: '#/definitions/Link'
+        type: array
+      location:
+        $ref: '#/definitions/City'
+      login_metadata:
+        $ref: '#/definitions/LoginMeta'
+      name:
+        type: string
+      opportunities:
+        items:
+          $ref: '#/definitions/Opportunity'
+        type: array
+      title:
+        type: string
+      username:
+        type: string
+      verification_status:
+        $ref: '#/definitions/VerificationStatus'
+      verified_at:
         type: string
     type: object
   UserProfileResponse:
@@ -291,7 +486,6 @@ paths:
     post:
       consumes:
       - application/json
-      description: Authenticate admin via Telegram using init data
       operationId: admin-telegram-auth
       parameters:
       - description: Telegram Auth Request
@@ -319,7 +513,70 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/ErrorResponse'
-      summary: Admin Telegram Auth
+      tags:
+      - admin
+  /admin/badges:
+    get:
+      consumes:
+      - application/json
+      operationId: admin-list-badges
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/Badge'
+            type: array
+      security:
+      - ApiKeyAuth: []
+      tags:
+      - admin
+    post:
+      consumes:
+      - application/json
+      operationId: admin-create-badge
+      parameters:
+      - description: Badge data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/CreateBadgeRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/Badge'
+      security:
+      - ApiKeyAuth: []
+      tags:
+      - admin
+  /admin/cities/{name}:
+    get:
+      consumes:
+      - application/json
+      operationId: admin-get-city-by-name
+      parameters:
+      - description: City name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/CityResponse'
+            type: array
+      security:
+      - ApiKeyAuth: []
       tags:
       - admin
   /admin/collaborations:
@@ -361,65 +618,46 @@ paths:
       summary: List collaborations by verification status
       tags:
       - admin
-  /admin/create:
     post:
       consumes:
       - application/json
-      description: Create a new admin account (protected, only existing admins can
-        create new admins)
-      operationId: admin-create
+      description: Create a new collaboration for a user as admin
+      operationId: admin-create-collaboration
       parameters:
-      - description: Admin credentials
+      - description: Collaboration data
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/AdminLoginRequest'
+          $ref: '#/definitions/AdminCreateCollaborationRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/AdminResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/Collaboration'
       security:
       - ApiKeyAuth: []
-      summary: Create admin account
+      summary: Create collaboration as admin
       tags:
       - admin
-  /admin/login:
-    post:
+  /admin/opportunities:
+    get:
       consumes:
       - application/json
-      description: Login as admin using username and password
-      operationId: admin-login
-      parameters:
-      - description: Admin login credentials
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/AdminLoginRequest'
+      operationId: admin-list-opportunities
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/AdminAuthResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      summary: Admin login via password
+            items:
+              $ref: '#/definitions/Opportunity'
+            type: array
+      security:
+      - ApiKeyAuth: []
       tags:
       - admin
   /admin/users:
@@ -459,6 +697,103 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: List users by verification status
+      tags:
+      - admin
+    post:
+      consumes:
+      - application/json
+      description: Create a new user with optional fields as admin
+      operationId: admin-create-user
+      parameters:
+      - description: User data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/AdminCreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create user as admin
+      tags:
+      - admin
+  /admin/users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a user and all their related data including collaborations
+        and followers
+      operationId: admin-delete-user
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/StatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete user completely
+      tags:
+      - admin
+  /admin/users/{id}/collaborations:
+    get:
+      consumes:
+      - application/json
+      operationId: admin-get-users-collaborations
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/Collaboration'
+            type: array
+      security:
+      - ApiKeyAuth: []
       tags:
       - admin
   /admin/users/{id}/verify:
@@ -543,6 +878,50 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Update collaboration verification status
+      tags:
+      - admin
+  /admin/users/{username}:
+    get:
+      consumes:
+      - application/json
+      operationId: admin-get-user-by-username
+      parameters:
+      - description: Username
+        in: path
+        name: username
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/User'
+      security:
+      - ApiKeyAuth: []
+      tags:
+      - admin
+  /admin/users/chat/{id}:
+    get:
+      consumes:
+      - application/json
+      operationId: admin-get-user-by-chat-id
+      parameters:
+      - description: Chat ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/User'
+      security:
+      - ApiKeyAuth: []
       tags:
       - admin
   /api/badges:

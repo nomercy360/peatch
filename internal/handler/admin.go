@@ -16,8 +16,6 @@ import (
 	initdata "github.com/telegram-mini-apps/init-data-golang"
 )
 
-// @Summary Admin Telegram Auth
-// @Description Authenticate admin via Telegram using init data
 // @ID admin-telegram-auth
 // @Tags admin
 // @Accept json
@@ -121,19 +119,24 @@ func getAdminClaims(c echo.Context) *contract.AdminJWTClaims {
 // @Router /admin/users [get]
 func (h *Handler) handleAdminListUsers(c echo.Context) error {
 	status := c.QueryParam("status")
-	if status == "" {
-		status = string(db.VerificationStatusPending)
+	page := parseIntQuery(c, "page", 1)
+	perPage := parseIntQuery(c, "per_page", 20)
+
+	if status != "" && !db.IsValidVerificationStatus(status) {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid verification status")
 	}
 
-	page := parseIntQuery(c, "page", 1)
-
-	perPage := parseIntQuery(c, "per_page", 20)
 	if perPage > 100 {
 		perPage = 100
 	}
 
-	users, err := h.storage.GetUsersByVerificationStatus(c.Request().Context(),
-		db.VerificationStatus(status), page, perPage)
+	limit := perPage
+	var offset int
+	if page > 1 {
+		offset = (page - 1) * perPage
+	}
+
+	users, err := h.storage.GetUsersByVerificationStatus(c.Request().Context(), status, offset, limit)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get users").WithInternal(err)
 	}
@@ -144,6 +147,32 @@ func (h *Handler) handleAdminListUsers(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, userResponses)
+}
+
+// @ID admin-get-me
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Success 200 {object} contract.AdminResponse
+// @Failure 401 {object} contract.ErrorResponse
+// @Security ApiKeyAuth
+func (h *Handler) handleAdminGetMe(c echo.Context) error {
+	adminClaims := getAdminClaims(c)
+	if adminClaims == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, "unauthorized: invalid token")
+	}
+
+	adminID := adminClaims.AdminID
+
+	admin, err := h.storage.GetAdminByID(c.Request().Context(), adminID)
+	if err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			return echo.NewHTTPError(http.StatusNotFound, "admin not found").WithInternal(err)
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get admin").WithInternal(err)
+	}
+
+	return c.JSON(http.StatusOK, contract.ToAdminResponse(admin))
 }
 
 // @Summary List collaborations by verification status
@@ -163,18 +192,18 @@ func (h *Handler) handleAdminListUsers(c echo.Context) error {
 func (h *Handler) handleAdminListCollaborations(c echo.Context) error {
 	// Parse query parameters
 	status := c.QueryParam("status")
-	if status == "" {
-		status = string(db.VerificationStatusPending)
-	}
-
 	page := parseIntQuery(c, "page", 1)
 	perPage := parseIntQuery(c, "per_page", 20)
+
+	if status != "" && !db.IsValidVerificationStatus(status) {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid verification status")
+	}
+
 	if perPage > 100 {
 		perPage = 100
 	}
 
-	collaborations, err := h.storage.GetCollaborationsByVerificationStatus(c.Request().Context(),
-		db.VerificationStatus(status), page, perPage)
+	collaborations, err := h.storage.GetCollaborationsByVerificationStatus(c.Request().Context(), status, page, perPage)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get collaborations").WithInternal(err)
 	}
@@ -366,6 +395,7 @@ func (h *Handler) handleAdminCreateUser(c echo.Context) error {
 		ChatID:             req.ChatID,
 		Description:        req.Description,
 		Title:              req.Title,
+		AvatarURL:          req.AvatarURL,
 	}
 
 	var links []db.Link
@@ -413,11 +443,7 @@ func (h *Handler) handleAdminCreateUser(c echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param request body contract.AdminCreateCollaborationRequest true "Collaboration data"
-// @Success 200 {object} contract.CollaborationResponse
-// @Failure 400 {object} contract.ErrorResponse
-// @Failure 401 {object} contract.ErrorResponse
-// @Failure 404 {object} contract.ErrorResponse
-// @Failure 500 {object} contract.ErrorResponse
+// @Success 200 {object} db.Collaboration
 // @Security ApiKeyAuth
 // @Router /admin/collaborations [post]
 func (h *Handler) handleAdminCreateCollaboration(c echo.Context) error {
@@ -474,11 +500,263 @@ func (h *Handler) handleAdminCreateCollaboration(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to create collaboration").WithInternal(err)
 	}
 
-	// Get the created collaboration to return full response
 	createdCollab, err := h.storage.GetCollaborationByID(c.Request().Context(), req.UserID, collaboration.ID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get created collaboration").WithInternal(err)
 	}
 
-	return c.JSON(http.StatusOK, contract.ToCollaborationResponse(createdCollab))
+	return c.JSON(http.StatusOK, createdCollab)
+}
+
+// @ID admin-list-badges
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Success 200 {array} db.Badge
+// @Security ApiKeyAuth
+// @Router /admin/badges [get]
+func (h *Handler) handleAdminListBadges(c echo.Context) error {
+	badges, err := h.storage.ListBadges(c.Request().Context(), "")
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get badges").WithInternal(err)
+	}
+
+	return c.JSON(http.StatusOK, badges)
+}
+
+// @ID admin-create-badge
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param request body contract.CreateBadgeRequest true "Badge data"
+// @Security ApiKeyAuth
+// @Success 201 {object} db.Badge
+// @Router /admin/badges [post]
+func (h *Handler) handleAdminCreateBadge(c echo.Context) error {
+	var req contract.CreateBadgeRequest
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid request").WithInternal(err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid request").WithInternal(err)
+	}
+
+	badge := db.Badge{
+		ID:    nanoid.Must(),
+		Text:  req.Text,
+		Icon:  req.Icon,
+		Color: req.Color,
+	}
+
+	if err := h.storage.CreateBadge(c.Request().Context(), badge); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to create badge").WithInternal(err)
+	}
+
+	return c.JSON(http.StatusCreated, badge)
+}
+
+// @ID admin-list-opportunities
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Success 200 {array} db.Opportunity
+// @Security ApiKeyAuth
+// @Router /admin/opportunities [get]
+func (h *Handler) handleAdminListOpportunities(c echo.Context) error {
+	opportunities, err := h.storage.ListOpportunities(c.Request().Context())
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get opportunities").WithInternal(err)
+	}
+
+	return c.JSON(http.StatusOK, opportunities)
+}
+
+// @ID admin-get-user-by-chat-id
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param id path string true "Chat ID"
+// @Success 200 {object} db.User
+// @Security ApiKeyAuth
+// @Router /admin/users/chat/{id} [get]
+func (h *Handler) handleAdminGetUserByChatID(c echo.Context) error {
+	chatID := c.Param("id")
+
+	if chatID == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "chat ID is required")
+	}
+
+	var chatIDInt int64
+	if _, err := fmt.Sscanf(chatID, "%d", &chatIDInt); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid chat ID format").WithInternal(err)
+	}
+
+	user, err := h.storage.GetUserByChatID(c.Request().Context(), chatIDInt)
+	if err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			return echo.NewHTTPError(http.StatusNotFound, "user not found").WithInternal(err)
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get user").WithInternal(err)
+	}
+
+	return c.JSON(http.StatusOK, user)
+}
+
+// @ID admin-get-user-by-username
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param username path string true "Username"
+// @Success 200 {object} db.User
+// @Security ApiKeyAuth
+// @Router /admin/users/{username} [get]
+func (h *Handler) handleAdminGetUserByUsername(c echo.Context) error {
+	username := c.Param("username")
+	if username == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "username is required")
+	}
+
+	user, err := h.storage.GetUserByUsername(c.Request().Context(), username)
+	if err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			return echo.NewHTTPError(http.StatusNotFound, "user not found").WithInternal(err)
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get user").WithInternal(err)
+	}
+
+	return c.JSON(http.StatusOK, user)
+}
+
+// @ID admin-get-city-by-name
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param name path string true "City name"
+// @Success 200 {array} contract.CityResponse
+// @Security ApiKeyAuth
+// @Router /admin/cities/{name} [get]
+func (h *Handler) handleAdminGetCityByName(c echo.Context) error {
+	cityName := c.Param("name")
+	if cityName == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "city name is required")
+	}
+
+	city, err := h.storage.GetCityByName(c.Request().Context(), cityName)
+	if err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			return echo.NewHTTPError(http.StatusNotFound, "city not found").WithInternal(err)
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get city").WithInternal(err)
+	}
+
+	return c.JSON(http.StatusOK, contract.ToCityResponse(city))
+}
+
+// @ID admin-get-users-collaborations
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Success 200 {array} db.Collaboration
+// @Security ApiKeyAuth
+// @Router /admin/users/{id}/collaborations [get]
+func (h *Handler) handleAdminGetUsersCollaborations(c echo.Context) error {
+	userID := c.Param("id")
+	if userID == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "user ID is required")
+	}
+
+	collaborations, err := h.storage.GetUserCollaborations(c.Request().Context(), userID)
+	if err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			return echo.NewHTTPError(http.StatusNotFound, "user not found").WithInternal(err)
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get user collaborations").WithInternal(err)
+	}
+
+	return c.JSON(http.StatusOK, collaborations)
+}
+
+// @Summary Delete user completely
+// @Description Delete a user and all their related data including collaborations and followers
+// @ID admin-delete-user
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Success 200 {object} contract.StatusResponse
+// @Failure 400 {object} contract.ErrorResponse
+// @Failure 401 {object} contract.ErrorResponse
+// @Failure 404 {object} contract.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /admin/users/{id} [delete]
+func (h *Handler) handleAdminDeleteUser(c echo.Context) error {
+	userID := c.Param("id")
+	if userID == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "user ID is required")
+	}
+
+	err := h.storage.DeleteUserCompletely(c.Request().Context(), userID)
+	if err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			return echo.NewHTTPError(http.StatusNotFound, "user not found")
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to delete user").WithInternal(err)
+	}
+
+	return c.JSON(http.StatusOK, contract.StatusResponse{
+		Success: true,
+	})
+}
+
+// handleAdminDeleteCollaboration deletes a collaboration
+// @Summary Delete collaboration
+// @Description Delete a collaboration by ID
+// @ID admin-delete-collaboration
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param id path string true "Collaboration ID"
+// @Success 200 {object} contract.StatusResponse
+// @Failure 400 {object} contract.ErrorResponse
+// @Failure 401 {object} contract.ErrorResponse
+// @Failure 404 {object} contract.ErrorResponse
+// @Failure 500 {object} contract.ErrorResponse
+// @Security ApiKeyAuth
+// @Router /admin/collaborations/{id} [delete]
+func (h *Handler) handleAdminDeleteCollaboration(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	collaborationID := c.Param("id")
+	if collaborationID == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "collaboration ID is required")
+	}
+
+	// Check if collaboration exists (admin can view any collaboration)
+	collaboration, err := h.storage.GetCollaborationByID(ctx, "", collaborationID)
+	if err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			return echo.NewHTTPError(http.StatusNotFound, "collaboration not found")
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch collaboration")
+	}
+
+	// Delete the collaboration
+	if err := h.storage.DeleteCollaboration(ctx, collaborationID); err != nil {
+		h.logger.Error("failed to delete collaboration",
+			slog.String("collaboration_id", collaborationID),
+			slog.String("error", err.Error()),
+		)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to delete collaboration")
+	}
+
+	h.logger.Info("collaboration deleted",
+		slog.String("collaboration_id", collaborationID),
+		slog.String("title", collaboration.Title),
+	)
+
+	return c.JSON(http.StatusOK, contract.StatusResponse{
+		Success: true,
+	})
 }

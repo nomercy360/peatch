@@ -5,6 +5,7 @@
 
 import type { BadgeResponse } from './BadgeResponse.ts'
 import type { CityResponse } from './CityResponse.ts'
+import type { Link } from './Link.ts'
 import type { OpportunityResponse } from './OpportunityResponse.ts'
 import type { VerificationStatus } from './VerificationStatus.ts'
 
@@ -32,6 +33,10 @@ export type UserResponse = {
   /**
    * @type string | undefined
    */
+  hidden_at?: string
+  /**
+   * @type string | undefined
+   */
   id?: string
   /**
    * @type string | undefined
@@ -41,6 +46,10 @@ export type UserResponse = {
    * @type string | undefined
    */
   last_active_at?: string
+  /**
+   * @type array | undefined
+   */
+  links?: Link[]
   /**
    * @type object | undefined
    */

@@ -7,10 +7,10 @@ import type { UserProfileResponse } from './UserProfileResponse.ts'
 
 export type GetApiUsersIdPathParams = {
   /**
-   * @description User ID
-   * @type integer
+   * @description User ID or username
+   * @type string
    */
-  id: number
+  id: string
 }
 
 /**

@@ -268,8 +268,9 @@ func (s *Storage) Close() error {
 }
 
 var (
-	ErrNotFound      = errors.New("not found")
-	ErrAlreadyExists = errors.New("already exists")
+	ErrNotFound       = errors.New("not found")
+	ErrAlreadyExists  = errors.New("already exists")
+	ErrDatabaseLocked = errors.New("database is locked")
 )
 
 type HealthStats struct {

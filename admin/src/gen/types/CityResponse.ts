@@ -3,8 +3,6 @@
  * Do not edit manually.
  */
 
-import type { Location } from './Location.ts'
-
 export type CityResponse = {
   /**
    * @type string | undefined
@@ -19,9 +17,13 @@ export type CityResponse = {
    */
   id?: string
   /**
-   * @type object | undefined
+   * @type number | undefined
    */
-  location?: Location
+  latitude?: number
+  /**
+   * @type number | undefined
+   */
+  longitude?: number
   /**
    * @type string | undefined
    */

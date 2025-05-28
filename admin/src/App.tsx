@@ -1,8 +1,6 @@
-import { createEffect, createSignal, Match, Switch } from 'solid-js'
-import { setToken } from './store'
-import { API_BASE_URL } from '~/lib/api'
-import { NavigationProvider } from './lib/useNavigation'
+import { createEffect, createSignal, Show } from 'solid-js'
 import { QueryClient, QueryClientProvider } from '@tanstack/solid-query'
+import { checkAuth } from './lib/api'
 
 export const queryClient = new QueryClient({
 	defaultOptions: {
@@ -17,70 +15,40 @@ export const queryClient = new QueryClient({
 	},
 })
 
-export default function App(props: any) {
-	const [isAuthenticated, setIsAuthenticated] = createSignal(false)
+export default function App(props: { children?: any }) {
 	const [isLoading, setIsLoading] = createSignal(true)
 
 	createEffect(async () => {
+		// Skip auth check on login page
+		if (window.location.pathname === '/login') {
+			setIsLoading(false)
+			return
+		}
+
 		try {
-			console.log('WEBAPP:', window.Telegram)
+			const isValid = await checkAuth()
+			setIsLoading(false)
 
-			const initData = window.Telegram.WebApp.initData
-			const startapp = window.Telegram.WebApp.initDataUnsafe.start_param
-
-			const resp = await fetch(`${API_BASE_URL}/admin/auth/telegram`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({ query: initData }),
-			})
-
-			if (resp.status !== 200) {
-				setIsAuthenticated(false)
-				setIsLoading(false)
-				return
+			// Redirect to login if not authenticated
+			if (!isValid) {
+				window.location.href = '/login'
 			}
-
-			const data = await resp.json()
-
-			setToken(data.token)
-
-			window.Telegram.WebApp.ready()
-			window.Telegram.WebApp.expand()
-			window.Telegram.WebApp.disableClosingConfirmation()
-			window.Telegram.WebApp.disableVerticalSwipes()
-			window.Telegram.WebApp.requestWriteAccess()
-
-			setIsAuthenticated(true)
-			setIsLoading(false)
-
 		} catch (e) {
-			console.error('Failed to authenticate user:', e)
-			setIsAuthenticated(false)
+			console.error('Failed to check authentication:', e)
 			setIsLoading(false)
+			window.location.href = '/login'
 		}
 	})
+
 	return (
-		<NavigationProvider>
-			<QueryClientProvider client={queryClient}>
-				<Switch>
-					<Match when={isAuthenticated()}>
-						{props.children}
-					</Match>
-					<Match when={!isAuthenticated() && isLoading()}>
-						<div class="min-h-screen w-full flex-col items-start justify-center bg-main" />
-					</Match>
-					<Match when={!isAuthenticated() && !isLoading()}>
-						<div
-							class="flex text-center h-screen w-full flex-col items-center justify-center text-3xl">
-							<p>
-								App Error
-							</p>
-						</div>
-					</Match>
-				</Switch>
-			</QueryClientProvider>
-		</NavigationProvider>
+		<QueryClientProvider client={queryClient}>
+			<Show when={!isLoading()} fallback={
+				<div class="min-h-screen w-full flex items-center justify-center">
+					<div>Loading...</div>
+				</div>
+			}>
+				{props.children}
+			</Show>
+		</QueryClientProvider>
 	)
 }

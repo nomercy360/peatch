@@ -6,10 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
+	"math/rand"
 	"strings"
 	"time"
 
 	nanoid "github.com/matoous/go-nanoid/v2"
+	"github.com/mattn/go-sqlite3"
 )
 
 type UserFollower struct {
@@ -30,7 +33,7 @@ type LoginMeta struct {
 	UserAgent string `bson:"user_agent,omitempty" json:"user_agent,omitempty"`
 	Country   string `bson:"country,omitempty" json:"country,omitempty"`
 	City      string `bson:"city,omitempty" json:"city,omitempty"`
-}
+} // @Name LoginMeta
 
 type VerificationStatus string // @Name VerificationStatus
 
@@ -42,13 +45,22 @@ const (
 	VerificationStatusUnverified VerificationStatus = "unverified"
 )
 
+func IsValidVerificationStatus(status string) bool {
+	switch VerificationStatus(status) {
+	case VerificationStatusPending, VerificationStatusVerified, VerificationStatusDenied,
+		VerificationStatusBlocked, VerificationStatusUnverified:
+		return true
+	}
+	return false
+}
+
 type Link struct {
 	URL   string `bson:"url" json:"url"`
 	Label string `bson:"label" json:"label"`
 	Type  string `bson:"type" json:"type"` // e.g., "github", "linkedin", "website", "portfolio"
 	Order int    `bson:"order" json:"order"`
 	Icon  string `bson:"icon,omitempty" json:"icon,omitempty"` // Optional icon for the link
-}
+} // @Name Link
 
 type User struct {
 	ID                     string             `bson:"_id,omitempty" json:"id"`
@@ -72,9 +84,8 @@ type User struct {
 	LastActiveAt           *time.Time         `bson:"last_active_at,omitempty" json:"last_active_at"`
 	VerificationStatus     VerificationStatus `bson:"verification_status,omitempty" json:"verification_status"`
 	VerifiedAt             *time.Time         `bson:"verified_at,omitempty" json:"verified_at"`
-	Embedding              []float64          `bson:"embedding,omitempty" json:"-"`
 	EmbeddingUpdatedAt     *time.Time         `bson:"embedding_updated_at,omitempty" json:"-"`
-}
+} // @Name User
 
 func (u *User) ToString() string {
 	var badgeTexts []string
@@ -252,6 +263,20 @@ func (s *Storage) GetUserByID(ctx context.Context, id string) (User, error) {
 		WHERE id = ?
 	`
 	return s.getUserByQuery(ctx, query, id)
+}
+
+// GetUserByUsername retrieves a user by username
+func (s *Storage) GetUserByUsername(ctx context.Context, username string) (User, error) {
+	query := `
+		SELECT id, name, chat_id, username, created_at, updated_at, 
+		       notifications_enabled_at, hidden_at, avatar_url, title, 
+		       description, language_code, last_active_at,
+		       verification_status, verified_at, embedding_updated_at,
+		       login_metadata, location, links, badges, opportunities
+		FROM users
+		WHERE username = ?
+	`
+	return s.getUserByQuery(ctx, query, username)
 }
 
 // CreateUser creates a new user
@@ -442,7 +467,7 @@ func (s *Storage) UpdateUser(
 }
 
 // GetUsersByVerificationStatus gets users by verification status
-func (s *Storage) GetUsersByVerificationStatus(ctx context.Context, status VerificationStatus, offset, limit int) ([]User, error) {
+func (s *Storage) GetUsersByVerificationStatus(ctx context.Context, status string, offset, limit int) ([]User, error) {
 	query := `
 		SELECT id, name, chat_id, username, created_at, updated_at, 
 		       notifications_enabled_at, hidden_at, avatar_url, title, 
@@ -450,12 +475,20 @@ func (s *Storage) GetUsersByVerificationStatus(ctx context.Context, status Verif
 		       verification_status, verified_at, embedding_updated_at,
 		       login_metadata, location, links, badges, opportunities
 		FROM users
-		WHERE verification_status = ?
-		ORDER BY created_at DESC
-		LIMIT ? OFFSET ?
 	`
 
-	rows, err := s.db.QueryContext(ctx, query, status, limit, offset)
+	var args []interface{}
+	if status != "" {
+		query += ` WHERE verification_status = ?`
+		args = append(args, status)
+	} else {
+		query += ` WHERE verification_status IS NOT NULL`
+	}
+
+	args = append(args, limit, offset)
+	query += fmt.Sprintf(` ORDER BY created_at DESC LIMIT ? OFFSET ?`)
+
+	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -742,4 +775,80 @@ func (s *Storage) GetUserProfile(ctx context.Context, viewerID string, idOrUsern
 
 	resp.IsFollowing = isFollowing
 	return resp, nil
+}
+
+// DeleteUserCompletely deletes a user and all related data (collaborations, followers, etc.)
+func (s *Storage) DeleteUserCompletely(ctx context.Context, userID string) error {
+	// Implement retry logic for database locked errors
+	maxRetries := 3
+	baseDelay := 100 * time.Millisecond
+
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		err := s.deleteUserCompletelyTx(ctx, userID)
+		if err == nil {
+			return nil
+		}
+
+		// Check if it's a database locked error
+		var sqlite3Err sqlite3.Error
+		if errors.As(err, &sqlite3Err) && errors.Is(sqlite3Err.Code, sqlite3.ErrBusy) {
+			log.Printf("Database is locked, retrying... (attempt %d/%d)", attempt+1, maxRetries)
+			if attempt < maxRetries-1 {
+				// Exponential backoff with jitter
+				delay := baseDelay * time.Duration(1<<attempt)
+				jitter := time.Duration(rand.Int63n(int64(delay / 2)))
+				time.Sleep(delay + jitter)
+				continue
+			}
+		}
+
+		return err
+	}
+
+	return fmt.Errorf("failed after %d retries: database is locked", maxRetries)
+}
+
+func (s *Storage) deleteUserCompletelyTx(ctx context.Context, userID string) error {
+	// Start a transaction
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	// Check if user exists
+	var exists bool
+	checkQuery := `SELECT EXISTS(SELECT 1 FROM users WHERE id = ?)`
+	err = tx.QueryRowContext(ctx, checkQuery, userID).Scan(&exists)
+	if err != nil {
+		return fmt.Errorf("failed to check user existence: %w", err)
+	}
+	if !exists {
+		return ErrNotFound
+	}
+
+	// Delete user's collaborations
+	deleteCollabsQuery := `DELETE FROM collaborations WHERE user_id = ?`
+	if _, err := tx.ExecContext(ctx, deleteCollabsQuery, userID); err != nil {
+		return fmt.Errorf("failed to delete collaborations: %w", err)
+	}
+
+	// Delete follower relationships (both following and followers)
+	deleteFollowersQuery := `DELETE FROM user_followers WHERE follower_id = ? OR user_id = ?`
+	if _, err := tx.ExecContext(ctx, deleteFollowersQuery, userID, userID); err != nil {
+		return fmt.Errorf("failed to delete follower relationships: %w", err)
+	}
+
+	// Delete the user record
+	deleteUserQuery := `DELETE FROM users WHERE id = ?`
+	if _, err := tx.ExecContext(ctx, deleteUserQuery, userID); err != nil {
+		return fmt.Errorf("failed to delete user: %w", err)
+	}
+
+	// Commit the transaction
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
 }

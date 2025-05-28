@@ -75,6 +75,7 @@ type AdminCreateUserRequest struct {
 	OpportunityIDs []string `json:"opportunity_ids"`
 	LocationID     *string  `json:"location"`
 	Links          []Link   `json:"links"`
+	AvatarURL      *string  `json:"avatar_url"`
 } // @Name AdminCreateUserRequest
 
 func (r AdminCreateUserRequest) Validate() error {
@@ -95,6 +96,12 @@ func (r AdminCreateUserRequest) Validate() error {
 	}
 	if len(r.OpportunityIDs) == 0 {
 		return fmt.Errorf("at least one opportunity_id is required")
+	}
+	if r.LocationID != nil && *r.LocationID == "" {
+		return fmt.Errorf("when provided, location must not be empty")
+	}
+	if r.AvatarURL != nil && *r.AvatarURL == "" {
+		return fmt.Errorf("when provided, avatar_url must not be empty")
 	}
 	return nil
 }

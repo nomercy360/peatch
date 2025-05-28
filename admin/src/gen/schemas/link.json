@@ -1,0 +1,1 @@
+{"properties":{"icon":{"description":"Optional icon for the link","type":"string"},"label":{"type":"string"},"order":{"type":"integer"},"type":{"description":"e.g., \"github\", \"linkedin\", \"website\", \"portfolio\"","type":"string"},"url":{"type":"string"}},"type":"object","x-readme-ref-name":"Link"}

@@ -16,7 +16,7 @@ type Admin struct {
 	APIToken  string    `json:"-"` // Never expose API token in JSON responses
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
-}
+} // @Name Admin
 
 // CreateAdmin creates a new admin
 func (s *Storage) CreateAdmin(ctx context.Context, admin Admin) (Admin, error) {
@@ -57,14 +57,12 @@ func (s *Storage) GetAdminByUsername(ctx context.Context, username string) (Admi
 	`
 
 	var admin Admin
-	var chatID sql.NullInt64
-	var apiToken sql.NullString
 
 	err := s.db.QueryRowContext(ctx, query, username).Scan(
 		&admin.ID,
 		&admin.Username,
-		&chatID,
-		&apiToken,
+		&admin.ChatID,
+		&admin.APIToken,
 		&admin.CreatedAt,
 		&admin.UpdatedAt,
 	)
@@ -74,13 +72,6 @@ func (s *Storage) GetAdminByUsername(ctx context.Context, username string) (Admi
 			return Admin{}, errors.New("admin not found")
 		}
 		return Admin{}, err
-	}
-
-	if chatID.Valid {
-		admin.ChatID = chatID.Int64
-	}
-	if apiToken.Valid {
-		admin.APIToken = apiToken.String
 	}
 
 	return admin, nil
@@ -160,4 +151,32 @@ func generateSecureToken(length int) (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(bytes), nil
+}
+
+func (s *Storage) GetAdminByID(ctx context.Context, id string) (Admin, error) {
+	query := `
+		SELECT id, username, chat_id, api_token, created_at, updated_at
+		FROM admins
+		WHERE id = ?
+	`
+
+	var admin Admin
+
+	err := s.db.QueryRowContext(ctx, query, id).Scan(
+		&admin.ID,
+		&admin.Username,
+		&admin.ChatID,
+		&admin.APIToken,
+		&admin.CreatedAt,
+		&admin.UpdatedAt,
+	)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return Admin{}, ErrNotFound
+		}
+		return Admin{}, err
+	}
+
+	return admin, nil
 }

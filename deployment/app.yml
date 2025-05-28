@@ -1,17 +1,20 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   labels:
     service: peatch
   name: peatch
   namespace: default
 spec:
+  serviceName: "peatch"
   replicas: 1
   selector:
     matchLabels:
       service: peatch
-  strategy:
+  updateStrategy:
     type: RollingUpdate
+    rollingUpdate:
+      partition: 0
   template:
     metadata:
       labels:
@@ -21,7 +24,7 @@ spec:
         - image: maksim1111/peatch:latest
           name: peatch
           imagePullPolicy: IfNotPresent
-          command: [ "/app/api" ]
+          command: [ "/app/main" ]
           ports:
             - containerPort: 8080
               name: http
@@ -33,13 +36,35 @@ spec:
             limits:
               memory: "512Mi"
           volumeMounts:
+            - mountPath: /app/storage
+              subPath: storage
+              name: peatch-data
             - mountPath: /app/config.yml
               name: peatch-config
               subPath: config.yml
+          env:
+            - name: CONFIG_FILE_PATH
+              value: /app/config.yml
+          readinessProbe:
+            exec:
+              command: [ "sqlite3", "/app/storage/db.sqlite", ".tables" ]
+            initialDelaySeconds: 0
+            periodSeconds: 5
+            timeoutSeconds: 2
       volumes:
         - name: peatch-config
           secret:
             secretName: peatch-secrets
+  volumeClaimTemplates:
+    - metadata:
+        name: peatch-data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 1Gi
+        storageClassName: "do-block-storage"
+
 ---
 apiVersion: v1
 kind: Service

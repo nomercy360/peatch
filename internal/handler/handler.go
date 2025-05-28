@@ -54,6 +54,7 @@ type storager interface {
 	ListUsers(ctx context.Context, params db.ListUsersOptions) ([]db.User, error)
 	GetUserByChatID(ctx context.Context, chatID int64) (db.User, error)
 	GetUserByID(ctx context.Context, ID string) (db.User, error)
+	GetUserByUsername(ctx context.Context, username string) (db.User, error)
 	CreateUser(ctx context.Context, params db.UpdateUserParams) error
 	GetUserProfile(ctx context.Context, viewerID string, id string) (db.User, error)
 	UpdateUser(ctx context.Context, params db.UpdateUserParams) error
@@ -64,21 +65,25 @@ type storager interface {
 	PublishUserProfile(ctx context.Context, userID string) error
 	FollowUser(ctx context.Context, userID, followerID string, ttlDuration time.Duration) error
 	IsUserFollowing(ctx context.Context, userID, followerID string) (bool, error)
-	GetUsersByVerificationStatus(ctx context.Context, status db.VerificationStatus, page, perPage int) ([]db.User, error)
+	GetUsersByVerificationStatus(ctx context.Context, status string, page, perPage int) ([]db.User, error)
+	DeleteUserCompletely(ctx context.Context, userID string) error
 	// Collaboration-related operations
 	ListCollaborations(ctx context.Context, query db.CollaborationQuery) ([]db.Collaboration, error)
 	GetCollaborationByID(ctx context.Context, userID, id string) (db.Collaboration, error)
 	CreateCollaboration(ctx context.Context, params db.CreateCollaborationParams) error
 	UpdateCollaboration(ctx context.Context, params db.CreateCollaborationParams) error
 	UpdateCollaborationVerificationStatus(ctx context.Context, collaborationID string, status db.VerificationStatus) error
-	GetCollaborationsByVerificationStatus(ctx context.Context, status db.VerificationStatus, page, perPage int) ([]db.Collaboration, error)
+	GetCollaborationsByVerificationStatus(ctx context.Context, status string, page, perPage int) ([]db.Collaboration, error)
 	ExpressInterest(ctx context.Context, userID string, collabID string, ttlDuration time.Duration) error
 	HasExpressedInterest(ctx context.Context, userID string, collabID string) (bool, error)
+	GetUserCollaborations(ctx context.Context, userID string) ([]db.Collaboration, error)
+	DeleteCollaboration(ctx context.Context, collaborationID string) error
 
 	// Admin-related operations
 	CreateAdmin(ctx context.Context, admin db.Admin) (db.Admin, error)
 	GetAdminByChatID(ctx context.Context, chatID int64) (db.Admin, error)
 	GetAdminByAPIToken(ctx context.Context, apiToken string) (db.Admin, error)
+	GetAdminByID(ctx context.Context, id string) (db.Admin, error)
 
 	// Miscellaneous operations
 	ListOpportunities(ctx context.Context) ([]db.Opportunity, error)
@@ -86,6 +91,7 @@ type storager interface {
 	CreateBadge(ctx context.Context, badge db.Badge) error
 	SearchCities(ctx context.Context, query string, limit, skip int) ([]db.City, error)
 	Health() (db.HealthStats, error)
+	GetCityByName(ctx context.Context, name string) (db.City, error)
 
 	// Embedding-related operations
 	UpdateUserEmbedding(ctx context.Context, userID string, embeddingVector []float64) error
@@ -175,15 +181,26 @@ func (h *Handler) SetupRoutes(e *echo.Echo) {
 		return admin.ID, nil
 	}))
 
+	admin.GET("/me", h.handleAdminGetMe)
+
 	// User management endpoints
 	admin.GET("/users", h.handleAdminListUsers)
 	admin.POST("/users", h.handleAdminCreateUser)
 	admin.PUT("/users/:id/verify", h.handleAdminUpdateUserVerification)
+	admin.GET("/badges", h.handleAdminListBadges)
+	admin.POST("/badges", h.handleAdminCreateBadge)
+	admin.GET("/opportunities", h.handleAdminListOpportunities)
+	admin.GET("/cities/:name", h.handleAdminGetCityByName)
+	admin.GET("/users/chat/:id", h.handleAdminGetUserByChatID)
+	admin.GET("/users/:username", h.handleAdminGetUserByUsername)
+	admin.GET("/users/:id/collaborations", h.handleAdminGetUsersCollaborations)
+	admin.DELETE("/users/:id", h.handleAdminDeleteUser)
 
 	// Collaboration endpoints
 	admin.GET("/collaborations", h.handleAdminListCollaborations)
 	admin.POST("/collaborations", h.handleAdminCreateCollaboration)
 	admin.PUT("/users/:uid/collaborations/:cid/verify", h.handleAdminUpdateCollaborationVerification)
+	admin.DELETE("/collaborations/:id", h.handleAdminDeleteCollaboration)
 }
 
 func (h *Handler) handleIndex(c echo.Context) error {

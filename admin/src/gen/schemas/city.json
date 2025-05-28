@@ -1,0 +1,1 @@
+{"properties":{"country_code":{"type":"string"},"country_name":{"type":"string"},"id":{"type":"string"},"latitude":{"type":"number"},"longitude":{"type":"number"},"name":{"type":"string"}},"type":"object","x-readme-ref-name":"City"}

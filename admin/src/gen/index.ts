@@ -1,12 +1,46 @@
 export type { AdminAuthResponse } from './types/AdminAuthResponse.ts'
 export type {
-  AdminCreate200,
-  AdminCreate400,
-  AdminCreate401,
-  AdminCreateMutationRequest,
-  AdminCreateMutationResponse,
-  AdminCreateMutation,
-} from './types/AdminCreate.ts'
+  AdminCreateBadge201,
+  AdminCreateBadgeMutationRequest,
+  AdminCreateBadgeMutationResponse,
+  AdminCreateBadgeMutation,
+} from './types/AdminCreateBadge.ts'
+export type {
+  AdminCreateCollaboration200,
+  AdminCreateCollaborationMutationRequest,
+  AdminCreateCollaborationMutationResponse,
+  AdminCreateCollaborationMutation,
+} from './types/AdminCreateCollaboration.ts'
+export type { AdminCreateCollaborationRequest } from './types/AdminCreateCollaborationRequest.ts'
+export type {
+  AdminCreateUser200,
+  AdminCreateUser400,
+  AdminCreateUser401,
+  AdminCreateUser500,
+  AdminCreateUserMutationRequest,
+  AdminCreateUserMutationResponse,
+  AdminCreateUserMutation,
+} from './types/AdminCreateUser.ts'
+export type { AdminCreateUserRequest } from './types/AdminCreateUserRequest.ts'
+export type {
+  AdminGetCityByNamePathParams,
+  AdminGetCityByName200,
+  AdminGetCityByNameQueryResponse,
+  AdminGetCityByNameQuery,
+} from './types/AdminGetCityByName.ts'
+export type {
+  AdminGetUserByChatIdPathParams,
+  AdminGetUserByChatId200,
+  AdminGetUserByChatIdQueryResponse,
+  AdminGetUserByChatIdQuery,
+} from './types/AdminGetUserByChatId.ts'
+export type {
+  AdminGetUsersCollaborationsPathParams,
+  AdminGetUsersCollaborations200,
+  AdminGetUsersCollaborationsQueryResponse,
+  AdminGetUsersCollaborationsQuery,
+} from './types/AdminGetUsersCollaborations.ts'
+export type { AdminListBadges200, AdminListBadgesQueryResponse, AdminListBadgesQuery } from './types/AdminListBadges.ts'
 export type {
   AdminListCollaborationsQueryParams,
   AdminListCollaborations200,
@@ -15,6 +49,7 @@ export type {
   AdminListCollaborationsQueryResponse,
   AdminListCollaborationsQuery,
 } from './types/AdminListCollaborations.ts'
+export type { AdminListOpportunities200, AdminListOpportunitiesQueryResponse, AdminListOpportunitiesQuery } from './types/AdminListOpportunities.ts'
 export type {
   AdminListUsersQueryParams,
   AdminListUsers200,
@@ -23,8 +58,6 @@ export type {
   AdminListUsersQueryResponse,
   AdminListUsersQuery,
 } from './types/AdminListUsers.ts'
-export type { AdminLogin200, AdminLogin400, AdminLoginMutationRequest, AdminLoginMutationResponse, AdminLoginMutation } from './types/AdminLogin.ts'
-export type { AdminLoginRequest } from './types/AdminLoginRequest.ts'
 export type { AdminResponse } from './types/AdminResponse.ts'
 export type {
   AdminTelegramAuth200,
@@ -57,10 +90,14 @@ export type {
   AdminUpdateUserVerificationMutation,
 } from './types/AdminUpdateUserVerification.ts'
 export type { AuthTelegramRequest } from './types/AuthTelegramRequest.ts'
+export type { Badge } from './types/Badge.ts'
 export type { BadgeResponse } from './types/BadgeResponse.ts'
 export type { BotBlockedResponse } from './types/BotBlockedResponse.ts'
+export type { City } from './types/City.ts'
 export type { CityResponse } from './types/CityResponse.ts'
+export type { Collaboration } from './types/Collaboration.ts'
 export type { CollaborationResponse } from './types/CollaborationResponse.ts'
+export type { CreateBadgeRequest } from './types/CreateBadgeRequest.ts'
 export type { CreateCollaboration } from './types/CreateCollaboration.ts'
 export type { ErrorResponse } from './types/ErrorResponse.ts'
 export type { GetApiBadges200, GetApiBadgesQueryResponse, GetApiBadgesQuery } from './types/GetApiBadges.ts'
@@ -82,7 +119,9 @@ export type { GetApiOpportunities200, GetApiOpportunitiesQueryResponse, GetApiOp
 export type { GetApiUsersQueryParams, GetApiUsers200, GetApiUsersQueryResponse, GetApiUsersQuery } from './types/GetApiUsers.ts'
 export type { GetApiUsersIdPathParams, GetApiUsersId200, GetApiUsersIdQueryResponse, GetApiUsersIdQuery } from './types/GetApiUsersId.ts'
 export type { GetApiUsersMe200, GetApiUsersMeQueryResponse, GetApiUsersMeQuery } from './types/GetApiUsersMe.ts'
-export type { Location } from './types/Location.ts'
+export type { Link } from './types/Link.ts'
+export type { LoginMeta } from './types/LoginMeta.ts'
+export type { Opportunity } from './types/Opportunity.ts'
 export type { OpportunityResponse } from './types/OpportunityResponse.ts'
 export type {
   PostApiCollaborations201,
@@ -113,6 +152,7 @@ export type {
   PostApiUsersIdFollowMutationResponse,
   PostApiUsersIdFollowMutation,
 } from './types/PostApiUsersIdFollow.ts'
+export type { PostApiUsersPublish200, PostApiUsersPublishMutationResponse, PostApiUsersPublishMutation } from './types/PostApiUsersPublish.ts'
 export type {
   PostAuthTelegram400,
   PostAuthTelegram500,
@@ -127,8 +167,16 @@ export type {
   PutApiCollaborationsIdMutation,
 } from './types/PutApiCollaborationsId.ts'
 export type { PutApiUsers200, PutApiUsersMutationRequest, PutApiUsersMutationResponse, PutApiUsersMutation } from './types/PutApiUsers.ts'
+export type {
+  PutApiUsersLinks200,
+  PutApiUsersLinksMutationRequest,
+  PutApiUsersLinksMutationResponse,
+  PutApiUsersLinksMutation,
+} from './types/PutApiUsersLinks.ts'
 export type { StatusResponse } from './types/StatusResponse.ts'
+export type { UpdateUserLinksRequest } from './types/UpdateUserLinksRequest.ts'
 export type { UpdateUserRequest } from './types/UpdateUserRequest.ts'
+export type { User } from './types/User.ts'
 export type { UserProfileResponse } from './types/UserProfileResponse.ts'
 export type { UserResponse } from './types/UserResponse.ts'
 export type { VerificationStatusEnum, VerificationStatus } from './types/VerificationStatus.ts'

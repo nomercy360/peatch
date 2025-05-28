@@ -1,18 +1,40 @@
-import { store } from '~/store'
-import { VerificationStatus } from '~/gen'
+import { UpdateUserRequest, VerificationStatus } from '~/gen'
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string
 
+export function getToken(): string | null {
+	return localStorage.getItem('admin-token')
+}
+
+export function setToken(token: string) {
+	localStorage.setItem('admin-token', token)
+}
+
+export function clearToken() {
+	localStorage.removeItem('admin-token')
+}
+
 export async function apiRequest(endpoint: string, options: RequestInit = {}) {
+	const token = getToken()
+
 	try {
 		const response = await fetch(`${API_BASE_URL}${endpoint}`, {
 			...options,
 			headers: {
 				'Content-Type': 'application/json',
-				Authorization: `Bearer ${store.token}`,
+				...(token ? { 'x-api-token': token } : {}),
 				...(options.headers || {}),
 			},
 		})
+
+		if (response.status === 401) {
+			clearToken()
+			// Only redirect if we're not already on the login page
+			if (window.location.pathname !== '/login') {
+				window.location.href = '/login'
+			}
+			throw new Error('Unauthorized')
+		}
 
 		let data
 		try {
@@ -38,25 +60,78 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
 	}
 }
 
-export const fetchUsers = async ({ pageParam = 1, status = 'pending' }: { pageParam?: number, status?: string }) => {
-	const response = await apiRequest(`/admin/users?page=${pageParam}&limit=20&status=${status}`)
-
-	return {
-		data: response,
-		nextPage: response.length === 20 ? pageParam + 1 : undefined,
+export async function checkAuth(): Promise<boolean> {
+	try {
+		await apiRequest('/admin/me')
+		return true
+	} catch {
+		return false
 	}
 }
 
-export const fetchCollaborations = async ({ pageParam = 1, status = 'pending' }: { pageParam?: number, status?: string }) => {
-	const response = await apiRequest(`/admin/collaborations?page=${pageParam}&limit=20&status=${status}`)
+export async function login(token: string): Promise<boolean> {
+	setToken(token)
+	const isValid = await checkAuth()
+	if (!isValid) {
+		clearToken()
+	}
+	return isValid
+}
 
+export const fetchUsers = async ({ page = 0, limit = 10, status = 'verified' }: {
+	page?: number,
+	limit?: number,
+	status?: string
+}) => {
+	const params = new URLSearchParams()
+	params.append('page', (page + 1).toString()) // API uses 1-based pagination
+	params.append('per_page', limit.toString())
+
+	// Only add status param if it's provided and not empty
+	if (status) {
+		params.append('status', status)
+	}
+
+	const users = await apiRequest(`/admin/users?${params.toString()}`)
+
+	// The API returns an array of users, not a paginated response
 	return {
-		data: response,
-		nextPage: response.length === 20 ? pageParam + 1 : undefined,
+		users,
+		total: users.length === limit ? (page + 1) * limit + 1 : page * limit + users.length,
 	}
 }
 
-export const updateUserStatus = async (userId: string, status: VerificationStatus) => {
+export const fetchCollaborations = async ({ page = 0, limit = 10, status = '' }: {
+	page?: number,
+	limit?: number,
+	status?: string
+}) => {
+	const params = new URLSearchParams()
+	params.append('page', (page + 1).toString()) // API uses 1-based pagination
+	params.append('per_page', limit.toString())
+	
+	// Only add status param if it's provided and not empty
+	if (status) {
+		params.append('status', status)
+	}
+	
+	const collaborations = await apiRequest(`/admin/collaborations?${params.toString()}`)
+
+	// The API returns an array of collaborations, similar to users endpoint
+	return {
+		collaborations,
+		total: collaborations.length === limit ? (page + 1) * limit + 1 : page * limit + collaborations.length,
+	}
+}
+
+export const updateUser = async (userId: any, data: UpdateUserRequest) => {
+	return await apiRequest(`/api/users`, {
+		method: 'PUT',
+		body: JSON.stringify({ ...data, id: userId }),
+	})
+}
+
+export const updateUserStatus = async (userId: any, status: VerificationStatus) => {
 	return await apiRequest(`/admin/users/${userId}/verify`, {
 		method: 'PUT',
 		body: JSON.stringify({ status }),
@@ -68,4 +143,30 @@ export const updateCollaborationStatus = async (userId: string, collaborationId:
 		method: 'PUT',
 		body: JSON.stringify({ status }),
 	})
+}
+
+export const deleteUser = async (userId: string) => {
+	return await apiRequest(`/admin/users/${userId}`, {
+		method: 'DELETE',
+	})
+}
+
+export const deleteUsers = async (userIds: string[]) => {
+	// For now, delete users one by one
+	// TODO: Add batch delete endpoint when available
+	const promises = userIds.map(id => deleteUser(id))
+	return Promise.all(promises)
+}
+
+export const deleteCollaboration = async (collaborationId: string) => {
+	return await apiRequest(`/admin/collaborations/${collaborationId}`, {
+		method: 'DELETE',
+	})
+}
+
+export const deleteCollaborations = async (collaborationIds: string[]) => {
+	// For now, delete collaborations one by one
+	// TODO: Add batch delete endpoint when available
+	const promises = collaborationIds.map(id => deleteCollaboration(id))
+	return Promise.all(promises)
 }

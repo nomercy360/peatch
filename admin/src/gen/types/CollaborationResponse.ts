@@ -5,6 +5,7 @@
 
 import type { BadgeResponse } from './BadgeResponse.ts'
 import type { CityResponse } from './CityResponse.ts'
+import type { Link } from './Link.ts'
 import type { OpportunityResponse } from './OpportunityResponse.ts'
 import type { UserProfileResponse } from './UserProfileResponse.ts'
 import type { VerificationStatus } from './VerificationStatus.ts'
@@ -23,6 +24,10 @@ export type CollaborationResponse = {
    */
   description?: string
   /**
+   * @type boolean | undefined
+   */
+  has_interest?: boolean
+  /**
    * @type string | undefined
    */
   id?: string
@@ -30,6 +35,10 @@ export type CollaborationResponse = {
    * @type boolean | undefined
    */
   is_payable?: boolean
+  /**
+   * @type array | undefined
+   */
+  links?: Link[]
   /**
    * @type object | undefined
    */

@@ -1,0 +1,1 @@
+{"properties":{"city":{"type":"string"},"country":{"type":"string"},"ip":{"type":"string"},"user_agent":{"type":"string"}},"type":"object","x-readme-ref-name":"LoginMeta"}

@@ -17,7 +17,6 @@ const docTemplate = `{
     "paths": {
         "/admin/auth/telegram": {
             "post": {
-                "description": "Authenticate admin via Telegram using init data",
                 "consumes": [
                     "application/json"
                 ],
@@ -27,7 +26,6 @@ const docTemplate = `{
                 "tags": [
                     "admin"
                 ],
-                "summary": "Admin Telegram Auth",
                 "operationId": "admin-telegram-auth",
                 "parameters": [
                     {
@@ -63,6 +61,111 @@ const docTemplate = `{
                         "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/badges": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "operationId": "admin-list-badges",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/Badge"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "operationId": "admin-create-badge",
+                "parameters": [
+                    {
+                        "description": "Badge data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CreateBadgeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/Badge"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/cities/{name}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "operationId": "admin-get-city-by-name",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "City name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/CityResponse"
+                            }
                         }
                     }
                 }
@@ -127,16 +230,14 @@ const docTemplate = `{
                         }
                     }
                 }
-            }
-        },
-        "/admin/create": {
+            },
             "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Create a new admin account (protected, only existing admins can create new admins)",
+                "description": "Create a new collaboration for a user as admin",
                 "consumes": [
                     "application/json"
                 ],
@@ -146,16 +247,16 @@ const docTemplate = `{
                 "tags": [
                     "admin"
                 ],
-                "summary": "Create admin account",
-                "operationId": "admin-create",
+                "summary": "Create collaboration as admin",
+                "operationId": "admin-create-collaboration",
                 "parameters": [
                     {
-                        "description": "Admin credentials",
+                        "description": "Collaboration data",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/AdminLoginRequest"
+                            "$ref": "#/definitions/AdminCreateCollaborationRequest"
                         }
                     }
                 ],
@@ -163,27 +264,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/AdminResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/Collaboration"
                         }
                     }
                 }
             }
         },
-        "/admin/login": {
-            "post": {
-                "description": "Login as admin using username and password",
+        "/admin/opportunities": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -193,30 +286,15 @@ const docTemplate = `{
                 "tags": [
                     "admin"
                 ],
-                "summary": "Admin login via password",
-                "operationId": "admin-login",
-                "parameters": [
-                    {
-                        "description": "Admin login credentials",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/AdminLoginRequest"
-                        }
-                    }
-                ],
+                "operationId": "admin-list-opportunities",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/AdminAuthResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/Opportunity"
+                            }
                         }
                     }
                 }
@@ -278,6 +356,193 @@ const docTemplate = `{
                         "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create a new user with optional fields as admin",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Create user as admin",
+                "operationId": "admin-create-user",
+                "parameters": [
+                    {
+                        "description": "User data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/AdminCreateUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/UserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/users/chat/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "operationId": "admin-get-user-by-chat-id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Chat ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/User"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/users/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Delete a user and all their related data including collaborations and followers",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Delete user completely",
+                "operationId": "admin-delete-user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/StatusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/users/{id}/collaborations": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "operationId": "admin-get-users-collaborations",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/Collaboration"
+                            }
                         }
                     }
                 }
@@ -408,6 +673,42 @@ const docTemplate = `{
                         "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/users/{username}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "operationId": "admin-get-user-by-username",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Username",
+                        "name": "username",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/User"
                         }
                     }
                 }
@@ -1019,10 +1320,75 @@ const docTemplate = `{
                 }
             }
         },
-        "AdminLoginRequest": {
+        "AdminCreateCollaborationRequest": {
             "type": "object",
             "properties": {
-                "password": {
+                "badges": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "links": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Link"
+                    }
+                },
+                "location": {
+                    "type": "string"
+                },
+                "opportunity_id": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "AdminCreateUserRequest": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
+                "badges": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "chat_id": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "links": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Link"
+                    }
+                },
+                "location": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "opportunity_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "title": {
                     "type": "string"
                 },
                 "username": {
@@ -1064,6 +1430,26 @@ const docTemplate = `{
                 }
             }
         },
+        "Badge": {
+            "type": "object",
+            "properties": {
+                "color": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "text": {
+                    "type": "string"
+                }
+            }
+        },
         "BadgeResponse": {
             "type": "object",
             "properties": {
@@ -1095,6 +1481,29 @@ const docTemplate = `{
                 }
             }
         },
+        "City": {
+            "type": "object",
+            "properties": {
+                "country_code": {
+                    "type": "string"
+                },
+                "country_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "latitude": {
+                    "type": "number"
+                },
+                "longitude": {
+                    "type": "number"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "CityResponse": {
             "type": "object",
             "properties": {
@@ -1107,10 +1516,69 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
-                "location": {
-                    "$ref": "#/definitions/Location"
+                "latitude": {
+                    "type": "number"
+                },
+                "longitude": {
+                    "type": "number"
                 },
                 "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "Collaboration": {
+            "type": "object",
+            "properties": {
+                "badges": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Badge"
+                    }
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "has_interest": {
+                    "type": "boolean"
+                },
+                "hidden_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_payable": {
+                    "type": "boolean"
+                },
+                "links": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Link"
+                    }
+                },
+                "location": {
+                    "$ref": "#/definitions/City"
+                },
+                "opportunity": {
+                    "$ref": "#/definitions/Opportunity"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/User"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "verification_status": {
+                    "$ref": "#/definitions/VerificationStatus"
+                },
+                "verified_at": {
                     "type": "string"
                 }
             }
@@ -1130,11 +1598,20 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
+                "has_interest": {
+                    "type": "boolean"
+                },
                 "id": {
                     "type": "string"
                 },
                 "is_payable": {
                     "type": "boolean"
+                },
+                "links": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Link"
+                    }
                 },
                 "location": {
                     "$ref": "#/definitions/CityResponse"
@@ -1156,6 +1633,20 @@ const docTemplate = `{
                 },
                 "verification_status": {
                     "$ref": "#/definitions/VerificationStatus"
+                }
+            }
+        },
+        "CreateBadgeRequest": {
+            "type": "object",
+            "properties": {
+                "color": {
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "text": {
+                    "type": "string"
                 }
             }
         },
@@ -1196,6 +1687,10 @@ const docTemplate = `{
         "Link": {
             "type": "object",
             "properties": {
+                "icon": {
+                    "description": "Optional icon for the link",
+                    "type": "string"
+                },
                 "label": {
                     "type": "string"
                 },
@@ -1203,6 +1698,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "type": {
+                    "description": "e.g., \"github\", \"linkedin\", \"website\", \"portfolio\"",
                     "type": "string"
                 },
                 "url": {
@@ -1210,14 +1706,49 @@ const docTemplate = `{
                 }
             }
         },
-        "Location": {
+        "LoginMeta": {
             "type": "object",
             "properties": {
-                "latitude": {
-                    "type": "number"
+                "city": {
+                    "type": "string"
                 },
-                "longitude": {
-                    "type": "number"
+                "country": {
+                    "type": "string"
+                },
+                "ip": {
+                    "type": "string"
+                },
+                "user_agent": {
+                    "type": "string"
+                }
+            }
+        },
+        "Opportunity": {
+            "type": "object",
+            "properties": {
+                "color": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "description_ru": {
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "text": {
+                    "type": "string"
+                },
+                "text_ru": {
+                    "type": "string"
                 }
             }
         },
@@ -1272,12 +1803,6 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
-                "links": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/Link"
-                    }
-                },
                 "location_id": {
                     "type": "string"
                 },
@@ -1291,6 +1816,77 @@ const docTemplate = `{
                     }
                 },
                 "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "User": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
+                "badges": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Badge"
+                    }
+                },
+                "chat_id": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "hidden_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_following": {
+                    "type": "boolean"
+                },
+                "language_code": {
+                    "type": "string"
+                },
+                "last_active_at": {
+                    "type": "string"
+                },
+                "links": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Link"
+                    }
+                },
+                "location": {
+                    "$ref": "#/definitions/City"
+                },
+                "login_metadata": {
+                    "$ref": "#/definitions/LoginMeta"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "opportunities": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Opportunity"
+                    }
+                },
+                "title": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                },
+                "verification_status": {
+                    "$ref": "#/definitions/VerificationStatus"
+                },
+                "verified_at": {
                     "type": "string"
                 }
             }

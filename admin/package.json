@@ -17,6 +17,7 @@
     "@kubb/plugin-oas": "^3.10.5",
     "@kubb/plugin-solid-query": "^3.10.5",
     "@kubb/plugin-ts": "^3.10.5",
+    "@types/node": "^22.15.21",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.3",
     "tailwindcss": "^3.4.17",
@@ -25,13 +26,15 @@
     "vite-plugin-solid": "^2.11.6"
   },
   "dependencies": {
+    "@kobalte/core": "^0.13.9",
     "@solidjs/router": "^0.15.3",
-    "@tanstack/solid-query": "^5.75.0",
-    "axios": "^1.9.0",
+    "@tanstack/solid-query": "^5.77.2",
+    "@tanstack/solid-table": "^8.21.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "solid-js": "^1.9.6",
+    "solid-js": "^1.9.7",
     "solid-transition-group": "^0.3.0",
-    "tailwind-merge": "^2.6.0"
+    "tailwind-merge": "^2.6.0",
+    "tailwindcss-animate": "^1.0.7"
   }
 }

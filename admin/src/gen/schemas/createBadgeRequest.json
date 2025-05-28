@@ -1,0 +1,1 @@
+{"properties":{"color":{"type":"string"},"icon":{"type":"string"},"text":{"type":"string"}},"type":"object","x-readme-ref-name":"CreateBadgeRequest"}

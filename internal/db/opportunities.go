@@ -19,7 +19,7 @@ type Opportunity struct {
 	CreatedAt          time.Time  `json:"created_at"`
 	Embedding          []float64  `json:"-"`
 	EmbeddingUpdatedAt *time.Time `json:"-"`
-}
+} // @Name Opportunity
 
 // ListOpportunities lists all opportunities
 func (s *Storage) ListOpportunities(ctx context.Context) ([]Opportunity, error) {
