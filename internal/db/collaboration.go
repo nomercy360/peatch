@@ -160,7 +160,7 @@ func (s *Storage) GetCollaborationByID(ctx context.Context, viewerID string, col
 			c.created_at, c.updated_at, c.hidden_at,
 			c.location, c.links, c.badges, c.opportunity,
 			c.verification_status, c.verified_at,
-			u.id, u.name, u.username, u.avatar_url, u.title,
+			u.id, u.chat_id, u.name, u.username, u.avatar_url, u.title,
 			u.verification_status, u.verified_at
 		FROM collaborations c
 		LEFT JOIN users u ON c.user_id = u.id
@@ -552,7 +552,7 @@ func scanCollaborationRow(row *sql.Row) (Collaboration, error) {
 		&collab.CreatedAt, &collab.UpdatedAt, &collab.HiddenAt,
 		&locationJSON, &linksJSON, &badgesJSON, &opportunityJSON,
 		&collab.VerificationStatus, &collab.VerifiedAt,
-		&user.ID, &user.Name, &user.Username, &user.AvatarURL,
+		&user.ID, &user.ChatID, &user.Name, &user.Username, &user.AvatarURL,
 		&user.Title, &user.VerificationStatus, &user.VerifiedAt,
 	)
 	if err != nil {
