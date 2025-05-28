@@ -178,11 +178,10 @@ func (u *User) IsProfileComplete() bool {
 }
 
 type ListUsersOptions struct {
-	SearchQuery   string
-	Offset        int
-	Limit         int
-	IncludeHidden bool
-	UserID        string // Optional viewer ID
+	SearchQuery string
+	Offset      int
+	Limit       int
+	UserID      string // Optional viewer ID
 }
 
 // ListUsers lists users with pagination and search
@@ -194,25 +193,16 @@ func (s *Storage) ListUsers(ctx context.Context, params ListUsersOptions) ([]Use
 		       verification_status, verified_at, embedding_updated_at,
 		       login_metadata, location, links, badges, opportunities
 		FROM users
-		WHERE 1=1
+		WHERE verification_status = 'verified' AND hidden_at IS NULL AND id != ?
 	`
-	var args []interface{}
+
+	args := []interface{}{params.UserID} // Exclude the viewer themselves
 
 	// Add search filter
 	if params.SearchQuery != "" {
 		query += ` AND (name LIKE ? OR username LIKE ? OR title LIKE ? OR description LIKE ?)`
 		searchPattern := "%" + params.SearchQuery + "%"
 		args = append(args, searchPattern, searchPattern, searchPattern, searchPattern)
-	}
-
-	// Add hidden filter
-	if !params.IncludeHidden {
-		query += ` AND hidden_at IS NULL`
-	}
-
-	if params.UserID != "" {
-		query += ` AND id != ?` // Exclude the viewer themselves
-		args = append(args, params.UserID)
 	}
 
 	// Add ordering and pagination

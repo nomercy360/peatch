@@ -35,11 +35,10 @@ func (h *Handler) handleListUsers(c echo.Context) error {
 	}
 
 	params := db.ListUsersOptions{
-		Limit:         limit,
-		Offset:        (page - 1) * limit,
-		SearchQuery:   search,
-		UserID:        getUserID(c),
-		IncludeHidden: false,
+		Limit:       limit,
+		Offset:      (page - 1) * limit,
+		SearchQuery: search,
+		UserID:      getUserID(c),
 	}
 
 	users, err := h.storage.ListUsers(c.Request().Context(), params)
