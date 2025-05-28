@@ -433,6 +433,8 @@ func (h *Handler) handleAdminCreateUser(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get created user").WithInternal(err)
 	}
 
+	go updateUserEmbedding(h, createdUser)
+
 	return c.JSON(http.StatusOK, createdUser)
 }
 
@@ -504,6 +506,8 @@ func (h *Handler) handleAdminCreateCollaboration(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get created collaboration").WithInternal(err)
 	}
+
+	go generateCollaborationEmbedding(h, createdCollab)
 
 	return c.JSON(http.StatusOK, createdCollab)
 }

@@ -63,28 +63,28 @@ type Link struct {
 } // @Name Link
 
 type User struct {
-	ID                     string             `bson:"_id,omitempty" json:"id"`
-	Name                   *string            `bson:"name,omitempty" json:"name"`
-	ChatID                 int64              `bson:"chat_id,omitempty" json:"chat_id"`
-	Username               string             `bson:"username,omitempty" json:"username"`
-	CreatedAt              time.Time          `bson:"created_at,omitempty" json:"created_at"`
-	UpdatedAt              time.Time          `bson:"updated_at,omitempty" json:"-"`
-	NotificationsEnabledAt *time.Time         `bson:"notifications_enabled_at,omitempty" json:"-"`
-	HiddenAt               *time.Time         `bson:"hidden_at,omitempty" json:"hidden_at"`
-	AvatarURL              *string            `bson:"avatar_url,omitempty" json:"avatar_url"`
-	Title                  *string            `bson:"title,omitempty" json:"title"`
-	Description            *string            `bson:"description,omitempty" json:"description"`
-	LanguageCode           LanguageCode       `bson:"language_code,omitempty" json:"language_code"`
-	Location               *City              `bson:"location,omitempty" json:"location"`
-	IsFollowing            bool               `bson:"is_following,omitempty" json:"is_following"`
-	Badges                 []Badge            `bson:"badges,omitempty" json:"badges"`
-	Opportunities          []Opportunity      `bson:"opportunities,omitempty" json:"opportunities"`
-	Links                  []Link             `bson:"links,omitempty" json:"links"`
-	LoginMetadata          *LoginMeta         `bson:"login_metadata,omitempty" json:"login_metadata"`
-	LastActiveAt           *time.Time         `bson:"last_active_at,omitempty" json:"last_active_at"`
-	VerificationStatus     VerificationStatus `bson:"verification_status,omitempty" json:"verification_status"`
-	VerifiedAt             *time.Time         `bson:"verified_at,omitempty" json:"verified_at"`
-	EmbeddingUpdatedAt     *time.Time         `bson:"embedding_updated_at,omitempty" json:"-"`
+	ID                     string             `json:"id"`
+	Name                   *string            `json:"name"`
+	ChatID                 int64              `json:"chat_id"`
+	Username               string             `json:"username"`
+	CreatedAt              time.Time          `json:"created_at"`
+	UpdatedAt              time.Time          `json:"-"`
+	NotificationsEnabledAt *time.Time         `json:"-"`
+	HiddenAt               *time.Time         `json:"hidden_at"`
+	AvatarURL              *string            `json:"avatar_url"`
+	Title                  *string            `json:"title"`
+	Description            *string            `json:"description"`
+	LanguageCode           LanguageCode       `json:"language_code"`
+	Location               *City              `json:"location"`
+	IsFollowing            bool               `json:"is_following"`
+	Badges                 []Badge            `json:"badges"`
+	Opportunities          []Opportunity      `json:"opportunities"`
+	Links                  []Link             `json:"links"`
+	LoginMetadata          *LoginMeta         `json:"login_metadata"`
+	LastActiveAt           *time.Time         `json:"last_active_at"`
+	VerificationStatus     VerificationStatus `json:"verification_status"`
+	VerifiedAt             *time.Time         `json:"verified_at"`
+	EmbeddingUpdatedAt     *time.Time         `json:"-"`
 } // @Name User
 
 func (u *User) ToString() string {
@@ -163,9 +163,6 @@ func (u *User) IsProfileComplete() bool {
 		return false
 	}
 	if u.Description == nil || *u.Description == "" {
-		return false
-	}
-	if u.Location == nil || u.Location.ID == "" {
 		return false
 	}
 	if len(u.Badges) == 0 {

@@ -13,6 +13,7 @@ COPY . ./
 
 ARG TARGETARCH
 RUN GOOS=linux GOARCH=${TARGETARCH} CGO_ENABLED=1 go build -tags fts5,libsqlite3 -buildvcs=false -ldflags="-s -w" -o /bin/api ./cmd/api
+RUN GOOS=linux GOARCH=${TARGETARCH} CGO_ENABLED=1 go build -tags fts5,libsqlite3 -buildvcs=false -ldflags="-s -w" -o /bin/embedding ./cmd/embedding
 
 FROM debian:bookworm-slim
 
@@ -26,5 +27,6 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /bin/api /app/main
+COPY --from=build /bin/embedding /app/embedding
 
 CMD [ "/app/main" ]

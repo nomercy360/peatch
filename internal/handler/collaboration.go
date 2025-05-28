@@ -1,12 +1,14 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"github.com/labstack/echo/v4"
 	"github.com/peatch-io/peatch/internal/contract"
 	"github.com/peatch-io/peatch/internal/db"
 	"github.com/peatch-io/peatch/internal/nanoid"
 	"github.com/peatch-io/peatch/internal/notification"
+	"log"
 	"log/slog"
 	"net/http"
 	"time"
@@ -129,7 +131,26 @@ func (h *Handler) handleCreateCollaboration(c echo.Context) error {
 		}
 	}()
 
+	go generateCollaborationEmbedding(h, res)
+
 	return c.JSON(http.StatusCreated, contract.ToCollaborationResponse(res))
+}
+
+func generateCollaborationEmbedding(h *Handler, collab db.Collaboration) {
+	ctx := context.Background()
+
+	embeddingVector, err := h.embeddingService.GenerateEmbedding(ctx, collab.ToString())
+	if err != nil {
+		log.Printf("failed to generate embedding for collaboration %s: %v", collab.ID, err)
+		return
+	}
+
+	if err := h.storage.UpdateCollaborationEmbedding(ctx, collab.ID, embeddingVector); err != nil {
+		log.Printf("failed to update user embedding: %v", err)
+		return
+	}
+
+	return
 }
 
 // handleUpdateCollaboration godoc
@@ -181,6 +202,8 @@ func (h *Handler) handleUpdateCollaboration(c echo.Context) error {
 	} else if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get collaboration").WithInternal(err)
 	}
+
+	go generateCollaborationEmbedding(h, collaboration)
 
 	return c.JSON(http.StatusOK, contract.ToCollaborationResponse(collaboration))
 }

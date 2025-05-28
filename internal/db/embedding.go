@@ -60,6 +60,46 @@ func (s *Storage) UpdateUserEmbedding(ctx context.Context, userID string, embedd
 	return tx.Commit()
 }
 
+func (s *Storage) UpdateCollaborationEmbedding(ctx context.Context, collabID string, embeddingVector []float64) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	// Check if collaboration exists
+	var exists bool
+	err = tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM collaborations WHERE id = ?)", collabID).Scan(&exists)
+	if err != nil {
+		return fmt.Errorf("failed to check collaboration existence: %w", err)
+	}
+	if !exists {
+		return ErrNotFound
+	}
+
+	// Serialize the embedding vector for sqlite-vec
+	serializedVector, err := sqlite_vec.SerializeFloat32(vectorFloat64ToFloat32(embeddingVector))
+	if err != nil {
+		return fmt.Errorf("failed to serialize embedding vector: %w", err)
+	}
+
+	// Delete existing embedding if any
+	_, err = tx.ExecContext(ctx, "DELETE FROM collaboration_embeddings WHERE collaboration_id = ?", collabID)
+	if err != nil {
+		return fmt.Errorf("failed to delete existing embedding: %w", err)
+	}
+
+	// Insert new embedding
+	_, err = tx.ExecContext(ctx,
+		"INSERT INTO collaboration_embeddings(collaboration_id, embedding) VALUES (?, ?)",
+		collabID, serializedVector)
+	if err != nil {
+		return fmt.Errorf("failed to insert collaboration embedding: %w", err)
+	}
+
+	return tx.Commit()
+}
+
 // GetMatchingUsersForCollaboration finds users similar to an embedding vector for a given collaboration
 func (s *Storage) GetMatchingUsersForCollaboration(ctx context.Context, collabID string, limit int) ([]User, error) {
 	if limit <= 0 {

@@ -8,6 +8,7 @@ import (
 	"github.com/peatch-io/peatch/internal/contract"
 	"github.com/peatch-io/peatch/internal/db"
 	"github.com/peatch-io/peatch/internal/notification"
+	"log"
 	"log/slog"
 	"net/http"
 	"time"
@@ -168,27 +169,33 @@ func (h *Handler) handleUpdateUser(c echo.Context) error {
 		}()
 	}
 
-	go func() {
-		// Extract text from user profile
-		ctx := context.Background()
-
-		// Generate embedding
-		embeddingVector, err := h.embeddingService.GenerateEmbedding(ctx, user.ToString())
-		if err != nil {
-			h.logger.Error("failed to generate user embedding",
-				slog.String("user_id", uid),
-				slog.String("error", err.Error()))
-			return
-		}
-
-		if err := h.storage.UpdateUserEmbedding(context.Background(), uid, embeddingVector); err != nil {
-			h.logger.Error("failed to generate user embedding",
-				slog.String("user_id", uid),
-				slog.String("error", err.Error()))
-		}
-	}()
+	go updateUserEmbedding(h, resp)
 
 	return c.JSON(http.StatusOK, contract.ToUserResponse(resp))
+}
+
+func updateUserEmbedding(h *Handler, user db.User) {
+	ctx := context.Background()
+
+	if !user.IsProfileComplete() {
+		log.Printf("user %s profile is not complete, skipping embedding update", user.ID)
+		return
+	}
+
+	// Generate embedding
+	embeddingVector, err := h.embeddingService.GenerateEmbedding(ctx, user.ToString())
+	if err != nil {
+		log.Printf("failed to generate embedding for user %s: %v", user.ID, err)
+		return
+	}
+
+	// Update user embedding in storage
+	if err := h.storage.UpdateUserEmbedding(ctx, user.ID, embeddingVector); err != nil {
+		log.Printf("failed to update user embedding: %v", err)
+		return
+	}
+
+	return
 }
 
 // handleFollowUser godoc

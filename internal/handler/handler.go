@@ -96,6 +96,7 @@ type storager interface {
 	// Embedding-related operations
 	UpdateUserEmbedding(ctx context.Context, userID string, embeddingVector []float64) error
 	GetMatchingUsersForCollaboration(ctx context.Context, opportunityID string, limit int) ([]db.User, error)
+	UpdateCollaborationEmbedding(ctx context.Context, collaborationID string, embeddingVector []float64) error
 }
 
 func New(storage storager, config Config, s3Client s3Client, logger *slog.Logger, bot *telegram.Bot, n interfaces.NotificationService, es embeddingService) *Handler {
