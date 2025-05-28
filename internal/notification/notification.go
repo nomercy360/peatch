@@ -557,8 +557,7 @@ func (n *Notifier) SendCollaborationToCommunityChatWithImage(collab db.Collabora
 		}
 	}
 
-	communityMsg := fmt.Sprintf("🌟 New collaboration opportunity!\n\"%s\" by %s\n\nCheck it out",
-		collab.Title, fullName)
+	communityMsg := fmt.Sprintf("🌟 *%s*\n\n%s\n", telegram.EscapeMarkdown(collab.Title), telegram.EscapeMarkdown(collab.Description))
 
 	if imageBytes != nil && len(imageBytes) > 0 {
 		photoData := &models.InputFileUpload{
@@ -568,6 +567,7 @@ func (n *Notifier) SendCollaborationToCommunityChatWithImage(collab db.Collabora
 
 		if _, err := n.bot.SendPhoto(context.Background(), &telegram.SendPhotoParams{
 			ChatID:      n.getChatID(n.communityChatID),
+			ParseMode:   models.ParseModeMarkdown,
 			Caption:     communityMsg,
 			Photo:       photoData,
 			ReplyMarkup: &keyboard,
