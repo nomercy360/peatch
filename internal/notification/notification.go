@@ -438,19 +438,17 @@ func (n *Notifier) NotifyUsersWithMatchingOpportunity(collab db.Collaboration, u
 					if collab.User.Name != nil {
 						collabUserName = *collab.User.Name
 					}
-					msgText = fmt.Sprintf("🔍 Новая коллаборация от %s, которая может вас заинтересовать!\n\n\"%s\"\n\nОна соответствует вашему интересу: %s",
+					msgText = fmt.Sprintf("🔍 Новая коллаборация от %s, которая может вас заинтересовать!\n\n%s",
 						collabUserName,
-						collab.Title,
-						collab.Opportunity.TextRU)
+						collab.Title)
 				} else {
 					collabUserName := collab.User.Username
 					if collab.User.Name != nil {
 						collabUserName = *collab.User.Name
 					}
-					msgText = fmt.Sprintf("🔍 New collaboration from %s that might interest you!\n\n\"%s\"\n\nIt matches your interest: %s",
+					msgText = fmt.Sprintf("🔍 New collaboration from %s that might interest you!\n\n%s",
 						collabUserName,
-						collab.Title,
-						collab.Opportunity.Text)
+						collab.Title)
 				}
 
 				var err error
