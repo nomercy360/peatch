@@ -10,7 +10,7 @@ export default function FillProfilePopup(props: { onClose: () => void }) {
         class="absolute right-2 top-2 size-5 rounded-full bg-background"
         onClick={() => props.onClose()}
       >
-        <span class="material-symbols-rounded text-secondary-foreground">
+        <span class="material-symbols-rounded text-[16px] text-secondary-foreground">
           close
         </span>
       </button>

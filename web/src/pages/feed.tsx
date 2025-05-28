@@ -14,16 +14,14 @@ import FillProfilePopup from '~/components/fill-profile-popup'
 import { LocationBadge } from '~/components/location-badge'
 import { useTranslations } from '~/lib/locale-context'
 import { useInfiniteQuery } from '@tanstack/solid-query'
-import { verificationStatus, UserProfileResponse } from '~/gen'
+import { UserProfileResponse } from '~/gen'
 import { fetchUsers } from '~/lib/api'
-import { useNavigation } from '~/lib/useNavigation'
 import { Motion, Presence } from 'solid-motionone'
 
 export const [search, setSearch] = createSignal('')
 
 export default function FeedPage() {
   const { t } = useTranslations()
-  const navigation = useNavigation()
 
   const updateSearch = useDebounce(setSearch, 350)
 
@@ -77,8 +75,8 @@ export default function FeedPage() {
     )
 
     window.Telegram.WebApp.disableClosingConfirmation()
-    // window.Telegram.WebApp.CloudStorage.removeItem('profilePopup')
-    // window.Telegram.WebApp.CloudStorage.removeItem('communityPopup')
+    //window.Telegram.WebApp.CloudStorage.removeItem('profilePopup')
+    //window.Telegram.WebApp.CloudStorage.removeItem('communityPopup')
   })
 
   const closePopup = (name: string) => {
@@ -117,9 +115,7 @@ export default function FeedPage() {
         <Presence exitBeforeEnter>
           <Show
             when={
-              store.user.verification_status ==
-                verificationStatus.VerificationStatusUnverified &&
-              profilePopup()
+              (!store.user.title || !store.user.description) && profilePopup()
             }
           >
             <Motion.div
@@ -133,13 +129,7 @@ export default function FeedPage() {
           </Show>
         </Presence>
         <Presence exitBeforeEnter>
-          <Show
-            when={
-              communityPopup() &&
-              store.user.verification_status ==
-                verificationStatus.VerificationStatusVerified
-            }
-          >
+          <Show when={communityPopup() && store.user.description}>
             <Motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -329,11 +319,11 @@ const OpenCommunityPopup = (props: { onClose: () => void }) => {
       transition={{ duration: 0.3 }}
     >
       <Motion.button
-        class="absolute right-4 top-4 flex size-6 items-center justify-center rounded-full bg-background"
+        class="absolute right-4 top-4 z-10 flex size-6 cursor-pointer items-center justify-center rounded-full bg-background"
         onClick={() => props.onClose()}
         press={{ scale: 0.98 }}
       >
-        <span class="material-symbols-rounded text-[20px] text-secondary-foreground">
+        <span class="material-symbols-rounded text-[16px] text-secondary-foreground">
           close
         </span>
       </Motion.button>
